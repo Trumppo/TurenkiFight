@@ -11,7 +11,7 @@ export const fighterKey = (id: string, pose: FighterPose, frame: number): string
   `fighter-${id}-${pose}-${frame % FRAMES_PER_POSE}`;
 
 export function createFighterTextures(scene: Phaser.Scene): void {
-  for (let player = 1; player <= 4; player++) {
+  for (let player = 1; player <= 8; player++) {
     const id = `P${player}`;
     const color = playerColor(id);
     for (const pose of POSES) for (let frame = 0; frame < FRAMES_PER_POSE; frame++) {
