@@ -38,7 +38,7 @@ tasks:
     title: Polish Turenki station art and fighter presentation assets
     assigned_role: graphics-session
     session_id: graphics-session-20261024
-    status: claimed
+    status: review
     priority: P1
     specification: docs/visual/STYLE_GUIDE.md
     branch: feature/m1-visual-polish
@@ -54,7 +54,7 @@ tasks:
       - Keep all existing sprite pose keys and presentation APIs compatible
       - Update visual documentation with before-after rationale
       - Build and relevant tests pass
-    pull_request: null
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/6
     last_updated: "2026-10-24"
     notes: "Parallel-safe visual asset work only. Do not modify StationScene.ts, simulation, modes, input, or gameplay HUD; integration remains M1-VISUAL-QA."
   - id: M1-VISUAL-QA
