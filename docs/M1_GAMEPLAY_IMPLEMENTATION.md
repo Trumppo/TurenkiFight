@@ -52,6 +52,20 @@ Replace ambiguous generic attack with explicit **punch, kick and jump-kick** com
 
 Allow 2–4 joined local players in M1; one-player practice is optional. Default controls for existing P1 and P2 should continue to work. Provide a documented workable P3/P4 setup using gamepads; do not assume four players can comfortably share one keyboard. The browser Gamepad API is polled by the input adapter, not the simulation. Show controller slot and joining feedback.
 
+### Locked M1 lobby and join decisions (2026-10-24)
+
+These decisions supersede any ambiguous lobby implementation assumptions:
+
+1. **Explicit join:** A player joins only by pressing a designated **Join** button/key on their own input device while the lobby is open. Merely connecting or detecting a gamepad does not automatically reserve a player slot. Show immediate feedback with assigned P1–P4 slot and device.
+2. **P1 host starts:** Only the player occupying **P1** can activate **Start match**. The control is disabled until at least two players have joined. Other players cannot start the countdown. Start triggers the existing 180-tick countdown, then the 7200-tick fight.
+3. **No ready state:** M1 has **no per-player Ready / Not ready toggle**, indicator or all-ready gate. Joined players are eligible to start immediately once the P1 host starts.
+4. **Stable assignment:** Preserve one exclusive gamepad per joined slot, maintain existing workable keyboard mappings, and prevent accidental duplicate joins from held inputs. A disconnected controller produces neutral gameplay input and does not silently reassign the slot.
+5. **Rematch:** Keep the joined player roster and P1 host assignment for rematches. Returning to lobby permits a fresh join flow.
+
+**Implementation coordination:** This clarification belongs to the existing `M1-GAMEPLAY` task; it is not a separate task or permission to modify graphics-session files. The gameplay agent should reconcile its current branch with this specification before final PR review, without discarding work already in progress.
+
+**Focused acceptance checks:** Controller detection alone never joins; a Join press creates one slot; P2–P4 cannot start; P1 cannot start with fewer than two players; P1 can start with 2–4 players; no ready flags are required; rematch retains assignments.
+
 ### Fighter state and movement
 
 Track ground-plane `x,y`, jump height `z`, vertical velocity, facing, health, current attack phase, hitstun, KO state, respawn timer, protection timer and per-attack target-hit set. Logical arena bounds are configurable and independent of rendered sprites. Preserve existing Y-depth sorting, ground shadows and Z-offset display.
