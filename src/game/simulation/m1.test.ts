@@ -76,7 +76,7 @@ describe('M1 Score Brawl', () => {
      const input={...neutral('P1'),[move]:true};
      s=step(s,[input]);
      const startup=move==='punch'?4:7;
-     for(let i=1;i<startup-1;i++) s=step(s,[]);
+     for(let i=1;i<startup;i++) s=step(s,[]);
      expect(s.fighters[0].score).toBe(0);
      s=step(s,[]);
      expect(s.fighters[0].score).toBe(move==='punch'?100:150);
