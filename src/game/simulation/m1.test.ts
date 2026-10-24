@@ -45,6 +45,18 @@ describe('M1 Score Brawl', () => {
    const diagonal=step(active,[{...neutral('P1'),moveX:1,moveY:1}]).fighters[0];
    expect(Math.hypot(diagonal.x-start.fighters[0].x,diagonal.y-start.fighters[0].y)).toBeCloseTo(cardinal.x-start.fighters[0].x,8);
  });
+ it('awards punch points once per attack and respects facing', () => {
+   let s=createState(['P1','P2']);
+   s={...s,phase:'fighting',fighters:s.fighters.map((f,i)=>({...f,x:100+i*20,y:160,facing:i===0?1:-1}))};
+   for(let i=0;i<30;i++) s=step(s,[{...neutral('P1'),punch:true}]);
+   expect(s.fighters[0].score).toBe(100);
+   expect(s.fighters[1].health).toBe(90);
+   expect(s.fighters[1].hitsReceived).toBe(1);
+ });
+ it('does not score after match completion',()=>{
+   const s={...createState(),phase:'results' as const,remainingTicks:0};
+   expect(step(s,[{...neutral('P1'),punch:true}]).fighters).toEqual(s.fighters);
+ });
  it('supports exact shared ranks',()=>{
    const s=createState(['P2','P1']);
    expect(standings(s)).toEqual([{id:'P1',score:0,rank:1},{id:'P2',score:0,rank:1}]);
