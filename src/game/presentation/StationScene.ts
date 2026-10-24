@@ -42,7 +42,7 @@ export class StationScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     const pads = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter((p): p is Gamepad => p !== null) : [];
-    if (this.state.phase === 'countdown' && this.state.tick === 0) {
+    if (this.state.phase === 'countdown') {
       for (const pad of pads) {
         if (pad.buttons.some(b => b.pressed) && !this.gamepadSlots.has(pad.index) && this.state.fighters.length < 4) {
           const id = `P${this.state.fighters.length + 1}`;
