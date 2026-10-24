@@ -1,5 +1,10 @@
 # M1 visual integration status
 
+## M1 resolution migration (2026-10-24)
+
+The prior 384×216 SVG rasterization and browser checks above are historical implementation evidence, not M1 target validation. New target is configurable **640×360** rendering with fixed logical camera framing, sharp pixel scaling and proportional top-row HUD. Gameplay agent owns viewport, camera and `StationScene.ts`; graphics agent owns station source art and sprite/theme assets without editing gameplay-owned files. After integration validate coverage, sprite readability and UI at 640×360, responsive scaling, and configuration-only 960×540 behavior.
+
+
 Branch: `feature/visual-design`. No simulation or networking changes.
 
 ## Implemented
