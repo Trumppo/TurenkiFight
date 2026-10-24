@@ -105,6 +105,21 @@ Separate match-specific counters (`koCount`, `hitsReceived`) from fighter physic
 
 Reuse `StationScene`, `fighterSprites`, `visualTheme` and station SVG. Drive pose from explicit simulation state/events: punch/kick/jumpkick/hit/ko/respawn. Display joined player IDs, scores, countdown, 02:00 match clock, KO/respawn feedback, standings and rematch controls. Keep game view legible at 384×216 and check 2×/3× scaling. Do not silently remove current two-player keyboard functionality. UI can be modest but must be readable.
 
+### Locked M1 HUD layout (2026-10-24)
+
+The following are **approved design decisions**, superseding any alternative HUD mockups:
+
+- **Layout:** All joined player panels appear in **one horizontal top row**, ordered by player slot P1–P4. Do not use four-corner placement. For 2–3 joined players, show only active slots while preserving clear alignment.
+- **Health:** Display health as a numeric **`HP <value>`** field, not a health bar. Use authoritative fighter health; clamp the displayed value to the simulation's valid range and make KO state obvious.
+- **Score:** Show each player's **live score throughout the match**, including negative values. Scores must come from the authoritative match state and remain visible in the fighting phase.
+- **Timer:** Keep the authoritative match clock visually prominent and legible; show `02:00` at the start of fighting and do not decrement during the 3-second countdown.
+- **384×216 constraint:** Reserve a compact, consistent top HUD strip (suggested target height 28–34 internal pixels). Four panels must fit across 384 internal pixels without horizontal scrolling, clipping, or covering each other. Use high-contrast, readable pixel-aligned text, slot color plus explicit P1/P2/P3/P4 labels, and check both native scale and 2×/3× display scaling. Avoid obscuring fighters or the center of the arena. Exact font size and spacing may be tuned during visual QA; correctness and legibility are acceptance criteria.
+- **Events:** KO/respawn effects and other feedback must not hide the top-row HP, scores or timer. Presentation reads state; it never calculates health, scores or clock.
+
+**Coordination:** HUD wiring in `StationScene.ts` and related gameplay presentation belongs to the existing `M1-GAMEPLAY` task. Graphics-session's parallel `M1-VISUAL-POLISH` must not edit `StationScene.ts` or HUD; `M1-VISUAL-QA` may refine visuals after gameplay integration. Gameplay agent should incorporate these locked decisions when reconciling its feature branch, without discarding existing implementation work.
+
+**HUD acceptance checks:** With 2, 3 and 4 players, the top-row panels show correct slot labels, numeric HP and live scores; the clock shows 02:00 at fight start; no panels overlap or clip at 384×216; negative scores, KO/respawn and rematch state remain correct.
+
 ## Acceptance tests (automated)
 
 1. Same initial state + same per-tick inputs over >=7200 ticks produces byte-equivalent normalized state and event checksum on repeated runs; original state and inputs are never mutated.
