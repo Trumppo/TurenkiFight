@@ -34,6 +34,29 @@ tasks:
     pull_request: null
     last_updated: "2026-10-24"
     notes: "Keep current graphics. No networking architecture decisions."
+  - id: M1-VISUAL-POLISH
+    title: Polish Turenki station art and fighter presentation assets
+    assigned_role: graphics-session
+    session_id: null
+    status: ready
+    priority: P1
+    specification: docs/visual/STYLE_GUIDE.md
+    branch: feature/m1-visual-polish
+    depends_on: []
+    scope:
+      - public/assets/station/
+      - src/game/presentation/fighterSprites.ts
+      - src/game/presentation/visualTheme.ts
+      - docs/visual/
+    acceptance:
+      - Improve station background composition and legibility without changing gameplay
+      - Improve visual differentiation of four simultaneous fighters at 384x216
+      - Keep all existing sprite pose keys and presentation APIs compatible
+      - Update visual documentation with before-after rationale
+      - Build and relevant tests pass
+    pull_request: null
+    last_updated: "2026-10-24"
+    notes: "Parallel-safe visual asset work only. Do not modify StationScene.ts, simulation, modes, input, or gameplay HUD; integration remains M1-VISUAL-QA."
   - id: M1-VISUAL-QA
     title: Review and refine merged station visuals after gameplay integration
     assigned_role: graphics-session
