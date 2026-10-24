@@ -14,7 +14,7 @@ tasks:
     title: Implement deterministic four-player Score Brawl
     assigned_role: gameplay-session
     session_id: gameplay-session-20261024
-    status: in_progress
+    status: review
     priority: P0
     specification: docs/M1_GAMEPLAY_IMPLEMENTATION.md
     branch: feature/m1-gameplay
