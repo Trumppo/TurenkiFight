@@ -43,4 +43,19 @@ test('lobby requires explicit joining, P1 host and two players', async ({ page }
   await page.keyboard.down('Enter');
   await expect.poll(state).toEqual({ phase: 'countdown', count: 2 });
   await page.keyboard.up('Enter');
+  await page.evaluate(async () => {
+    const game = (window as typeof window & {
+      __turenkiGame?: { scene: { getScene: (key: string) => { state: unknown } } }
+    }).__turenkiGame!;
+    const scene = game.scene.getScene('StationScene');
+    const moduleUrl = '/src/game/simulation/step.ts';
+    const simulation = await import(/* @vite-ignore */ moduleUrl);
+    let s = scene.state as ReturnType<typeof simulation.createState>;
+    for (let tick = 0; tick < simulation.COUNTDOWN_TICKS + simulation.MATCH_TICKS; tick++) s = simulation.step(s, []);
+    scene.state = s;
+  });
+  await expect.poll(state).toEqual({ phase: 'results', count: 2 });
+  await page.keyboard.down('Enter');
+  await expect.poll(state).toEqual({ phase: 'countdown', count: 2 });
+  await page.keyboard.up('Enter');
 });
