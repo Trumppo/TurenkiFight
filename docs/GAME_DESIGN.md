@@ -1,5 +1,12 @@
 # TurenkiFight – Game Design v0.3
 
+### Stage rollout and decoupling decision (2026-10-24)
+
+**Roadmap:** Turenki railway station is the sole M1 arena. The four proposed locations (yläaste, K-kauppa, Ravintola Mesku, keskustan kävelykatu) are **candidates for the first or second implementation phase after M1**, subject to prioritization; do not treat them as M1 acceptance requirements.
+
+**Non-negotiable separation:** A stage's visual assets (background, facade, foreground, decoration, signage, visual props, parallax, lighting, ambience) are purely presentation data and cannot influence the deterministic combat simulation. Stage gameplay data (world bounds, spawns, collision shapes and any future interactive object definitions) must be declarative, typed and loaded by stable `arenaId`, not hardcoded as branches in fighting rules. Changing visual assets alone must preserve identical simulation replay results. Changing declared collision geometry may legitimately change movement outcomes, but must not require changes to the combat engine source.
+
+
 ## Future Turenki arenas (candidate locations, 2026-10-24)
 
 The Turenki railway station remains the **M1 playable arena**. Candidate arenas for later milestones (concepts, not yet approved level layouts or M1 scope):
