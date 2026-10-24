@@ -1,40 +1,43 @@
 import Phaser from 'phaser';
 import { createState, step, TICK_RATE } from '../simulation/step';
 import type { GameState, PlayerInput } from '../simulation/types';
+import { VISUAL } from './visualTheme';
+import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
 
 export class StationScene extends Phaser.Scene {
   private state: GameState = createState();
   private elapsedMs = 0;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
-  private fighterGraphics!: Phaser.GameObjects.Graphics;
+  private fighterSprites = new Map<string, Phaser.GameObjects.Image>();
+  private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
+  private labels = new Map<string, Phaser.GameObjects.Text>();
   private scoreLabel!: Phaser.GameObjects.Text;
+  private hudTimer!: Phaser.GameObjects.Text;
+  private elapsedRound = 0;
+  private readonly roundLength = 180;
+  private previous = new Map<string, { x: number; y: number; health: number }>();
+  private hitFlash = new Map<string, number>();
 
   constructor() { super('StationScene'); }
 
-  create(): void {
-    const g = this.add.graphics();
-    g.fillStyle(0x6d8999).fillRect(0, 0, 384, 120);
-    g.fillStyle(0xc2a27d).fillRect(0, 38, 160, 85);
-    g.fillStyle(0x58463e).fillRect(0, 32, 165, 9);
-    for (const x of [13, 55, 97]) {
-      g.fillStyle(0x3b5360).fillRect(x, 58, 29, 41);
-      g.fillStyle(0xa6c7c9).fillRect(x + 4, 62, 21, 33);
-    }
-    g.fillStyle(0x293f45).fillRect(45, 44, 76, 17);
-    this.add.text(52, 47, 'TURENKI', { fontFamily: 'monospace', fontSize: '11px', color: '#f4e5b4' });
-    g.fillStyle(0x506c7c).fillRect(207, 72, 165, 49);
-    for (const x of [216, 250, 284, 318]) {
-      g.fillStyle(0xacc5c5).fillRect(x, 81, 25, 25);
-    }
-    g.fillStyle(0x76786f).fillRect(0, 122, 384, 94);
-    g.lineStyle(3, 0xd7c9a5).lineBetween(0, 123, 384, 123);
-    g.lineBetween(0, 209, 384, 209);
-    g.lineStyle(1, 0x92968a).lineBetween(0, 166, 384, 166);
+  preload(): void {
+    this.load.svg('station-backdrop', 'assets/station/turenki-station-background.svg', { width: 384, height: 216 });
+  }
 
-    this.fighterGraphics = this.add.graphics();
-    this.scoreLabel = this.add.text(8, 7, '', { fontFamily: 'monospace', fontSize: '11px', color: '#fff1b7', backgroundColor: '#263747' });
-    this.add.text(328, 7, 'v0.1', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7' });
+  create(): void {
+    createFighterTextures(this);
+    this.add.image(0, 0, 'station-backdrop').setOrigin(0, 0).setDepth(-100);
+    // Non-interactive foreground trim remains behind the depth-sorted fighters.
+    const hud = this.add.graphics().setDepth(1000);
+    hud.fillStyle(0x172536, 0.92).fillRect(0, 0, 384, VISUAL.hudHeight);
+    hud.lineStyle(1, VISUAL.colors.cream).lineBetween(0, 23, 384, 23);
+    this.scoreLabel = this.add.text(7, 6, '', {
+      fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7'
+    }).setDepth(1001);
+    this.hudTimer = this.add.text(330, 6, '03:00', {
+      fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7'
+    }).setDepth(1001);
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,L,SPACE') as Record<string, Phaser.Input.Keyboard.Key>;
     this.drawFighters();
@@ -46,6 +49,7 @@ export class StationScene extends Phaser.Scene {
     while (this.elapsedMs >= interval) {
       this.state = step(this.state, this.readInputs());
       this.elapsedMs -= interval;
+      this.elapsedRound += interval / 1000;
     }
     this.drawFighters();
   }
@@ -59,21 +63,40 @@ export class StationScene extends Phaser.Scene {
   }
 
   private drawFighters(): void {
-    const g = this.fighterGraphics;
-    g.clear();
-    const fighters = [...this.state.fighters].sort((a, b) => a.y - b.y);
-    for (const f of fighters) {
-      const x = Math.round(f.x);
-      const y = Math.round(f.y);
-      g.fillStyle(0x283640, 0.55).fillEllipse(x, y, 22, 7);
-      const bodyY = y - Math.round(f.z);
-      g.fillStyle(f.id === 'P1' ? 0xcf665c : 0x54b7ae).fillRect(x - 7, bodyY - 30, 14, 19);
-      g.fillStyle(0xe5b58b).fillRect(x - 5, bodyY - 40, 10, 10);
-      g.fillStyle(0x343c4d).fillRect(x - 7, bodyY - 43, 14, 4);
-      g.fillStyle(0x343c4d).fillRect(x - 6, bodyY - 11, 5, 11).fillRect(x + 2, bodyY - 11, 5, 11);
-      g.fillStyle(0xe5b58b).fillRect(x + f.facing * 6, bodyY - 25, f.attackFrames > 0 ? f.facing * 18 : f.facing * 9, 5);
+    for (const f of this.state.fighters) {
+      if (!this.fighterSprites.has(f.id)) {
+        const shadow = this.add.ellipse(0, 0, 22, 7, 0x283640, 0.55);
+        const sprite = this.add.image(0, 0, fighterKey(f.id, 'idle', 0)).setOrigin(0.5, 1);
+        const label = this.add.text(0, 0, f.id, {
+          fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7',
+          backgroundColor: '#202a36'
+        }).setOrigin(0.5, 1);
+        this.shadows.set(f.id, shadow);
+        this.fighterSprites.set(f.id, sprite);
+        this.labels.set(f.id, label);
+      }
+      const prev = this.previous.get(f.id);
+      const movingX = prev ? Math.abs(prev.x - f.x) > 0.05 : false;
+      const movingY = prev ? Math.abs(prev.y - f.y) > 0.05 : false;
+      if (prev && f.health < prev.health) this.hitFlash.set(f.id, this.state.tick + 12);
+      const hit = (this.hitFlash.get(f.id) ?? 0) > this.state.tick;
+      const pose: FighterPose = hit ? 'hit' : f.attackFrames > 0
+        ? (f.z > 0 ? 'jumpkick' : 'punch')
+        : f.z > 0 ? 'jump' : movingX ? 'walk' : movingY ? 'depth' : 'idle';
+      const frame = Math.floor(this.state.tick / (pose === 'idle' ? 15 : 6)) % 4;
+      const x = Math.round(f.x), y = Math.round(f.y);
+      this.shadows.get(f.id)!.setPosition(x, y).setDepth(y - 0.2);
+      this.fighterSprites.get(f.id)!
+        .setTexture(fighterKey(f.id, pose, frame))
+        .setPosition(x, y - Math.round(f.z))
+        .setFlipX(f.facing < 0)
+        .setDepth(y);
+      this.labels.get(f.id)!.setPosition(x, y - Math.round(f.z) - 47).setDepth(y + 0.1);
+      this.previous.set(f.id, { x: f.x, y: f.y, health: f.health });
     }
-    this.scoreLabel.setText(this.state.fighters.map(f => `${f.id}: ${f.score}`).join('   '));
+    this.scoreLabel.setText(this.state.fighters.map(f => `${f.id} ${f.score}`).join('   '));
+    const remaining = Math.max(0, Math.ceil(this.roundLength - this.elapsedRound));
+    this.hudTimer.setText(`${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`);
   }
 }
 
