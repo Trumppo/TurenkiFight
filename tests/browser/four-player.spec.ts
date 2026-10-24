@@ -22,7 +22,8 @@ test('four local fighters can join through simulated gamepads', async ({ page })
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: unknown; drawFighters: () => void } } } }).__turenkiGame!;
     const scene = game.scene.getScene('StationScene');
     // Import the actual Vite-served simulation for a deterministic accelerated round.
-    const simulation = await import('/src/game/simulation/step.ts');
+    const moduleUrl = '/src/game/simulation/step.ts';
+    const simulation = await import(/* @vite-ignore */ moduleUrl);
     let state = scene.state as ReturnType<typeof simulation.createState>;
     for (let i = 0; i < simulation.COUNTDOWN_TICKS + simulation.MATCH_TICKS; i++) state = simulation.step(state, []);
     scene.state = state;
