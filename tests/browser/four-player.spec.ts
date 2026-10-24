@@ -32,6 +32,31 @@ test('four local fighters can join through simulated gamepads', async ({ page })
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { fighters: unknown[] } } } } }).__turenkiGame;
     return game?.scene.getScene('StationScene')?.state?.fighters?.length ?? 0;
   }), {timeout: 3000}).toBe(4);
+  const hud = await page.evaluate(() => {
+    const game = (window as typeof window & {
+      __turenkiGame?: { scene: { getScene: (key: string) => {
+        state: { phase: string; fighters: { id: string }[] };
+        playerHud: Map<string, { text: string }>;
+        hudTimer: { text: string };
+        gamepadSlots: Map<number, string>;
+      } } }
+    }).__turenkiGame!;
+    const scene = game.scene.getScene('StationScene');
+    return {
+      phase: scene.state.phase,
+      timer: scene.hudTimer.text,
+      panels: scene.state.fighters.map(f => scene.playerHud.get(f.id)?.text),
+      pads: [...scene.gamepadSlots.values()],
+    };
+  });
+  expect(hud.phase).toBe('lobby');
+  expect(hud.timer).toBe('02:00');
+  expect(hud.panels).toHaveLength(4);
+  for (const [i, panel] of hud.panels.entries()) {
+    expect(panel).toContain(`P${i + 1} HP 100`);
+    expect(panel).toContain('0');
+  }
+  expect(hud.pads).toEqual(['P3', 'P4']);
   await page.keyboard.down('Enter');
   await expect.poll(async () => page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { phase: string } } } } }).__turenkiGame;
