@@ -22,7 +22,7 @@ export class StationScene extends Phaser.Scene {
   constructor() { super('StationScene'); }
 
   preload(): void {
-    this.load.svg('station-backdrop', 'assets/station/turenki-station-background.svg', { width: 384, height: 216 });
+    this.load.svg('station-backdrop', `${import.meta.env.BASE_URL}assets/station/turenki-station-background.svg`, { width: 384, height: 216 });
   }
 
   create(): void {
@@ -94,7 +94,8 @@ export class StationScene extends Phaser.Scene {
       this.labels.get(f.id)!.setPosition(x, y - Math.round(f.z) - 47).setDepth(y + 0.1);
       this.previous.set(f.id, { x: f.x, y: f.y, health: f.health });
     }
-    this.scoreLabel.setText(this.state.fighters.map(f => `${f.id} ${f.score}`).join('   '));
+    this.scoreLabel.setText(this.state.fighters.slice(0, 8).map(f => `${f.id}:${f.score}`).join('  '));
+    this.scoreLabel.setFontSize(this.state.fighters.length > 4 ? '7px' : '10px');
     const remaining = Math.max(0, Math.ceil(this.roundLength - this.elapsedRound));
     this.hudTimer.setText(`${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`);
   }
