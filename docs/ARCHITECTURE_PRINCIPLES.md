@@ -1,5 +1,16 @@
 # TurenkiFight — configurable, data-driven game architecture
 
+## Stage content contract and testability (2026-10-24)
+
+- Every stage has a stable `arenaId` and separate **visual manifest** (background/foreground layers, decorations, sprites, music, ambience) and **logical arena definition** (bounds, spawn points, collision shapes, future prop entities).
+- Presentation may swap stage art independently from logical geometry; it must never derive collisions, combat distances or world bounds from background image pixels or render dimensions.
+- The simulation reads typed logical arena data through the same generic interface for every stage; no `if (arenaId === "station")` branches in combat/movement/scoring systems.
+- Future interactive props are separate logical entities with explicit deterministic behavior and independently replaceable sprites/animations/sounds. Decorative props have no collisions unless explicitly declared in logical data.
+- Validate arena data on load: stable IDs, coordinates, spawn count, valid bounds and referenced logical object types. Provide errors for invalid stage definitions.
+- Acceptance: swapping only a stage's background or decorations produces the **same deterministic replay checksum** for identical initial state and inputs; selecting different declarative geometry may change movement as designed without changing the combat engine implementation.
+- Roadmap: M1 ships the station stage; school, K-kauppa, Ravintola Mesku and pedestrian street are candidates for the first or second **post-M1 implementation phase**, not added M1 scope.
+
+
 **Status:** Approved cross-milestone architecture principle (2026-10-24). Applies to M1 work and later milestones, but does not expand the current M1 feature scope.
 
 ## Principle
