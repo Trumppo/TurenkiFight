@@ -36,7 +36,7 @@ export class StationScene extends Phaser.Scene {
     this.hudTimer = this.add.text(332, 6, '02:00', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7' }).setDepth(1001);
     this.statusLabel = this.add.text(192, 34, '', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7', backgroundColor: '#172536', align: 'center' }).setOrigin(0.5, 0).setDepth(1002);
     this.cursors = this.input.keyboard!.createCursorKeys();
-    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,SPACE,ENTER') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,SPACE,ENTER') as Record<string, Phaser.Input.Keyboard.Key>;
     this.drawFighters();
   }
 
@@ -47,7 +47,8 @@ export class StationScene extends Phaser.Scene {
         if (pad.buttons.some(b => b.pressed) && !this.gamepadSlots.has(pad.index) && this.state.fighters.length < 4) {
           const id = `P${this.state.fighters.length + 1}`;
           this.gamepadSlots.set(pad.index, id);
-          this.state = createState([...this.state.fighters.map(f => f.id), id]);
+          const previousCountdown = this.state.countdownTicks;
+          this.state = { ...createState([...this.state.fighters.map(f => f.id), id]), countdownTicks: previousCountdown };
         }
       }
     }
@@ -70,7 +71,7 @@ export class StationScene extends Phaser.Scene {
     const k = this.keys;
     const inputs: PlayerInput[] = [
       { playerId: 'P1', moveX: axis(k.A.isDown, k.D.isDown), moveY: axis(k.W.isDown, k.S.isDown), jump: k.SPACE.isDown, punch: k.F.isDown, kick: k.G.isDown, jumpkick: k.H.isDown },
-      { playerId: 'P2', moveX: axis(this.cursors.left.isDown, this.cursors.right.isDown), moveY: axis(this.cursors.up.isDown, this.cursors.down.isDown), jump: k.K.isDown, punch: k.L.isDown, kick: k.J.isDown, jumpkick: k.K.isDown && k.L.isDown },
+      { playerId: 'P2', moveX: axis(this.cursors.left.isDown, this.cursors.right.isDown), moveY: axis(this.cursors.up.isDown, this.cursors.down.isDown), jump: k.K.isDown, punch: k.L.isDown, kick: k.J.isDown, jumpkick: k.U.isDown },
     ];
     for (const [index, id] of this.gamepadSlots) {
       const pad = pads.find(p => p.index === index);
@@ -105,7 +106,7 @@ export class StationScene extends Phaser.Scene {
     this.scoreLabel.setText(this.state.fighters.map(f => `${f.id}:${f.score}`).join(' '));
     const seconds = Math.ceil(this.state.remainingTicks / TICK_RATE);
     this.hudTimer.setText(`${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`);
-    if (this.state.phase === 'countdown') this.statusLabel.setText(`START ${Math.ceil(this.state.countdownTicks / TICK_RATE)} | Pad: press button to join`);
+    if (this.state.phase === 'countdown') this.statusLabel.setText(`START ${Math.ceil(this.state.countdownTicks / TICK_RATE)} | PADS: press button`);
     else if (this.state.phase === 'results') this.statusLabel.setText('RESULTS\n' + standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join('\n') + '\nENTER: REMATCH');
     else this.statusLabel.setText(this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' '));
   }
