@@ -61,7 +61,7 @@ tasks:
     title: Review and refine merged station visuals after gameplay integration
     assigned_role: graphics-session
     session_id: null
-    status: backlog
+    status: ready
     priority: P1
     specification: docs/visual/IMPLEMENTATION.md
     branch: feature/m1-visual-qa
@@ -71,13 +71,14 @@ tasks:
       - src/game/presentation/
       - docs/visual/
     acceptance:
-      - Four fighters and HUD remain readable at 384x216
+      - Four fighters and HUD remain readable at 640x360, 2x/3x and mobile fit
       - Attack, KO and respawn animation cues are visibly correct
       - Station architecture and visual quality reviewed
       - Production Pages asset paths work
+      - Render resolution can be changed to 960x540 without changing simulation behavior
     pull_request: null
     last_updated: "2026-10-24"
-    notes: "Initial visual PR #1 was merged; this is follow-up QA, not a duplicate implementation."
+    notes: "Review merged gameplay and visual PRs at 640x360; document manual checks and any limitations. Keep fixes scoped to presentation/assets, coordinate gameplay fixes separately."
   - id: M1-ACCEPTANCE
     title: Independent M1 integration and acceptance review
     assigned_role: planning-session
