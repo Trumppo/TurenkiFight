@@ -6,7 +6,7 @@ import { VIEWPORT, cameraScale } from './viewport';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
 
 export class StationScene extends Phaser.Scene {
-  private state: GameState = createState(['P1', 'P2'], 'lobby');
+  private state: GameState = createState(['P1'], 'lobby');
   private elapsedMs = 0;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -21,6 +21,7 @@ export class StationScene extends Phaser.Scene {
   private hitFlash = new Map<string, number>();
   private gamepadSlots = new Map<number, string>();
   private lastStart = false;
+  private lastKeyboardJoin = false;
   private lastJoinButtons = new Map<number, boolean>();
 
   constructor() { super('StationScene'); }
@@ -41,19 +42,26 @@ export class StationScene extends Phaser.Scene {
     this.hudTimer = this.add.text(192, 26, '02:00', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7' }).setOrigin(0.5, 0).setDepth(1001);
     this.statusLabel = this.add.text(192, 42, '', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7', backgroundColor: '#172536', align: 'center' }).setOrigin(0.5, 0).setDepth(1002);
     this.cursors = this.input.keyboard!.createCursorKeys();
-    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,SPACE,ENTER') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,SPACE,ENTER,SHIFT') as Record<string, Phaser.Input.Keyboard.Key>;
     this.drawFighters();
   }
 
   update(_time: number, delta: number): void {
     const pads = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter((p): p is Gamepad => p !== null) : [];
+    // The host occupies P1; every additional player must explicitly join.
+    const keyboardJoin = this.keys.SHIFT.isDown;
+    if (this.state.phase === 'lobby' && keyboardJoin && !this.lastKeyboardJoin && !this.state.fighters.some(f => f.id === 'P2')) {
+      this.state = createState([...this.state.fighters.map(f => f.id), 'P2'], 'lobby');
+    }
+    this.lastKeyboardJoin = keyboardJoin;
     // Only a deliberate Start press by the host begins the match.
     // Gamepad button 9 is Start; button 8 is the dedicated Join button.
     if (this.state.phase === 'lobby') {
       for (const pad of pads) {
         const join = !!pad.buttons[8]?.pressed;
         if (join && !this.lastJoinButtons.get(pad.index) && !this.gamepadSlots.has(pad.index) && this.state.fighters.length < 4) {
-          const id = `P${this.state.fighters.length + 1}`;
+          const id = ['P2', 'P3', 'P4'].find(candidate => !this.state.fighters.some(f => f.id === candidate));
+          if (!id) continue;
           this.gamepadSlots.set(pad.index, id);
           this.state = createState([...this.state.fighters.map(f => f.id), id], 'lobby');
         }
@@ -61,7 +69,7 @@ export class StationScene extends Phaser.Scene {
     }
     for (const pad of pads) this.lastJoinButtons.set(pad.index, !!pad.buttons[8]?.pressed);
     const start = this.keys.ENTER.isDown || pads.some(p => this.gamepadSlots.get(p.index) === 'P1' && !!p.buttons[9]?.pressed);
-    if (start && !this.lastStart && (this.state.phase === 'lobby' || this.state.phase === 'results')) {
+    if (start && !this.lastStart && (this.state.phase === 'results' || (this.state.phase === 'lobby' && this.state.fighters.length >= 2))) {
       this.state = createState(this.state.fighters.map(f => f.id));
       this.previous.clear();
       this.hitFlash.clear();
@@ -125,7 +133,7 @@ export class StationScene extends Phaser.Scene {
     }
     const seconds = Math.ceil(this.state.remainingTicks / TICK_RATE);
     this.hudTimer.setText(`${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`);
-    if (this.state.phase === 'lobby') this.statusLabel.setText('LOBBY | PADS: SELECT JOIN | P1: ENTER START');
+    if (this.state.phase === 'lobby') this.statusLabel.setText('LOBBY | P2: SHIFT | PADS: SELECT JOIN | P1: ENTER');
     else if (this.state.phase === 'countdown') this.statusLabel.setText(`START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`);
     else if (this.state.phase === 'results') this.statusLabel.setText('RESULTS\n' + standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join('\n') + '\nENTER: REMATCH');
     else this.statusLabel.setText(this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' '));
