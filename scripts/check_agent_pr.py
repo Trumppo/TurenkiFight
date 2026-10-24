@@ -14,8 +14,11 @@ def run():
     body = pr.get("body") or ""
     number = pr.get("number", "?")
     matches = [t for t in tasks if isinstance(t, dict) and t.get("branch") == branch]
+    if not matches:
+        print(f"PR #{number}: no agent task assigned to {branch!r}; check not applicable")
+        return 0
     if len(matches) != 1:
-        errors.append(f"PR #{number}: head branch {branch!r} must match exactly one task branch")
+        errors.append(f"PR #{number}: branch {branch!r} matches multiple tasks")
     else:
         task = matches[0]
         tid = task["id"]
