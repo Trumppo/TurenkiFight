@@ -34,8 +34,9 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
   const byId = new Map(inputs.map(i => [i.playerId, i]));
   for (const f of fighters) {
     const i = byId.get(f.id);
-    const buttons = i ? (['punch','kick','jumpkick'] as Move[]).filter(m => i[m] || (m === 'punch' && i.attack)) : [];
+    const buttons = i ? [...(['punch','kick','jumpkick'] as Move[]).filter(m => i[m] || (m === 'punch' && i.attack)), ...(i.jump ? ['jump'] : [])] : [];
     const pressed = buttons.filter(b => !f.previousButtons.includes(b));
+    const jumpPressed = buttons.includes('jump') && !f.previousButtons.includes('jump');
     f.previousButtons = buttons;
     if (f.koTimer > 0) {
       f.koTimer--;
@@ -52,7 +53,7 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
       f.x = Math.max(16,Math.min(368,f.x + i.moveX * 1.3 * scale));
       f.y = Math.max(124,Math.min(204,f.y + i.moveY * 1.3 * scale));
       if (i.moveX) f.facing = i.moveX;
-      if (i.jump && f.z === 0 && !f.attackMove) f.vz = 5.2;
+      if (jumpPressed && f.z === 0 && !f.attackMove) f.vz = 5.2;
       if (!f.attackMove) {
         const move = pressed.find(m => m === 'jumpkick' ? f.z > 0 : f.z === 0);
         if (move) { f.attackMove=move; const d=MOVES[move]; f.attackFrames=d.startup+d.active+d.recovery; f.attackCooldown=f.attackFrames; f.hitTargets=[]; f.protection=0; }
