@@ -1,0 +1,76 @@
+# TurenkiFight shared agent task queue
+# This file coordinates work; it does NOT automatically launch agents.
+schema_version: 1
+project: Trumppo/TurenkiFight
+coordination:
+  planning_owner: planning-session
+  default_base: main
+  claim_policy: "A worker must explicitly claim an assigned task before starting. Session labels are roles, not automatically discoverable session IDs."
+  update_policy: "Update task state via PR or an explicitly authorized commit; avoid simultaneous edits to this file."
+  merge_policy: "Never merge a PR without user approval."
+  statuses: [backlog, ready, claimed, in_progress, review, blocked, done]
+tasks:
+  - id: M1-GAMEPLAY
+    title: Implement deterministic four-player Score Brawl
+    assigned_role: gameplay-session
+    session_id: null
+    status: ready
+    priority: P0
+    specification: docs/M1_GAMEPLAY_IMPLEMENTATION.md
+    branch: feature/m1-gameplay
+    depends_on: []
+    scope:
+      - src/game/simulation/
+      - src/game/modes/
+      - src/game/input/
+      - src/game/presentation/StationScene.ts
+      - tests/
+    acceptance:
+      - Four local players can join and fight
+      - Punch, kick and jump kick work deterministically
+      - KO, delayed respawn and protection follow specification
+      - Score Brawl lasts exactly 120 seconds and shows results
+      - Unit tests, build and browser smoke tests pass
+    pull_request: null
+    last_updated: "2026-10-24"
+    notes: "Keep current graphics. No networking architecture decisions."
+  - id: M1-VISUAL-QA
+    title: Review and refine merged station visuals after gameplay integration
+    assigned_role: graphics-session
+    session_id: null
+    status: backlog
+    priority: P1
+    specification: docs/visual/IMPLEMENTATION.md
+    branch: feature/m1-visual-qa
+    depends_on: [M1-GAMEPLAY]
+    scope:
+      - public/assets/
+      - src/game/presentation/
+      - docs/visual/
+    acceptance:
+      - Four fighters and HUD remain readable at 384x216
+      - Attack, KO and respawn animation cues are visibly correct
+      - Station architecture and visual quality reviewed
+      - Production Pages asset paths work
+    pull_request: null
+    last_updated: "2026-10-24"
+    notes: "Initial visual PR #1 was merged; this is follow-up QA, not a duplicate implementation."
+  - id: M1-ACCEPTANCE
+    title: Independent M1 integration and acceptance review
+    assigned_role: planning-session
+    session_id: null
+    status: backlog
+    priority: P0
+    specification: docs/M1_GAMEPLAY_IMPLEMENTATION.md
+    branch: null
+    depends_on: [M1-GAMEPLAY, M1-VISUAL-QA]
+    scope:
+      - docs/ROADMAP.md
+      - docs/M1_GAMEPLAY_IMPLEMENTATION.md
+    acceptance:
+      - Gameplay and visual PRs reviewed
+      - Test evidence and remaining limitations documented
+      - User explicitly approves milestone acceptance
+    pull_request: null
+    last_updated: "2026-10-24"
+    notes: "Do not equate passing CI with user acceptance."
