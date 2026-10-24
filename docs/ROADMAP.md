@@ -6,11 +6,13 @@
 
 ## Milestone 0 – Project foundations
 
+**Status: technically complete (2026-10-24).** User verified both GitHub Actions and the deployed browser prototype. License selection remains a separate administrative follow-up.
+
 - [x] Initial game vision and design documents
 - [x] Initialize TypeScript + Vite + Phaser prototype scaffold
 - [x] Add Vitest smoke tests and GitHub Actions deployment workflow (execution not yet verified)
-- [ ] Verify clean build and CI; publish and verify first GitHub Pages build
-- [ ] Decide code and art licenses
+- [x] Verify clean build and CI; publish and verify first GitHub Pages build (user confirmed Actions and deployed game work on 2026-10-24)
+- [ ] Decide code and art licenses (administrative follow-up; not blocking technical M0 acceptance)
 
 ## Milestone 1 – Local playable slice
 
