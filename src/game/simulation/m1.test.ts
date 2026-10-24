@@ -57,6 +57,31 @@ describe('M1 Score Brawl', () => {
    const s={...createState(),phase:'results' as const,remainingTicks:0};
    expect(step(s,[{...neutral('P1'),punch:true}]).fighters).toEqual(s.fighters);
  });
+ it('resolves simultaneous lethal hits once and preserves KO credits', () => {
+   let s=createState(['P1','P2']);
+   s={...s,phase:'fighting',fighters:s.fighters.map((f,i)=>({...f,x:100+i*20,y:160,health:10,facing:i===0?1:-1}))};
+   s=step(s,[{...neutral('P1'),punch:true},{...neutral('P2'),punch:true}]);
+   for(let i=0;i<4;i++) s=step(s,[]);
+   expect(s.events.filter(e=>e.type==='Knockout')).toHaveLength(2);
+   expect(s.fighters.map(f=>f.koCount)).toEqual([1,1]);
+   expect(s.fighters.map(f=>f.score)).toEqual([400,400]);
+   expect(s.fighters.map(f=>f.koTimer)).toEqual([180,180]);
+   for(let i=0;i<180;i++) s=step(s,[]);
+   expect(s.fighters.every(f=>f.health===100 && f.protection>0)).toBe(true);
+ });
+ it('uses punch and kick startup windows and does not score before activation', () => {
+   for(const move of ['punch','kick'] as const) {
+     let s=createState();
+     s={...s,phase:'fighting',fighters:s.fighters.map((f,i)=>({...f,x:100+i*20,y:160,facing:i===0?1:-1}))};
+     const input={...neutral('P1'),[move]:true};
+     s=step(s,[input]);
+     const startup=move==='punch'?4:7;
+     for(let i=1;i<startup-1;i++) s=step(s,[]);
+     expect(s.fighters[0].score).toBe(0);
+     s=step(s,[]);
+     expect(s.fighters[0].score).toBe(move==='punch'?100:150);
+   }
+ });
  it('supports exact shared ranks',()=>{
    const s=createState(['P2','P1']);
    expect(standings(s)).toEqual([{id:'P1',score:0,rank:1},{id:'P2',score:0,rank:1}]);
