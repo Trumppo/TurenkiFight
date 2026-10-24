@@ -38,7 +38,7 @@ tasks:
     title: Polish Turenki station art and fighter presentation assets
     assigned_role: graphics-session
     session_id: graphics-session-20261024
-    status: claimed
+    status: in_progress
     priority: P1
     specification: docs/visual/STYLE_GUIDE.md
     branch: feature/m1-visual-polish
