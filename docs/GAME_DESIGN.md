@@ -1,5 +1,21 @@
 # TurenkiFight – Game Design v0.3
 
+## Future Turenki arenas (candidate locations, 2026-10-24)
+
+The Turenki railway station remains the **M1 playable arena**. Candidate arenas for later milestones (concepts, not yet approved level layouts or M1 scope):
+
+| Arena ID (provisional) | Location concept | Possible visual identity / later props |
+| --- | --- | --- |
+| `turenki-school` | Turenki yläaste (lower secondary school) | School yard, bicycle racks, building facade |
+| `turenki-k-store` | Turenki K-kauppa | Storefront, signage, shopping carts |
+| `turenki-mesku` | Ravintola Mesku | Restaurant setting, tables and chairs |
+| `turenki-pedestrian-street` | Turenki keskustan kävelykatu | Shopfronts, benches and planters |
+
+These are **creative environment proposals**, not verified depictions of exact local building layouts. Verify reference photos and any branding/permissions as appropriate during visual production.
+
+Each arena should be a **data-driven definition** with stable `arenaId`, visual/background asset IDs, music/ambience IDs, fixed logical world bounds, spawn points, collision geometry, presentation layers and optional future interactive-object placements. The simulation must consume typed arena geometry/data, not derive physics from image pixels or hardcode station-specific rules. Adding a visual arena variant should not require changes to core fighting mechanics. New object behaviors may require separate gameplay implementation.
+
+
 > Architecture principle: [configurable, data-driven game content](ARCHITECTURE_PRINCIPLES.md). Art, sprites, animations, arena objects, audio, UI and tunable rules must be replaceable through typed data/configuration rather than simulation hardcoding. New mechanics may still require code.
 
 ## M1 resolution decision (2026-10-24)
