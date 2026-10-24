@@ -34,6 +34,8 @@ test('lobby requires explicit joining, P1 host and two players', async ({ page }
     buttons[8].pressed = true;
   });
   await expect.poll(state).toEqual({ phase: 'lobby', count: 2 });
+  await page.waitForTimeout(80);
+  expect(await state()).toEqual({ phase: 'lobby', count: 2 }); // Held Join must not duplicate.
   await page.evaluate(() => {
     const buttons = (window as typeof window & { __testPad?: { buttons: { pressed: boolean }[] } }).__testPad!.buttons;
     buttons[8].pressed = false;
