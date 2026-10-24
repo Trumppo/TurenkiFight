@@ -1,7 +1,7 @@
-# TurenkiFight – Technical Architecture v0.3
+# TurenkiFight – Technical Architecture v0.4
 
 **Date:** 2026-10-24  
-**Status:** Proposed architecture, not yet implemented.
+**Status:** Proposed architecture, not yet implemented. **Network topology and authority placement are undecided pending comparative tests.** See [NETWORK_BENCHMARK_PLAN.md](NETWORK_BENCHMARK_PLAN.md).
 
 ## High-level model
 
@@ -28,8 +28,8 @@ GitHub Pages serves static files only; it **cannot** host a persistent WebSocket
 - **Client:** TypeScript + Vite + Phaser 3 for rendering/input/scene management.
 - **Simulation:** framework-independent TypeScript module with fixed 60 Hz update, seeded randomness, explicit input frames and serializable state.
 - **Tests:** Vitest for deterministic simulation and rules; Playwright for browser smoke tests.
-- **Online signaling/lobby:** small WebSocket service on a separately hosted Linux machine, exposed via HTTPS/WSS (Caddy or Nginx).
-- **Peer transport:** WebRTC DataChannel, with STUN and TURN fallback (coturn if required).
+- **Lobby/signaling or central authority:** small WebSocket service on a separately hosted Linux machine, exposed via HTTPS/WSS (Caddy or Nginx), depending on benchmark results.
+- **Transport candidates:** central WebSocket/WSS and browser-host WebRTC DataChannel, with STUN and TURN fallback (coturn if required) for WebRTC.
 - **Dedicated server mode:** optional later; WebSocket or WebRTC transports can share the same simulation/protocol.
 - These choices are candidates to validate, not immutable commitments.
 
@@ -55,7 +55,7 @@ Simulation owns the truth of positions, health, scores and match state. Presenta
 
 ## Networking approach
 
-**Host-authoritative** topology. One match host (initially a player's browser; later optionally a dedicated server) validates inputs and computes canonical game state. Clients send timestamped/sequence-numbered input frames, predict their own movement, interpolate other fighters, and reconcile corrections from the host.
+**Authoritative** topology, with authority placement **not yet selected**. Candidate A runs the authoritative simulation on a central WebSocket server; candidate B runs it in one player's browser with WebRTC DataChannel star connections. Clients send timestamped/sequence-numbered input frames, predict their own movement, interpolate other fighters, and reconcile corrections from the host.
 
 - Prefer star topology for many players; avoid full peer-to-peer mesh because connection count grows quadratically.
 - WebRTC requires signaling to establish peer connections. TURN relaying may be necessary when direct connections fail; this adds bandwidth and hosting cost.
@@ -65,7 +65,7 @@ Simulation owns the truth of positions, health, scores and match state. Presenta
 
 ## LAN and remote play
 
-- **Online:** clients download from GitHub Pages, then connect to the signaling server over WSS and to the host over WebRTC.
+- **Online:** clients download from GitHub Pages, then either connect directly to an authoritative WSS server (candidate A), or use WSS signaling to establish WebRTC connections to a browser host (candidate B).
 - **LAN with internet access:** the same flow may work; peers can negotiate local network paths.
 - **Fully offline LAN:** static client and signaling service must be served locally; GitHub Pages cannot be depended on during offline operation. Browsers may require a secure context for some APIs, so local deployment needs testing.
 - Multiple players on one browser can send separate logical player inputs through one transport connection.
