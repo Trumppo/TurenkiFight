@@ -1,19 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="384" height="216" viewBox="0 0 384 216" shape-rendering="crispEdges">
+<!-- Original stylized station art; designed for 384x216 with an uncluttered combat plane. -->
 <rect width="384" height="216" fill="#6d8999"/>
-<path d="M0 73h384v50H0z" fill="#78909a"/>
-<path d="M0 91h384v30H0z" fill="#536d79"/>
-<path d="M0 45h163v79H0z" fill="#c2a27d"/>
-<path d="M0 34h168v12H0z" fill="#58463e"/>
-<path d="M0 31h162v5H0z" fill="#293f45"/>
-<g fill="#3b5360"><rect x="13" y="58" width="29" height="42"/><rect x="55" y="58" width="29" height="42"/><rect x="97" y="58" width="29" height="42"/></g>
-<g fill="#a6c7c9"><rect x="17" y="62" width="21" height="33"/><rect x="59" y="62" width="21" height="33"/><rect x="101" y="62" width="21" height="33"/></g>
-<path d="M19 62v33m42-33v33m42-33v33" stroke="#6d8999" stroke-width="2"/>
-<rect x="45" y="45" width="78" height="17" fill="#293f45"/>
-<text x="84" y="57" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#f4e5b4">TURENKI</text>
-<rect x="207" y="72" width="165" height="49" fill="#506c7c"/>
-<g fill="#acc5c5"><rect x="216" y="81" width="25" height="25"/><rect x="250" y="81" width="25" height="25"/><rect x="284" y="81" width="25" height="25"/><rect x="318" y="81" width="25" height="25"/></g>
+<path d="M0 64h384v58H0z" fill="#829ca3"/>
+<path d="M0 82h384v39H0z" fill="#718d91"/>
+<!-- Distant foliage and rooflines; low contrast so fighters remain foreground. -->
+<path d="M0 105v-11h9v-7h9v5h10v-9h9v12h11v-5h10v15h326v17H0z" fill="#607c79"/>
+<path d="M169 88h25v-7h37v7h10v34h-72z" fill="#526b74"/>
+<path d="M181 93h8v14h-8zm18 0h8v14h-8zm18 0h8v14h-8z" fill="#93afb0"/>
+<!-- Station silhouette: dark pitched eaves, warm plaster and masonry plinth. -->
+<path d="M0 34h164l10 10H0z" fill="#293f45"/>
+<path d="M0 40h169v6H0z" fill="#58463e"/>
+<rect x="0" y="46" width="164" height="75" fill="#c2a27d"/>
+<path d="M0 48h164v3H0z" fill="#dfc49d"/>
+<path d="M0 112h164v9H0z" fill="#94785d"/>
+<path d="M0 119h164v3H0z" fill="#564b45"/>
+<!-- Framed windows with glass highlights and strong mullions. -->
+<g fill="#384f57"><rect x="11" y="60" width="32" height="43"/><rect x="53" y="60" width="32" height="43"/><rect x="95" y="60" width="32" height="43"/></g>
+<g fill="#a6c7c9"><rect x="15" y="64" width="24" height="35"/><rect x="57" y="64" width="24" height="35"/><rect x="99" y="64" width="24" height="35"/></g>
+<g fill="#d5dfd2"><path d="M16 65h6l-6 11zm42 0h6l-6 11zm42 0h6l-6 11z"/></g>
+<g stroke="#516975" stroke-width="2"><path d="M27 64v35m-12-18h24M69 64v35m-12-18h24M111 64v35m-12-18h24"/></g>
+<g fill="#e3c69f"><rect x="6" y="104" width="42" height="3"/><rect x="48" y="104" width="42" height="3"/><rect x="90" y="104" width="42" height="3"/></g>
+<!-- Readable station sign, positioned away from HUD and playable floor. -->
+<rect x="43" y="46" width="83" height="17" fill="#1d3039"/>
+<rect x="45" y="48" width="79" height="13" fill="#293f45"/>
+<text x="84" y="58" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#f4e5b4">TURENKI</text>
+<!-- Service building with platform-facing window rhythm. -->
+<path d="M202 72h174v7H202z" fill="#334b55"/>
+<rect x="206" y="79" width="167" height="42" fill="#506c7c"/>
+<rect x="206" y="116" width="167" height="6" fill="#3c5662"/>
+<g fill="#283f49"><rect x="214" y="83" width="28" height="27"/><rect x="249" y="83" width="28" height="27"/><rect x="284" y="83" width="28" height="27"/><rect x="319" y="83" width="28" height="27"/></g>
+<g fill="#acc5c5"><rect x="217" y="86" width="22" height="21"/><rect x="252" y="86" width="22" height="21"/><rect x="287" y="86" width="22" height="21"/><rect x="322" y="86" width="22" height="21"/></g>
+<g fill="#6c909b"><path d="M228 86v21m35-21v21m35-21v21m35-21v21"/></g>
+<!-- Platform plane: deliberately quiet behind 4–8 moving fighters. -->
 <rect x="0" y="122" width="384" height="94" fill="#76786f"/>
 <rect x="0" y="122" width="384" height="3" fill="#d7c9a5"/>
+<rect x="0" y="125" width="384" height="2" fill="#595f5c"/>
 <rect x="0" y="165" width="384" height="1" fill="#92968a"/>
 <rect x="0" y="208" width="384" height="3" fill="#d7c9a5"/>
+<rect x="0" y="211" width="384" height="2" fill="#565d5b"/>
+<!-- Small low-contrast paving seams, outside main character silhouettes. -->
+<g fill="#85877d"><rect x="22" y="143" width="31" height="1"/><rect x="316" y="145" width="37" height="1"/><rect x="12" y="192" width="29" height="1"/><rect x="335" y="190" width="34" height="1"/></g>
 </svg>
