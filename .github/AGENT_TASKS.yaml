@@ -14,7 +14,7 @@ tasks:
     title: Implement deterministic four-player Score Brawl
     assigned_role: gameplay-session
     session_id: gameplay-session-20261024
-    status: claimed
+    status: done
     priority: P0
     specification: docs/M1_GAMEPLAY_IMPLEMENTATION.md
     branch: feature/m1-gameplay
@@ -31,9 +31,9 @@ tasks:
       - KO, delayed respawn and protection follow specification
       - Score Brawl lasts exactly 120 seconds and shows results
       - Unit tests, build and browser smoke tests pass
-    pull_request: null
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/2
     last_updated: "2026-10-24"
-    notes: "Keep current graphics. No networking architecture decisions."
+    notes: "Implementation merged as 6493ce2; keep current graphics. No networking architecture decisions."
   - id: M1-VISUAL-POLISH
     title: Polish Turenki station art and fighter presentation assets
     assigned_role: graphics-session
