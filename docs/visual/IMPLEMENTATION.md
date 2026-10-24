@@ -29,3 +29,9 @@ Check browser console for asset load failures. Test 384×216 canvas at mobile fi
 
 ## Rights
 All newly authored graphics and source in this branch are original project contributions. No third-party photos or sprites have been copied. The repository currently has no declared project-wide license; establish one before redistribution.
+
+## Follow-up fixes
+- Runtime textures now generated for P1–P8 (four distinct colors repeat with unique player labels).
+- Station SVG load URL respects Vite BASE_URL for GitHub Pages project subpaths.
+- Score HUD uses a compact font for more than four fighters; dense eight-player scores still require layout validation.
+- CI run #14 passed unit tests and build for earlier commit 9aac5e3; browser smoke remained in progress at last inspection. Later commits require fresh CI validation.
