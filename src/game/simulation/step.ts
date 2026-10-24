@@ -43,15 +43,16 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
       continue;
     }
     if (f.protection > 0) f.protection--;
+    const stunned = f.hitstun > 0;
     if (f.hitstun > 0) f.hitstun--;
     if (f.attackFrames > 0) { f.attackFrames--; if (!f.attackFrames) f.attackMove=null; }
     f.attackCooldown = f.attackFrames;
-    if (i && !f.hitstun) {
+    if (i && !stunned) {
       const scale = i.moveX && i.moveY ? Math.SQRT1_2 : 1;
       f.x = Math.max(16,Math.min(368,f.x + i.moveX * 1.3 * scale));
       f.y = Math.max(124,Math.min(204,f.y + i.moveY * 1.3 * scale));
       if (i.moveX) f.facing = i.moveX;
-      if (i.jump && f.z === 0) f.vz = 5.2;
+      if (i.jump && f.z === 0 && !f.attackMove) f.vz = 5.2;
       if (!f.attackMove) {
         const move = pressed.find(m => m === 'jumpkick' ? f.z > 0 : f.z === 0);
         if (move) { f.attackMove=move; const d=MOVES[move]; f.attackFrames=d.startup+d.active+d.recovery; f.attackCooldown=f.attackFrames; f.hitTargets=[]; f.protection=0; }
@@ -74,7 +75,7 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
   hits.sort((a,b)=>a.attacker.id.localeCompare(b.attacker.id)||a.target.id.localeCompare(b.target.id));
   for (const h of hits) {
     const {attacker:a,target:t,move}=h;
-    if (a.hitTargets.includes(t.id)) continue;
+    if (a.hitTargets.includes(t.id) || t.koTimer) continue;
     a.hitTargets.push(t.id);
     const m=MOVES[move]; a.score+=m.points; t.hitsReceived++; t.health=Math.max(0,t.health-m.damage);
     event('HitLanded',{attacker:a.id,target:t.id,move});
