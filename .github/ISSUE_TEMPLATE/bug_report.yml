@@ -1,0 +1,16 @@
+name: Bug report
+description: Report a reproducible problem in TurenkiFight
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include browser, OS, player count and expected vs actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots (without secrets)
