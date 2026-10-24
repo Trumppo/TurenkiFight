@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
-import { createState, step, TICK_RATE } from '../simulation/step';
-import type { GameState, PlayerInput } from '../simulation/types';
+import { createState, step, standings, TICK_RATE } from '../simulation/step';
+import type { GameState, PlayerInput, Fighter } from '../simulation/types';
 import { VISUAL } from './visualTheme';
+import { VIEWPORT, cameraScale } from './viewport';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
 
 export class StationScene extends Phaser.Scene {
-  private state: GameState = createState();
+  private state: GameState = createState(['P1'], 'lobby');
   private elapsedMs = 0;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -13,11 +14,15 @@ export class StationScene extends Phaser.Scene {
   private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
   private labels = new Map<string, Phaser.GameObjects.Text>();
   private scoreLabel!: Phaser.GameObjects.Text;
+  private playerHud = new Map<string, Phaser.GameObjects.Text>();
   private hudTimer!: Phaser.GameObjects.Text;
-  private elapsedRound = 0;
-  private readonly roundLength = 180;
+  private statusLabel!: Phaser.GameObjects.Text;
   private previous = new Map<string, { x: number; y: number; health: number }>();
   private hitFlash = new Map<string, number>();
+  private gamepadSlots = new Map<number, string>();
+  private lastStart = false;
+  private lastKeyboardJoin = false;
+  private lastJoinButtons = new Map<number, boolean>();
 
   constructor() { super('StationScene'); }
 
@@ -26,81 +31,128 @@ export class StationScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.cameras.main.setZoom(cameraScale(this.scale.width, this.scale.height));
+    this.cameras.main.centerOn(VIEWPORT.logicalWidth / 2, VIEWPORT.logicalHeight / 2);
     createFighterTextures(this);
     this.add.image(0, 0, 'station-backdrop').setOrigin(0, 0).setDepth(-100);
-    // Non-interactive foreground trim remains behind the depth-sorted fighters.
     const hud = this.add.graphics().setDepth(1000);
-    hud.fillStyle(0x172536, 0.92).fillRect(0, 0, 384, VISUAL.hudHeight);
-    hud.lineStyle(1, VISUAL.colors.cream).lineBetween(0, 23, 384, 23);
-    this.scoreLabel = this.add.text(7, 6, '', {
-      fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7'
-    }).setDepth(1001);
-    this.hudTimer = this.add.text(330, 6, '03:00', {
-      fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7'
-    }).setDepth(1001);
+    hud.fillStyle(0x172536, 0.92).fillRect(0, 0, VIEWPORT.logicalWidth, Math.max(35, VISUAL.hudHeight));
+    hud.lineStyle(1, VISUAL.colors.cream).lineBetween(0, 35, VIEWPORT.logicalWidth, 35);
+    this.scoreLabel = this.add.text(7, 6, '', { fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7' }).setDepth(1001).setVisible(false);
+    this.hudTimer = this.add.text(192, 26, '02:00', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7' }).setOrigin(0.5, 0).setDepth(1001);
+    this.statusLabel = this.add.text(192, 42, '', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7', backgroundColor: '#172536', align: 'center' }).setOrigin(0.5, 0).setDepth(1002);
     this.cursors = this.input.keyboard!.createCursorKeys();
-    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,L,SPACE') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,SPACE,ENTER,SHIFT') as Record<string, Phaser.Input.Keyboard.Key>;
     this.drawFighters();
   }
 
   update(_time: number, delta: number): void {
+    const pads = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter((p): p is Gamepad => p !== null) : [];
+    // The host occupies P1; every additional player must explicitly join.
+    const keyboardJoin = this.keys.SHIFT.isDown;
+    if (this.state.phase === 'lobby' && keyboardJoin && !this.lastKeyboardJoin && !this.state.fighters.some(f => f.id === 'P2') && ![...this.gamepadSlots.values()].includes('P2')) {
+      this.state = createState([...this.state.fighters.map(f => f.id), 'P2'], 'lobby');
+    }
+    this.lastKeyboardJoin = keyboardJoin;
+    // Only a deliberate Start press by the host begins the match.
+    // Gamepad button 9 is Start; button 8 is the dedicated Join button.
+    if (this.state.phase === 'lobby') {
+      for (const pad of pads) {
+        const join = !!pad.buttons[8]?.pressed;
+        if (join && !this.lastJoinButtons.get(pad.index) && !this.gamepadSlots.has(pad.index) && this.state.fighters.length < 4) {
+          const id = ['P2', 'P3', 'P4'].find(candidate => !this.state.fighters.some(f => f.id === candidate));
+          if (!id) continue;
+          this.gamepadSlots.set(pad.index, id);
+          this.state = createState([...this.state.fighters.map(f => f.id), id], 'lobby');
+        }
+      }
+    }
+    for (const pad of pads) this.lastJoinButtons.set(pad.index, !!pad.buttons[8]?.pressed);
+    const start = this.keys.ENTER.isDown || pads.some(p => this.gamepadSlots.get(p.index) === 'P1' && !!p.buttons[9]?.pressed);
+    if (start && !this.lastStart && (this.state.phase === 'results' || (this.state.phase === 'lobby' && this.state.fighters.length >= 2))) {
+      this.state = createState(this.state.fighters.map(f => f.id));
+      this.previous.clear();
+      this.hitFlash.clear();
+    }
+    this.lastStart = start;
+
     this.elapsedMs = Math.min(this.elapsedMs + delta, 250);
     const interval = 1000 / TICK_RATE;
     while (this.elapsedMs >= interval) {
-      this.state = step(this.state, this.readInputs());
+      this.state = step(this.state, this.readInputs(pads));
       this.elapsedMs -= interval;
-      this.elapsedRound += interval / 1000;
     }
     this.drawFighters();
   }
 
-  private readInputs(): PlayerInput[] {
+  private readInputs(pads: Gamepad[]): PlayerInput[] {
     const k = this.keys;
-    return [
-      { playerId: 'P1', moveX: axis(k.A.isDown, k.D.isDown), moveY: axis(k.W.isDown, k.S.isDown), jump: k.SPACE.isDown, attack: k.F.isDown },
-      { playerId: 'P2', moveX: axis(this.cursors.left.isDown, this.cursors.right.isDown), moveY: axis(this.cursors.up.isDown, this.cursors.down.isDown), jump: false, attack: k.L.isDown },
+    const inputs: PlayerInput[] = [
+      { playerId: 'P1', moveX: axis(k.A.isDown, k.D.isDown), moveY: axis(k.W.isDown, k.S.isDown), jump: k.SPACE.isDown, punch: k.F.isDown, kick: k.G.isDown, jumpkick: k.H.isDown },
+      { playerId: 'P2', moveX: axis(this.cursors.left.isDown, this.cursors.right.isDown), moveY: axis(this.cursors.up.isDown, this.cursors.down.isDown), jump: k.K.isDown, punch: k.L.isDown, kick: k.J.isDown, jumpkick: k.U.isDown },
     ];
+    for (const [index, id] of this.gamepadSlots) {
+      const pad = pads.find(p => p.index === index);
+      if (!pad) continue;
+      const x = pad.axes[0] ?? 0, y = pad.axes[1] ?? 0;
+      const input: PlayerInput = { playerId: id, moveX: x < -0.3 ? -1 : x > 0.3 ? 1 : 0, moveY: y < -0.3 ? -1 : y > 0.3 ? 1 : 0,
+        jump: !!pad.buttons[0]?.pressed, punch: !!pad.buttons[2]?.pressed, kick: !!pad.buttons[1]?.pressed, jumpkick: !!pad.buttons[3]?.pressed };
+      const existing = inputs.findIndex(i => i.playerId === id);
+      if (existing >= 0) inputs[existing] = input;
+      else inputs.push(input);
+    }
+    return inputs;
   }
 
   private drawFighters(): void {
     for (const f of this.state.fighters) {
       if (!this.fighterSprites.has(f.id)) {
-        const shadow = this.add.ellipse(0, 0, 22, 7, 0x283640, 0.55);
-        const sprite = this.add.image(0, 0, fighterKey(f.id, 'idle', 0)).setOrigin(0.5, 1);
-        const label = this.add.text(0, 0, f.id, {
-          fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7',
-          backgroundColor: '#202a36'
-        }).setOrigin(0.5, 1);
-        this.shadows.set(f.id, shadow);
-        this.fighterSprites.set(f.id, sprite);
-        this.labels.set(f.id, label);
+        this.shadows.set(f.id, this.add.ellipse(0, 0, 22, 7, 0x283640, 0.55));
+        this.fighterSprites.set(f.id, this.add.image(0, 0, fighterKey(f.id, 'idle', 0)).setOrigin(0.5, 1));
+        this.labels.set(f.id, this.add.text(0, 0, f.id, { fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7', backgroundColor: '#202a36' }).setOrigin(0.5, 1));
       }
       const prev = this.previous.get(f.id);
-      const movingX = prev ? Math.abs(prev.x - f.x) > 0.05 : false;
-      const movingY = prev ? Math.abs(prev.y - f.y) > 0.05 : false;
       if (prev && f.health < prev.health) this.hitFlash.set(f.id, this.state.tick + 12);
-      const hit = (this.hitFlash.get(f.id) ?? 0) > this.state.tick;
-      const pose: FighterPose = hit ? 'hit' : f.attackFrames > 0
-        ? (f.z > 0 ? 'jumpkick' : 'punch')
-        : f.z > 0 ? 'jump' : movingX ? 'walk' : movingY ? 'depth' : 'idle';
+      const pose = this.pose(f, prev);
       const frame = Math.floor(this.state.tick / (pose === 'idle' ? 15 : 6)) % 4;
       const x = Math.round(f.x), y = Math.round(f.y);
-      this.shadows.get(f.id)!.setPosition(x, y).setDepth(y - 0.2);
-      this.fighterSprites.get(f.id)!
-        .setTexture(fighterKey(f.id, pose, frame))
-        .setPosition(x, y - Math.round(f.z))
-        .setFlipX(f.facing < 0)
-        .setDepth(y);
+      this.shadows.get(f.id)!.setPosition(x, y).setDepth(y - 0.2).setVisible(f.koTimer === 0);
+      this.fighterSprites.get(f.id)!.setTexture(fighterKey(f.id, pose, frame)).setPosition(x, y - Math.round(f.z)).setFlipX(f.facing < 0).setDepth(y);
       this.labels.get(f.id)!.setPosition(x, y - Math.round(f.z) - 47).setDepth(y + 0.1);
       this.previous.set(f.id, { x: f.x, y: f.y, health: f.health });
     }
-    this.scoreLabel.setText(this.state.fighters.slice(0, 8).map(f => `${f.id}:${f.score}`).join('  '));
-    this.scoreLabel.setFontSize(this.state.fighters.length > 4 ? '7px' : '10px');
-    const remaining = Math.max(0, Math.ceil(this.roundLength - this.elapsedRound));
-    this.hudTimer.setText(`${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`);
+    const segment = VIEWPORT.logicalWidth / this.state.fighters.length;
+    for (const [index, f] of this.state.fighters.entries()) {
+      if (!this.playerHud.has(f.id)) {
+        this.playerHud.set(f.id, this.add.text(0, 3, '', {
+          fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7',
+        }).setDepth(1001));
+      }
+      this.playerHud.get(f.id)!.setPosition(Math.round(index * segment + 4), 3)
+        .setText(`${f.id} HP ${Math.max(0, Math.min(100, f.health))}\n${f.score} ${f.koTimer ? 'KO' : ''}`);
+    }
+    const seconds = Math.ceil(this.state.remainingTicks / TICK_RATE);
+    this.hudTimer.setText(`${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`);
+    if (this.state.phase === 'lobby') {
+      const joined = this.state.fighters.map(f => `${f.id}:${[...this.gamepadSlots.entries()].find(([, id]) => id === f.id)?.[0] !== undefined ? 'PAD' : 'KEY'}`).join(' ');
+      this.statusLabel.setText(`LOBBY ${joined}\nSHIFT/PAD SELECT: JOIN | P1 ENTER: START`);
+    }
+    else if (this.state.phase === 'countdown') this.statusLabel.setText(`START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`);
+    else if (this.state.phase === 'results') this.statusLabel.setText('RESULTS\n' + standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join('\n') + '\nENTER: REMATCH');
+    else this.statusLabel.setText(this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' '));
+  }
+
+  private pose(f: Fighter, prev?: { x: number; y: number; health: number }): FighterPose {
+    if (f.koTimer) return 'ko';
+    if (f.protection > 0) return 'respawn';
+    if ((this.hitFlash.get(f.id) ?? 0) > this.state.tick) return 'hit';
+    if (f.attackMove) return f.attackMove;
+    if (f.z > 0) return 'jump';
+    if (prev && Math.abs(prev.x - f.x) > 0.05) return 'walk';
+    if (prev && Math.abs(prev.y - f.y) > 0.05) return 'depth';
+    return 'idle';
   }
 }
-
 function axis(negative: boolean, positive: boolean): -1 | 0 | 1 {
   return negative === positive ? 0 : negative ? -1 : 1;
 }
