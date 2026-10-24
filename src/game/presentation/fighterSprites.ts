@@ -37,7 +37,7 @@ export function createFighterTextures(scene: Phaser.Scene): void {
       const kick = pose === 'kick' || pose === 'jumpkick';
       const hit = pose === 'hit';
       const lean = hit ? -3 : strike || kick ? 2 : 0;
-      const y = bounce + depth + (hit ? 2 : 0);
+      const y = bounce + depth + (hit ? 2 : 0) - (airborne ? [0, 2, 3, 1][frame] : 0);
       if (pose === 'ko') {
         const squash = frame === 0 ? 2 : 0;
         rect(3, 35 - squash, 27, 8 + squash, O);
@@ -68,12 +68,12 @@ export function createFighterTextures(scene: Phaser.Scene): void {
         if (variant === 3) rect(10 + lean, 4 + y, 14, 2, accent); // headband
         // Distinct punch extension across active frames.
         const reach = strike ? [3, 7, 9, 5][frame] : 3;
-        rect(23 + lean, 21 + y, Math.min(reach, 9), 5, SKIN);
+        rect(21 + lean, 21 + y, Math.min(reach, 9), 5, SKIN);
         rect(4 + lean, 22 + y, 5, 5, SKIN);
         if (kick) {
           const extension = [3, 7, 10, 5][frame];
-          rect(19, 33 + y, extension, 6, SHADOW);
-          rect(19 + extension, 32 + y, 4, 5, accent);
+          rect(17, 33 + y, extension, 6, SHADOW);
+          rect(17 + extension, 32 + y, 4, 5, accent);
         }
         if (pose === 'depth') rect(14 + lean, 12 + y, 5, 2, O);
         if (hit) { rect(4, 14, 4, 4, LIGHT); rect(2, 18, 2, 2, LIGHT); }
