@@ -1,61 +1,86 @@
-# TurenkiFight – Prototype Roadmap v0.3
+# TurenkiFight – Prototype Roadmap v0.4
 
-**Date:** 2026-10-24. Milestones, not calendar commitments.
+**Updated:** 2026-10-24. Milestones, not calendar commitments.
+
+**Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
 ## Milestone 0 – Project foundations
 
-- [x] Initial vision and architecture documents
+- [x] Initial game vision and design documents
+- [x] Initialize TypeScript + Vite + Phaser prototype scaffold
+- [x] Add Vitest smoke tests and GitHub Actions deployment workflow (execution not yet verified)
+- [ ] Verify clean build and CI; publish and verify first GitHub Pages build
 - [ ] Decide code and art licenses
-- [ ] Initialize Vite + TypeScript + Phaser client
-- [ ] Add Vitest and a simple CI workflow
-- [ ] Publish first static page via GitHub Pages
 
 ## Milestone 1 – Local playable slice
 
-- [ ] Fixed 384 × 216 arena camera and pixel-perfect scaling
-- [ ] Turenki railway station placeholder stage
-- [ ] X/Y movement, jump Z and foot-Y sprite sorting
-- [ ] Punch, kick, hitboxes, hurtboxes and knockouts
-- [ ] Four local player inputs, keyboard/gamepad as available
-- [ ] Score Brawl rules, match timer, HUD and results
-- [ ] Deterministic fixed-step simulation unit tests
+- [x] Basic fixed 384 × 216 camera, Turenki station placeholder, two keyboard-controlled fighters and simple attacks (prototype only)
+- [ ] Expand to four configurable local players with keyboard/gamepad support
+- [ ] Proper punch, kick, jump kick, hitboxes, hurtboxes and KO state
+- [ ] Implement Score Brawl mode separately: 120 s timer, respawns, score HUD, results
+- [ ] Validate X/Y movement, Z jumping and Y depth sorting
+- [ ] Add deterministic fixed-step/replay and combat unit tests
+- [ ] Test legibility at 384 × 216 and 640 × 360, especially with eight fighters
 
-**Exit:** four players can complete a fun local match.
+**Exit:** four players can finish a consistent local Score Brawl match.
 
-## Milestone 2 – LAN multiplayer
+## Milestone 2 – Shared multiplayer foundations (transport-neutral)
 
-- [ ] Separate input, protocol, simulation and transport
-- [ ] Room creation/join and host selection
-- [ ] Small signaling backend
-- [ ] WebRTC DataChannel star connections
-- [ ] Host-authoritative input processing and scorekeeping
-- [ ] Prediction, interpolation and reconciliation
-- [ ] Test multiple browsers on the same LAN
+- [ ] Define versioned InputFrame, StateSnapshot, event and room protocol schemas
+- [ ] Separate simulation, authority, rendering, mode rules and transport adapters
+- [ ] Implement scripted bots, replay checksums, benchmark telemetry and synthetic clients
+- [ ] Establish identical test workloads for both architectures
+- [ ] Add baseline latency, tick duration and bandwidth measurements
 
-**Exit:** stable LAN match with consistent authoritative outcomes.
+**Exit:** one shared simulation/protocol can be driven by both transport prototypes.
 
-## Milestone 3 – Remote multiplayer
+## Milestone 3 – Architecture experiment A: central WebSocket server
 
-- [ ] Public HTTPS/WSS endpoint for signaling
-- [ ] STUN and connection-failure handling
-- [ ] TURN fallback where needed
-- [ ] Invite links, disconnect/rejoin behavior
-- [ ] Test latency, packet loss, jitter and NAT scenarios
+- [ ] Implement central authoritative 60 Hz TypeScript game session
+- [ ] Implement WSS/WS room join, input processing, state snapshots and disconnections
+- [ ] Measure 4/8/12/16 clients on physical LAN and across internet
+- [ ] Test loss/jitter, CPU, bandwidth and cost
 
-**Exit:** players on different networks can complete a match.
+**Exit:** measured WebSocket baseline with reproducible results.
 
-## Milestone 4 – Scaling and polish
+## Milestone 4 – Architecture experiment B: WebRTC browser host
 
-- [ ] Benchmark eight concurrent players; explore 12–16 without promising support
-- [ ] Profile CPU, network bandwidth and HUD readability
-- [ ] Refine pixel art, audio and hit feedback
-- [ ] Tune combat frame data and scoring
-- [ ] Decide whether optional dedicated authoritative servers are needed
+- [ ] Implement WebSocket room signaling and browser-host authoritative session
+- [ ] Implement WebRTC DataChannel star topology and client connection lifecycle
+- [ ] Test direct connectivity, NAT/CGNAT, STUN and TURN-relayed scenarios
+- [ ] Measure same workload, snapshot/input rates and impairments as experiment A
+- [ ] Test host exit and recovery limitations
 
-## Future modes
+**Exit:** measured WebRTC baseline directly comparable to A.
 
-Last Man Standing and Deathmatch are planned, but Score Brawl is the sole initial implementation. Keep mode rules pluggable.
+## Milestone 5 – Architecture decision (evidence gate)
 
-## Definition of done for each milestone
+- [ ] Collect >= 5 measured 120 s runs per key case
+- [ ] Evaluate responsiveness p50/p95/p99, reliability, correctness, CPU, RAM and bandwidth
+- [ ] Verify physical LAN, fully offline LAN and remote-internet use cases
+- [ ] Estimate operating costs including TURN where relevant
+- [ ] Publish results in `benchmarks/RESULTS.md`
+- [ ] Write `docs/adr/0001-network-topology.md` with decision, evidence and reconsideration criteria
 
-A playable build, reproducible automated tests where appropriate, short documentation of known limitations, and no unsupported performance claims.
+**Exit:** a documented choice based on results; no predetermined winner. See [benchmark plan](NETWORK_BENCHMARK_PLAN.md).
+
+## Milestone 6 – Multiplayer productization
+
+- [ ] Harden selected architecture and room/join workflow
+- [ ] Add client prediction, interpolation and reconciliation as needed
+- [ ] Implement security controls, disconnect handling and robust errors
+- [ ] Validate mixed local/remote players and multiple local controllers per browser
+- [ ] Publish browser build and document LAN hosting
+- [ ] Profile eight players, explore 12–16 without imposing an arbitrary maximum
+
+**Exit:** reliable multiplayer party game in tested environments.
+
+## Milestone 7 – Polish and future modes
+
+- [ ] Refine pixel art, sound, hit feedback, balancing and readability
+- [ ] Add Last Man Standing and Deathmatch as independent modes
+- [ ] Revisit dedicated hosting and rollback only if measurements justify them
+
+## Definition of done
+
+Each milestone needs a reproducible build, test evidence, known limitations and links to measured results. A checked item indicates work committed, **not necessarily independently validated**.
