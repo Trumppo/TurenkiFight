@@ -1,75 +1,87 @@
-import type { Fighter, GameState, PlayerInput } from './types';
-
+import type { Fighter, GameState, PlayerInput, Move, GameEvent } from './types';
 export const TICK_RATE = 60;
-const SPEED = 1.3;
-const DEPTH_SPEED = 0.9;
-const GRAVITY = 0.35;
-const JUMP_SPEED = 5.2;
-const ATTACK_COOLDOWN = 28;
-const ATTACK_ACTIVE_FRAMES = 7;
-
-export function createState(): GameState {
-  return {
-    tick: 0,
-    fighters: [
-      createFighter('P1', 95, 159, 1),
-      createFighter('P2', 280, 180, -1),
-    ],
-  };
+export const MATCH_TICKS = 7200;
+export const COUNTDOWN_TICKS = 180;
+export const MOVES: Record<Move, { startup: number; active: number; recovery: number; damage: number; points: number; reach: number; depth: number; height: number }> = {
+  punch: { startup: 4, active: 5, recovery: 12, damage: 10, points: 100, reach: 32, depth: 14, height: 18 },
+  kick: { startup: 7, active: 6, recovery: 16, damage: 15, points: 150, reach: 42, depth: 17, height: 20 },
+  jumpkick: { startup: 6, active: 7, recovery: 18, damage: 20, points: 200, reach: 45, depth: 19, height: 30 },
+};
+function spawn(index: number, count: number): { x: number; y: number } {
+  return { x: 70 + (244 * index) / Math.max(1, count - 1), y: 148 + (index % 2) * 35 };
 }
-
-function createFighter(id: string, x: number, y: number, facing: -1 | 1): Fighter {
-  return { id, x, y, z: 0, vz: 0, facing, health: 100, score: 0, attackCooldown: 0, attackFrames: 0, hitTargets: [] };
+export function createState(ids: string[] = ['P1', 'P2'], phase: GameState['phase'] = 'countdown'): GameState {
+  if (ids.length < 1 || new Set(ids).size !== ids.length) throw new Error('Roster must contain unique players');
+  return { tick: 0, phase, countdownTicks: COUNTDOWN_TICKS, remainingTicks: MATCH_TICKS, events: [],
+    fighters: ids.map((id, i) => ({ id, ...spawn(i, ids.length), z: 0, vz: 0, facing: (i % 2 ? -1 : 1) as -1 | 1,
+      health: 100, score: 0, koCount: 0, hitsReceived: 0, attackCooldown: 0, attackFrames: 0, attackMove: null,
+      hitTargets: [], hitstun: 0, koTimer: 0, protection: 0, previousButtons: [] })) };
 }
-
-/** Pure-ish fixed-step transition: input state is never mutated. */
+export function standings(state: GameState): { id: string; rank: number; score: number }[] {
+  const sorted = [...state.fighters].sort((a,b) => b.score-a.score || b.koCount-a.koCount || a.hitsReceived-b.hitsReceived || a.id.localeCompare(b.id));
+  return sorted.map((f,i) => ({ id: f.id, score: f.score, rank: 1 + sorted.slice(0,i).filter(p => p.score > f.score || (p.score === f.score && (p.koCount > f.koCount || (p.koCount === f.koCount && p.hitsReceived < f.hitsReceived)))).length }));
+}
 export function step(state: GameState, inputs: PlayerInput[]): GameState {
-  const fighters = state.fighters.map(f => ({ ...f, hitTargets: [...f.hitTargets] }));
-  const byId = new Map(inputs.map(input => [input.playerId, input]));
-
-  for (const fighter of fighters) {
-    const input = byId.get(fighter.id);
-    if (input) {
-      fighter.x = clamp(fighter.x + input.moveX * SPEED, 16, 368);
-      fighter.y = clamp(fighter.y + input.moveY * DEPTH_SPEED, 124, 204);
-      if (input.moveX !== 0) fighter.facing = input.moveX;
-      if (input.jump && fighter.z === 0) fighter.vz = JUMP_SPEED;
-      if (input.attack && fighter.attackCooldown === 0) {
-        fighter.attackCooldown = ATTACK_COOLDOWN;
-        fighter.attackFrames = ATTACK_ACTIVE_FRAMES;
-        fighter.hitTargets = [];
+  const fighters = state.fighters.map(f => ({ ...f, hitTargets: [...f.hitTargets], previousButtons: [...f.previousButtons] }));
+  const next: GameState = { ...state, tick: state.tick + 1, fighters, events: [] };
+  const event = (type: GameEvent['type'], extra: Partial<GameEvent> = {}) => next.events.push({ tick: next.tick, type, ...extra });
+  if (state.phase === 'results' || state.phase === 'lobby') return next;
+  if (state.phase === 'countdown') {
+    next.countdownTicks = Math.max(0, state.countdownTicks - 1);
+    if (!next.countdownTicks) { next.phase = 'fighting'; event('MatchStarted'); }
+    return next;
+  }
+  const byId = new Map(inputs.map(i => [i.playerId, i]));
+  for (const f of fighters) {
+    const i = byId.get(f.id);
+    const buttons = i ? (['punch','kick','jumpkick'] as Move[]).filter(m => i[m] || (m === 'punch' && i.attack)) : [];
+    const pressed = buttons.filter(b => !f.previousButtons.includes(b));
+    f.previousButtons = buttons;
+    if (f.koTimer > 0) {
+      f.koTimer--;
+      if (!f.koTimer) { const s = spawn(fighters.indexOf(f), fighters.length); f.x=s.x; f.y=s.y; f.z=0; f.vz=0; f.health=100; f.protection=90; event('Respawned',{target:f.id}); }
+      continue;
+    }
+    if (f.protection > 0) f.protection--;
+    if (f.hitstun > 0) f.hitstun--;
+    if (f.attackFrames > 0) { f.attackFrames--; if (!f.attackFrames) f.attackMove=null; }
+    f.attackCooldown = f.attackFrames;
+    if (i && !f.hitstun) {
+      const scale = i.moveX && i.moveY ? Math.SQRT1_2 : 1;
+      f.x = Math.max(16,Math.min(368,f.x + i.moveX * 1.3 * scale));
+      f.y = Math.max(124,Math.min(204,f.y + i.moveY * 1.3 * scale));
+      if (i.moveX) f.facing = i.moveX;
+      if (i.jump && f.z === 0) f.vz = 5.2;
+      if (!f.attackMove) {
+        const move = pressed.find(m => m === 'jumpkick' ? f.z > 0 : f.z === 0);
+        if (move) { f.attackMove=move; const d=MOVES[move]; f.attackFrames=d.startup+d.active+d.recovery; f.attackCooldown=f.attackFrames; f.hitTargets=[]; f.protection=0; }
       }
     }
-    fighter.z = Math.max(0, fighter.z + fighter.vz);
-    fighter.vz = fighter.z === 0 ? 0 : fighter.vz - GRAVITY;
-    if (fighter.attackCooldown > 0) fighter.attackCooldown--;
+    f.z = Math.max(0, f.z+f.vz);
+    f.vz = f.z === 0 ? 0 : f.vz-0.35;
   }
-
-  for (const attacker of fighters) {
-    if (attacker.attackFrames <= 0) continue;
-    for (const target of fighters) {
-      if (target.id === attacker.id || attacker.hitTargets.includes(target.id)) continue;
-      const dx = (target.x - attacker.x) * attacker.facing;
-      const dy = Math.abs(target.y - attacker.y);
-      const dz = Math.abs(target.z - attacker.z);
-      if (dx > 0 && dx < 32 && dy < 16 && dz < 20) {
-        attacker.hitTargets.push(target.id);
-        attacker.score += 100;
-        target.health = Math.max(0, target.health - 10);
-        if (target.health === 0) {
-          attacker.score += 500;
-          target.health = 100; // Placeholder instant respawn; mode rules will replace this.
-          target.x = target.id === 'P1' ? 95 : 280;
-          target.y = target.id === 'P1' ? 159 : 180;
-        }
-      }
+  const hits: { attacker: Fighter; target: Fighter; move: Move }[] = [];
+  for (const a of fighters) {
+    if (!a.attackMove || a.koTimer) continue;
+    const m=MOVES[a.attackMove], elapsed=m.startup+m.active+m.recovery-a.attackFrames;
+    if (elapsed < m.startup || elapsed >= m.startup+m.active) continue;
+    for (const t of fighters) {
+      if (a.id === t.id || t.koTimer || t.protection || a.hitTargets.includes(t.id)) continue;
+      const dx=(t.x-a.x)*a.facing;
+      if (dx > 0 && dx <= m.reach && Math.abs(t.y-a.y) <= m.depth && Math.abs(t.z-a.z) <= m.height) hits.push({attacker:a,target:t,move:a.attackMove});
     }
-    attacker.attackFrames--;
   }
-
-  return { tick: state.tick + 1, fighters };
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
+  hits.sort((a,b)=>a.attacker.id.localeCompare(b.attacker.id)||a.target.id.localeCompare(b.target.id));
+  for (const h of hits) {
+    const {attacker:a,target:t,move}=h;
+    if (a.hitTargets.includes(t.id)) continue;
+    a.hitTargets.push(t.id);
+    const m=MOVES[move]; a.score+=m.points; t.hitsReceived++; t.health=Math.max(0,t.health-m.damage);
+    event('HitLanded',{attacker:a.id,target:t.id,move});
+    if (t.health === 0 && !t.koTimer) { a.score+=500; a.koCount++; t.score-=200; t.koTimer=180; t.attackMove=null; t.attackFrames=0; t.hitstun=0; event('Knockout',{attacker:a.id,target:t.id}); }
+    else if (!t.koTimer) t.hitstun=Math.max(t.hitstun,8);
+  }
+  next.remainingTicks--;
+  if (next.remainingTicks === 0) { next.phase='results'; event('MatchEnded'); }
+  return next;
 }
