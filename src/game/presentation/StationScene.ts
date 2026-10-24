@@ -5,7 +5,7 @@ import { VISUAL } from './visualTheme';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
 
 export class StationScene extends Phaser.Scene {
-  private state: GameState = createState();
+  private state: GameState = createState(['P1', 'P2'], 'lobby');
   private elapsedMs = 0;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -18,7 +18,8 @@ export class StationScene extends Phaser.Scene {
   private previous = new Map<string, { x: number; y: number; health: number }>();
   private hitFlash = new Map<string, number>();
   private gamepadSlots = new Map<number, string>();
-  private lastRematch = false;
+  private lastStart = false;
+  private lastJoinButtons = new Map<number, boolean>();
 
   constructor() { super('StationScene'); }
 
@@ -42,22 +43,27 @@ export class StationScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     const pads = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter((p): p is Gamepad => p !== null) : [];
-    if (this.state.phase === 'countdown') {
+    // Only a deliberate Start press by the host begins the match.
+    // Gamepad button 9 is Start; button 8 is the dedicated Join button.
+    if (this.state.phase === 'lobby') {
       for (const pad of pads) {
-        if (pad.buttons.some(b => b.pressed) && !this.gamepadSlots.has(pad.index) && this.state.fighters.length < 4) {
+        const join = !!pad.buttons[8]?.pressed;
+        if (join && !this.lastJoinButtons.get(pad.index) && !this.gamepadSlots.has(pad.index) && this.state.fighters.length < 4) {
           const id = `P${this.state.fighters.length + 1}`;
           this.gamepadSlots.set(pad.index, id);
-          const previousCountdown = this.state.countdownTicks;
-          this.state = { ...createState([...this.state.fighters.map(f => f.id), id]), countdownTicks: previousCountdown };
+          this.state = createState([...this.state.fighters.map(f => f.id), id], 'lobby');
         }
       }
     }
-    const rematch = this.keys.ENTER.isDown;
-    if (this.state.phase === 'results' && rematch && !this.lastRematch) {
+    for (const pad of pads) this.lastJoinButtons.set(pad.index, !!pad.buttons[8]?.pressed);
+    const start = this.keys.ENTER.isDown || pads.some(p => this.gamepadSlots.get(p.index) === 'P1' && !!p.buttons[9]?.pressed);
+    if (start && !this.lastStart && (this.state.phase === 'lobby' || this.state.phase === 'results')) {
       this.state = createState(this.state.fighters.map(f => f.id));
       this.previous.clear();
+      this.hitFlash.clear();
     }
-    this.lastRematch = rematch;
+    this.lastStart = start;
+
     this.elapsedMs = Math.min(this.elapsedMs + delta, 250);
     const interval = 1000 / TICK_RATE;
     while (this.elapsedMs >= interval) {
@@ -106,7 +112,8 @@ export class StationScene extends Phaser.Scene {
     this.scoreLabel.setText(this.state.fighters.map(f => `${f.id}:${f.score}`).join(' '));
     const seconds = Math.ceil(this.state.remainingTicks / TICK_RATE);
     this.hudTimer.setText(`${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`);
-    if (this.state.phase === 'countdown') this.statusLabel.setText(`START ${Math.ceil(this.state.countdownTicks / TICK_RATE)} | PADS: press button`);
+    if (this.state.phase === 'lobby') this.statusLabel.setText('LOBBY | PADS: SELECT JOIN | P1: ENTER START');
+    else if (this.state.phase === 'countdown') this.statusLabel.setText(`START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`);
     else if (this.state.phase === 'results') this.statusLabel.setText('RESULTS\n' + standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join('\n') + '\nENTER: REMATCH');
     else this.statusLabel.setText(this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' '));
   }
