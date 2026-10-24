@@ -39,7 +39,7 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     f.previousButtons = buttons;
     if (f.koTimer > 0) {
       f.koTimer--;
-      if (!f.koTimer) { const s = spawn(fighters.indexOf(f), fighters.length); f.x=s.x; f.y=s.y; f.z=0; f.vz=0; f.health=100; f.protection=90; event('Respawned',{target:f.id}); }
+      if (!f.koTimer) { const origin = spawn(fighters.indexOf(f), fighters.length); const options = [origin, ...Array.from({length:8},(_,i)=>({x:Math.max(16,Math.min(368,origin.x+(i%2?1:-1)*(Math.floor(i/2)+1)*32)),y:origin.y}))]; const s = options.find(p=>fighters.every(other=>other.id===f.id || other.koTimer>0 || Math.hypot(other.x-p.x,other.y-p.y)>=24)) ?? origin; f.x=s.x; f.y=s.y; f.z=0; f.vz=0; f.health=100; f.protection=90; event('Respawned',{target:f.id}); }
       continue;
     }
     if (f.protection > 0) f.protection--;
