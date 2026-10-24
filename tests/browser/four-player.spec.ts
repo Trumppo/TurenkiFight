@@ -15,6 +15,13 @@ test('four local fighters can join through simulated gamepads', async ({ page })
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect(page.locator('#game canvas')).toHaveAttribute('width', '640');
   await expect(page.locator('#game canvas')).toHaveAttribute('height', '360');
+  // Keyboard P2 must join explicitly before the two controllers can occupy P3/P4.
+  await page.keyboard.down('Shift');
+  await expect.poll(async () => page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { fighters: unknown[] } } } } }).__turenkiGame;
+    return game?.scene.getScene('StationScene')?.state?.fighters?.length ?? 0;
+  })).toBeGreaterThanOrEqual(3);
+  await page.keyboard.up('Shift');
   // Phaser text is rendered inside the canvas; inspect the scene state instead.
   await expect.poll(async () => page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { fighters: unknown[] } } } } }).__turenkiGame;
