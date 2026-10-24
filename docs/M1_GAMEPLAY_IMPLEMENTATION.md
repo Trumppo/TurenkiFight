@@ -1,5 +1,19 @@
 # M1 Gameplay implementation specification — Score Brawl
 
+## Locked M1 rendering resolution architecture (2026-10-24)
+
+This section supersedes older references to 384×216 in this document. **M1 target internal resolution is 640×360 (16:9)**; the old 384×216 value describes the pre-migration implementation, not the target.
+
+- Rendering resolution is a centralized presentation setting, not a simulation parameter. Later switching to 960×540 must require no changes to combat, movement, scoring, hitboxes, spawn positions or fixed-tick timing.
+- Keep fixed logical world coordinates and fixed camera framing across all resolutions: increasing resolution must not expose additional arena area or change the on-screen proportion of fighters.
+- Isolate world-to-screen transforms in the Phaser presentation layer. Use aspect-preserving viewport scaling/letterboxing; nearest-neighbor filtering, pixelArt and integer display scaling where possible.
+- HUD: preserve the **locked top-row P1–P4 panels, numeric HP and live scores**. Layout four equal proportional horizontal segments rather than hardcoded 384-pixel coordinates. Keep the timer legible and avoid overlap at 640×360.
+- Existing 32×48 sprite art and station SVG can be scaled/re-rasterized in presentation; preserve pose keys, sprite APIs and station readability. Do not mistake increased render resolution for an automatic increase in art detail.
+- Test default 640×360, 2×/3× browser display scaling and mobile fit. A configuration-only test at 960×540 must preserve identical world framing and deterministic simulation output. No end-user resolution menu is required for M1.
+
+**Agent boundary:** Existing `M1-GAMEPLAY` owns camera/viewport configuration, `StationScene.ts` and HUD integration. Concurrent `M1-VISUAL-POLISH` owns only station SVG, fighter sprite/theme assets and visual documentation; it must not modify `StationScene.ts`, simulation or HUD. Follow-up `M1-VISUAL-QA` validates integrated graphics. Gameplay agent should incorporate this updated specification without discarding work in progress.
+
+
 **Status:** Approved design for implementation, not a claim of implemented functionality.  
 **Owner:** gameplay implementation session.  
 **Baseline:** `main` after visual PR #1, Phaser 3 / TypeScript / Vite, 384×216.  
