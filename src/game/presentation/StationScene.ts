@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { createState, step, standings, TICK_RATE } from '../simulation/step';
 import type { GameState, PlayerInput, Fighter } from '../simulation/types';
 import { VISUAL } from './visualTheme';
+import { VIEWPORT, cameraScale } from './viewport';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
 
 export class StationScene extends Phaser.Scene {
@@ -13,6 +14,7 @@ export class StationScene extends Phaser.Scene {
   private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
   private labels = new Map<string, Phaser.GameObjects.Text>();
   private scoreLabel!: Phaser.GameObjects.Text;
+  private playerHud = new Map<string, Phaser.GameObjects.Text>();
   private hudTimer!: Phaser.GameObjects.Text;
   private statusLabel!: Phaser.GameObjects.Text;
   private previous = new Map<string, { x: number; y: number; health: number }>();
@@ -28,14 +30,16 @@ export class StationScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.cameras.main.setZoom(cameraScale(this.scale.width, this.scale.height));
+    this.cameras.main.centerOn(VIEWPORT.logicalWidth / 2, VIEWPORT.logicalHeight / 2);
     createFighterTextures(this);
     this.add.image(0, 0, 'station-backdrop').setOrigin(0, 0).setDepth(-100);
     const hud = this.add.graphics().setDepth(1000);
-    hud.fillStyle(0x172536, 0.92).fillRect(0, 0, 384, VISUAL.hudHeight);
-    hud.lineStyle(1, VISUAL.colors.cream).lineBetween(0, 23, 384, 23);
-    this.scoreLabel = this.add.text(7, 6, '', { fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7' }).setDepth(1001);
-    this.hudTimer = this.add.text(332, 6, '02:00', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7' }).setDepth(1001);
-    this.statusLabel = this.add.text(192, 34, '', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7', backgroundColor: '#172536', align: 'center' }).setOrigin(0.5, 0).setDepth(1002);
+    hud.fillStyle(0x172536, 0.92).fillRect(0, 0, VIEWPORT.logicalWidth, Math.max(35, VISUAL.hudHeight));
+    hud.lineStyle(1, VISUAL.colors.cream).lineBetween(0, 35, VIEWPORT.logicalWidth, 35);
+    this.scoreLabel = this.add.text(7, 6, '', { fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7' }).setDepth(1001).setVisible(false);
+    this.hudTimer = this.add.text(192, 26, '02:00', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7' }).setOrigin(0.5, 0).setDepth(1001);
+    this.statusLabel = this.add.text(192, 42, '', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7', backgroundColor: '#172536', align: 'center' }).setOrigin(0.5, 0).setDepth(1002);
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,SPACE,ENTER') as Record<string, Phaser.Input.Keyboard.Key>;
     this.drawFighters();
@@ -109,7 +113,16 @@ export class StationScene extends Phaser.Scene {
       this.labels.get(f.id)!.setPosition(x, y - Math.round(f.z) - 47).setDepth(y + 0.1);
       this.previous.set(f.id, { x: f.x, y: f.y, health: f.health });
     }
-    this.scoreLabel.setText(this.state.fighters.map(f => `${f.id}:${f.score}`).join(' '));
+    const segment = VIEWPORT.logicalWidth / this.state.fighters.length;
+    for (const [index, f] of this.state.fighters.entries()) {
+      if (!this.playerHud.has(f.id)) {
+        this.playerHud.set(f.id, this.add.text(0, 3, '', {
+          fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7',
+        }).setDepth(1001));
+      }
+      this.playerHud.get(f.id)!.setPosition(Math.round(index * segment + 4), 3)
+        .setText(`${f.id} HP ${Math.max(0, Math.min(100, f.health))}\n${f.score} ${f.koTimer ? 'KO' : ''}`);
+    }
     const seconds = Math.ceil(this.state.remainingTicks / TICK_RATE);
     this.hudTimer.setText(`${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`);
     if (this.state.phase === 'lobby') this.statusLabel.setText('LOBBY | PADS: SELECT JOIN | P1: ENTER START');
