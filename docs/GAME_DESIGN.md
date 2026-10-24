@@ -1,5 +1,10 @@
 # TurenkiFight – Game Design v0.3
 
+## M1 resolution decision (2026-10-24)
+
+The approved M1 internal render target is **640×360, 16:9**, superseding the earlier 384×216 prototype baseline. Rendering resolution must be configurable independently of fixed simulation world coordinates and fixed camera framing; higher resolution cannot show more of the arena or change combat. Use aspect-preserving sharp nearest-neighbor pixel scaling and proportional top-row HUD layout. Future resolutions (e.g. 960×540) must be selectable by changing presentation configuration, without rewriting game rules.
+
+
 **Date:** 2026-10-24  
 **Status:** Initial prototype design; all numeric balance values are provisional.
 
