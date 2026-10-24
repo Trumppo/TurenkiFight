@@ -43,7 +43,7 @@ describe('M1 Score Brawl', () => {
    const active={...start,phase:'fighting' as const};
    const cardinal=step(active,[{...neutral('P1'),moveX:1}]).fighters[0];
    const diagonal=step(active,[{...neutral('P1'),moveX:1,moveY:1}]).fighters[0];
-   expect(Math.hypot(diagonal.x-95,diagonal.y-159)).toBeCloseTo(cardinal.x-95,8);
+   expect(Math.hypot(diagonal.x-start.fighters[0].x,diagonal.y-start.fighters[0].y)).toBeCloseTo(cardinal.x-start.fighters[0].x,8);
  });
  it('supports exact shared ranks',()=>{
    const s=createState(['P2','P1']);
