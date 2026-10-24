@@ -1,5 +1,35 @@
 # TurenkiFight – Game Design v0.3
 
+### Stage rollout and decoupling decision (2026-10-24)
+
+**Roadmap:** Turenki railway station is the sole M1 arena. The four proposed locations (yläaste, K-kauppa, Ravintola Mesku, keskustan kävelykatu) are **candidates for the first or second implementation phase after M1**, subject to prioritization; do not treat them as M1 acceptance requirements.
+
+**Non-negotiable separation:** A stage's visual assets (background, facade, foreground, decoration, signage, visual props, parallax, lighting, ambience) are purely presentation data and cannot influence the deterministic combat simulation. Stage gameplay data (world bounds, spawns, collision shapes and any future interactive object definitions) must be declarative, typed and loaded by stable `arenaId`, not hardcoded as branches in fighting rules. Changing visual assets alone must preserve identical simulation replay results. Changing declared collision geometry may legitimately change movement outcomes, but must not require changes to the combat engine source.
+
+
+## Future Turenki arenas (candidate locations, 2026-10-24)
+
+The Turenki railway station remains the **M1 playable arena**. Candidate arenas for later milestones (concepts, not yet approved level layouts or M1 scope):
+
+| Arena ID (provisional) | Location concept | Possible visual identity / later props |
+| --- | --- | --- |
+| `turenki-school` | Turenki yläaste (lower secondary school) | School yard, bicycle racks, building facade |
+| `turenki-k-store` | Turenki K-kauppa | Storefront, signage, shopping carts |
+| `turenki-mesku` | Ravintola Mesku | Restaurant setting, tables and chairs |
+| `turenki-pedestrian-street` | Turenki keskustan kävelykatu | Shopfronts, benches and planters |
+
+These are **creative environment proposals**, not verified depictions of exact local building layouts. Verify reference photos and any branding/permissions as appropriate during visual production.
+
+Each arena should be a **data-driven definition** with stable `arenaId`, visual/background asset IDs, music/ambience IDs, fixed logical world bounds, spawn points, collision geometry, presentation layers and optional future interactive-object placements. The simulation must consume typed arena geometry/data, not derive physics from image pixels or hardcode station-specific rules. Adding a visual arena variant should not require changes to core fighting mechanics. New object behaviors may require separate gameplay implementation.
+
+
+> Architecture principle: [configurable, data-driven game content](ARCHITECTURE_PRINCIPLES.md). Art, sprites, animations, arena objects, audio, UI and tunable rules must be replaceable through typed data/configuration rather than simulation hardcoding. New mechanics may still require code.
+
+## M1 resolution decision (2026-10-24)
+
+The approved M1 internal render target is **640×360, 16:9**, superseding the earlier 384×216 prototype baseline. Rendering resolution must be configurable independently of fixed simulation world coordinates and fixed camera framing; higher resolution cannot show more of the arena or change combat. Use aspect-preserving sharp nearest-neighbor pixel scaling and proportional top-row HUD layout. Future resolutions (e.g. 960×540) must be selectable by changing presentation configuration, without rewriting game rules.
+
+
 **Date:** 2026-10-24  
 **Status:** Initial prototype design; all numeric balance values are provisional.
 

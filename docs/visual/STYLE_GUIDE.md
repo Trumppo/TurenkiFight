@@ -1,5 +1,10 @@
 # TurenkiFight visual style guide — M1
 
+## M1 resolution and parallel-agent boundary (2026-10-24)
+
+**New target: 640×360 internal rendering (16:9)**; earlier 384×216 instructions above describe legacy art/implementation and are superseded for M1 acceptance. Fixed logical camera framing, resolution-independent simulation, nearest-neighbor sampling, crisp pixel art and proportional HUD apply. Station and sprites may be scaled or re-rasterized, preserving sprite animation pose keys and interfaces. Graphics agent must not edit `StationScene.ts`, HUD, input, mode or simulation files while gameplay work is parallel. Integrated 640×360 quality is checked in M1-VISUAL-QA; do not treat legacy 384×216 test results as new-resolution acceptance.
+
+
 ## Directions evaluated
 
 1. **Nordic Arcade (selected):** muted Nordic blue sky, warm ochre station, dark slate roof, readable arcade fighters. Strong local identity with restrained noise.
