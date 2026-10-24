@@ -1,5 +1,7 @@
 # M1 Gameplay implementation specification — Score Brawl
 
+> Architecture principle: [configurable, data-driven game content](ARCHITECTURE_PRINCIPLES.md). Art, sprites, animations, arena objects, audio, UI and tunable rules must be replaceable through typed data/configuration rather than simulation hardcoding. New mechanics may still require code.
+
 ## Locked M1 rendering resolution architecture (2026-10-24)
 
 This section supersedes older references to 384×216 in this document. **M1 target internal resolution is 640×360 (16:9)**; the old 384×216 value describes the pre-migration implementation, not the target.
