@@ -50,7 +50,7 @@ export class StationScene extends Phaser.Scene {
     const pads = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter((p): p is Gamepad => p !== null) : [];
     // The host occupies P1; every additional player must explicitly join.
     const keyboardJoin = this.keys.SHIFT.isDown;
-    if (this.state.phase === 'lobby' && keyboardJoin && !this.lastKeyboardJoin && !this.state.fighters.some(f => f.id === 'P2')) {
+    if (this.state.phase === 'lobby' && keyboardJoin && !this.lastKeyboardJoin && !this.state.fighters.some(f => f.id === 'P2') && ![...this.gamepadSlots.values()].includes('P2')) {
       this.state = createState([...this.state.fighters.map(f => f.id), 'P2'], 'lobby');
     }
     this.lastKeyboardJoin = keyboardJoin;
@@ -133,7 +133,10 @@ export class StationScene extends Phaser.Scene {
     }
     const seconds = Math.ceil(this.state.remainingTicks / TICK_RATE);
     this.hudTimer.setText(`${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`);
-    if (this.state.phase === 'lobby') this.statusLabel.setText('LOBBY | P2: SHIFT | PADS: SELECT JOIN | P1: ENTER');
+    if (this.state.phase === 'lobby') {
+      const joined = this.state.fighters.map(f => `${f.id}:${[...this.gamepadSlots.entries()].find(([, id]) => id === f.id)?.[0] !== undefined ? 'PAD' : 'KEY'}`).join(' ');
+      this.statusLabel.setText(`LOBBY ${joined}\nSHIFT/PAD SELECT: JOIN | P1 ENTER: START`);
+    }
     else if (this.state.phase === 'countdown') this.statusLabel.setText(`START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`);
     else if (this.state.phase === 'results') this.statusLabel.setText('RESULTS\n' + standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join('\n') + '\nENTER: REMATCH');
     else this.statusLabel.setText(this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' '));
