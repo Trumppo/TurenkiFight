@@ -5,7 +5,7 @@ Task: M1-VISUAL-POLISH
 ## Before / after
 - **Station:** previously flat facade and uninterrupted blue horizon; now roof/eaves, masonry base, richer window mullions, subtle reflections, distant roofline/foliage and rhythm in the service building. The TURENKI sign remains prominent. Platform combat zone stays deliberately low-contrast.
 - **Fighters:** previously four colors with near-identical silhouettes; now the four variants have distinctive cap/hair/ear guards/headband, plus differing torso stripe patterns. P5–P8 reuse those variants with unique ID labels, as before.
-- **Animation:** walk alternates foot displacement, punch and kick reach varies by frame, hit uses a flash, KO uses a flattened pose and respawn has a fading highlight.
+- **Animation:** walk alternates foot displacement, punch and kick reach varies by frame, jump frames shift vertically, hit uses a flash, KO uses a flattened pose and respawn has a fading highlight. Strike extremities stay inside the 32-pixel texture width.
 
 ## Compatibility contract
 - Unchanged exports: `FighterPose`, `POSES`, `FRAMES_PER_POSE`, `fighterKey`, `createFighterTextures`.
@@ -14,7 +14,7 @@ Task: M1-VISUAL-POLISH
 - No changes to `StationScene.ts`, simulation, inputs, mode rules or HUD.
 
 ## QA checklist
-- CI: `npm test`, `npm run build`, `npm run test:browser` on this branch.
+- CI: `npm test`, `npm run build`, `npm run test:browser` on this branch. Previous CI run #42 passed on commit `4430dfe`; the sprite-bounds fix after that commit requires a new run.
 - Verify all 4 players at 384×216 and overlapping fighters; check silhouette at 2× and mobile scaling.
 - Check station reference photographs before claiming architecture is historically accurate; this is an original stylized interpretation, not a photo trace.
 - Confirm the published GitHub Pages asset path after integration.
