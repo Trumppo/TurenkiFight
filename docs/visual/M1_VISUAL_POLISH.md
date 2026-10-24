@@ -14,7 +14,7 @@ Task: M1-VISUAL-POLISH
 - No changes to `StationScene.ts`, simulation, inputs, mode rules or HUD.
 
 ## QA checklist
-- CI: `npm test`, `npm run build`, `npm run test:browser` on this branch. Previous CI run #42 passed on commit `4430dfe`; the sprite-bounds fix after that commit requires a new run.
+- CI verified on commit `996bf545e7448f3b5f86edd43ae3365a1bac099f`: workflow run #59 completed successfully, including unit tests, production build and Playwright browser smoke. Agent task validation #17 and PR tracking #19 also succeeded. https://github.com/Trumppo/TurenkiFight/actions/runs/40081446774
 - Verify all 4 players at 384×216 and overlapping fighters; check silhouette at 2× and mobile scaling.
 - Check station reference photographs before claiming architecture is historically accurate; this is an original stylized interpretation, not a photo trace.
 - Confirm the published GitHub Pages asset path after integration.
