@@ -18,7 +18,12 @@ test('four local fighters can join through simulated gamepads', async ({ page })
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { fighters: unknown[] } } } } }).__turenkiGame;
     return game?.scene.getScene('StationScene')?.state?.fighters?.length ?? 0;
   }), {timeout: 3000}).toBe(4);
-  await page.keyboard.press('Enter');
+  await page.keyboard.down('Enter');
+  await expect.poll(async () => page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { phase: string } } } } }).__turenkiGame;
+    return game?.scene.getScene('StationScene')?.state?.phase;
+  })).toBe('countdown');
+  await page.keyboard.up('Enter');
   const result = await page.evaluate(async () => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: unknown; drawFighters: () => void } } } }).__turenkiGame!;
     const scene = game.scene.getScene('StationScene');
