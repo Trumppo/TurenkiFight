@@ -163,3 +163,41 @@ test('HUD clock, score and hit/KO/respawn presentation follow authoritative stat
   // Hit flash is event-driven in drawFighters; a changed previous health alone does not trigger pose().
   expect(['idle', 'hit']).toContain(result.hit);
 });
+
+test('960x540 browser renderer keeps the same logical camera framing', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  const result = await page.evaluate(() => {
+    const game = (window as typeof window & {
+      __turenkiGame?: {
+        scale: { resize: (width: number, height: number) => void };
+        canvas: HTMLCanvasElement;
+        scene: { getScene: (key: string) => unknown };
+      };
+    }).__turenkiGame!;
+    const scene = game.scene.getScene('StationScene') as {
+      cameras: { main: { zoom: number; setZoom: (zoom: number) => void; centerOn: (x: number, y: number) => void; worldView: { width: number; height: number } } };
+      state: { tick: number; fighters: Array<{ x: number; y: number; health: number; score: number }> };
+    };
+    const before = JSON.stringify(scene.state);
+    const originalZoom = scene.cameras.main.zoom;
+    game.scale.resize(960, 540);
+    scene.cameras.main.setZoom(Math.min(960 / 384, 540 / 216));
+    scene.cameras.main.centerOn(192, 108);
+    const after = JSON.stringify(scene.state);
+    return {
+      width: game.canvas.width, height: game.canvas.height,
+      zoom: scene.cameras.main.zoom, originalZoom,
+      worldWidth: 960 / scene.cameras.main.zoom,
+      worldHeight: 540 / scene.cameras.main.zoom,
+      simulationUnchanged: before === after,
+    };
+  });
+  expect(result.width).toBe(960);
+  expect(result.height).toBe(540);
+  expect(result.zoom).toBeCloseTo(2.5);
+  expect(result.originalZoom).toBeCloseTo(640 / 384);
+  expect(result.worldWidth).toBeCloseTo(384);
+  expect(result.worldHeight).toBeCloseTo(216);
+  expect(result.simulationUnchanged).toBe(true);
+});
