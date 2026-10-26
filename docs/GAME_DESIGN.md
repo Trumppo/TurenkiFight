@@ -33,6 +33,18 @@ The approved M1 internal render target is **640×360, 16:9**, superseding the ea
 **Date:** 2026-10-24  
 **Status:** Initial prototype design; all numeric balance values are provisional.
 
+## Creative lineage and long-term direction (2026-10-26)
+
+**TurenkiFight should feel like a spiritual successor to *Target: Renegade* and *Streets of Rage***, while retaining its own Turenki identity, original artwork, characters and mechanics. These games are creative references, not templates to reproduce.
+
+- **Target: Renegade:** gritty, immediate street-brawl atmosphere, grounded impacts and rough-edged retro character.
+- **Streets of Rage:** responsive and readable close-range combat, multiple opponents, strong hit feedback, lively stage atmosphere and satisfying arcade pacing.
+- **TurenkiFight:** local recognizable settings, humorous personality, accessible multiplayer and configurable stage/character content.
+
+**Scope boundary:** M1 remains the existing fixed-camera four-player Score Brawl at Turenki railway station. This creative direction informs later iterations; it does **not** authorize a new scrolling campaign, enemy AI, progression, new attacks or a change of M1 acceptance criteria. Consider beat-'em-up modes and stage progression as optional post-M1 design explorations.
+
+Keep stage visuals, gameplay geometry and combat rules decoupled as specified in `ARCHITECTURE_PRINCIPLES.md`.
+
 ## Vision
 
 A chaotic, accessible browser-based 2.5D party fighting game set in stylized Turenki locations. The first map is Turengin rautatieasema (Turenki railway station). Visual direction: 8-bit-inspired pixel art, readable silhouettes and lively arcade feedback. Inspired by the energy of IK+, but original in content and mechanics.
