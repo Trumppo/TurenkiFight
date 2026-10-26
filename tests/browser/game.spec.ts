@@ -155,6 +155,7 @@ test('HUD clock, score and hit/KO/respawn presentation follow authoritative stat
     f.protection = 10;
     const respawn = scene.pose(f);
     f.protection = 0;
+    scene.hitFlash.set(f.id, scene.state.tick + 12);
     const hit = scene.pose(f, { x: f.x, y: f.y, health: 60 });
     return { hud, clock, punch, kick, jumpkick, ko, respawn, hit };
   });
@@ -166,8 +167,8 @@ test('HUD clock, score and hit/KO/respawn presentation follow authoritative stat
   expect(result.jumpkick).toBe('jumpkick');
   expect(result.ko).toBe('ko');
   expect(result.respawn).toBe('respawn');
-  // Hit flash is event-driven in drawFighters; a changed previous health alone does not trigger pose().
-  expect(['idle', 'hit']).toContain(result.hit);
+  // Explicitly assert the hit cue with an active flash, independent of earlier attack assertions.
+  expect(result.hit).toBe('hit');
 });
 
 test('960x540 browser renderer keeps the same logical camera framing', async ({ page }) => {
