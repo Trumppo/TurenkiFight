@@ -51,7 +51,7 @@ test('station SVG loads and four-player HUD is visible after gamepad joins', asy
       players: scene.state.fighters.map(f => f.id),
       textures: ['P1', 'P2', 'P3', 'P4'].every(id =>
         ['idle', 'walk', 'punch', 'kick', 'jumpkick', 'hit', 'ko', 'respawn'].every(pose =>
-          [0, 1, 2, 3].every(frame => scene.textures.exists(`fighter-${id}-${pose}-${frame}`))),
+          [0, 1, 2, 3].every(frame => scene.textures.exists(`fighter-${id}-${pose}-${frame}`)))),
       hud: [...scene.playerHud.values()].map(label => label.text),
       station: scene.textures.exists('station-backdrop'),
     };
