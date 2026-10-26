@@ -79,6 +79,30 @@ tasks:
     pull_request: null
     last_updated: "2026-10-26"
     notes: "Review merged gameplay and visual PRs at 640x360; document manual checks and any limitations. Keep fixes scoped to presentation/assets, coordinate gameplay fixes separately."
+  - id: M1-GAMEPLAY-QA
+    title: Verify deterministic combat, input edge cases and arena-independent gameplay
+    assigned_role: gameplay-session
+    session_id: null
+    status: ready
+    priority: P0
+    specification: docs/M1_GAMEPLAY_QA.md
+    branch: feature/m1-gameplay-qa
+    depends_on: [M1-GAMEPLAY]
+    scope:
+      - src/game/simulation/
+      - src/game/modes/
+      - src/game/input/
+      - tests/
+    acceptance:
+      - Identical initial state and inputs produce identical simulation results and replay fingerprints
+      - Simultaneous attacks, KO, respawn, protection and match-ending edge cases have regression tests
+      - Join, held buttons, disconnect and reconnect behavior is tested and documented
+      - Core simulation is not hardcoded to four players or Turenki station presentation assets
+      - Unit tests, production build and relevant browser CI pass
+      - Findings, test evidence and limitations are documented
+    pull_request: null
+    last_updated: "2026-10-26"
+    notes: "Parallel with M1-VISUAL-QA; never modify src/game/presentation/, public/assets/ or docs/visual/. Report presentation defects to graphics-session; no networking or new game modes."
   - id: M1-ACCEPTANCE
     title: Independent M1 integration and acceptance review
     assigned_role: planning-session
