@@ -82,8 +82,8 @@ tasks:
   - id: M1-GAMEPLAY-QA
     title: Verify deterministic combat, input edge cases and arena-independent gameplay
     assigned_role: gameplay-session
-    session_id: null
-    status: ready
+    session_id: gameplay-session-20261026
+    status: claimed
     priority: P0
     specification: docs/M1_GAMEPLAY_QA.md
     branch: feature/m1-gameplay-qa
