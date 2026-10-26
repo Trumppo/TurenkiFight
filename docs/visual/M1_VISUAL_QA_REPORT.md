@@ -21,7 +21,7 @@ Code inspection is not a visual browser observation. Automated tests verify thei
 
 ## CI evidence
 - Commit `774db7a`: GitHub Actions CI #90 passed both `quality` (unit tests + TypeScript/Vite build) and `browser-smoke` (Playwright) after correcting a test syntax error. https://github.com/Trumppo/TurenkiFight/actions/runs/40375075404
-- Subsequent render-configuration change needs its own CI confirmation.
+- CI #92 passed on commit `07f61d1` after the render-configuration change: https://github.com/Trumppo/TurenkiFight/actions/runs/40378187528\n- A later animation test incorrectly expected an attack pose while an earlier hit flash was still active. Commit `e05e7fe` isolates the assertions by clearing the test-only hit flash; no gameplay behavior was modified. The CI result for the final PR head must be verified separately.
 
 ## Changes
 - Added typed presentation-only `visualAssets.ts` for stable station texture key, source path and SVG raster dimensions. `StationScene.preload()` now resolves the asset through the manifest without touching simulation or HUD behavior.
@@ -37,5 +37,5 @@ Code inspection is not a visual browser observation. Automated tests verify thei
 ## Commands and CI
 Expected project checks: `npm test`, `npm run build`, `npm run test:browser`. Results for this branch are recorded from GitHub Actions after PR creation; do not infer a manual browser pass from CI.
 
-## Remaining acceptance work
+## Latest browser test coverage\n- Four-player controller joins, P1–P4 HP HUD, station texture and missing-resource response checks.\n- 390×844 viewport with a 16:9, 640×360 internal canvas.\n- Four fighters × ten poses × four animation frames checked for nonempty raster data.\n- HUD health, negative score, countdown clock, punch/kick/jumpkick, KO and respawn pose selection checked against a controlled scene state. These are automated assertions, not an independent visual inspection.\n\n## Remaining acceptance work
 Open the actual game in a desktop browser, join four players (gamepads as available), capture native/2×/3×/mobile screenshots, verify overlapping silhouettes and attack/KO/respawn, inspect the console and network for 404s, and test an actual 960×540 render with unchanged simulation replay. Do not mark these as passed without observations.
