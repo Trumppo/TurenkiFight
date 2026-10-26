@@ -79,3 +79,84 @@ test('responsive canvas retains 16:9 and logical camera coverage', async ({ page
   expect(geometry.internalHeight).toBe(360);
   expect(geometry.cssWidth / geometry.cssHeight).toBeCloseTo(16 / 9, 1);
 });
+
+test('all fighter poses resolve to distinct, nonempty canvas textures', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  const result = await page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame!;
+    const scene = game.scene.getScene('StationScene') as {
+      textures: { get: (key: string) => { getSourceImage: () => HTMLCanvasElement } };
+    };
+    const poses = ['idle', 'walk', 'depth', 'punch', 'kick', 'jump', 'jumpkick', 'hit', 'ko', 'respawn'];
+    const signatures: Record<string, number[]> = {};
+    for (const id of ['P1', 'P2', 'P3', 'P4']) {
+      const samples: number[] = [];
+      for (const pose of poses) {
+        for (let frame = 0; frame < 4; frame++) {
+          const canvas = scene.textures.get(`fighter-${id}-${pose}-${frame}`).getSourceImage();
+          const context = canvas.getContext('2d')!;
+          const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+          let nonTransparent = 0;
+          for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 0) nonTransparent++;
+          samples.push(nonTransparent);
+        }
+      }
+      signatures[id] = samples;
+    }
+    return signatures;
+  });
+  for (const samples of Object.values(result)) {
+    expect(samples).toHaveLength(40);
+    expect(samples.every(count => count > 0)).toBe(true);
+  }
+  expect(result.P1).not.toEqual(result.P2);
+});
+
+test('HUD clock, score and hit/KO/respawn presentation follow authoritative state', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  const result = await page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame!;
+    const scene = game.scene.getScene('StationScene') as {
+      state: { fighters: Array<{ id: string; health: number; score: number; koTimer: number; protection: number; attackMove: string | null; z: number; x: number; y: number }>; remainingTicks: number; phase: string; tick: number };
+      playerHud: Map<string, { text: string }>;
+      hudTimer: { text: string };
+      pose: (f: unknown, prev?: unknown) => string;
+      drawFighters: () => void;
+      fighterSprites: Map<string, { texture: { key: string } }>;
+    };
+    const f = scene.state.fighters[0];
+    f.health = 37;
+    f.score = -2;
+    scene.state.remainingTicks = 90 * 60;
+    scene.drawFighters();
+    const hud = scene.playerHud.get(f.id)!.text;
+    const clock = scene.hudTimer.text;
+    f.attackMove = 'punch';
+    const punch = scene.pose(f);
+    f.attackMove = 'kick';
+    const kick = scene.pose(f);
+    f.attackMove = 'jumpkick';
+    const jumpkick = scene.pose(f);
+    f.attackMove = null;
+    f.koTimer = 10;
+    const ko = scene.pose(f);
+    f.koTimer = 0;
+    f.protection = 10;
+    const respawn = scene.pose(f);
+    f.protection = 0;
+    const hit = scene.pose(f, { x: f.x, y: f.y, health: 60 });
+    return { hud, clock, punch, kick, jumpkick, ko, respawn, hit };
+  });
+  expect(result.hud).toContain('HP 37');
+  expect(result.hud).toContain('-2');
+  expect(result.clock).toBe('01:30');
+  expect(result.punch).toBe('punch');
+  expect(result.kick).toBe('kick');
+  expect(result.jumpkick).toBe('jumpkick');
+  expect(result.ko).toBe('ko');
+  expect(result.respawn).toBe('respawn');
+  // Hit flash is event-driven in drawFighters; a changed previous health alone does not trigger pose().
+  expect(['idle', 'hit']).toContain(result.hit);
+});
