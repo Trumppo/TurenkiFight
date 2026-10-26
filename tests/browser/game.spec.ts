@@ -125,6 +125,7 @@ test('HUD clock, score and hit/KO/respawn presentation follow authoritative stat
       pose: (f: unknown, prev?: unknown) => string;
       drawFighters: () => void;
       fighterSprites: Map<string, { texture: { key: string } }>;
+      hitFlash: Map<string, number>;
     };
     const f = scene.state.fighters[0];
     f.health = 37;
@@ -133,6 +134,8 @@ test('HUD clock, score and hit/KO/respawn presentation follow authoritative stat
     scene.drawFighters();
     const hud = scene.playerHud.get(f.id)!.text;
     const clock = scene.hudTimer.text;
+    // drawFighters() correctly starts a hit flash when health drops; isolate attack pose assertions.
+    scene.hitFlash.delete(f.id);
     f.attackMove = 'punch';
     const punch = scene.pose(f);
     f.attackMove = 'kick';
