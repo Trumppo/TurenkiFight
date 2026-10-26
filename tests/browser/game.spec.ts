@@ -98,8 +98,14 @@ test('all fighter poses resolve to distinct, nonempty canvas textures', async ({
           const context = canvas.getContext('2d')!;
           const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
           let nonTransparent = 0;
-          for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 0) nonTransparent++;
-          samples.push(nonTransparent);
+          let colorChecksum = 0;
+          for (let i = 0; i < pixels.length; i += 4) {
+            if (pixels[i + 3] === 0) continue;
+            nonTransparent++;
+            colorChecksum = (colorChecksum + pixels[i] * 3 + pixels[i + 1] * 5 + pixels[i + 2] * 7) >>> 0;
+          }
+          if (nonTransparent === 0) throw new Error(`Empty fighter texture: ${id}/${pose}/${frame}`);
+          samples.push(colorChecksum);
         }
       }
       signatures[id] = samples;
@@ -108,7 +114,7 @@ test('all fighter poses resolve to distinct, nonempty canvas textures', async ({
   });
   for (const samples of Object.values(result)) {
     expect(samples).toHaveLength(40);
-    expect(samples.every(count => count > 0)).toBe(true);
+    expect(samples.every(checksum => checksum > 0)).toBe(true);
   }
   expect(result.P1).not.toEqual(result.P2);
 });
