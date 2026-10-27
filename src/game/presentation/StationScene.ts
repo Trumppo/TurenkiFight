@@ -77,7 +77,7 @@ export class StationScene extends Phaser.Scene {
     const padHostStart = pads.some(p => {
       const pressed = !!p.buttons[9]?.pressed;
       const fresh = pressed && !this.lastPadStart.get(p.index);
-      if (fresh && !this.gamepadSlots.has(p.index) && ![...this.gamepadSlots.values()].includes('P1')) {
+      if (fresh && this.state.fighters.length >= 2 && !this.gamepadSlots.has(p.index) && ![...this.gamepadSlots.values()].includes('P1')) {
         this.gamepadSlots.set(p.index, 'P1');
       }
       return fresh && this.gamepadSlots.get(p.index) === 'P1';
