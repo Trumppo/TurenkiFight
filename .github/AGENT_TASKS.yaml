@@ -106,12 +106,12 @@ tasks:
   - id: M1-ACCEPTANCE
     title: Independent M1 integration and acceptance review
     assigned_role: planning-session
-    session_id: null
-    status: backlog
+    session_id: planning-session-20261027
+    status: in_progress
     priority: P0
-    specification: docs/M1_GAMEPLAY_IMPLEMENTATION.md
-    branch: null
-    depends_on: [M1-GAMEPLAY, M1-VISUAL-QA]
+    specification: docs/M1_ACCEPTANCE_REPORT.md
+    branch: planning/m1-acceptance-review
+    depends_on: [M1-GAMEPLAY, M1-VISUAL-QA, M1-GAMEPLAY-QA]
     scope:
       - docs/ROADMAP.md
       - docs/M1_GAMEPLAY_IMPLEMENTATION.md
@@ -120,5 +120,5 @@ tasks:
       - Test evidence and remaining limitations documented
       - User explicitly approves milestone acceptance
     pull_request: null
-    last_updated: "2026-10-24"
-    notes: "Do not equate passing CI with user acceptance."
+    last_updated: "2026-10-27"
+    notes: "Independent evidence review started; manual hardware/visual/Pages checks and user approval outstanding. Never mark accepted without explicit user decision."
