@@ -107,12 +107,8 @@ test.describe('M1 automated game harness', () => {
         update: (t: number, delta: number) => void;
         keys: Record<string, { isDown: boolean }>;
       };
-      const state = scene.state;
-      state.phase = 'fighting';
-      state.countdownTicks = 0;
       // The lobby begins with P1 only; use the same simulation roster constructor
       // indirectly by joining P2 through the scene's keyboard adapter.
-      state.phase = 'lobby';
       scene.keys.SHIFT.isDown = true;
       scene.update(0, 17);
       scene.keys.SHIFT.isDown = false;
@@ -127,12 +123,13 @@ test.describe('M1 automated game harness', () => {
       scene.keys.F.isDown = true;
       scene.update(0, 150);
       scene.keys.F.isDown = false;
-      const ko = { health: p2.health, timer: p2.koTimer, koCount: p1.koCount, score: p1.score };
+      const [hitP1, hitP2] = scene.state.fighters;
+      const ko = { health: hitP2.health, timer: hitP2.koTimer, koCount: hitP1.koCount, score: hitP1.score };
       // Advance the real simulation through the 180-tick KO interval.
       for (let i = 0; i < 14; i++) scene.update(0, 250);
       return {
         ko,
-        respawn: { health: p2.health, timer: p2.koTimer, protection: p2.protection },
+        respawn: { health: scene.state.fighters[1].health, timer: scene.state.fighters[1].koTimer, protection: scene.state.fighters[1].protection },
         originalScore,
       };
     });
@@ -176,11 +173,14 @@ test.describe('M1 automated game harness', () => {
         scene.keys.D.isDown = false;
         scene.keys.F.isDown = false;
         return JSON.stringify({
-          phase: scene.state.phase, tick: scene.state.tick,
+          phase: scene.state.phase,
           remainingTicks: scene.state.remainingTicks, fighters: scene.state.fighters,
         });
       });
     };
+    // Ignore the absolute scene tick: Phaser can perform a render-loop update
+    // between page navigation and the controlled input schedule. The authoritative
+    // match timer and all fighter state must still be identical.
     const first = await run();
     const second = await run();
     expect(second).toBe(first);
