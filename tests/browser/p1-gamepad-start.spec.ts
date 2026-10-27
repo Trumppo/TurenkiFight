@@ -63,7 +63,8 @@ test('P1 explicitly binds an unassigned gamepad Start; nonhost cannot start; rec
     const scene = (window as typeof window & {
       __turenkiGame?: { scene: { getScene: (name: string) => { state: unknown } } };
     }).__turenkiGame!.scene.getScene('StationScene');
-    const sim = await import(/* @vite-ignore */ '/src/game/simulation/step.ts');
+    const moduleUrl = '/src/game/simulation/step.ts';
+    const sim = await import(/* @vite-ignore */ moduleUrl);
     let state = scene.state as ReturnType<typeof sim.createState>;
     for (let i = 0; i < sim.COUNTDOWN_TICKS + sim.MATCH_TICKS; i++) state = sim.step(state, []);
     scene.state = state;
