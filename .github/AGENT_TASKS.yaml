@@ -83,7 +83,7 @@ tasks:
     title: Verify deterministic combat, input edge cases and arena-independent gameplay
     assigned_role: gameplay-session
     session_id: gameplay-session-20261026
-    status: claimed
+    status: review
     priority: P0
     specification: docs/M1_GAMEPLAY_QA.md
     branch: feature/m1-gameplay-qa
@@ -100,8 +100,8 @@ tasks:
       - Core simulation is not hardcoded to four players or Turenki station presentation assets
       - Unit tests, production build and relevant browser CI pass
       - Findings, test evidence and limitations are documented
-    pull_request: null
-    last_updated: "2026-10-26"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/15
+    last_updated: "2026-10-27"
     notes: "Parallel with M1-VISUAL-QA; never modify src/game/presentation/, public/assets/ or docs/visual/. Report presentation defects to graphics-session; no networking or new game modes."
   - id: M1-ACCEPTANCE
     title: Independent M1 integration and acceptance review
