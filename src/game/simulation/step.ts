@@ -76,7 +76,9 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
   hits.sort((a,b)=>a.attacker.id.localeCompare(b.attacker.id)||a.target.id.localeCompare(b.target.id));
   for (const h of hits) {
     const {attacker:a,target:t,move}=h;
-    if (a.hitTargets.includes(t.id) || t.koTimer) continue;
+    // Eligibility was captured before resolution: a fighter KO'd by an earlier
+    // sorted hit can still land a simultaneous attack in this same tick.
+    if (a.hitTargets.includes(t.id)) continue;
     a.hitTargets.push(t.id);
     const m=MOVES[move]; a.score+=m.points; t.hitsReceived++; t.health=Math.max(0,t.health-m.damage);
     event('HitLanded',{attacker:a.id,target:t.id,move});

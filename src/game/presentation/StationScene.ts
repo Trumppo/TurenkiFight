@@ -22,6 +22,7 @@ export class StationScene extends Phaser.Scene {
   private hitFlash = new Map<string, number>();
   private gamepadSlots = new Map<number, string>();
   private lastStart = false;
+  private lastPadStart = new Map<number, boolean>();
   private lastKeyboardJoin = false;
   private lastJoinButtons = new Map<number, boolean>();
 
@@ -70,8 +71,20 @@ export class StationScene extends Phaser.Scene {
       }
     }
     for (const pad of pads) this.lastJoinButtons.set(pad.index, !!pad.buttons[8]?.pressed);
-    const start = this.keys.ENTER.isDown || pads.some(p => this.gamepadSlots.get(p.index) === 'P1' && !!p.buttons[9]?.pressed);
-    if (start && !this.lastStart && (this.state.phase === 'results' || (this.state.phase === 'lobby' && this.state.fighters.length >= 2))) {
+    // P1 is initially keyboard-hosted. An unassigned controller may explicitly
+    // claim P1 with Start; controllers already assigned to P2-P4 cannot start.
+    // Never auto-claim merely because a controller is connected.
+    const padHostStart = pads.some(p => {
+      const pressed = !!p.buttons[9]?.pressed;
+      const fresh = pressed && !this.lastPadStart.get(p.index);
+      if (fresh && this.state.fighters.length >= 2 && !this.gamepadSlots.has(p.index) && ![...this.gamepadSlots.values()].includes('P1')) {
+        this.gamepadSlots.set(p.index, 'P1');
+      }
+      return fresh && this.gamepadSlots.get(p.index) === 'P1';
+    });
+    for (const pad of pads) this.lastPadStart.set(pad.index, !!pad.buttons[9]?.pressed);
+    const start = this.keys.ENTER.isDown;
+    if (((start && !this.lastStart) || padHostStart) && (this.state.phase === 'results' || (this.state.phase === 'lobby' && this.state.fighters.length >= 2))) {
       this.state = createState(this.state.fighters.map(f => f.id));
       this.previous.clear();
       this.hitFlash.clear();
@@ -137,7 +150,7 @@ export class StationScene extends Phaser.Scene {
     this.hudTimer.setText(`${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`);
     if (this.state.phase === 'lobby') {
       const joined = this.state.fighters.map(f => `${f.id}:${[...this.gamepadSlots.entries()].find(([, id]) => id === f.id)?.[0] !== undefined ? 'PAD' : 'KEY'}`).join(' ');
-      this.statusLabel.setText(`LOBBY ${joined}\nSHIFT/PAD SELECT: JOIN | P1 ENTER: START`);
+      this.statusLabel.setText(`LOBBY ${joined}\nSHIFT/PAD SELECT: JOIN | P1 ENTER/PAD START`);
     }
     else if (this.state.phase === 'countdown') this.statusLabel.setText(`START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`);
     else if (this.state.phase === 'results') this.statusLabel.setText('RESULTS\n' + standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join('\n') + '\nENTER: REMATCH');
