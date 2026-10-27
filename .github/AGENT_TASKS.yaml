@@ -61,7 +61,7 @@ tasks:
     title: Review and refine merged station visuals after gameplay integration
     assigned_role: graphics-session
     session_id: graphics-session-20261026
-    status: claimed
+    status: review
     priority: P1
     specification: docs/visual/IMPLEMENTATION.md
     branch: feature/m1-visual-qa
@@ -76,7 +76,7 @@ tasks:
       - Station architecture and visual quality reviewed
       - Production Pages asset paths work
       - Render resolution can be changed to 960x540 without changing simulation behavior
-    pull_request: null
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/10
     last_updated: "2026-10-26"
     notes: "Review merged gameplay and visual PRs at 640x360; document manual checks and any limitations. Keep fixes scoped to presentation/assets, coordinate gameplay fixes separately."
   - id: M1-GAMEPLAY-QA
