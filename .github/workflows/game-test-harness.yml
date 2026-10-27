@@ -23,6 +23,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Run full game harness
         run: npx playwright test tests/browser/harness.spec.ts
+        env:
+          GAME_HARNESS: '1'
       - name: Upload HTML report, screenshots, traces and failure videos
         if: always()
         uses: actions/upload-artifact@v4
