@@ -41,6 +41,55 @@ test.describe('M1 automated game harness', () => {
     expect(failedResponses).toEqual([]);
   });
 
+  test('browser combat: P1 punch lands, scores and reduces P2 health', async ({ page }, testInfo) => {
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto('/');
+    await expect(page.locator('#game canvas')).toBeVisible();
+    // P2 joins via the documented keyboard join key.
+    await page.keyboard.down('Shift');
+    await page.evaluate(() => {
+      const game = (window as typeof window & { __turenkiGame: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
+      (game.scene.getScene('StationScene') as { update: (t: number, d: number) => void }).update(0, 17);
+    });
+    await page.keyboard.up('Shift');
+    expect((await snapshot(page)).fighters).toHaveLength(2);
+    await page.keyboard.down('Enter');
+    await page.evaluate(() => {
+      const game = (window as typeof window & { __turenkiGame: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
+      (game.scene.getScene('StationScene') as { update: (t: number, d: number) => void }).update(0, 17);
+    });
+    await page.keyboard.up('Enter');
+    // Set a controlled combat position through the existing test-visible scene.
+    // This does not replace the real simulation or bypass hit resolution.
+    await page.evaluate(() => {
+      const game = (window as typeof window & { __turenkiGame: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
+      const scene = game.scene.getScene('StationScene') as {
+        update: (t: number, d: number) => void;
+        state: { phase: string; countdownTicks: number; fighters: Array<{ x: number; y: number; facing: number; health: number; score: number }> };
+      };
+      // Finish countdown via the actual scene update.
+      for (let i = 0; i < 14; i++) scene.update(0, 250);
+      if (scene.state.phase !== 'fighting') throw new Error('Countdown did not finish');
+      const [p1, p2] = scene.state.fighters;
+      p1.x = 170; p1.y = 160; p1.facing = 1;
+      p2.x = 190; p2.y = 160;
+    });
+    const before = await snapshot(page);
+    await page.keyboard.down('f');
+    await page.evaluate(() => {
+      const game = (window as typeof window & { __turenkiGame: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
+      (game.scene.getScene('StationScene') as { update: (t: number, d: number) => void }).update(0, 150);
+    });
+    await page.keyboard.up('f');
+    const after = await snapshot(page);
+    expect(after.fighters[1].health).toBeLessThan(before.fighters[1].health);
+    expect(after.fighters[0].score).toBeGreaterThan(before.fighters[0].score);
+    await page.screenshot({ path: testInfo.outputPath('combat-hit.png') });
+    await testInfo.attach('combat-hit', { path: testInfo.outputPath('combat-hit.png'), contentType: 'image/png' });
+    expect(errors).toEqual([]);
+  });
+
   test('mobile layout renders without runtime exceptions', async ({ page }, testInfo) => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
