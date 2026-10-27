@@ -1,0 +1,58 @@
+name: Game Test Harness
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  game-harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Run full game harness
+        id: harness
+        run: npx playwright test tests/browser/harness.spec.ts
+        env:
+          GAME_HARNESS: '1'
+      - name: Mobile-friendly test summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## TurenkiFight — M1 browser harness"
+            echo
+            echo "**Run:** \${{ github.run_number }} · **Commit:** \${GITHUB_SHA:0:7}"
+            echo
+            echo "| Scenario | What is verified |"
+            echo "|---|---|"
+            echo "| Four players | Join, full 120-second match, results |"
+            echo "| Combat | P1 punch, damage and scoring |"
+            echo "| KO and respawn | KO, score, respawn and protection |"
+            echo "| Repeatability | Equal match timer and fighter state for repeated inputs |"
+            echo "| Mobile | Canvas dimensions and aspect ratio |"
+            echo
+            echo "**Execution:** \${{ steps.harness.outcome }}"
+            echo
+            echo "Detailed results, screenshots and failure traces: download the \`game-harness-report\` artifact below."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload HTML report, screenshots, traces and failure videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-harness-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
