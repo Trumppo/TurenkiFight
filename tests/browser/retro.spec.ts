@@ -179,6 +179,35 @@ test('forward kick overlaps torso without a duplicate third leg', async ({ page 
   expect(result.noOverflow).toBe(true);
 });
 
+test('expanded P1 keeps the same feet anchor and leaves P2 unchanged', async ({ page }) => {
+  test.skip(!expanded, 'Only the opt-in expanded P1 experiment');
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { exists: (key: string) => boolean } } } } }).__turenkiGame;
+    return !!game?.scene.getScene('StationScene').textures.exists('fighter-P1-kick-2');
+  })).toBe(true);
+  const result = await page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame!;
+    const scene = game.scene.getScene('StationScene') as {
+      textures: { get: (key: string) => { getSourceImage: () => HTMLCanvasElement } };
+      fighterSprites: Map<string, { originX: number; originY: number }>;
+    };
+    const p1 = scene.textures.get('fighter-P1-kick-2').getSourceImage();
+    const p2 = scene.textures.get('fighter-P2-kick-2').getSourceImage();
+    const bottom = p1.getContext('2d')!.getImageData(0, 63, 48, 1).data;
+    return {
+      p1: [p1.width, p1.height], p2: [p2.width, p2.height],
+      origin: [scene.fighterSprites.get('P1')?.originX, scene.fighterSprites.get('P1')?.originY],
+      transparentBottom: Array.from(bottom).every(v => v === 0),
+    };
+  });
+  expect(result.p1).toEqual([48, 64]);
+  expect(result.p2).toEqual([32, 48]);
+  expect(result.origin).toEqual([0.5, 1]);
+  expect(result.transparentBottom).toBe(true);
+});
+
 test('extended kick toe uses boot shading rather than a stray bright spark', async ({ page }) => {
   test.skip(!retro || expanded, 'Toe pixel coordinate is specific to the original 32x48 canvas');
   await page.goto('/');
