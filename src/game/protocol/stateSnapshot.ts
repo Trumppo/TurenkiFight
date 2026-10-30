@@ -53,9 +53,15 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
   return { version: SNAPSHOT_VERSION, state: state as unknown as GameState };
 }
 
-/** Canonical key order is provided by the simulation's stable object shape. */
+/** Sort object keys recursively so semantically identical snapshots have identical wire bytes. */
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (obj(value)) return Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])]));
+  return value;
+}
+
 export function encodeStateSnapshot(snapshot: StateSnapshot): string {
-  const json = JSON.stringify(parseStateSnapshot(snapshot));
+  const json = JSON.stringify(canonical(parseStateSnapshot(snapshot)));
   if (new TextEncoder().encode(json).byteLength > MAX_SNAPSHOT_BYTES) throw new Error('State snapshot exceeds size limit');
   return json;
 }
