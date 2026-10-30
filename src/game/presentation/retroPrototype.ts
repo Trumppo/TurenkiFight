@@ -114,18 +114,20 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
       rect(17,16,3,1,skinShade);
       rect(11,12,1,3,skinShade); // ear and jaw shadow
 
-      // Rear arm guards face. Hand is separately shaded and connected at elbow.
-      limb([10,21],[7,26],6,P.ink);
-      limb([10,21],[7,26],4,giMid);
-      limb([7,26],[10,20],5,P.ink);
-      limb([7,26],[10,20],3,giLight);
+      // Rear guard is driven by the same shared two-arm anatomical rig.
+      const guard = fighterRig('idle', frame).leftArm;
+      limb([...guard.shoulder],[...guard.elbow],6,P.ink);
+      limb([...guard.shoulder],[...guard.elbow],4,giMid);
+      limb([...guard.elbow],[...guard.wrist],5,P.ink);
+      limb([...guard.elbow],[...guard.wrist],3,giLight);
       poly([[7,17],[11,17],[12,21],[9,24],[6,22]],P.ink);
       poly([[8,18],[11,18],[11,21],[9,22],[7,21]],skinMid);
 
       if (punch) {
         // Frame 0: chamber, 1–2: extension, 3: recovery.
-        const elbow = active ? [28,19] : [26,25];
-        const fist = active ? [34,16] : [26,19];
+        const rig = fighterRig('punch', frame);
+        const elbow = [...rig.rightArm.elbow];
+        const fist = [...rig.rightArm.wrist];
         limb([24,22],elbow,7,P.ink); limb([24,22],elbow,5,giMid);
         limb(elbow,fist,6,P.ink); limb(elbow,fist,4,skinMid);
         poly([[Math.min(29,fist[0]-3),fist[1]-3],[31,fist[1]-3],[31,fist[1]+3],[Math.min(29,fist[0]-3),fist[1]+3]],P.ink);
