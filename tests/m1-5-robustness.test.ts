@@ -87,21 +87,27 @@ describe('M1.5 robustness: seeded deterministic simulation', () => {
     expect(checksums.size).toBeGreaterThan(900);
   }, 180000);
 
-  it('resolves a four-fighter simultaneous KO ring in deterministic attacker order', () => {
+  it('credits four simultaneous attacks as two mutual KO pairs on the same tick', () => {
     const state = createState([...ids], 'fighting');
+    const positions = [100, 120, 260, 280];
     for (const [i, fighter] of state.fighters.entries()) {
-      fighter.x = 130 + i * 20; fighter.y = 150; fighter.health = 10;
-      fighter.facing = i === 3 ? -1 : 1;
+      fighter.x = positions[i]; fighter.y = 150; fighter.health = 10;
+      fighter.facing = (i % 2 === 0 ? 1 : -1);
       fighter.attackMove = 'punch';
       fighter.attackFrames = MOVES.punch.active + MOVES.punch.recovery + 1;
     }
     const original = JSON.stringify(state);
     const next = step(state, []);
-    expect(next.events.filter(e => e.type === 'Knockout').length).toBeGreaterThanOrEqual(2);
-    expect(next.events.map(e => e.type)).toEqual(step(state, []).events.map(e => e.type));
+    expect(next.events.map(e => e.type)).toEqual([
+      'HitLanded', 'Knockout', 'HitLanded', 'Knockout',
+      'HitLanded', 'Knockout', 'HitLanded', 'Knockout',
+    ]);
+    expect(next.events.filter(e => e.type === 'Knockout').map(e => [e.attacker, e.target]))
+      .toEqual([['P1', 'P2'], ['P2', 'P1'], ['P3', 'P4'], ['P4', 'P3']]);
+    expect(next.fighters.map(f => f.score)).toEqual([400, 400, 400, 400]);
+    expect(next.fighters.map(f => f.koCount)).toEqual([1, 1, 1, 1]);
+    expect(next.fighters.map(f => f.koTimer)).toEqual([180, 180, 180, 180]);
     expect(hash(next)).toBe(hash(step(state, [])));
-    expect(next.fighters.reduce((total, f) => total + f.koCount, 0))
-      .toBe(next.events.filter(e => e.type === 'Knockout').length);
     expect(JSON.stringify(state)).toBe(original);
   });
 
