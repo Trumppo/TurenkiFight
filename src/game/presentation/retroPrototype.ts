@@ -4,6 +4,8 @@ import { fighterRig } from './fighterRig';
 
 /** Original 1990s arcade-inspired martial artist, not a licensed character. */
 export const RETRO_PREVIEW = import.meta.env.VITE_VISUAL_STYLE === 'retro';
+export const EXPANDED_P1_CANVAS = import.meta.env.VITE_FIGHTER_CANVAS === 'expanded';
+export const RETRO_P1_SIZE = EXPANDED_P1_CANVAS ? { width: 48, height: 64 } : { width: 32, height: 48 };
 export const RETRO_STATION_PATH = 'assets/station/turenki-station-retro.svg';
 export const RETRO_PALETTE = {
   ink: '#151c28', outline: '#27313b', skin: '#dca47f', light: '#ffd4a0',
@@ -22,11 +24,17 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
   for (const pose of POSES) for (let frame = 0; frame < FRAMES_PER_POSE; frame++) {
     const key = fighterKey('P1', pose, frame);
     if (scene.textures.exists(key)) scene.textures.remove(key);
-    const tex = scene.textures.createCanvas(key, 32, 48);
+    const tex = scene.textures.createCanvas(key, RETRO_P1_SIZE.width, RETRO_P1_SIZE.height);
     if (!tex) throw new Error('Cannot create fighter texture ' + key);
     const g = tex.context;
-    g.clearRect(0, 0, 32, 48);
+    g.clearRect(0, 0, RETRO_P1_SIZE.width, RETRO_P1_SIZE.height);
     g.imageSmoothingEnabled = false;
+    // Isolated canvas-size experiment: preserve the original authored coordinates and feet origin.
+    // Geometry is scaled only in the experimental variant; classic 32x48 remains bit-identical.
+    if (EXPANDED_P1_CANVAS) {
+      const scale = 4 / 3;
+      g.setTransform(scale, 0, 0, scale, (48 - 32 * scale) / 2, 0);
+    }
     const poly = (points: number[][], color: string) => {
       g.fillStyle = color; g.beginPath();
       g.moveTo(points[0][0], points[0][1]);
@@ -169,6 +177,7 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
       }
       g.restore();
     }
+    if (EXPANDED_P1_CANVAS) g.resetTransform();
     tex.refresh();
   }
 }
