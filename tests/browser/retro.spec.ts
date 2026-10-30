@@ -46,7 +46,7 @@ test('station and P1 prototype render with stable legacy sprite API', async ({ p
       origin: [scene.fighterSprites.get('P1')?.originX, scene.fighterSprites.get('P1')?.originY],
     };
   });
-  expect(result.station).toBe(384);
+  expect(result.station).toBe(retro ? 640 : 384);
   expect(result.p1).toEqual([32, 48]);
   expect(result.p2).toEqual([32, 48]);
   expect(result.keys).toBe(true);
