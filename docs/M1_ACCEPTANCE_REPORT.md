@@ -1,6 +1,6 @@
 # M1 acceptance review — 2026-10-27
 
-**Decision: PENDING USER ACCEPTANCE.** This is an independent evidence review, not approval of M1 or a claim of completed physical playtesting.
+**Decision: ACCEPTED WITH DOCUMENTED LIMITATIONS by project owner on 2026-10-30.** This is an independent evidence review, not approval of M1 or a claim of completed physical playtesting.
 
 ## Baseline and provenance
 
@@ -50,6 +50,6 @@ Automated browser coverage was subsequently expanded through merged [PR #18](htt
 
 ## Recommendation and approval gate
 
-**Conditional readiness for user acceptance review; not accepted.** Automated gameplay and presentation coverage support progressing to manual acceptance. Do not set M1 to done, mark milestone accepted, or check outstanding roadmap items until the user explicitly approves and any required evidence is recorded.
+**ACCEPTED WITH DOCUMENTED LIMITATIONS (2026-10-30).** The project owner explicitly approved M1 after reporting a successful manual browser playtest. Automated test evidence includes merged PR #18. Outstanding physical controller tests, detailed visual readability review, independently configured 960×540 replay and published Pages console/network inspection remain follow-up QA, not claims of verified success.
 
-Proposed final decision after verification: ACCEPT / ACCEPT WITH DOCUMENTED LIMITATIONS / REJECT AND OPEN FIX TASKS, decided by the user.
+Final decision: **ACCEPT WITH DOCUMENTED LIMITATIONS**. Future work must retain the open verification items above.
