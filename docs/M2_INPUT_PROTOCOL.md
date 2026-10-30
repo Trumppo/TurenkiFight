@@ -36,3 +36,5 @@ This is an independent first slice of issue #24. Future M2 work should define a 
 Run `npm test`, `npm run build` and browser CI. See `src/game/protocol/inputFrame.test.ts` for round-trip, rejection and deterministic ordering tests.
 
 InputFrame v1 currently caps each tick at four player inputs, matching the M1 local roster. Larger rooms require an explicit protocol revision or negotiated limit.
+
+StateSnapshot serialization recursively sorts object keys while preserving array order, ensuring equivalent snapshots produce identical diagnostic fingerprints regardless of object property insertion order.
