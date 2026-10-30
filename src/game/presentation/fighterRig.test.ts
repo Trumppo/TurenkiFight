@@ -10,6 +10,15 @@ describe('reusable fighter anatomy', () => {
       expect(rig.rightLeg.hip).toEqual([21, 32]);
     }
   });
+  it('makes the kick extend forward relative to the chamber and raise phases', () => {
+    const chamber = fighterRig('kick', 0).rightLeg;
+    const raised = fighterRig('kick', 1).rightLeg;
+    const extended = fighterRig('kick', 2).rightLeg;
+    expect(extended.ankle[0]).toBeGreaterThan(raised.ankle[0]);
+    expect(extended.ankle[0]).toBeGreaterThan(chamber.ankle[0]);
+    expect(extended.ankle[1]).toBeLessThan(chamber.ankle[1]);
+    expect(extended.ankle[1]).toBeLessThanOrEqual(extended.knee[1]);
+  });
   it('keeps the kick boot fully inside the 32-pixel-wide source sprite', () => {
     for (let frame = 0; frame < 4; frame++) {
       const ankleX = fighterRig('kick', frame).rightLeg.ankle[0];
