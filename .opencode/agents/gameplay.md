@@ -19,6 +19,9 @@ permissions:
     resource: "src/game/input/**"
     effect: allow
   - action: edit
+    resource: "src/game/protocol/**"
+    effect: allow
+  - action: edit
     resource: "tests/**"
     effect: allow
   - action: edit

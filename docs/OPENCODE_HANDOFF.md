@@ -33,7 +33,7 @@ Suggested prompts:
 - Graphics: "Read AGENTS.md and docs/M1_5_VISUAL_UPGRADE.md. Implement only the approved visual slice, preserve pose/API contracts, capture visual QA evidence and open a PR. Do not merge."
 
 ## Handoff / boundaries
-Designer owns specifications and cross-cutting decisions. Gameplay owns `src/game/simulation/`, modes, input and relevant tests. Graphics owns `public/assets/`, visual themes, sprites and presentation-only effects. Shared `src/game/presentation/` scene integration requires explicit task-level ownership to avoid conflicts. Designer should not simultaneously edit task coordination files with workers.
+Designer owns specifications and cross-cutting decisions. Gameplay owns `src/game/simulation/`, modes, input, transport-neutral `src/game/protocol/` foundations and relevant tests. Graphics owns `public/assets/`, visual themes, sprites and presentation-only effects. Shared `src/game/presentation/` scene integration requires explicit task-level ownership to avoid conflicts. Designer should not simultaneously edit task coordination files with workers.
 
 ## Checks before every PR
 - Review package.json scripts; run relevant tests, typecheck/lint if defined, production build and browser tests for UI changes.

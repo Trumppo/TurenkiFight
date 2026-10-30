@@ -101,15 +101,15 @@ Tee työ nykyisessä eristetyssä PR #21 -työpuussa ja pidä muutokset committo
 
 **Tavoite:** varmista, että projektin Designer-, Gameplay-, Graphics- ja Tester-roolit, malli-ID:t, delegointirajat ja hyväksyntäportit vastaavat todellista käyttöä, ja esitä PR #28 merge-valmiina tai listaa jäljellä olevat esteet.
 
-**Nykytila:** PR #28:n head on `2eeaaa5`; GitHub ilmoitti `CLEAN`/`MERGEABLE`. `check-task`, `quality`, `game-harness` ja `browser-smoke` olivat vihreät; haavoittuvuusskannaus oli ohitettu/neutraali. PR:ssä ei ollut reviewta. Nykyisessä istunnossa Graphics-lapsiagentti on onnistuneesti käynnistetty; se vahvistaa tämän delegointipolun, mutta ei automaattisesti kaikkien mallien tai tilien saatavuutta.
+**Nykytila:** GitHubin PR #28 head `2eeaaa5` oli `CLEAN`/`MERGEABLE` ja sen pakolliset tarkistukset vihreät. Paikallinen commit `488cd05` lisäsi tämän tavoitedokumentin, mutta ei ole GitHubissa. Lisäksi Gameplay-agentille on lisätty `src/game/protocol/**`-muokkausraja ja handoff-dokumenttiin vastaava omistus: nämä paikalliset muutokset vaativat tuoreen CI-ajon. Nykyisessä istunnossa Graphics-lapsiagentti on onnistuneesti käynnistetty; tämä vahvistaa vain Graphics-delegoinnin tässä runtime-ympäristössä.
 
 - **Riippuvuudet:** omistajan käyttämä OpenCode V2 -projektilataus sekä `.opencode/agents/*.md`- ja `opencode.json`-asetukset. Mallien saatavuus ja Go-tilauksen käyttöoikeus ovat runtime-tietoja; älä päättele niitä pelkästä tiedostosta.
-- **Omistus ja tiedostot:** Designer omistaa `.opencode/agents/designer.md`, `AGENTS.md`, `docs/OPENCODE_HANDOFF.md`, `opencode.json` ja tämän tavoitedokumentin `docs/GOALS.md`; agenttikohtaiset mallivalinnat tarkistetaan kyseisistä agenttitiedostoista.
-- **Hyväksyntä:** tarkista PR-diff, `opencode.json`-jäsennys, agenttien frontmatterit, `scripts/validate_agent_tasks.py`, `git diff --check`, tuore PR-CI sekä kevyt live-delegointi (Graphic-agentti käynnistyy oikealla tunnisteella/mallilla ja pysyy oikeassa työpuussa). Päivitä PR-kuvauksen vanhentuneet tarkistusväitteet tarvittaessa. Älä väitä paikallista `npm test` -ajoa tehdyksi, jos sitä ei ajettu.
+- **Omistus ja tiedostot:** Designer omistaa `.opencode/agents/designer.md`, `.opencode/agents/gameplay.md`, `AGENTS.md`, `docs/OPENCODE_HANDOFF.md`, `opencode.json` ja tämän tavoitedokumentin `docs/GOALS.md`; agenttikohtaiset mallivalinnat tarkistetaan agenttitiedostoista. Gameplay-agentin protokollan muokkausoikeus on rajattu `src/game/protocol/**`-polkuun.
+- **Hyväksyntä:** tarkista PR-diff, `opencode.json`-jäsennys, agenttien frontmatterit, `scripts/validate_agent_tasks.py`, `git diff --check`, tuore PR-CI sekä kevyt live-delegointi (Graphics käynnistyy mallillaan ja Gameplay pystyy muokkaamaan vain sille rajattua protokollapolkua). Päivitä PR-kuvauksen vanhentuneet tarkistusväitteet tarvittaessa. Älä väitä paikallista `npm test` -ajoa tehdyksi, jos sitä ei ajettu.
 - **Rajauksen ulkopuolella:** suojattujen asetusten muuttaminen, tunnusten tai salaisuuksien lukeminen, mallipalveluntarjoajan tai tietosuojareitityksen vaihtaminen, gameplay-/visual-featuret.
 - **Riski:** GitHubin vihreä CI ei todista paikallisen OpenCode-instanssin kaikkien agenttien tai mallien toimivuutta; yksi onnistunut Graphics-delegointi ei kata Gameplay-/Tester-rooleja.
-- **Haara/PR:** jatka `feature/opencode-multi-agent`-haarassa; `docs/GOALS.md` kuuluu tähän nykyiseen työpuuhun. Älä pushaa tai yhdistä automaattisesti.
-- **Omistajan portti:** PR näyttää nyt yhdistettävältä, mutta yhdistä vasta, kun omistaja antaa yksiselitteisen merge-luvan. Muuten palauta tarkistuslista ja odota.
+- **Haara/PR:** jatka `feature/opencode-multi-agent`-haarassa; tavoitteessa, agenttioikeuksissa ja handoffissa on paikallisia muutoksia. Uusi CI on ajettava vasta omistajan suorittaman pushin jälkeen.
+- **Omistajan portti:** PR #28:lle on annettu merge-lupa, mutta yhdistä vasta kun kaikki lopullisen headin pakolliset tarkistukset ovat vihreät. Nykyinen PR-head ei sisällä paikallisia committeja/muutoksia.
 
 ## Tavoitedokumentin päivityskäytäntö
 
