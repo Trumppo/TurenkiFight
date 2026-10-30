@@ -2,6 +2,7 @@ import type { PlayerInput } from '../simulation/types';
 
 /** Versioned, transport-neutral input contract. No networking or bot runtime required. */
 export const INPUT_PROTOCOL_VERSION = 1 as const;
+export const MAX_INPUT_FRAME_BYTES = 4096;
 export type InputFrame = {
   version: typeof INPUT_PROTOCOL_VERSION;
   tick: number;
@@ -43,10 +44,13 @@ export function parseInputFrame(value: unknown): InputFrame {
 }
 
 export function encodeInputFrame(frame: InputFrame): string {
-  return JSON.stringify(parseInputFrame(frame));
+  const json = JSON.stringify(parseInputFrame(frame));
+  if (new TextEncoder().encode(json).byteLength > MAX_INPUT_FRAME_BYTES) throw new Error('Input frame exceeds size limit');
+  return json;
 }
 
 export function decodeInputFrame(json: string): InputFrame {
+  if (new TextEncoder().encode(json).byteLength > MAX_INPUT_FRAME_BYTES) throw new Error('Input frame exceeds size limit');
   return parseInputFrame(JSON.parse(json) as unknown);
 }
 
