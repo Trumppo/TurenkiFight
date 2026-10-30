@@ -69,7 +69,7 @@ Suorita erikseen:
 
 Käytä Windows PowerShellissä ympäristömuuttujille esimerkiksi `$env:VITE_VISUAL_STYLE='retro'`. Kirjaa tarkat testikomennot, tulokset, ohitetut testit ja epäonnistumisten todelliset syyt. Aja selain-smoke ja PR:n CI, jos ympäristö sallii; erottele aiempi CI nykyisen revision tuloksista.
 
-**Nykyinen paikallinen lähtönäyttö:** viimeksi raportoitu retro-ajo 13 läpi / 1 ohitettu, classic 9 läpi / 5 ohitettu, `npm test` 39 läpi ja `npm run build` läpi suuresta bundle-koosta varoittaen. Nämä tulokset eivät todista seuraavien muutosten tai nykyisen PR-headin CI:tä.
+**Nykyinen paikallinen näyttö:** retro 13 läpi / 1 ohitettu, expanded retro 12 / 2, classic 9 / 5; `npm test` 39 läpi; build läpi chunk-kokovaroituksella; diff-check puhdas. Tester tarkisti riippumattomasti kuvakaappausten nimeämisen ja ottelun aloituksen: hyväksytty. Paikalliset tulokset eivät todista CI:tä nykyisellä PR-headilla; omistajan visuaalinen päätös on yhä avoin.
 
 ### Riskit ja rajat
 
