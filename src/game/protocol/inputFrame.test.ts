@@ -6,13 +6,13 @@ const p = (playerId: string) => ({ playerId, moveX: 1 as const, moveY: 0 as cons
 
 describe('M2 InputFrame v1', () => {
   it('round trips and canonicalizes unordered player inputs', () => {
-    const a = { version: 1, tick: 42, inputs: [p('P2'), p('P1')] };
+    const a = { version: 1 as const, tick: 42, inputs: [p('P2'), p('P1')] };
     const b = { version: 1, tick: 42, inputs: [p('P1'), p('P2')] };
     expect(encodeInputFrame(a)).toBe(encodeInputFrame(b));
     expect(decodeInputFrame(encodeInputFrame(a))).toEqual(parseInputFrame(b));
   });
   it('rejects malformed and future-version frames', () => {
-    const base = { version: 1, tick: 1, inputs: [p('P1')] };
+    const base = { version: 1 as const, tick: 1, inputs: [p('P1')] };
     for (const invalid of [
       { ...base, version: 2 }, { ...base, tick: -1 }, { ...base, tick: 1.5 },
       { ...base, inputs: [p('P1'), p('P1')] },
