@@ -6,6 +6,8 @@ import { stateSnapshotFingerprint } from './fingerprint';
 import { step } from '../simulation/step';
 
 export const REPLAY_VERSION = 1 as const;
+export const MAX_REPLAY_FRAMES = 7200;
+export const MAX_REPLAY_CHECKPOINTS = 7201;
 export type ReplayRecord = {
   version: typeof REPLAY_VERSION;
   initial: StateSnapshot;
@@ -18,6 +20,9 @@ const fingerprint = /^[0-9a-f]{8}$/;
 
 export function verifyReplay(record: ReplayRecord): ReplayResult {
   if (record.version !== REPLAY_VERSION) throw new Error('Unsupported replay version');
+  if (record.frames.length > MAX_REPLAY_FRAMES || record.checkpoints.length > MAX_REPLAY_CHECKPOINTS) {
+    throw new Error('Replay exceeds configured limits');
+  }
   let state = decodeStateSnapshot(encodeStateSnapshot(record.initial)).state;
   const checkpoints = new Map<number, string>();
   for (const point of record.checkpoints) {
