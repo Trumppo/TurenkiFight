@@ -12,7 +12,7 @@ Read `docs/M1_GAMEPLAY_IMPLEMENTATION.md`, `docs/M1_GAMEPLAY_QA.md`, existing M1
 - `npm test -- tests/m1-5-robustness.test.ts` (or `npm test`).
 - Seeds: integer sequence `1..1000`, xorshift32 (unsigned 32-bit, shifts 13,17,5), four fighters `P1..P4`, 72 active ticks per seed. Each case runs **twice**, compares entire final `GameState` and SHA-256 of ordered event stream + terminal state.
 - Full-length reproducibility: seeds `1`, `42`, `20261030` with 7200 active ticks, each replayed twice; asserts exact ending tick, phase, remaining time and checksum.
-- These are **1,000 seeded match segments** (plus three full 120-second replays), not 1,000 complete 120-second matches. This distinction is intentional and should be reviewed against the requested acceptance criterion.
+- **1,000 complete four-player matches:** seeds `1..1000`, 7,200 active ticks per match (7,200,000 total). Every 120th tick uses the next deterministic seeded input frame, and intervening ticks use neutral inputs. Verify `results`, exact tick count, zero remaining ticks, and at least 900 distinct SHA-256 final-state/event checksums. This is in addition to the 1,000 twice-replayed 72-tick segments and three twice-replayed full-length matches.
 - Other deterministic tests: simultaneous four-fighter attacks and KO credit, state immutability, respawn/protection windows, 180-tick countdown + 7200-tick match, device-agnostic normalized inputs.
 - Graphical assets, Phaser, browser time, wall-clock and random global state are absent from these tests.
 
@@ -39,7 +39,7 @@ A future AI bot, replay/test client, or network client may construct this same d
 
 - Existing `PlayerInput[]` boundary is sufficient; no changes to core game code are needed.
 - Existing `tests/browser/lobby.spec.ts`, `four-player.spec.ts` and `p1-gamepad-start.spec.ts` exercise explicit joining, four players, host-only start, simulated disconnect/reconnect and rematch; hardware gamepads remain unverified.
-- The 1000-case campaign covers 72-tick active segments rather than 1000 full 7200-tick games; if full-match interpretation is mandatory, extend harness before approving.
+- The 1,000-full-match campaign uses sparse seeded inputs (one frame per 120 ticks) to bound CI runtime; the separate 72-tick campaign exercises denser per-tick inputs. The full-match campaign does not individually replay each of its 1,000 seeds twice; three full matches and all 1,000 short segments are independently replayed twice.
 - No new game balance values or M1 rules were modified.
 
 ## Verification
