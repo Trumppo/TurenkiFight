@@ -61,7 +61,7 @@ tasks:
     title: Review and refine merged station visuals after gameplay integration
     assigned_role: graphics-session
     session_id: graphics-session-20261026
-    status: review
+    status: done
     priority: P1
     specification: docs/visual/IMPLEMENTATION.md
     branch: feature/m1-visual-qa
@@ -77,13 +77,13 @@ tasks:
       - Production Pages asset paths work
       - Render resolution can be changed to 960x540 without changing simulation behavior
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/10
-    last_updated: "2026-10-26"
+    last_updated: "2026-10-30"
     notes: "Review merged gameplay and visual PRs at 640x360; document manual checks and any limitations. Keep fixes scoped to presentation/assets, coordinate gameplay fixes separately."
   - id: M1-GAMEPLAY-QA
     title: Verify deterministic combat, input edge cases and arena-independent gameplay
     assigned_role: gameplay-session
     session_id: gameplay-session-20261026
-    status: review
+    status: done
     priority: P0
     specification: docs/M1_GAMEPLAY_QA.md
     branch: feature/m1-gameplay-qa
@@ -101,13 +101,13 @@ tasks:
       - Unit tests, production build and relevant browser CI pass
       - Findings, test evidence and limitations are documented
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/15
-    last_updated: "2026-10-27"
+    last_updated: "2026-10-30"
     notes: "Parallel with M1-VISUAL-QA; never modify src/game/presentation/, public/assets/ or docs/visual/. Report presentation defects to graphics-session; no networking or new game modes."
   - id: M1-ACCEPTANCE
     title: Independent M1 integration and acceptance review
     assigned_role: planning-session
     session_id: planning-session-20261027
-    status: in_progress
+    status: done
     priority: P0
     specification: docs/M1_ACCEPTANCE_REPORT.md
     branch: planning/m1-acceptance-review
@@ -119,6 +119,6 @@ tasks:
       - Gameplay and visual PRs reviewed
       - Test evidence and remaining limitations documented
       - User explicitly approves milestone acceptance
-    pull_request: null
-    last_updated: "2026-10-27"
-    notes: "Independent evidence review started; manual hardware/visual/Pages checks and user approval outstanding. Never mark accepted without explicit user decision."
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/17
+    last_updated: "2026-10-30"
+    notes: "User explicitly accepted M1 on 2026-10-30 with documented limitations. Follow-up QA: physical gamepads, visual readability, 960x540 replay and published Pages console/network."
