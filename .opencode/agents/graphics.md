@@ -1,7 +1,7 @@
 ---
 description: Retro pixel-art and presentation specialist for TurenkiFight
 mode: subagent
-model: opencode-go/gemini-4-argon-contributor
+model: opencode-go/gpt-6-luna
 permissions:
   - action: subagent
     resource: "*"
