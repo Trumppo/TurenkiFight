@@ -39,4 +39,37 @@
 <rect y="141" width="320" height="1" fill="#858b82"/>
 <rect y="174" width="320" height="2" fill="#a3a391"/>
 <g fill="#828780"><rect x="9" y="125" width="33" height="1"/><rect x="269" y="126" width="42" height="1"/><rect x="17" y="164" width="29" height="1"/><rect x="272" y="161" width="31" height="1"/></g>
+<!-- Pixel-era material detail: timber joints, tile rhythm, lamp and ticket notice. -->
+<g fill="#5d6264">
+  <rect x="12" y="30" width="8" height="1"/><rect x="26" y="30" width="9" height="1"/>
+  <rect x="43" y="30" width="10" height="1"/><rect x="61" y="30" width="9" height="1"/>
+  <rect x="79" y="30" width="9" height="1"/><rect x="98" y="30" width="11" height="1"/>
+  <rect x="116" y="30" width="12" height="1"/>
+  <rect x="9" y="35" width="8" height="1"/><rect x="29" y="35" width="9" height="1"/>
+  <rect x="50" y="35" width="9" height="1"/><rect x="72" y="35" width="9" height="1"/>
+  <rect x="94" y="35" width="10" height="1"/><rect x="115" y="35" width="9" height="1"/>
+</g>
+<g fill="#d5ac7c">
+  <rect x="5" y="47" width="36" height="1"/><rect x="48" y="47" width="37" height="1"/>
+  <rect x="91" y="47" width="44" height="1"/>
+  <rect x="5" y="86" width="36" height="1"/><rect x="48" y="86" width="37" height="1"/>
+  <rect x="91" y="86" width="44" height="1"/>
+</g>
+<g fill="#815c45">
+  <rect x="7" y="48" width="1" height="45"/><rect x="42" y="48" width="1" height="45"/>
+  <rect x="49" y="48" width="1" height="45"/><rect x="86" y="48" width="1" height="45"/>
+  <rect x="93" y="48" width="1" height="45"/><rect x="133" y="48" width="1" height="45"/>
+</g>
+<!-- Lamp and station notice, deliberately above the fighting plane. -->
+<rect x="145" y="75" width="2" height="26" fill="#293844"/>
+<rect x="140" y="74" width="12" height="3" fill="#27313b"/>
+<rect x="142" y="77" width="8" height="4" fill="#f4d4a1"/>
+<rect x="150" y="83" width="13" height="16" fill="#27313b"/>
+<rect x="152" y="85" width="9" height="12" fill="#e1d2ae"/>
+<rect x="153" y="87" width="7" height="1" fill="#4d6572"/>
+<rect x="153" y="90" width="5" height="1" fill="#4d6572"/>
+<rect x="153" y="93" width="6" height="1" fill="#4d6572"/>
+<!-- Station annex mullions and subtle reflections -->
+<g fill="#263e4a"><rect x="186" y="79" width="1" height="14"/><rect x="221" y="79" width="1" height="14"/><rect x="256" y="79" width="1" height="14"/><rect x="291" y="79" width="1" height="14"/></g>
+<g fill="#b7c9c4"><rect x="177" y="80" width="4" height="1"/><rect x="212" y="80" width="4" height="1"/><rect x="247" y="80" width="4" height="1"/><rect x="282" y="80" width="4" height="1"/></g>
 </svg>
