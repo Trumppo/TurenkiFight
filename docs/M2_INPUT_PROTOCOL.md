@@ -1,6 +1,6 @@
 # M2 InputFrame v1 — transport-neutral contract
 
-The first M2 slice adds a strict input codec in `src/game/protocol/inputFrame.ts`. It does not alter `PlayerInput`, the simulation, game rules, renderer, or network architecture.
+The first M2 slice adds strict input and state snapshot codecs. The input codec is in `src/game/protocol/inputFrame.ts`. It does not alter `PlayerInput`, the simulation, game rules, renderer, or network architecture.
 
 ## Wire shape
 
@@ -15,9 +15,13 @@ The first M2 slice adds a strict input codec in `src/game/protocol/inputFrame.ts
 - `encodeInputFrame` and `decodeInputFrame` validate every message; unknown fields, duplicate IDs, malformed controls, and unsupported versions fail closed.
 - Canonical encoding does not provide cryptographic authentication or replay protection. No transport has been selected.
 
+## StateSnapshot v1
+
+A complete snapshot has the shape `{"version":1,"state":{...}}` where `state` is the current simulation `GameState`, including fighters, tick counters and event list. The codec validates finite numeric coordinates, legal phase and move enums, distinct player IDs, nonnegative integer timers, event ticks and supported version. A decoded snapshot can be fed directly to `step()` to resume deterministic replay. The format is intended for correctness testing, not yet a compact bandwidth-optimized network packet. No checksum, transport authentication, tick authority, maximum byte size or schema migration is implemented.
+
 ## Scope and next work
 
-This is an independent first slice of issue #24. Future M2 work should define `StateSnapshot`, game-event schema, authoritative tick ownership, replay checksum framing, session identity and bounded message size. The present codec does not claim to solve these concerns.
+This is an independent first slice of issue #24. Future M2 work should define a standalone game-event wire schema, authoritative tick ownership, replay checksum framing, session identity and bounded message size. The present codec does not claim to solve these concerns.
 
 ## Verification
 
