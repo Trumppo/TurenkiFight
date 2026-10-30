@@ -13,8 +13,8 @@ export interface FighterRig {
 }
 export type RigPose = 'idle' | 'kick' | 'punch' | 'jump' | 'walk' | 'hit';
 export const KICK_PHASES = ['chamber', 'raise', 'extend', 'recover'] as const;
-const kickKnees: readonly Joint[] = [[23,38],[26,32],[26,28],[24,34]];
-const kickAnkles: readonly Joint[] = [[25,43],[27,34],[27,25],[27,41]];
+const kickKnees: readonly Joint[] = [[23,38],[25,32],[27,30],[25,34]];
+const kickAnkles: readonly Joint[] = [[25,43],[27,34],[29,29],[27,41]];
 const jumpKnees: readonly Joint[] = [[11,34],[10,31],[9,29],[11,32]];
 const jumpAnkles: readonly Joint[] = [[8,39],[6,33],[5,31],[7,36]];
 const walkKnees: readonly Joint[] = [[10,38],[8,36],[10,38],[13,36]];
