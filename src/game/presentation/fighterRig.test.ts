@@ -16,13 +16,19 @@ describe('reusable fighter anatomy', () => {
     expect(new Set(ankles).size).toBe(4);
   });
   it('reuses four-limb anatomy across all fighter poses', () => {
-    for (const pose of ['idle', 'kick', 'punch'] as const) for (let frame = 0; frame < 4; frame++) {
+    for (const pose of ['idle', 'kick', 'punch', 'jump'] as const) for (let frame = 0; frame < 4; frame++) {
       const rig = fighterRig(pose, frame);
       expect(isValidRig(rig)).toBe(true);
       expect(Object.keys(rig).sort()).toEqual(['head','leftArm','leftLeg','neck','pelvis','rightArm','rightLeg']);
       expect(Object.keys(rig.leftArm)).toEqual(['shoulder','elbow','wrist']);
       expect(Object.keys(rig.rightArm)).toEqual(['shoulder','elbow','wrist']);
     }
+  });
+  it('replaces the standing leg positions during jumps', () => {
+    const standing = fighterRig('idle', 2);
+    const jumping = fighterRig('jump', 2);
+    expect(jumping.leftLeg.ankle).not.toEqual(standing.leftLeg.ankle);
+    expect(jumping.rightLeg.ankle).not.toEqual(standing.rightLeg.ankle);
   });
   it('moves punch wrist across keyframes while retaining shoulder anchor', () => {
     expect(fighterRig('punch', 0).rightArm.wrist).not.toEqual(fighterRig('punch', 2).rightArm.wrist);
