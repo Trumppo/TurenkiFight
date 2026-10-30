@@ -174,3 +174,19 @@ test('forward kick overlaps torso without a duplicate third leg', async ({ page 
   expect(result.torsoOverlap).toBe(true);
   expect(result.noOverflow).toBe(true);
 });
+
+test('extended kick toe uses boot shading rather than a stray bright spark', async ({ page }) => {
+  test.skip(!retro, 'Retro P1 art only');
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { exists: (key: string) => boolean } } } } }).__turenkiGame;
+    return !!game?.scene.getScene('StationScene').textures.exists('fighter-P1-kick-2');
+  })).toBe(true);
+  const pixel = await page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { get: (key: string) => { getSourceImage: () => HTMLCanvasElement } } } } } }).__turenkiGame!;
+    const source = game.scene.getScene('StationScene').textures.get('fighter-P1-kick-2').getSourceImage();
+    return Array.from(source.getContext('2d')!.getImageData(29, 28, 1, 1).data);
+  });
+  expect(pixel).toEqual([41, 45, 53, 255]); // RETRO_PALETTE.boot (#292d35)
+});
