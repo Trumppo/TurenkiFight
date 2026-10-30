@@ -2,6 +2,7 @@ import type { Fighter, GameEvent, GameState, Move, Phase } from '../simulation/t
 
 /** Transport-independent, versioned representation of the full deterministic simulation state. */
 export const SNAPSHOT_VERSION = 1 as const;
+export const MAX_SNAPSHOT_BYTES = 65536;
 export type StateSnapshot = { version: typeof SNAPSHOT_VERSION; state: GameState };
 
 const phases: Phase[] = ['lobby', 'countdown', 'fighting', 'results'];
@@ -51,9 +52,12 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
 
 /** Canonical key order is provided by the simulation's stable object shape. */
 export function encodeStateSnapshot(snapshot: StateSnapshot): string {
-  return JSON.stringify(parseStateSnapshot(snapshot));
+  const json = JSON.stringify(parseStateSnapshot(snapshot));
+  if (new TextEncoder().encode(json).byteLength > MAX_SNAPSHOT_BYTES) throw new Error('State snapshot exceeds size limit');
+  return json;
 }
 
 export function decodeStateSnapshot(json: string): StateSnapshot {
+  if (new TextEncoder().encode(json).byteLength > MAX_SNAPSHOT_BYTES) throw new Error('State snapshot exceeds size limit');
   return parseStateSnapshot(JSON.parse(json) as unknown);
 }
