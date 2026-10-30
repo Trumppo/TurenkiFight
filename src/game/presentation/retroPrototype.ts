@@ -62,7 +62,7 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
       g.save();
       g.translate(lean, dy);
       // Boots and lower limbs: standing legs are replaced, not overdrawn, for kicks.
-      if (!kick && !airborne) {
+      if (!kick && !airborne && !walking) {
       const rearFoot = 9 + stride;
       const frontFoot = 22 - stride;
       poly([[11,31],[16,32],[rearFoot+3,39],[rearFoot+1,43],[rearFoot-4,42],[7,37]], P.ink);
@@ -76,7 +76,7 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
       poly([[frontFoot-4,41],[frontFoot+3,41],[frontFoot+6,45],[frontFoot-5,45]],P.ink);
       poly([[frontFoot-4,42],[frontFoot+3,42],[frontFoot+5,44],[frontFoot-4,44]],P.boot);
       } else {
-        const rig = fighterRig(kick ? 'kick' : 'jump', frame);
+        const rig = fighterRig(kick ? 'kick' : airborne ? 'jump' : 'walk', frame);
         const drawLeg = (leg: typeof rig.leftLeg) => {
           limb([...leg.hip], [...leg.knee], 8, P.ink);
           limb([...leg.hip], [...leg.knee], 6, P.jeans);
@@ -114,7 +114,7 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
       rect(11,12,1,3,skinShade); // ear and jaw shadow
 
       // Rear guard is driven by the same shared two-arm anatomical rig.
-      const guard = fighterRig('idle', frame).leftArm;
+      const guard = fighterRig(hit ? 'hit' : 'idle', frame).leftArm;
       limb([...guard.shoulder],[...guard.elbow],6,P.ink);
       limb([...guard.shoulder],[...guard.elbow],4,giMid);
       limb([...guard.elbow],[...guard.wrist],5,P.ink);
@@ -132,10 +132,11 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
         poly([[Math.min(29,fist[0]-3),fist[1]-3],[31,fist[1]-3],[31,fist[1]+3],[Math.min(29,fist[0]-3),fist[1]+3]],P.ink);
         rect(Math.min(29,fist[0]-2),fist[1]-2,3,4,skinMid);
       } else {
-        limb([24,22],[27,27],7,P.ink);
-        limb([24,22],[27,27],5,giDark);
-        limb([27,27],[24,20],6,P.ink);
-        limb([27,27],[24,20],4,giMid);
+        const arm = fighterRig(hit ? 'hit' : 'idle', frame).rightArm;
+        limb([...arm.shoulder],[...arm.elbow],7,P.ink);
+        limb([...arm.shoulder],[...arm.elbow],5,giDark);
+        limb([...arm.elbow],[...arm.wrist],6,P.ink);
+        limb([...arm.elbow],[...arm.wrist],4,giMid);
         poly([[22,17],[26,17],[28,20],[26,23],[22,22]],P.ink);
         poly([[23,18],[26,18],[27,20],[25,22],[23,21]],skinMid);
       }
