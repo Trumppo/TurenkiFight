@@ -16,9 +16,11 @@ function parseEvent(value: unknown, batchTick: number): GameEvent {
     throw new Error('Malformed game event');
   }
   const type = value.type as GameEvent['type'];
-  if (type === 'HitLanded' || type === 'Knockout') {
+  if (type === 'HitLanded') {
     if (!id(value.attacker) || !id(value.target) || value.attacker === value.target ||
         !moves.includes(value.move as Move)) throw new Error('Invalid combat event');
+  } else if (type === 'Knockout') {
+    if (!id(value.attacker) || !id(value.target) || value.attacker === value.target || value.move !== undefined) throw new Error('Invalid knockout event');
   } else if (type === 'Respawned') {
     if (!id(value.target) || value.attacker !== undefined || value.move !== undefined) throw new Error('Invalid respawn event');
   } else if (value.attacker !== undefined || value.target !== undefined || value.move !== undefined) {
