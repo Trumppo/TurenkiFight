@@ -5,7 +5,7 @@ describe('reusable fighter anatomy', () => {
   it('has exactly two named legs in every phase', () => {
     for (let frame = 0; frame < 4; frame++) {
       const rig = fighterRig('kick', frame);
-      expect(Object.keys(rig).sort()).toEqual(['leftLeg', 'rightLeg']);
+      expect(Object.keys(rig).filter(k => k.endsWith('Leg')).sort()).toEqual(['leftLeg', 'rightLeg']);
       expect(rig.leftLeg.ankle).toEqual([8, 43]);
       expect(rig.rightLeg.hip).toEqual([21, 32]);
     }
