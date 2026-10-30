@@ -79,3 +79,41 @@ for (const [label, width, height] of [
     await page.screenshot({ path: `artifacts/visual/${retro ? 'retro' : 'classic'}-${label}.png`, animations: 'disabled' });
   });
 }
+
+test('capture enlarged P1 pose sheet for visual acceptance', async ({ page }) => {
+  test.skip(!retro, 'Only the retro preview is the subject of this pose sheet');
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
+    if (!game) return false;
+    const scene = game.scene.getScene('StationScene') as { textures: { exists: (key: string) => boolean } };
+    return scene.textures.exists('fighter-P1-idle-0');
+  })).toBe(true);
+  const sheet = await page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame!;
+    const scene = game.scene.getScene('StationScene') as { textures: { get: (key: string) => { getSourceImage: () => HTMLCanvasElement } } };
+    const poses = ['idle', 'walk', 'depth', 'punch', 'kick', 'jump', 'jumpkick', 'hit', 'ko', 'respawn'];
+    const cellW = 148, cellH = 232, scale = 4;
+    const out = document.createElement('canvas');
+    out.width = cellW * 5; out.height = cellH * 2;
+    const g = out.getContext('2d')!;
+    g.imageSmoothingEnabled = false;
+    g.fillStyle = '#202937'; g.fillRect(0, 0, out.width, out.height);
+    g.font = 'bold 17px monospace'; g.textBaseline = 'top';
+    for (let p = 0; p < poses.length; p++) {
+      const x = (p % 5) * cellW, y = Math.floor(p / 5) * cellH;
+      g.fillStyle = '#303c4a'; g.fillRect(x + 2, y + 2, cellW - 4, cellH - 4);
+      g.fillStyle = '#f0d8ad'; g.fillText(poses[p].toUpperCase(), x + 12, y + 9);
+      const texture = scene.textures.get(`fighter-P1-${poses[p]}-2`).getSourceImage();
+      g.drawImage(texture, x + 10, y + 30, 32 * scale, 48 * scale);
+      g.fillStyle = '#aab6c5'; g.fillText('frame 2 / 4', x + 12, y + 220);
+    }
+    return out.toDataURL('image/png');
+  });
+  const image = Buffer.from(sheet.split(',')[1], 'base64');
+  const fs = await import('node:fs');
+  fs.mkdirSync('artifacts/visual', { recursive: true });
+  fs.writeFileSync('artifacts/visual/retro-P1-pose-sheet.png', image);
+  expect(image.byteLength).toBeGreaterThan(1000);
+});
