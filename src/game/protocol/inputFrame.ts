@@ -3,6 +3,7 @@ import type { PlayerInput } from '../simulation/types';
 /** Versioned, transport-neutral input contract. No networking or bot runtime required. */
 export const INPUT_PROTOCOL_VERSION = 1 as const;
 export const MAX_INPUT_FRAME_BYTES = 4096;
+export const MAX_PLAYERS_PER_FRAME = 4;
 export type InputFrame = {
   version: typeof INPUT_PROTOCOL_VERSION;
   tick: number;
@@ -20,7 +21,8 @@ export function parseInputFrame(value: unknown): InputFrame {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid input frame');
   const frame = value as Record<string, unknown>;
   if (Object.keys(frame).some(k => !['version', 'tick', 'inputs'].includes(k)) ||
-      frame.version !== INPUT_PROTOCOL_VERSION || !integer(frame.tick) || !Array.isArray(frame.inputs)) {
+      frame.version !== INPUT_PROTOCOL_VERSION || !integer(frame.tick) || !Array.isArray(frame.inputs) ||
+      frame.inputs.length > MAX_PLAYERS_PER_FRAME) {
     throw new Error('Unsupported or malformed input frame');
   }
   const ids = new Set<string>();
