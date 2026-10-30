@@ -133,7 +133,7 @@ test('capture four-frame kick anatomy strip for acceptance', async ({ page }) =>
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { get: (key: string) => { getSourceImage: () => HTMLCanvasElement } } } } } }).__turenkiGame!;
     const scene = game.scene.getScene('StationScene');
     const phases = ['CHAMBER', 'RAISE', 'EXTEND', 'RECOVER'];
-    const scale = expanded ? 4 : 5, width = 220, height = 305;
+    const scale = 4, width = 220, height = 305;
     const out = document.createElement('canvas');
     out.width = width * 4; out.height = height;
     const ctx = out.getContext('2d')!;
