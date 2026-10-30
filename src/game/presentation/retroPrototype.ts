@@ -138,7 +138,12 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
         poly([[22,17],[26,17],[28,20],[26,23],[22,22]],P.ink);
         poly([[23,18],[26,18],[27,20],[25,22],[23,21]],skinMid);
       }
-      if (airborne) {\n        // Raised knee makes the airborne silhouette distinct from standing.\n        limb([11,34],[7,31],7,P.ink); limb([11,34],[7,31],5,P.jeansLight);\n        rect(3,29,6,4,P.boot);\n      }\n      if (hit) {
+      if (airborne) {
+        // Raised knee makes the airborne silhouette distinct from standing.
+        limb([11,34],[7,31],7,P.ink); limb([11,34],[7,31],5,P.jeansLight);
+        rect(3,29,6,4,P.boot);
+      }
+      if (hit) {
         rect(2,12,3,3,P.gold); rect(0,17,2,2,P.light);
         rect(28,9,3,2,P.gold);
       }
