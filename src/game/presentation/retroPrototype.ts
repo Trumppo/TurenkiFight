@@ -109,6 +109,11 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
         limb([...leg.knee], [...leg.ankle], 7, P.ink);
         limb([...leg.knee], [...leg.ankle], 5, P.jeansLight);
         rect(leg.ankle[0] - 4, leg.ankle[1] - 2, 7, 4, P.boot);
+        // Readable forward-facing toe on full extension; no extra limb or canvas overflow.
+        if (frame === 2) {
+          rect(leg.ankle[0], leg.ankle[1] - 1, 3, 2, P.outline);
+          rect(leg.ankle[0] + 1, leg.ankle[1] + 1, 2, 1, P.gold);
+        }
       }
 
       // Human neck, jaw and side-lit head; short tousled hair, eyes, nose, mouth.
