@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createState, step } from '../simulation/step';
 import { stateSnapshotFingerprint } from './fingerprint';
-import { verifyReplay } from './replay';
+import { MAX_REPLAY_CHECKPOINTS, MAX_REPLAY_FRAMES, verifyReplay } from './replay';
 
 describe('M2 replay verification', () => {
   const make = () => {
@@ -19,6 +19,11 @@ describe('M2 replay verification', () => {
     }
     return { version: 1 as const, initial, frames, checkpoints, state };
   };
+  it('rejects unbounded replay frames and checkpoints', () => {
+    const { state: _state, ...record } = make();
+    expect(() => verifyReplay({ ...record, frames: Array(MAX_REPLAY_FRAMES + 1).fill(record.frames[0]) })).toThrow(/configured limits/);
+    expect(() => verifyReplay({ ...record, checkpoints: Array(MAX_REPLAY_CHECKPOINTS + 1).fill(record.checkpoints[0]) })).toThrow(/configured limits/);
+  });
   it('verifies every checkpoint and final state', () => {
     const { state, ...record } = make();
     const result = verifyReplay(record);
