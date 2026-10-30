@@ -25,6 +25,19 @@ describe('M2 replay verification', () => {
     expect(result.final.state).toEqual(state);
     expect(result.checked).toBe(record.checkpoints.length);
   });
+  it('detects changed player input against a known-good checkpoint', () => {
+    const { state: _state, ...record } = make();
+    const frames = record.frames.map((frame, index) => index === 0
+      ? { ...frame, inputs: [{ ...frame.inputs[0], moveX: 0 as const, punch: false }] }
+      : frame);
+    expect(() => verifyReplay({ ...record, frames })).toThrow(/Replay state mismatch/);
+  });
+  it('rejects repeated and malformed checkpoints', () => {
+    const { state: _state, ...record } = make();
+    expect(() => verifyReplay({ ...record, checkpoints: [record.checkpoints[0], record.checkpoints[0]] })).toThrow(/Invalid replay checkpoint/);
+    expect(() => verifyReplay({ ...record, checkpoints: [{ tick: -1, fingerprint: '00000000' }] })).toThrow(/Invalid replay checkpoint/);
+    expect(() => verifyReplay({ ...record, checkpoints: [{ tick: 0, fingerprint: 'not-a-hash' }] })).toThrow(/Invalid replay checkpoint/);
+  });
   it('rejects corrupted checkpoints and skipped ticks', () => {
     const { state: _state, ...record } = make();
     expect(() => verifyReplay({ ...record, checkpoints: [{ tick: 30, fingerprint: '00000000' }] })).toThrow(/mismatch/);
