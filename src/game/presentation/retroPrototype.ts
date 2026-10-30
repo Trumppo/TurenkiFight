@@ -33,7 +33,8 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
     // Geometry is scaled only in the experimental variant; classic 32x48 remains bit-identical.
     if (EXPANDED_P1_CANVAS) {
       const scale = 4 / 3;
-      g.setTransform(scale, 0, 0, scale, (48 - 32 * scale) / 2, 0);
+      // Preserve 1px transparent bottom margin after scaling; avoid clipping feet at y=63.
+      g.setTransform(scale, 0, 0, scale, (48 - 32 * scale) / 2, -1);
     }
     const poly = (points: number[][], color: string) => {
       g.fillStyle = color; g.beginPath();
