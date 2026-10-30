@@ -150,3 +150,27 @@ test('capture four-frame kick anatomy strip for acceptance', async ({ page }) =>
   fs.writeFileSync('artifacts/visual/retro-P1-kick-four-phases.png', image);
   expect(image.byteLength).toBeGreaterThan(1000);
 });
+
+test('forward kick overlaps torso without a duplicate third leg', async ({ page }) => {
+  test.skip(!retro, 'Retro P1 kick only');
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  const result = await page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { get: (key: string) => { getSourceImage: () => HTMLCanvasElement } } } } } }).__turenkiGame!;
+    const scene = game.scene.getScene('StationScene');
+    const canvas = scene.textures.get('fighter-P1-kick-2').getSourceImage();
+    const ctx = canvas.getContext('2d')!;
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const opaque = (x: number, y: number) => pixels[(y * canvas.width + x) * 4 + 3] > 0;
+    return {
+      dimensions: [canvas.width, canvas.height],
+      forwardFoot: [27, 28, 29, 30, 31].some(x => opaque(x, 29)),
+      torsoOverlap: [23, 24, 25, 26].some(x => opaque(x, 30)),
+      noOverflow: canvas.width === 32,
+    };
+  });
+  expect(result.dimensions).toEqual([32, 48]);
+  expect(result.forwardFoot).toBe(true);
+  expect(result.torsoOverlap).toBe(true);
+  expect(result.noOverflow).toBe(true);
+});
