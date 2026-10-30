@@ -85,7 +85,7 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
           rect(Math.max(0, leg.ankle[0]-4), leg.ankle[1]-1, 7, 3, P.boot);
         };
         drawLeg(rig.leftLeg);
-        drawLeg(rig.rightLeg);
+        if (!kick) drawLeg(rig.rightLeg);
       }
 
       // Anatomical shoulder/chest/waist taper; open martial-arts jacket and belt.
@@ -100,6 +100,16 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
       // Belt tail stays beside the hip during kicks; a central hanging strip reads as a third leg.
       if (kick) poly([[11,33],[13,33],[12,37],[10,37]],belt);
       else poly([[19,33],[22,33],[21,38],[19,38]],belt);
+
+      // Foreground kicking leg must overlap the jacket: a forward thrust, not a leg behind the body.
+      if (kick) {
+        const leg = fighterRig('kick', frame).rightLeg;
+        limb([...leg.hip], [...leg.knee], 8, P.ink);
+        limb([...leg.hip], [...leg.knee], 6, P.jeans);
+        limb([...leg.knee], [...leg.ankle], 7, P.ink);
+        limb([...leg.knee], [...leg.ankle], 5, P.jeansLight);
+        rect(leg.ankle[0] - 4, leg.ankle[1] - 2, 7, 4, P.boot);
+      }
 
       // Human neck, jaw and side-lit head; short tousled hair, eyes, nose, mouth.
       poly([[13,16],[20,16],[21,21],[12,21]],P.ink);
