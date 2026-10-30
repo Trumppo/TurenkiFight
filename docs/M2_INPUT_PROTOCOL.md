@@ -19,6 +19,10 @@ The first M2 slice adds strict input and state snapshot codecs. The input codec 
 
 A complete snapshot has the shape `{"version":1,"state":{...}}` where `state` is the current simulation `GameState`, including fighters, tick counters and event list. The codec validates finite numeric coordinates, legal phase and move enums, distinct player IDs, nonnegative integer timers, event ticks and supported version. A decoded snapshot can be fed directly to `step()` to resume deterministic replay. The format is intended for correctness testing, not yet a compact bandwidth-optimized network packet. A diagnostic FNV-1a 32-bit fingerprint and byte limits are implemented in `fingerprint.ts`. This checksum is not collision-resistant or suitable for security. Transport authentication, tick authority and schema migration are not implemented.
 
+## EventBatch v1
+
+`eventBatch.ts` defines `{version:1,tick,events}` for existing simulation events: `HitLanded` requires attacker, target and move; `Knockout` requires attacker and target but no move; `Respawned` requires target; `MatchStarted` and `MatchEnded` carry no player fields. All event ticks must match the batch tick. The codec enforces an 8192-byte UTF-8 limit before decoding and after encoding. Event order is preserved because it is significant to replay diagnostics.
+
 ## Scope and next work
 
 This is an independent first slice of issue #24. Future M2 work should define a standalone game-event wire schema, authoritative tick ownership, replay checksum framing, session identity and session-level ingress controls. Both `decodeInputFrame()` and `decodeStateSnapshot()` now reject oversized UTF-8 payloads before JSON parsing; corresponding encoders enforce the same limits. `assertWireSize()` remains available for other boundaries. Current limits are 4096 bytes per input frame and 65536 bytes per snapshot. The present codec does not claim to solve these concerns.
