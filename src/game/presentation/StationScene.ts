@@ -32,7 +32,7 @@ export class StationScene extends Phaser.Scene {
   preload(): void {
     const backdrop = VISUAL_ASSETS.station.backdrop;
     const path = RETRO_PREVIEW ? RETRO_STATION_PATH : backdrop.path;
-    this.load.svg(backdrop.key, publicAssetUrl(import.meta.env.BASE_URL, path), { width: backdrop.width, height: backdrop.height });
+    this.load.svg(backdrop.key, publicAssetUrl(import.meta.env.BASE_URL, path), { width: RETRO_PREVIEW ? 640 : backdrop.width, height: RETRO_PREVIEW ? 360 : backdrop.height });
   }
 
   create(): void {
@@ -40,7 +40,8 @@ export class StationScene extends Phaser.Scene {
     this.cameras.main.centerOn(VIEWPORT.logicalWidth / 2, VIEWPORT.logicalHeight / 2);
     createFighterTextures(this);
     if (RETRO_PREVIEW) createRetroP1Textures(this);
-    this.add.image(0, 0, VISUAL_ASSETS.station.backdrop.key).setOrigin(0, 0).setDepth(-100);
+    this.add.image(0, 0, VISUAL_ASSETS.station.backdrop.key).setOrigin(0, 0)
+      .setDisplaySize(VIEWPORT.logicalWidth, VIEWPORT.logicalHeight).setDepth(-100);
     const hud = this.add.graphics().setDepth(1000);
     hud.fillStyle(0x172536, 0.92).fillRect(0, 0, VIEWPORT.logicalWidth, Math.max(35, VISUAL.hudHeight));
     hud.lineStyle(1, VISUAL.colors.cream).lineBetween(0, 35, VIEWPORT.logicalWidth, 35);
