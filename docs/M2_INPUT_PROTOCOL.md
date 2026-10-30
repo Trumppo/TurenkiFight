@@ -21,7 +21,7 @@ A complete snapshot has the shape `{"version":1,"state":{...}}` where `state` is
 
 ## Scope and next work
 
-This is an independent first slice of issue #24. Future M2 work should define a standalone game-event wire schema, authoritative tick ownership, replay checksum framing, session identity and ingress enforcement of message limits. `assertWireSize()` enforces UTF-8 byte counts when called; callers must apply it before decoding untrusted payloads. Current limits are 4096 bytes per input frame and 65536 bytes per snapshot. The present codec does not claim to solve these concerns.
+This is an independent first slice of issue #24. Future M2 work should define a standalone game-event wire schema, authoritative tick ownership, replay checksum framing, session identity and session-level ingress controls. Both `decodeInputFrame()` and `decodeStateSnapshot()` now reject oversized UTF-8 payloads before JSON parsing; corresponding encoders enforce the same limits. `assertWireSize()` remains available for other boundaries. Current limits are 4096 bytes per input frame and 65536 bytes per snapshot. The present codec does not claim to solve these concerns.
 
 ## Verification
 
