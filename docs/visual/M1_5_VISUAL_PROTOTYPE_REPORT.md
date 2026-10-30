@@ -23,8 +23,8 @@ Scene changes only route station asset loading and P1 texture replacement. No ch
 ## Test evidence and limitations
 - Static contract coverage: `src/game/presentation/retroPrototype.test.ts` checks texture keys, frame counts and asset path.
 - CI: **pending at PR creation**. Do not claim that `npm test`, `npm run build` or `npm run test:browser` passed until the new branch CI run confirms this.
-- Browser screenshot comparison and 2×/3×/mobile visual QA: **not captured** by this session. URLs above link to actual before/after art assets, not screenshots of a running game.
-- A real game-started 640×360 integration, multi-pose raster contrast and 320×180 pixel density are for owner visual approval. The game renderer remains 640×360 with its existing 384×216 world-camera mapping; this task changes only the art grid, not game coordinates.
+- Added Playwright `tests/browser/retro.spec.ts` for 640×360, 1280×720, 1920×1080 and 390×844 screenshot capture in both retro and classic modes. Workflow `.github/workflows/retro-visual-qa.yml` uploads `m1-5-retro-screenshots` as an Actions artifact. **Artifact generation and visual review are pending successful CI.**
+- The retro station SVG is rasterized to a 640×360 texture (integer 2× source art) and displayed over the unchanged 384×216 world; at default 640×360 output this avoids non-integer 320→384 resampling. A real game-started 640×360 integration, multi-pose raster contrast and 320×180 pixel density are for owner visual approval. The game renderer remains 640×360 with its existing 384×216 world-camera mapping; this task changes only the art grid, not game coordinates.
 - Facial details at 16×24 source cells are intentionally compressed; 320×180 is provisional. Higher facial pixel density or layered sprite accessories may prove preferable after side-by-side screenshots.
 - P1 only has the new art. P2–P4, HUD and other visual elements deliberately remain unchanged.
 
