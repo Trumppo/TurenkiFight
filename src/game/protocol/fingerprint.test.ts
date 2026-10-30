@@ -20,6 +20,15 @@ describe('M2 replay fingerprints and limits', () => {
     expect(first).not.toBe(second);
     expect(first).toBe(stateSnapshotFingerprint({ version: 1, state: JSON.parse(JSON.stringify(state)) }));
   });
+  it('ignores object insertion order when fingerprinting the same state', () => {
+    const state = createState(['P1', 'P2'], 'fighting');
+    const reordered = Object.fromEntries(Object.entries(state).reverse());
+    const fighter = Object.fromEntries(Object.entries(state.fighters[0]).reverse());
+    reordered.fighters = [fighter, ...state.fighters.slice(1)];
+    expect(stateSnapshotFingerprint({ version: 1, state })).toBe(
+      stateSnapshotFingerprint({ version: 1, state: reordered as unknown as typeof state }),
+    );
+  });
   it('enforces UTF-8 byte limits, not JavaScript character count', () => {
     assertWireSize('x'.repeat(MAX_INPUT_FRAME_BYTES), 'input');
     expect(() => assertWireSize('x'.repeat(MAX_INPUT_FRAME_BYTES + 1), 'input')).toThrow();
