@@ -49,7 +49,6 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
     const kick = pose === 'kick' || pose === 'jumpkick';
     const hit = pose === 'hit';
     const lean = hit ? [-3, -4, -2, -1][frame] : punch ? [0, 1, 2, 1][frame] : 0;
-    const active = punch || kick ? frame === 1 || frame === 2 : false;
     const dy = bob - lift + (hit ? 1 : 0);
 
     if (pose === 'ko') {
@@ -63,7 +62,7 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
       g.save();
       g.translate(lean, dy);
       // Boots and lower limbs: standing legs are replaced, not overdrawn, for kicks.
-      if (!kick) {
+      if (!kick && !airborne) {
       const rearFoot = 9 + stride;
       const frontFoot = 22 - stride;
       poly([[11,31],[16,32],[rearFoot+3,39],[rearFoot+1,43],[rearFoot-4,42],[7,37]], P.ink);
@@ -77,7 +76,7 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
       poly([[frontFoot-4,41],[frontFoot+3,41],[frontFoot+6,45],[frontFoot-5,45]],P.ink);
       poly([[frontFoot-4,42],[frontFoot+3,42],[frontFoot+5,44],[frontFoot-4,44]],P.boot);
       } else {
-        const rig = fighterRig('kick', frame);
+        const rig = fighterRig(airborne ? 'jump' : 'kick', frame);
         const drawLeg = (leg: typeof rig.leftLeg) => {
           limb([...leg.hip], [...leg.knee], 8, P.ink);
           limb([...leg.hip], [...leg.knee], 6, P.jeans);
@@ -139,11 +138,6 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
         limb([27,27],[24,20],4,giMid);
         poly([[22,17],[26,17],[28,20],[26,23],[22,22]],P.ink);
         poly([[23,18],[26,18],[27,20],[25,22],[23,21]],skinMid);
-      }
-      if (airborne) {
-        // Raised knee makes the airborne silhouette distinct from standing.
-        limb([11,34],[7,31],7,P.ink); limb([11,34],[7,31],5,P.jeansLight);
-        rect(3,29,6,4,P.boot);
       }
       if (hit) {
         rect(2,12,3,3,P.gold); rect(0,17,2,2,P.light);
