@@ -44,4 +44,4 @@ A future AI bot, replay/test client, or network client may construct this same d
 
 ## Verification
 
-Run `npm test`, `npm run build`, `npm run test:browser` via GitHub Actions on the PR. CI status must be checked on the final commit; do not claim PASS before that. Manual physical-controller verification remains an open limitation.
+GitHub Actions CI #148 on commit `5efe384` completed **SUCCESS** (quality and browser smoke workflow): https://github.com/Trumppo/TurenkiFight/actions/runs/41108342960. Game Test Harness #34 and Agent PR tracking #103 also completed **SUCCESS**. The shared dependency installation issue is tracked as #23; the final run passed despite earlier intermittent npm/Rollup failures. Manual physical-controller verification remains an open limitation.
