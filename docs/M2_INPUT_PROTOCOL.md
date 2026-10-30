@@ -25,7 +25,7 @@ A complete snapshot has the shape `{"version":1,"state":{...}}` where `state` is
 
 ## Deterministic replay verification
 
-`replay.ts` provides `verifyReplay()` over a starting StateSnapshot, consecutive InputFrames and expected FNV-1a checkpoints. It checks input ticks, validates wire frames, and raises an error at the first mismatching checkpoint. Checkpoints are diagnostic only: this is not a cryptographic integrity or authentication mechanism. A network authority and session handshake are not yet implemented.
+`replay.ts` provides `verifyReplay()` over a starting StateSnapshot, consecutive InputFrames and expected FNV-1a checkpoints. It checks input ticks, validates wire frames, and raises an error at the first mismatching checkpoint. Checkpoints are diagnostic only: this is not a cryptographic integrity or authentication mechanism. Replay verification is bounded to 7200 frames and 7201 checkpoints per record to prevent unbounded synchronous work. A network authority and session handshake are not yet implemented.
 
 ## Scope and next work
 
