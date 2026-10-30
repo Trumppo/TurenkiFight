@@ -17,11 +17,11 @@ The first M2 slice adds strict input and state snapshot codecs. The input codec 
 
 ## StateSnapshot v1
 
-A complete snapshot has the shape `{"version":1,"state":{...}}` where `state` is the current simulation `GameState`, including fighters, tick counters and event list. The codec validates finite numeric coordinates, legal phase and move enums, distinct player IDs, nonnegative integer timers, event ticks and supported version. A decoded snapshot can be fed directly to `step()` to resume deterministic replay. The format is intended for correctness testing, not yet a compact bandwidth-optimized network packet. No checksum, transport authentication, tick authority, maximum byte size or schema migration is implemented.
+A complete snapshot has the shape `{"version":1,"state":{...}}` where `state` is the current simulation `GameState`, including fighters, tick counters and event list. The codec validates finite numeric coordinates, legal phase and move enums, distinct player IDs, nonnegative integer timers, event ticks and supported version. A decoded snapshot can be fed directly to `step()` to resume deterministic replay. The format is intended for correctness testing, not yet a compact bandwidth-optimized network packet. A diagnostic FNV-1a 32-bit fingerprint and byte limits are implemented in `fingerprint.ts`. This checksum is not collision-resistant or suitable for security. Transport authentication, tick authority and schema migration are not implemented.
 
 ## Scope and next work
 
-This is an independent first slice of issue #24. Future M2 work should define a standalone game-event wire schema, authoritative tick ownership, replay checksum framing, session identity and bounded message size. The present codec does not claim to solve these concerns.
+This is an independent first slice of issue #24. Future M2 work should define a standalone game-event wire schema, authoritative tick ownership, replay checksum framing, session identity and ingress enforcement of message limits. `assertWireSize()` enforces UTF-8 byte counts when called; callers must apply it before decoding untrusted payloads. Current limits are 4096 bytes per input frame and 65536 bytes per snapshot. The present codec does not claim to solve these concerns.
 
 ## Verification
 
