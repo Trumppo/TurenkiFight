@@ -1,5 +1,7 @@
 import { encodeInputFrame, MAX_INPUT_FRAME_BYTES, type InputFrame } from './inputFrame';
+export { MAX_INPUT_FRAME_BYTES } from './inputFrame';
 import { encodeStateSnapshot, MAX_SNAPSHOT_BYTES, type StateSnapshot } from './stateSnapshot';
+export { MAX_SNAPSHOT_BYTES } from './stateSnapshot';
 
 function byteLength(s: string): number {
   return new TextEncoder().encode(s).byteLength;
