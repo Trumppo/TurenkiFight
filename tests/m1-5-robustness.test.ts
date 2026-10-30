@@ -64,6 +64,29 @@ describe('M1.5 robustness: seeded deterministic simulation', () => {
     }
   }, 30000);
 
+  it('completes 1,000 seeded full-length 120-second four-player matches', () => {
+    // Independent full-match campaign: seeds 1..1000, 7,200 active ticks each.
+    // Keep the per-tick input generation sparse to make this CI-friendly, while
+    // still exercising all input sources and attack phases during every match.
+    const checksums = new Set<string>();
+    for (let seed = 1; seed <= 1000; seed++) {
+      const random = rng(seed);
+      let state = createState([...ids], 'fighting');
+      const digest = createHash('sha256');
+      for (let tick = 0; tick < MATCH_TICKS; tick++) {
+        const frame = tick % 120 === 0 ? inputFrame(random) : [];
+        state = step(state, frame);
+        if (state.events.length) digest.update(JSON.stringify(state.events));
+      }
+      expect(state.phase).toBe('results');
+      expect(state.tick).toBe(MATCH_TICKS);
+      expect(state.remainingTicks).toBe(0);
+      digest.update(JSON.stringify(state));
+      checksums.add(digest.digest('hex'));
+    }
+    expect(checksums.size).toBeGreaterThan(900);
+  }, 180000);
+
   it('resolves a four-fighter simultaneous KO ring in deterministic attacker order', () => {
     const state = createState([...ids], 'fighting');
     for (const [i, fighter] of state.fighters.entries()) {
