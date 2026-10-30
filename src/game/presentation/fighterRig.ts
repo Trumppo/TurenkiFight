@@ -11,10 +11,12 @@ export interface FighterRig {
   leftLeg: Leg;
   rightLeg: Leg;
 }
-export type RigPose = 'idle' | 'kick' | 'punch';
+export type RigPose = 'idle' | 'kick' | 'punch' | 'jump';
 export const KICK_PHASES = ['chamber', 'raise', 'extend', 'recover'] as const;
 const kickKnees: readonly Joint[] = [[23,38],[25,30],[25,27],[24,32]];
 const kickAnkles: readonly Joint[] = [[25,43],[27,34],[31,27],[27,40]];
+const jumpKnees: readonly Joint[] = [[11,34],[10,31],[9,29],[11,32]];
+const jumpAnkles: readonly Joint[] = [[8,39],[6,33],[5,31],[7,36]];
 const punchElbows: readonly Joint[] = [[27,27],[28,22],[29,18],[27,25]];
 const punchWrists: readonly Joint[] = [[24,19],[29,19],[31,17],[25,19]];
 /** Every pose contains exactly two arms and two legs. Poses replace joint positions. */
@@ -25,9 +27,10 @@ export function fighterRig(pose: RigPose, frame: number): FighterRig {
     leftArm: { shoulder: [11,21], elbow: [7,27], wrist: [10,19] },
     rightArm: { shoulder: [23,21], elbow: pose === 'punch' ? punchElbows[frame] : [27,27],
       wrist: pose === 'punch' ? punchWrists[frame] : [24,19] },
-    leftLeg: { hip: [13,32], knee: [10,38], ankle: [8,43] },
-    rightLeg: { hip: [21,32], knee: pose === 'kick' ? kickKnees[frame] : [23,38],
-      ankle: pose === 'kick' ? kickAnkles[frame] : [25,43] },
+    leftLeg: { hip: [13,32], knee: pose === 'jump' ? jumpKnees[frame] : [10,38],
+      ankle: pose === 'jump' ? jumpAnkles[frame] : [8,43] },
+    rightLeg: { hip: [21,32], knee: pose === 'kick' ? kickKnees[frame] : pose === 'jump' ? [22,35] : [23,38],
+      ankle: pose === 'kick' ? kickAnkles[frame] : pose === 'jump' ? [27,38] : [25,43] },
   };
 }
 export function isValidRig(rig: FighterRig): boolean {
