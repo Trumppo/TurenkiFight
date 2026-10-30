@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 const retro = process.env.VITE_VISUAL_STYLE === 'retro';
+const expanded = retro && process.env.VITE_FIGHTER_CANVAS === 'expanded';
+const p1Width = expanded ? 48 : 32;
+const p1Height = expanded ? 64 : 48;
 
 test('station and P1 prototype render with stable legacy sprite API', async ({ page }) => {
   const errors: string[] = [];
@@ -41,19 +44,19 @@ test('station and P1 prototype render with stable legacy sprite API', async ({ p
       keys: ['idle','walk','punch','kick','hit'].every(pose =>
         [0,1,2,3].every(frame => {
           const c = scene.textures.get(`fighter-P1-${pose}-${frame}`).getSourceImage();
-          return c.width === 32 && c.height === 48;
+          return c.width === p1.width && c.height === p1.height;
         })),
       origin: [scene.fighterSprites.get('P1')?.originX, scene.fighterSprites.get('P1')?.originY],
     };
   });
   expect(result.station).toBe(retro ? 640 : 384);
-  expect(result.p1).toEqual([32, 48]);
+  expect(result.p1).toEqual([p1Width, p1Height]);
   expect(result.p2).toEqual([32, 48]);
   expect(result.keys).toBe(true);
   expect(result.origin).toEqual([0.5, 1]);
   expect(result.p1DistinctFromP2).toBe(true);
   // Deliberately permit 1px facial detail: 320x180 is a stage art grid, not a fighter limit.
-  if (retro) expect(result.p1Paired).toBe(false);
+  if (retro && !expanded) expect(result.p1Paired).toBe(false);
   expect(errors).toEqual([]);
   expect(missing).toEqual([]);
 });
@@ -94,7 +97,7 @@ test('capture enlarged P1 pose sheet for visual acceptance', async ({ page }) =>
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame!;
     const scene = game.scene.getScene('StationScene') as { textures: { get: (key: string) => { getSourceImage: () => HTMLCanvasElement } } };
     const poses = ['idle', 'walk', 'depth', 'punch', 'kick', 'jump', 'jumpkick', 'hit', 'ko', 'respawn'];
-    const cellW = 148, cellH = 232, scale = 4;
+    const cellW = 220, cellH = 310, scale = 4;
     const out = document.createElement('canvas');
     out.width = cellW * 5; out.height = cellH * 2;
     const g = out.getContext('2d')!;
@@ -106,8 +109,8 @@ test('capture enlarged P1 pose sheet for visual acceptance', async ({ page }) =>
       g.fillStyle = '#303c4a'; g.fillRect(x + 2, y + 2, cellW - 4, cellH - 4);
       g.fillStyle = '#f0d8ad'; g.fillText(poses[p].toUpperCase(), x + 12, y + 9);
       const texture = scene.textures.get(`fighter-P1-${poses[p]}-2`).getSourceImage();
-      g.drawImage(texture, x + 10, y + 30, 32 * scale, 48 * scale);
-      g.fillStyle = '#aab6c5'; g.fillText('frame 2 / 4', x + 12, y + 220);
+      g.drawImage(texture, x + 10, y + 30, texture.width * scale, texture.height * scale);
+      g.fillStyle = '#aab6c5'; g.fillText('frame 2 / 4', x + 12, y + 290);
     }
     return out.toDataURL('image/png');
   });
@@ -130,7 +133,7 @@ test('capture four-frame kick anatomy strip for acceptance', async ({ page }) =>
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { get: (key: string) => { getSourceImage: () => HTMLCanvasElement } } } } } }).__turenkiGame!;
     const scene = game.scene.getScene('StationScene');
     const phases = ['CHAMBER', 'RAISE', 'EXTEND', 'RECOVER'];
-    const scale = 5, width = 190, height = 275;
+    const scale = expanded ? 4 : 5, width = 220, height = 305;
     const out = document.createElement('canvas');
     out.width = width * 4; out.height = height;
     const ctx = out.getContext('2d')!;
@@ -140,7 +143,8 @@ test('capture four-frame kick anatomy strip for acceptance', async ({ page }) =>
     for (let frame = 0; frame < 4; frame++) {
       const x = frame * width;
       ctx.fillStyle = '#f1d9b4'; ctx.fillText(phases[frame], x + 12, 12);
-      ctx.drawImage(scene.textures.get(`fighter-P1-kick-${frame}`).getSourceImage(), x + 15, 38, 32 * scale, 48 * scale);
+      const texture = scene.textures.get(`fighter-P1-kick-${frame}`).getSourceImage();
+      ctx.drawImage(texture, x + 15, 38, texture.width * scale, texture.height * scale);
     }
     return out.toDataURL('image/png');
   });
@@ -169,7 +173,7 @@ test('forward kick overlaps torso without a duplicate third leg', async ({ page 
       noOverflow: canvas.width === 32,
     };
   });
-  expect(result.dimensions).toEqual([32, 48]);
+  expect(result.dimensions).toEqual([p1Width, p1Height]);
   expect(result.forwardFoot).toBe(true);
   expect(result.torsoOverlap).toBe(true);
   expect(result.noOverflow).toBe(true);
