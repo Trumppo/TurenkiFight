@@ -20,7 +20,9 @@ const fingerprint = /^[0-9a-f]{8}$/;
 
 export function verifyReplay(record: ReplayRecord): ReplayResult {
   if (!record || typeof record !== 'object' || record.version !== REPLAY_VERSION ||
-      !Array.isArray(record.frames) || !Array.isArray(record.checkpoints)) {
+      !Array.isArray(record.frames) || !Array.isArray(record.checkpoints) ||
+      Object.keys(record).some(key => !['version', 'initial', 'frames', 'checkpoints'].includes(key)) ||
+      Object.keys(record).length !== 4) {
     throw new Error('Unsupported or malformed replay record');
   }
   if (record.frames.length > MAX_REPLAY_FRAMES || record.checkpoints.length > MAX_REPLAY_CHECKPOINTS) {
@@ -29,7 +31,10 @@ export function verifyReplay(record: ReplayRecord): ReplayResult {
   let state = decodeStateSnapshot(encodeStateSnapshot(record.initial)).state;
   const checkpoints = new Map<number, string>();
   for (const point of record.checkpoints) {
-    if (!point || typeof point !== 'object' || !Number.isSafeInteger(point.tick) || point.tick < state.tick ||
+    if (!point || typeof point !== 'object' || Array.isArray(point) ||
+        Object.keys(point).length !== 2 ||
+        Object.keys(point).some(key => !['tick', 'fingerprint'].includes(key)) ||
+        !Number.isSafeInteger(point.tick) || point.tick < state.tick ||
         !fingerprint.test(point.fingerprint) || checkpoints.has(point.tick)) throw new Error('Invalid replay checkpoint');
     checkpoints.set(point.tick, point.fingerprint);
   }
