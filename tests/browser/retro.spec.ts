@@ -117,7 +117,7 @@ test('capture enlarged P1 pose sheet for visual acceptance', async ({ page }) =>
   const image = Buffer.from(sheet.split(',')[1], 'base64');
   const fs = await import('node:fs');
   fs.mkdirSync('artifacts/visual', { recursive: true });
-  fs.writeFileSync('artifacts/visual/retro-P1-pose-sheet.png', image);
+  fs.writeFileSync(`artifacts/visual/${expanded ? 'expanded' : 'retro'}-P1-pose-sheet.png`, image);
   expect(image.byteLength).toBeGreaterThan(1000);
 });
 
@@ -151,7 +151,7 @@ test('capture four-frame kick anatomy strip for acceptance', async ({ page }) =>
   const fs = await import('node:fs');
   fs.mkdirSync('artifacts/visual', { recursive: true });
   const image = Buffer.from(imageData.split(',')[1], 'base64');
-  fs.writeFileSync('artifacts/visual/retro-P1-kick-four-phases.png', image);
+  fs.writeFileSync(`artifacts/visual/${expanded ? 'expanded' : 'retro'}-P1-kick-four-phases.png`, image);
   expect(image.byteLength).toBeGreaterThan(1000);
 });
 
