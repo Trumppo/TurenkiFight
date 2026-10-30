@@ -43,11 +43,11 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
     const stride = walking ? [0, 3, 0, -3][frame] : 0;
     const bob = pose === 'idle' ? [0, -1, 0, -1][frame] : walking ? [0, -1, 0, -1][frame] : 0;
     const airborne = pose === 'jump' || pose === 'jumpkick';
-    const lift = airborne ? [1, 3, 5, 2][frame] : 0;
+    const lift = airborne ? [2, 5, 8, 4][frame] : 0;
     const punch = pose === 'punch';
     const kick = pose === 'kick' || pose === 'jumpkick';
     const hit = pose === 'hit';
-    const lean = hit ? [-3, -4, -2, -1][frame] : punch ? [0, 1, 3, 1][frame] : 0;
+    const lean = hit ? [-3, -4, -2, -1][frame] : punch ? [0, 1, 2, 1][frame] : 0;
     const active = punch || kick ? frame === 1 || frame === 2 : false;
     const dy = bob - lift + (hit ? 1 : 0);
 
@@ -110,12 +110,12 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
 
       if (punch) {
         // Frame 0: chamber, 1–2: extension, 3: recovery.
-        const elbow = active ? [25,21] : [26,25];
-        const fist = active ? [31,18] : [26,19];
+        const elbow = active ? [28,19] : [26,25];
+        const fist = active ? [34,16] : [26,19];
         limb([24,22],elbow,7,P.ink); limb([24,22],elbow,5,giMid);
         limb(elbow,fist,6,P.ink); limb(elbow,fist,4,skinMid);
-        poly([[fist[0]-3,fist[1]-3],[Math.min(31,fist[0]+2),fist[1]-3],[Math.min(31,fist[0]+2),fist[1]+3],[fist[0]-3,fist[1]+3]],P.ink);
-        rect(Math.max(0,fist[0]-2),fist[1]-2,Math.min(4,32-fist[0]+2),4,skinMid);
+        poly([[Math.min(29,fist[0]-3),fist[1]-3],[31,fist[1]-3],[31,fist[1]+3],[Math.min(29,fist[0]-3),fist[1]+3]],P.ink);
+        rect(Math.min(29,fist[0]-2),fist[1]-2,3,4,skinMid);
       } else {
         limb([24,22],[27,27],7,P.ink);
         limb([24,22],[27,27],5,giDark);
@@ -124,7 +124,7 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
         poly([[22,17],[26,17],[28,20],[26,23],[22,22]],P.ink);
         poly([[23,18],[26,18],[27,20],[25,22],[23,21]],skinMid);
       }
-      if (kick) {
+      if (airborne) {\n        // Raised knee makes the airborne silhouette distinct from standing.\n        limb([11,34],[7,31],7,P.ink); limb([11,34],[7,31],5,P.jeansLight);\n        rect(3,29,6,4,P.boot);\n      }\n      if (kick) {
         // Raised knee and extended shin, with foot pointing horizontally.
         const kneeX = active ? 24 : 21;
         const toeX = active ? 31 : 27;
