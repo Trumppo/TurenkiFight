@@ -10,6 +10,13 @@ describe('reusable fighter anatomy', () => {
       expect(rig.rightLeg.hip).toEqual([21, 32]);
     }
   });
+  it('keeps the kick boot fully inside the 32-pixel-wide source sprite', () => {
+    for (let frame = 0; frame < 4; frame++) {
+      const ankleX = fighterRig('kick', frame).rightLeg.ankle[0];
+      expect(ankleX - 4).toBeGreaterThanOrEqual(0);
+      expect(ankleX + 3).toBeLessThanOrEqual(32);
+    }
+  });
   it('has four separate kick configurations', () => {
     expect(KICK_PHASES).toHaveLength(4);
     const ankles = Array.from({ length: 4 }, (_, i) => fighterRig('kick', i).rightLeg.ankle.join(','));
