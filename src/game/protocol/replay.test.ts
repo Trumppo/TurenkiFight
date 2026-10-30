@@ -37,6 +37,12 @@ describe('M2 replay verification', () => {
       : frame);
     expect(() => verifyReplay({ ...record, frames })).toThrow(/Replay state mismatch/);
   });
+  it('rejects malformed replay envelopes and null checkpoints', () => {
+    const { state: _state, ...record } = make();
+    expect(() => verifyReplay(null as unknown as typeof record)).toThrow(/malformed replay/);
+    expect(() => verifyReplay({ ...record, frames: null } as unknown as typeof record)).toThrow(/malformed replay/);
+    expect(() => verifyReplay({ ...record, checkpoints: [null] } as unknown as typeof record)).toThrow(/Invalid replay checkpoint/);
+  });
   it('rejects repeated and malformed checkpoints', () => {
     const { state: _state, ...record } = make();
     expect(() => verifyReplay({ ...record, checkpoints: [record.checkpoints[0], record.checkpoints[0]] })).toThrow(/Invalid replay checkpoint/);
