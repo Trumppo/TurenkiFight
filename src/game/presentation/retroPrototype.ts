@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { fighterKey, POSES, FRAMES_PER_POSE } from './fighterSprites';
+import { fighterRig } from './fighterRig';
 
 /** Original 1990s arcade-inspired martial artist, not a licensed character. */
 export const RETRO_PREVIEW = import.meta.env.VITE_VISUAL_STYLE === 'retro';
@@ -61,7 +62,8 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
     } else {
       g.save();
       g.translate(lean, dy);
-      // Boots and lower limbs: angled thighs, articulated knees, separate calves.
+      // Boots and lower limbs: standing legs are replaced, not overdrawn, for kicks.
+      if (!kick) {
       const rearFoot = 9 + stride;
       const frontFoot = 22 - stride;
       poly([[11,31],[16,32],[rearFoot+3,39],[rearFoot+1,43],[rearFoot-4,42],[7,37]], P.ink);
@@ -74,6 +76,18 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
       poly([[rearFoot-4,42],[rearFoot+3,42],[rearFoot+3,44],[rearFoot-5,44]],P.boot);
       poly([[frontFoot-4,41],[frontFoot+3,41],[frontFoot+6,45],[frontFoot-5,45]],P.ink);
       poly([[frontFoot-4,42],[frontFoot+3,42],[frontFoot+5,44],[frontFoot-4,44]],P.boot);
+      } else {
+        const rig = fighterRig('kick', frame);
+        const drawLeg = (leg: typeof rig.leftLeg) => {
+          limb([...leg.hip], [...leg.knee], 8, P.ink);
+          limb([...leg.hip], [...leg.knee], 6, P.jeans);
+          limb([...leg.knee], [...leg.ankle], 7, P.ink);
+          limb([...leg.knee], [...leg.ankle], 5, P.jeansLight);
+          rect(Math.max(0, leg.ankle[0]-4), leg.ankle[1]-1, 7, 3, P.boot);
+        };
+        drawLeg(rig.leftLeg);
+        drawLeg(rig.rightLeg);
+      }
 
       // Anatomical shoulder/chest/waist taper; open martial-arts jacket and belt.
       poly([[8,19],[12,17],[22,17],[26,21],[24,29],[22,34],[11,34],[8,29]],P.ink);
@@ -124,17 +138,7 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
         poly([[22,17],[26,17],[28,20],[26,23],[22,22]],P.ink);
         poly([[23,18],[26,18],[27,20],[25,22],[23,21]],skinMid);
       }
-      if (airborne) {\n        // Raised knee makes the airborne silhouette distinct from standing.\n        limb([11,34],[7,31],7,P.ink); limb([11,34],[7,31],5,P.jeansLight);\n        rect(3,29,6,4,P.boot);\n      }\n      if (kick) {
-        // Raised knee and extended shin, with foot pointing horizontally.
-        const kneeX = active ? 24 : 21;
-        const toeX = active ? 31 : 27;
-        limb([19,33],[kneeX,31],9,P.ink);
-        limb([19,33],[kneeX,31],6,P.jeans);
-        limb([kneeX,31],[toeX,29],7,P.ink);
-        limb([kneeX,31],[toeX,29],5,P.jeansLight);
-        poly([[toeX-3,26],[31,26],[31,31],[toeX-3,32]],P.boot);
-      }
-      if (hit) {
+      if (airborne) {\n        // Raised knee makes the airborne silhouette distinct from standing.\n        limb([11,34],[7,31],7,P.ink); limb([11,34],[7,31],5,P.jeansLight);\n        rect(3,29,6,4,P.boot);\n      }\n      if (hit) {
         rect(2,12,3,3,P.gold); rect(0,17,2,2,P.light);
         rect(28,9,3,2,P.gold);
       }
