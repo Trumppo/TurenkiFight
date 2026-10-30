@@ -111,8 +111,9 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
         rect(leg.ankle[0] - 4, leg.ankle[1] - 2, 7, 4, P.boot);
         // Readable forward-facing toe on full extension; no extra limb or canvas overflow.
         if (frame === 2) {
-          rect(leg.ankle[0], leg.ankle[1] - 1, 3, 2, P.outline);
-          rect(leg.ankle[0] + 1, leg.ankle[1] + 1, 2, 1, P.gold);
+          // Dark horizontal boot tip, not a bright isolated pixel that reads as a spark.
+          rect(leg.ankle[0], leg.ankle[1] - 2, 3, 3, P.boot);
+          rect(leg.ankle[0] + 1, leg.ankle[1] - 2, 2, 1, P.jeansLight);
         }
       }
 
