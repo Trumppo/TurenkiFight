@@ -42,3 +42,5 @@ StateSnapshot serialization recursively sorts object keys while preserving array
 ## Tick input staging (M2 groundwork)
 
 `InputFrameBuffer` accepts bounded, out-of-order future InputFrames, rejects duplicates, stale ticks and unknown players, and produces a complete roster with neutral input for missing players. `peek()` does not advance; `consume()` advances exactly one tick. This is a transport-neutral staging primitive, **not** a network transport or multiplayer synchronization guarantee. The neutral-on-missing policy is a provisional local test behavior and must be revisited for authoritative online matches.
+
+`stepBuffered(state, buffer)` now connects staged inputs to `step()` and advances the buffer only after a successful one-tick simulation. A 90-tick integration test compares out-of-order staged inputs against direct deterministic simulation at every tick. This does not yet implement rollback, latency compensation or network synchronization.
