@@ -39,6 +39,20 @@ export function fighterRig(pose: RigPose, frame: number): FighterRig {
       ankle: pose === 'kick' ? kickAnkles[frame] : pose === 'jump' ? [27,38] : pose === 'walk' ? walkRightAnkles[frame] : [25,43] },
   };
 }
+export interface FighterProportions { readonly scaleX: number; readonly scaleY: number; readonly offsetX: number; readonly offsetY: number }
+/** Transform the complete skeleton, allowing distinct fighters without duplicating animations. */
+export function transformRig(rig: FighterRig, proportions: FighterProportions): FighterRig {
+  const { scaleX, scaleY, offsetX, offsetY } = proportions;
+  if (![scaleX, scaleY, offsetX, offsetY].every(Number.isFinite) || scaleX <= 0 || scaleY <= 0) {
+    throw new RangeError('fighter proportions must use positive finite scales and finite offsets');
+  }
+  const move = ([x,y]: Joint): Joint => [17 + (x - 17) * scaleX + offsetX, 32 + (y - 32) * scaleY + offsetY];
+  const arm = (a: Arm): Arm => ({ shoulder: move(a.shoulder), elbow: move(a.elbow), wrist: move(a.wrist) });
+  const leg = (l: Leg): Leg => ({ hip: move(l.hip), knee: move(l.knee), ankle: move(l.ankle) });
+  return { head: move(rig.head), neck: move(rig.neck), pelvis: move(rig.pelvis),
+    leftArm: arm(rig.leftArm), rightArm: arm(rig.rightArm),
+    leftLeg: leg(rig.leftLeg), rightLeg: leg(rig.rightLeg) };
+}
 export function isValidRig(rig: FighterRig): boolean {
   return Object.values(rig).every(v => Array.isArray(v) ? v.length === 2 &&
     v.every(n => typeof n === 'number' && Number.isFinite(n)) :
