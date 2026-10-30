@@ -30,6 +30,16 @@
 
 **Exit:** four-player local Score Brawl playable and automated full-match verified; user accepted milestone with these limitations.
 
+## Milestone 1.5 – Retro raster visual upgrade
+
+**Status: PLANNED; art direction approved 2026-10-30.** Early-1990s raster aesthetic inspired by Janne50v card technique, not its Dune theme. Keep 640 × 360 logical camera and prototype a 320 × 180 art grid before full conversion.
+
+- [ ] Approve one fighter and Turenki station visual proof
+- [ ] Upgrade four fighters, station, HUD and impact effects without changing gameplay
+- [ ] Pass automated and manual visual QA at native, integer-scaled and mobile sizes
+
+**Exit:** user-approved visual upgrade with unchanged deterministic gameplay and green tests. See [M1.5 visual upgrade plan](M1_5_VISUAL_UPGRADE.md).
+
 ## Milestone 2 – Shared multiplayer foundations (transport-neutral)
 
 - [ ] Define versioned InputFrame, StateSnapshot, event and room protocol schemas
