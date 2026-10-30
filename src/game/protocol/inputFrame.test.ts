@@ -11,6 +11,10 @@ describe('M2 InputFrame v1', () => {
     expect(encodeInputFrame(a)).toBe(encodeInputFrame(b));
     expect(decodeInputFrame(encodeInputFrame(a))).toEqual(parseInputFrame(b));
   });
+  it('rejects more than four players before processing the roster', () => {
+    const oversized = { version: 1 as const, tick: 0, inputs: ['P1', 'P2', 'P3', 'P4', 'P5'].map(p) };
+    expect(() => parseInputFrame(oversized)).toThrow(/malformed/);
+  });
   it('rejects malformed and future-version frames', () => {
     const base = { version: 1 as const, tick: 1, inputs: [p('P1')] };
     for (const invalid of [
