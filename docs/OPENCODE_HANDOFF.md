@@ -13,13 +13,18 @@ Move ongoing TurenkiFight development from three manually coordinated ChatGPT se
 - Resolution: 640×360 logical presentation, configurable rendering; provisional 320×180 raster art grid.
 
 ## Installation and usage
-Install OpenCode using its current official instructions, open a terminal in the repository root and launch `opencode`. The project-local agent definitions live in `.opencode/agents/`. Select the appropriate named agent in the OpenCode UI/command interface; available selection syntax may vary by OpenCode version. Check agent discovery and permissions in the installed version.
+Install OpenCode using its current official instructions, connect OpenCode Go with `/connect`, open a terminal in the repository root and launch `opencode`. The project-local agent definitions live in `.opencode/agents/`, and `opencode.json` sets `designer` as the default primary agent. In OpenCode V2, agents use `mode`, `model`, and ordered `permissions` rules; the project keeps `subagent_depth: 1` so workers cannot create further delegation chains.
+
+Configured model IDs (verify with the installed version's `/models` or `opencode models`): Designer `opencode-go/gpt-6-luna`; Gameplay `opencode-go/deepseek-v4.1-flash`; Graphics `opencode-go/gemini-4-argon-contributor`; Tester `opencode-go/glm-5.3-flash`. `openai/luna` is not a verified identifier; the official Go catalog uses `opencode-go/gpt-6-luna`. Graphics must confirm image-input support in the local model entry before using image attachments, and no agent is assumed to generate bitmap files without an image tool.
+
+If the local Go catalog does not expose DeepSeek or requires a Global/China-routing privacy setting, do not change that setting automatically: ask the owner or select the documented fallback `opencode-go/glm-5.3-flash`. Gameplay may alternatively use `opencode-go/kimi-k2.7-code` when the owner explicitly approves the change. Graphics' Gemini Contributor model has different data-use terms from the zero-retention coding models; confirm the account policy before sending project images.
 
 Recommended work sequence:
 1. **designer** inspects current GitHub branches, PRs, docs and CI, then produces a small scoped task with acceptance criteria and file ownership.
-2. **gameplay** or **graphics** takes the assigned task in a separate branch; if both run simultaneously, their file scopes must not overlap.
-3. Agent runs relevant checks and opens a PR with test evidence, known limitations and screenshots for visual work.
-4. **designer** reviews integration and reports recommendation; project owner decides acceptance and merging.
+2. **designer** delegates only to **gameplay**, **graphics** or **tester** through OpenCode's native subagent mechanism.
+3. **gameplay** or **graphics** takes the assigned task; if both run simultaneously, their file scopes must not overlap.
+4. **tester** checks the implementation, tests and CI evidence. Defects return to the owning worker; Tester re-checks the correction.
+5. **designer** reviews integration and prepares a PR; project owner decides acceptance and merging.
 5. Repeat. Never imply agents run persistently or autonomously without a configured runner.
 
 Suggested prompts:
@@ -40,10 +45,16 @@ Designer owns specifications and cross-cutting decisions. Gameplay owns `src/gam
 
 ## Initial migration backlog
 1. Audit repository/PR state and identify unfinished M1.5 tasks.
-2. Confirm three OpenCode agents are discovered and permissions are appropriate.
+2. Confirm four OpenCode agents are discovered, `designer` is the default primary, and permissions are appropriate.
+3. Confirm a small test-only task can be delegated from Designer to Tester and returns a reproducible report.
+4. Confirm each configured model appears in the local model list; do not infer availability from this repository file alone.
 3. Complete M1.5 visual proof and robustness testing without gameplay scope creep.
 4. Create separate feature specs for guard/throw/knockdown and items; preserve approved design without implementing everything at once.
 5. Build M2 input/protocol abstractions; run both network architecture benchmarks before decision.
 
 ## Owner approval gates
 Design decisions in docs/GAME_DESIGN_DECISIONS.md are approved *conceptually*, not automatic authorization to implement now. Owner approves milestone scope, significant design changes, PR merges, and final acceptance.
+
+## User approval gates
+
+The owner starts OpenCode and selects Designer (or accepts the configured default), connects the approved provider account, and verifies `/models`. The owner reviews the Tester report and PR checks before merging. Git push, merge, secret access and destructive operations remain approval-gated by the configuration and by the owner workflow.
