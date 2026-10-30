@@ -3,6 +3,8 @@ import type { Fighter, GameEvent, GameState, Move, Phase } from '../simulation/t
 /** Transport-independent, versioned representation of the full deterministic simulation state. */
 export const SNAPSHOT_VERSION = 1 as const;
 export const MAX_SNAPSHOT_BYTES = 65536;
+export const MAX_SNAPSHOT_FIGHTERS = 4;
+export const MAX_SNAPSHOT_EVENTS = 64;
 export type StateSnapshot = { version: typeof SNAPSHOT_VERSION; state: GameState };
 
 const phases: Phase[] = ['lobby', 'countdown', 'fighting', 'results'];
@@ -21,7 +23,8 @@ function fighter(x: unknown): x is Fighter {
     (x.facing === -1 || x.facing === 1) &&
     ['koCount','hitsReceived','attackCooldown','attackFrames','hitstun','koTimer','protection'].every(k => nonnegative(x[k])) &&
     (x.attackMove === null || moves.includes(x.attackMove as Move)) &&
-    strings(x.hitTargets) && strings(x.previousButtons) &&
+    strings(x.hitTargets) && x.hitTargets.length <= MAX_SNAPSHOT_FIGHTERS &&
+    strings(x.previousButtons) && x.previousButtons.length <= 8 &&
     Object.keys(x).length === 18;
 }
 
@@ -41,9 +44,9 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
       Object.keys(state).length !== 6 || !nonnegative(state.tick) ||
       !phases.includes(state.phase as Phase) || !nonnegative(state.countdownTicks) ||
       !nonnegative(state.remainingTicks) || !Array.isArray(state.fighters) ||
-      state.fighters.length < 1 || !state.fighters.every(fighter) ||
+      state.fighters.length < 1 || state.fighters.length > MAX_SNAPSHOT_FIGHTERS || !state.fighters.every(fighter) ||
       new Set((state.fighters as Fighter[]).map(f => f.id)).size !== state.fighters.length ||
-      !Array.isArray(state.events) || !state.events.every(gameEvent) ||
+      !Array.isArray(state.events) || state.events.length > MAX_SNAPSHOT_EVENTS || !state.events.every(gameEvent) ||
       (state.events as GameEvent[]).some(e => e.tick > (state.tick as number))) {
     throw new Error('Malformed simulation state');
   }
