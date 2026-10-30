@@ -97,7 +97,9 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
       poly([[16,21],[18,23],[17,27],[15,26]],skinMid);
       poly([[11,31],[22,31],[23,34],[10,34]],P.ink);
       rect(12,32,10,2,belt); rect(18,33,3,1,P.gold);
-      poly([[19,33],[22,33],[21,38],[19,38]],belt);
+      // Belt tail stays beside the hip during kicks; a central hanging strip reads as a third leg.
+      if (kick) poly([[11,33],[13,33],[12,37],[10,37]],belt);
+      else poly([[19,33],[22,33],[21,38],[19,38]],belt);
 
       // Human neck, jaw and side-lit head; short tousled hair, eyes, nose, mouth.
       poly([[13,16],[20,16],[21,21],[12,21]],P.ink);
