@@ -38,3 +38,7 @@ Run `npm test`, `npm run build` and browser CI. See `src/game/protocol/inputFram
 InputFrame v1 currently caps each tick at four player inputs, matching the M1 local roster. Larger rooms require an explicit protocol revision or negotiated limit.
 
 StateSnapshot serialization recursively sorts object keys while preserving array order, ensuring equivalent snapshots produce identical diagnostic fingerprints regardless of object property insertion order.
+
+## Tick input staging (M2 groundwork)
+
+`InputFrameBuffer` accepts bounded, out-of-order future InputFrames, rejects duplicates, stale ticks and unknown players, and produces a complete roster with neutral input for missing players. `peek()` does not advance; `consume()` advances exactly one tick. This is a transport-neutral staging primitive, **not** a network transport or multiplayer synchronization guarantee. The neutral-on-missing policy is a provisional local test behavior and must be revisited for authoritative online matches.
