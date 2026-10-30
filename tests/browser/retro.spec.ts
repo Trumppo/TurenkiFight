@@ -117,3 +117,36 @@ test('capture enlarged P1 pose sheet for visual acceptance', async ({ page }) =>
   fs.writeFileSync('artifacts/visual/retro-P1-pose-sheet.png', image);
   expect(image.byteLength).toBeGreaterThan(1000);
 });
+
+test('capture four-frame kick anatomy strip for acceptance', async ({ page }) => {
+  test.skip(!retro, 'Retro fighter anatomy only');
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { exists: (key: string) => boolean } } } } }).__turenkiGame;
+    return !!game?.scene.getScene('StationScene').textures.exists('fighter-P1-kick-3');
+  })).toBe(true);
+  const imageData = await page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { get: (key: string) => { getSourceImage: () => HTMLCanvasElement } } } } } }).__turenkiGame!;
+    const scene = game.scene.getScene('StationScene');
+    const phases = ['CHAMBER', 'RAISE', 'EXTEND', 'RECOVER'];
+    const scale = 5, width = 190, height = 275;
+    const out = document.createElement('canvas');
+    out.width = width * 4; out.height = height;
+    const ctx = out.getContext('2d')!;
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#26313e'; ctx.fillRect(0, 0, out.width, out.height);
+    ctx.font = 'bold 18px monospace'; ctx.textBaseline = 'top';
+    for (let frame = 0; frame < 4; frame++) {
+      const x = frame * width;
+      ctx.fillStyle = '#f1d9b4'; ctx.fillText(phases[frame], x + 12, 12);
+      ctx.drawImage(scene.textures.get(`fighter-P1-kick-${frame}`).getSourceImage(), x + 15, 38, 32 * scale, 48 * scale);
+    }
+    return out.toDataURL('image/png');
+  });
+  const fs = await import('node:fs');
+  fs.mkdirSync('artifacts/visual', { recursive: true });
+  const image = Buffer.from(imageData.split(',')[1], 'base64');
+  fs.writeFileSync('artifacts/visual/retro-P1-kick-four-phases.png', image);
+  expect(image.byteLength).toBeGreaterThan(1000);
+});
