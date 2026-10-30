@@ -76,7 +76,7 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
       poly([[frontFoot-4,41],[frontFoot+3,41],[frontFoot+6,45],[frontFoot-5,45]],P.ink);
       poly([[frontFoot-4,42],[frontFoot+3,42],[frontFoot+5,44],[frontFoot-4,44]],P.boot);
       } else {
-        const rig = fighterRig(airborne ? 'jump' : 'kick', frame);
+        const rig = fighterRig(kick ? 'kick' : 'jump', frame);
         const drawLeg = (leg: typeof rig.leftLeg) => {
           limb([...leg.hip], [...leg.knee], 8, P.ink);
           limb([...leg.hip], [...leg.knee], 6, P.jeans);
