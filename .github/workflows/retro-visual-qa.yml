@@ -23,6 +23,10 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run test:browser
+      - name: Capture original M1 comparison screenshots
+        run: npm run test:browser -- tests/browser/retro.spec.ts
+        env:
+          VITE_VISUAL_STYLE: classic
       - name: Upload retro comparison screenshots
         if: always()
         uses: actions/upload-artifact@v4
