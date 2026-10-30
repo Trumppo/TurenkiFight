@@ -19,14 +19,17 @@ export type ReplayResult = { final: StateSnapshot; checked: number };
 const fingerprint = /^[0-9a-f]{8}$/;
 
 export function verifyReplay(record: ReplayRecord): ReplayResult {
-  if (record.version !== REPLAY_VERSION) throw new Error('Unsupported replay version');
+  if (!record || typeof record !== 'object' || record.version !== REPLAY_VERSION ||
+      !Array.isArray(record.frames) || !Array.isArray(record.checkpoints)) {
+    throw new Error('Unsupported or malformed replay record');
+  }
   if (record.frames.length > MAX_REPLAY_FRAMES || record.checkpoints.length > MAX_REPLAY_CHECKPOINTS) {
     throw new Error('Replay exceeds configured limits');
   }
   let state = decodeStateSnapshot(encodeStateSnapshot(record.initial)).state;
   const checkpoints = new Map<number, string>();
   for (const point of record.checkpoints) {
-    if (!Number.isSafeInteger(point.tick) || point.tick < state.tick ||
+    if (!point || typeof point !== 'object' || !Number.isSafeInteger(point.tick) || point.tick < state.tick ||
         !fingerprint.test(point.fingerprint) || checkpoints.has(point.tick)) throw new Error('Invalid replay checkpoint');
     checkpoints.set(point.tick, point.fingerprint);
   }
