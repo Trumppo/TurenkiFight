@@ -156,7 +156,7 @@ test('capture four-frame kick anatomy strip for acceptance', async ({ page }) =>
 });
 
 test('forward kick overlaps torso without a duplicate third leg', async ({ page }) => {
-  test.skip(!retro, 'Retro P1 kick only');
+  test.skip(!retro || expanded, 'Pixel coordinates are specific to the original 32x48 kick');
   await page.goto('/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const result = await page.evaluate(() => {
@@ -180,7 +180,7 @@ test('forward kick overlaps torso without a duplicate third leg', async ({ page 
 });
 
 test('extended kick toe uses boot shading rather than a stray bright spark', async ({ page }) => {
-  test.skip(!retro, 'Retro P1 art only');
+  test.skip(!retro || expanded, 'Toe pixel coordinate is specific to the original 32x48 canvas');
   await page.goto('/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
