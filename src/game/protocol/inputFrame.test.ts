@@ -7,7 +7,7 @@ const p = (playerId: string) => ({ playerId, moveX: 1 as const, moveY: 0 as cons
 describe('M2 InputFrame v1', () => {
   it('round trips and canonicalizes unordered player inputs', () => {
     const a = { version: 1 as const, tick: 42, inputs: [p('P2'), p('P1')] };
-    const b = { version: 1, tick: 42, inputs: [p('P1'), p('P2')] };
+    const b = { version: 1 as const, tick: 42, inputs: [p('P1'), p('P2')] };
     expect(encodeInputFrame(a)).toBe(encodeInputFrame(b));
     expect(decodeInputFrame(encodeInputFrame(a))).toEqual(parseInputFrame(b));
   });
