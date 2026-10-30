@@ -1,9 +1,5 @@
-import { encodeInputFrame, type InputFrame } from './inputFrame';
-import { encodeStateSnapshot, type StateSnapshot } from './stateSnapshot';
-
-/** Explicit wire limits. A future session layer may impose stricter per-room limits. */
-export const MAX_INPUT_FRAME_BYTES = 4096;
-export const MAX_SNAPSHOT_BYTES = 65536;
+import { encodeInputFrame, MAX_INPUT_FRAME_BYTES, type InputFrame } from './inputFrame';
+import { encodeStateSnapshot, MAX_SNAPSHOT_BYTES, type StateSnapshot } from './stateSnapshot';
 
 function byteLength(s: string): number {
   return new TextEncoder().encode(s).byteLength;
