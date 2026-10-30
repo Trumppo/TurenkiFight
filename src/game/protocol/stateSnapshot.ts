@@ -46,7 +46,7 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
       (state.events as GameEvent[]).some(e => e.tick > (state.tick as number))) {
     throw new Error('Malformed simulation state');
   }
-  return { version: SNAPSHOT_VERSION, state: state as GameState };
+  return { version: SNAPSHOT_VERSION, state: state as unknown as GameState };
 }
 
 /** Canonical key order is provided by the simulation's stable object shape. */
