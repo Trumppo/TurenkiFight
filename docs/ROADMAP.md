@@ -1,6 +1,6 @@
 # TurenkiFight – Prototype Roadmap v0.4
 
-**Updated:** 2026-10-24. Milestones, not calendar commitments.
+**Updated:** 2026-10-30. Milestones, not calendar commitments.
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
@@ -16,15 +16,19 @@
 
 ## Milestone 1 – Local playable slice
 
-- [x] Basic fixed 384 × 216 camera, Turenki station placeholder, two keyboard-controlled fighters and simple attacks (prototype only)
-- [ ] Expand to four configurable local players with keyboard/gamepad support
-- [ ] Proper punch, kick, jump kick, hitboxes, hurtboxes and KO state
-- [ ] Implement Score Brawl mode separately: 120 s timer, respawns, score HUD, results
-- [ ] Validate X/Y movement, Z jumping and Y depth sorting
-- [ ] Add deterministic fixed-step/replay and combat unit tests
-- [ ] Test legibility at 384 × 216 and 640 × 360, especially with eight fighters
+**Status: ACCEPTED WITH DOCUMENTED LIMITATIONS (2026-10-30).** Project owner confirmed a playable browser match with movement, hits, scoring, start and finish. Five Playwright game-harness scenarios and the CI checks passed before PR #18 was merged. See [M1 acceptance report](M1_ACCEPTANCE_REPORT.md).
 
-**Exit:** four players can finish a consistent local Score Brawl match.
+- [x] Fixed 640 × 360 logical presentation and Turenki station arena (revised from the early 384 × 216 prototype)
+- [x] Four local player slots with explicit keyboard/gamepad join; physical controllers remain unverified
+- [x] Punch, kick, jump kick, hit detection and KO/respawn/protection simulation
+- [x] Score Brawl with 120 s timer, score/HP HUD and results
+- [x] X/Y movement, Z jumping and depth ordering implemented; visual quality at all scales remains follow-up QA
+- [x] Deterministic fixed-step simulation, replay regression and browser combat tests
+- [x] Automated four-player complete match, mobile viewport, punch, KO/respawn and repeatability harness
+
+**Accepted limitations / follow-up QA:** physical gamepad hardware; four-player readability at multiple scales; fresh 960 × 540 configured browser and replay comparison; production GitHub Pages console/network inspection. Eight-fighter simulation scalability is tested but eight simultaneous UI fighters are not an M1 requirement.
+
+**Exit:** four-player local Score Brawl playable and automated full-match verified; user accepted milestone with these limitations.
 
 ## Milestone 2 – Shared multiplayer foundations (transport-neutral)
 
