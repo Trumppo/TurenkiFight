@@ -39,6 +39,15 @@ This review checked GitHub PR merge state, documented test evidence and task met
 - `M1-VISUAL-QA` and `M1-GAMEPLAY-QA` remain at `review` in the task queue even though their implementation PRs are merged; close them only through an authorized follow-up.
 - The source reports correctly distinguish simulated gamepads from physical hardware; do not silently promote them to verified.
 
+
+## User manual browser playtest — 2026-10-30
+
+The project owner reports personally testing the deployed game in a browser and confirming that the game is playable, a match starts and finishes, scores accumulate, fighters move, and fighters can hit one another. **Result: USER-REPORTED MANUAL PASS for this basic end-to-end gameplay path.** This is a firsthand user report, not an independent agent observation.
+
+The report does **not** establish the exact player count used, a 120-second stopwatch measurement, three distinct attack types, KO/respawn protection, rematch, real gamepads, multi-resolution readability, browser console/network cleanliness or a fresh 960×540 session. Those checks remain unverified unless separately evidenced.
+
+Automated browser coverage was subsequently expanded through merged [PR #18](https://github.com/Trumppo/TurenkiFight/pull/18), including a complete four-player match, punch/scoring, KO/respawn, repeated controlled inputs and mobile canvas checks. All five harness tests and other PR checks passed before merge. This adds automation evidence but does not replace the remaining visual/hardware checks or constitute user approval of the milestone.
+
 ## Recommendation and approval gate
 
 **Conditional readiness for user acceptance review; not accepted.** Automated gameplay and presentation coverage support progressing to manual acceptance. Do not set M1 to done, mark milestone accepted, or check outstanding roadmap items until the user explicitly approves and any required evidence is recorded.
