@@ -52,7 +52,8 @@ test('station and P1 prototype render with stable legacy sprite API', async ({ p
   expect(result.keys).toBe(true);
   expect(result.origin).toEqual([0.5, 1]);
   expect(result.p1DistinctFromP2).toBe(true);
-  if (retro) expect(result.p1Paired).toBe(true);
+  // Deliberately permit 1px facial detail: 320x180 is a stage art grid, not a fighter limit.
+  if (retro) expect(result.p1Paired).toBe(false);
   expect(errors).toEqual([]);
   expect(missing).toEqual([]);
 });
