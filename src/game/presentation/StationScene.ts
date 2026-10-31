@@ -6,6 +6,7 @@ import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
 import { VIEWPORT, cameraScale } from './viewport';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
 import { createRetroP1Textures, RETRO_PREVIEW, RETRO_STATION_PATH } from './retroPrototype';
+import { createRetroP2Textures } from './retroP2';
 
 export class StationScene extends Phaser.Scene {
   private state: GameState = createState(['P1'], 'lobby');
@@ -39,7 +40,10 @@ export class StationScene extends Phaser.Scene {
     this.cameras.main.setZoom(cameraScale(this.scale.width, this.scale.height));
     this.cameras.main.centerOn(VIEWPORT.logicalWidth / 2, VIEWPORT.logicalHeight / 2);
     createFighterTextures(this);
-    if (RETRO_PREVIEW) createRetroP1Textures(this);
+    if (RETRO_PREVIEW) {
+      createRetroP1Textures(this);
+      createRetroP2Textures(this);
+    }
     this.add.image(0, 0, VISUAL_ASSETS.station.backdrop.key).setOrigin(0, 0)
       .setDisplaySize(VIEWPORT.logicalWidth, VIEWPORT.logicalHeight).setDepth(-100);
     const hud = this.add.graphics().setDepth(1000);
