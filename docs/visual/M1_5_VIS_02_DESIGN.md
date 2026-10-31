@@ -1,5 +1,7 @@
 # M1.5-VIS-02 — Four-fighter retro art design and acceptance gate
 
+> **Implementation update 2026-10-31:** VIS-02A P2 retro art was merged in PR #30 (main commit `d199fc5`). The initial P2-unimplemented baseline below is historical. VIS-02B P3/P4 branch exists, but its final acceptance has not been verified. Refer to [four-agent sprint](../AGENT_SPRINT_2026-10-31.md) before starting work.
+
 **Status:** DESIGN READY FOR OWNER REVIEW; implementation NOT authorized by this document.
 **Baseline:** PR #21 merged at c0ae871; retro preview opt-in via VITE_VISUAL_STYLE=retro. P1 retro 32×48 default, 48×64 experiment remains opt-in. P2–P4 classic.
 
