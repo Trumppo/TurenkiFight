@@ -4,6 +4,8 @@
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
+> **Status checkpoint 2026-10-31 (planning review):** M1 remains accepted with documented limitations. M1.5 VIS-01 (opt-in P1 + Turenki station retro prototype) was merged in PR #21, merge commit `c0ae871`; this is **not** acceptance of the full M1.5 visual upgrade. M1.5 gameplay robustness tests were merged earlier; see `docs/M1_5_GAMEPLAY_ROBUSTNESS_REPORT.md`. M2 transport-neutral protocol work exists on `feature/m2-input-frame-contract` and is **not on main** (branch 56 commits ahead of main when compared on 2026-10-31); PR #25 integration and latest CI need verification before merge. The WebSocket vs WebRTC decision remains OPEN. See `docs/AGENT_HANDOFF_2026-10-31.md`. This checkpoint supersedes the stale M1.5 “planned only” label below until the milestone section is fully reconciled.
+
 ## Milestone 0 – Project foundations
 
 **Status: technically complete (2026-10-24).** User verified both GitHub Actions and the deployed browser prototype. License selection remains a separate administrative follow-up.
