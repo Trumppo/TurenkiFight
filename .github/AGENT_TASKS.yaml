@@ -184,6 +184,7 @@ tasks:
     status: in_progress
     priority: P1
     specification: docs/M1_5_VISUAL_UPGRADE.md
+    execution_brief: docs/visual/M1_5_TESTER_EXECUTION_BRIEF.md
     depends_on: [M1-5-VIS-03, M1-5-VIS-04]
     scope:
       - tests/browser/
@@ -456,3 +457,20 @@ tasks:
     last_updated: "2026-10-31"
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/71
     notes: "PR #71 squash-merged as 23cd011 after all five checks passed (including retro visual QA). Old draft PR #38 closed; no visual assets or game rules changed."
+
+  - id: M2-AGENT-HANDOFF-GATES
+    title: Reconcile current M1.5 and M2 agent handoff gates
+    assigned_role: planning-session
+    session_id: planning-session-20261031-handoffs-current
+    status: review
+    priority: P0
+    depends_on: []
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/77
+    specification: docs/M2_AGENT_HANDOFF_2026-10-31.md
+    scope: [docs/M2_AGENT_HANDOFF_2026-10-31.md, docs/visual/M1_5_TESTER_EXECUTION_BRIEF.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Preserve current Tester VIS-05 status and owner approval gate
+      - Preserve Gameplay benchmark implementation status
+      - Keep M2 envelope implementation blocked pending owner approval
+    last_updated: "2026-10-31"
+    notes: "Current-main replacement for conflicted planning PR #72; no milestone accepted."
