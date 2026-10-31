@@ -1,6 +1,6 @@
 # TurenkiFight – Prototype Roadmap v0.4
 
-**Updated:** 2026-10-30. Milestones, not calendar commitments.
+**Updated:** 2026-10-31. Milestones, not calendar commitments. Current four-agent sprint: [AGENT_SPRINT_2026-10-31.md](AGENT_SPRINT_2026-10-31.md).
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
@@ -34,15 +34,17 @@
 
 ## Milestone 1.5 – Retro raster visual upgrade
 
-**Status: PLANNED; art direction approved 2026-10-30.** Early-1990s raster aesthetic inspired by Janne50v card technique, not its Dune theme. Keep 640 × 360 logical camera and prototype a 320 × 180 art grid before full conversion.
+**Status: IN PROGRESS, not milestone-accepted.** VIS-01 P1/station merged in #21; VIS-02A P2 merged in #30. VIS-02B P3/P4 and VIS-04 HUD branches exist, but final review/CI/owner visual acceptance is unverified. See sprint audit. Original direction approved 2026-10-30. Early-1990s raster aesthetic inspired by Janne50v card technique, not its Dune theme. Keep 640 × 360 logical camera and prototype a 320 × 180 art grid before full conversion.
 
-- [ ] Approve one fighter and Turenki station visual proof
+- [x] Approve one fighter and Turenki station visual proof (VIS-01, PR #21; not full milestone approval)
 - [ ] Upgrade four fighters, station, HUD and impact effects without changing gameplay
 - [ ] Pass automated and manual visual QA at native, integer-scaled and mobile sizes
 
 **Exit:** user-approved visual upgrade with unchanged deterministic gameplay and green tests. See [M1.5 visual upgrade plan](M1_5_VISUAL_UPGRADE.md).
 
 ## Milestone 2 – Shared multiplayer foundations (transport-neutral)
+
+**Status: PARTIAL IMPLEMENTATION.** M2 session roster, bounded tick input buffer and authorized ingress merged in PRs #33–35 (main `e5799bc`). These are isolated modules, not yet integrated with the M2 codec or game loop. PR #25 protocol branch remains unmerged (56 ahead, 5 behind at audit); PR #37 tick-boundary hardening is under review. See [integration gate](M2_INTEGRATION_GATE.md).
 
 - [ ] Define versioned InputFrame, StateSnapshot, event and room protocol schemas
 - [ ] Separate simulation, authority, rendering, mode rules and transport adapters
