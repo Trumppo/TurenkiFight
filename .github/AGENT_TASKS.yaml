@@ -285,7 +285,7 @@ tasks:
       - Host loss, reconnect, sequence, tick and payload limits specified
       - Gameplay and Tester receive independent implementation and negative-test gates
       - Owner approves contract before production implementation
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/47
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/49
     last_updated: "2026-10-31"
     notes: "Design-only PR; no transport or protocol implementation and no merge authorization."
   - id: M2-ENVELOPE-IMPLEMENTATION
