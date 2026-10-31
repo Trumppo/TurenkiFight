@@ -246,7 +246,7 @@ tasks:
     title: Independently verify merged M2 protocol and ingress
     assigned_role: tester-session
     session_id: tester-session-20261031
-    status: in_progress
+    status: done
     priority: P0
     specification: docs/M2_INTEGRATION_GATE.md
     depends_on: [M2-PROTOCOL-INTEGRATION]
@@ -255,7 +255,7 @@ tasks:
       - Record exact SHA and PASS PASS WITH LIMITATIONS or FAIL
       - Test malformed frames, authorization, replay, reconnect and 7200 ticks
     last_updated: "2026-10-31"
-    notes: "PR #62 preliminary report merged; PR #63 independent negative protocol regressions merged. Four-player 7200-tick replay test in progress; ingress authorization/replay/reconnect and final verdict pending."
+    notes: "Independent QA PASS WITH LIMITATIONS on main 6baef11; PRs #63, #64 and #65 merged with green CI. Exact SHAs, coverage and transport-auth exclusions documented in docs/M2_INDEPENDENT_TESTER_REPORT.md."
 
   - id: M2-INGRESS-IDENTITY-REGRESSION
     title: Test host authority, malformed identities and disconnect replay
