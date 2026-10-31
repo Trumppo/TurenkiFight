@@ -15,3 +15,7 @@ Keep simulation headless and deterministic, separate from Phaser rendering. Keep
 Designer first reads the current repository and task specification, then creates a small task with ownership and acceptance criteria. Gameplay and Graphics implement independent slices, Tester verifies the resulting changes and returns reproducible findings to Designer. Defects go back to the owning worker and Tester re-checks them. Designer reviews the evidence and prepares a PR; the owner approves and merges it.
 
 Connect OpenCode Go in the OpenCode UI with `/connect`, then verify the exact models with `/models` (or `opencode models` where supported) before running a task. Model availability, account entitlements and regional routing are runtime facts; this repository does not contain credentials or override privacy settings. A failed local model lookup must be reported rather than silently replaced with a different provider.
+
+## Pull request title convention
+
+Every new PR title must start with the responsible agent's uppercase role and a colon followed by a space: `DESIGNER:`, `LOGIC:`, `GRAPHICS:`, or `TESTER:`. For manually coordinated `planning-session` work, use `DESIGNER:`. Examples: `LOGIC: korjaa osumalogiikka`, `GRAPHICS: paranna HUD:n luettavuutta`, `TESTER: lisää regressiotestit`, `DESIGNER: päivitä M2-suunnitelma`. Keep the exact `Task: TASK-ID` line in the PR body. Prefix identifies the owner, not the reviewer or the type of change. Existing PRs need not be renamed retroactively.
