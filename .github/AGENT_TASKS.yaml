@@ -122,3 +122,162 @@ tasks:
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/17
     last_updated: "2026-10-30"
     notes: "User explicitly accepted M1 on 2026-10-30 with documented limitations. Follow-up QA: physical gamepads, visual readability, 960x540 replay and published Pages console/network."
+
+  # 2026-10-31 reconciliation: status denotes verified evidence, not inferred branch completion.
+  - id: DESIGN-ROADMAP-01
+    title: Reconcile current milestones, PRs and agent task queue
+    assigned_role: planning-session
+    status: review
+    priority: P0
+    specification: docs/AGENT_SPRINT_2026-10-31.md
+    branch: planning/agent-roadmap-reconciliation-20261031
+    depends_on: []
+    scope: [docs/, .github/AGENT_TASKS.yaml, README.md]
+    acceptance:
+      - Compare main and open PRs with all four agent workstreams
+      - Correct stale README, ROADMAP and GOALS status claims
+      - Publish near-term tasks with dependencies and test gates
+    last_updated: "2026-10-31"
+    notes: "Designer reconciliation PR pending; do not mark done before review and merge."
+  - id: M15-VIS-02A
+    title: Verify merged P2 retro art and owner visual approval
+    assigned_role: graphics-session
+    status: review
+    priority: P1
+    specification: docs/visual/M1_5_VIS_02_DESIGN.md
+    branch: feature/m1-5-vis-02a-p2-retro
+    depends_on: [M1-VISUAL-QA]
+    scope: [src/game/presentation/, public/assets/, docs/visual/, tests/browser/]
+    acceptance:
+      - PR 30 merge verified
+      - Tester inspects real retro and classic screenshots and pose readability
+      - Owner approves visual quality before milestone acceptance
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/30
+    last_updated: "2026-10-31"
+    notes: "Merged commit d199fc5; implementation done but independent visual acceptance remains open."
+  - id: M15-VIS-02B
+    title: Finish P3 and P4 distinct retro sprites
+    assigned_role: graphics-session
+    status: ready
+    priority: P0
+    specification: docs/visual/M1_5_VIS_02_DESIGN.md
+    branch: feature/m1-5-vis-02b-p3-p4-retro
+    depends_on: [M15-VIS-02A]
+    scope: [src/game/presentation/, public/assets/, docs/visual/, tests/browser/]
+    acceptance:
+      - Four distinguishable fighters and unchanged pose keys
+      - Retro and classic screenshots at desktop and mobile sizes
+      - Green unit build browser tests and independent QA
+    last_updated: "2026-10-31"
+    notes: "Branch exists; do not infer merge, CI or visual approval from branch name."
+  - id: M15-VIS-04
+    title: Retro HUD and impact feedback without changing game rules
+    assigned_role: graphics-session
+    status: ready
+    priority: P1
+    specification: docs/M1_5_VISUAL_UPGRADE.md
+    branch: feature/m1-5-vis-04-retro-hud
+    depends_on: [M15-VIS-02A]
+    scope: [src/game/presentation/, public/assets/, docs/visual/, tests/browser/]
+    acceptance:
+      - Readable HP scores timer and results at 640x360 and mobile
+      - Lobby overlay no longer obscures important station information
+      - Classic rollback and deterministic gameplay unchanged
+    last_updated: "2026-10-31"
+    notes: "Coordinate shared scene files with VIS-02B; branch exists but completion unverified."
+  - id: M2-PROTOCOL-INTEGRATION
+    title: Reconcile and validate PR 25 transport-neutral protocol
+    assigned_role: gameplay-session
+    status: ready
+    priority: P0
+    specification: docs/M2_INTEGRATION_GATE.md
+    branch: feature/m2-input-frame-contract
+    depends_on: [M1-GAMEPLAY-QA]
+    scope: [src/game/protocol/, docs/M2_INPUT_PROTOCOL.md, tests/]
+    acceptance:
+      - Actual PR 25 head, draft state, base and divergence verified
+      - Current-main merge conflicts resolved without force push
+      - Strict codecs replay and snapshot tests pass on final SHA
+      - Independent Tester approval and explicit owner merge approval
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/25
+    last_updated: "2026-10-31"
+    notes: "Branch was 56 ahead and 5 behind main at audit; do not merge from stale CI."
+  - id: M2-SESSION-INTEGRATION
+    title: Connect merged authorized ingress to canonical M2 codec and tick driver
+    assigned_role: gameplay-session
+    status: blocked
+    priority: P0
+    specification: docs/M2_SESSION_01_CONTRACT.md
+    branch: feature/m2-session-integration
+    depends_on: [M2-PROTOCOL-INTEGRATION]
+    scope: [src/game/session/, src/game/protocol/, tests/]
+    acceptance:
+      - Authorized connection and slot identity checked before input parsing
+      - Canonical InputFrame consumed exactly once per tick
+      - Disconnect loss reorder replay and four-player deterministic tests
+      - No WS or WebRTC transport selected
+    last_updated: "2026-10-31"
+    notes: "PR 33-35 merged; integration to PR 25 codecs still missing."
+  - id: M2-TICK-HARDENING
+    title: Review safe tick range and full-match deterministic buffer tests
+    assigned_role: gameplay-session
+    status: review
+    priority: P1
+    specification: docs/AGENT_SPRINT_2026-10-31.md
+    branch: fix/m2-session-buffer-tick-overflow
+    depends_on: [M1-GAMEPLAY-QA]
+    scope: [src/game/session/, tests/]
+    acceptance:
+      - PR 37 current head CI and tests pass
+      - Tester reviews safe integer bounds and 7200 tick regression
+      - Owner approves merge
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/37
+    last_updated: "2026-10-31"
+    notes: "Open PR; merge and CI not verified."
+  - id: QA-M15-RELEASE
+    title: Independent M1.5 visual and hardware release gate
+    assigned_role: tester-session
+    status: ready
+    priority: P0
+    specification: docs/AGENT_SPRINT_2026-10-31.md
+    branch: qa/m15-release-gate
+    depends_on: [M15-VIS-02A]
+    scope: [docs/visual/, tests/browser/, tests/]
+    acceptance:
+      - Review P2 P3 P4 and HUD separately against actual PR heads
+      - Retro classic mobile and 2x 3x screenshots inspected
+      - Physical controller and Pages production gaps explicitly reported
+      - PASS FAIL or NOT VERIFIED per acceptance criterion
+    last_updated: "2026-10-31"
+    notes: "Can start immediately on merged P2; future visuals assessed as delivered."
+  - id: QA-M2-SECURITY
+    title: Independent M2 protocol and session ingress adversarial QA
+    assigned_role: tester-session
+    status: ready
+    priority: P0
+    specification: docs/M2_INTEGRATION_GATE.md
+    branch: qa/m2-security-gate
+    depends_on: [M1-GAMEPLAY-QA]
+    scope: [src/game/session/, src/game/protocol/, tests/, docs/]
+    acceptance:
+      - Audit PR 25 and PR 37 exact SHAs and CI
+      - Test spoof replay disconnect reconnect oversized payload and tick bounds
+      - Verify codec and session boundary cannot be bypassed in integration
+      - Report reproducible defects without self-approving implementation
+    last_updated: "2026-10-31"
+    notes: "Audit current main session layer immediately; codec integration requires PR 25."
+  - id: DESIGN-M2-BENCH
+    title: Define fair WS vs WebRTC measurement and acceptance matrix
+    assigned_role: planning-session
+    status: ready
+    priority: P1
+    specification: docs/NETWORK_BENCHMARK_PLAN.md
+    branch: planning/m2-benchmark-contract
+    depends_on: [DESIGN-ROADMAP-01]
+    scope: [docs/, benchmarks/]
+    acceptance:
+      - Use canonical codec and separate transport envelope in both alternatives
+      - Define repeatable 4 8 12 16 player workload and p50 p95 p99 metrics
+      - Preserve topology decision as open until benchmark evidence
+    last_updated: "2026-10-31"
+    notes: "No network architecture decision or benchmark performance claims yet."
