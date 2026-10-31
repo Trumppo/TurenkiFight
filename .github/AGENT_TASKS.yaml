@@ -370,7 +370,7 @@ tasks:
   - id: M2-BENCHMARK-HARNESS-IMPLEMENTATION
     title: Build deterministic fixture generator and in-memory benchmark adapter
     assigned_role: gameplay-session
-    status: ready
+    status: review
     priority: P1
     specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
     depends_on: [M2-BENCHMARK-HARNESS-DESIGN]
@@ -380,7 +380,10 @@ tasks:
       - Validated machine-readable run manifest and NOT_MEASURED semantics
       - CI unit tests and independent Tester gate
     last_updated: "2026-10-31"
-    notes: "No sockets or transport decision in first implementation slice."
+    session_id: gameplay-session-20261031-benchmark
+    branch: feature/m2-benchmark-in-memory-fixture
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/73
+    notes: "PR #73 implementation complete and four CI checks green; independent Tester gate pending. No sockets, performance claims or transport decision."
 
   - id: M2-SAFE-TICK-WINDOW
     title: Reject unsafe tick arithmetic and verify 7200-tick canonical assembly
@@ -404,7 +407,7 @@ tasks:
     title: Release disconnected gamepads and reclaim lobby slots without changing match roster
     assigned_role: gameplay-session
     session_id: gameplay-session-20261031-rejoin
-    status: review
+    status: done
     priority: P0
     specification: docs/M1_GAMEPLAY_CONTROLS.md
     branch: feature/m1-5-gamepad-rejoin-current-main
@@ -417,4 +420,4 @@ tasks:
       - Browser smoke, unit tests and CI pass
     last_updated: "2026-10-31"
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/71
-    notes: "Supersedes stale draft PR #38; limited input handling change, no visual or rules changes. CI pending."
+    notes: "PR #71 squash-merged as 23cd011 after all five checks passed (including retro visual QA). Old draft PR #38 closed; no visual assets or game rules changed."
