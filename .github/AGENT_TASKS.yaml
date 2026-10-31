@@ -9,6 +9,26 @@ coordination:
   update_policy: "Update task state via PR or an explicitly authorized commit; avoid simultaneous edits to this file."
   merge_policy: "Never merge a PR without user approval."
   statuses: [backlog, ready, claimed, in_progress, review, blocked, done]
+  work_package_policy: "Prefer one PR per coherent work package (normally 2-5 related tasks), multiple commits on one branch; avoid PRs for individual fixes or interim task metadata. Never batch unrelated changes."
+  pr_body_policy: "Keep Task: <primary-task-id> for existing PR tracking; list additional tasks in the description until multi-task tracking is implemented."
+  ci_policy: "Run focused local checks during development; full required CI on PR. Never bypass mandatory checks or owner merge approval."
+# Optional work packages supplement existing task IDs; do not migrate historical tasks.
+# Legacy task validation and PR tracking still use tasks: and one primary Task: ID.
+work_packages:
+  - id: WP-M2-BENCHMARK-VALIDATION
+    title: Benchmark correctness and independent evidence
+    assigned_role: tester-session
+    status: blocked
+    task_ids: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
+    depends_on: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
+    branch: tester/wp-m2-benchmark-validation
+    pr_policy: one_pr_per_package
+    acceptance:
+      - Validate reproducible 7200-tick fixtures and fingerprints after implementation merge
+      - Report negative-test coverage and NOT_MEASURED limitations
+      - Publish independently reproducible evidence without network performance claims
+    notes: "Planning example; task allocation requires coordination with Tester. Do not treat this package as an automatic claim."
+
 tasks:
   - id: M1-GAMEPLAY
     title: Implement deterministic four-player Score Brawl
