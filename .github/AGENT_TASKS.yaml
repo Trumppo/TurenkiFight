@@ -381,3 +381,21 @@ tasks:
       - CI unit tests and independent Tester gate
     last_updated: "2026-10-31"
     notes: "No sockets or transport decision in first implementation slice."
+
+  - id: M2-SAFE-TICK-WINDOW
+    title: Reject unsafe tick arithmetic and verify 7200-tick canonical assembly
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261031
+    status: review
+    priority: P0
+    specification: docs/M2_SESSION_01_CONTRACT.md
+    branch: feature/m2-safe-tick-current-main-2
+    depends_on: [M2-SESSION-BOUNDARY-QA]
+    scope: [src/game/session/]
+    acceptance:
+      - Reject start ticks whose bounded lead can overflow safe integers
+      - Deterministic four-player 7200-tick assembly despite reversed arrival order
+      - CI, browser smoke and game harness pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/58
+    last_updated: "2026-10-31"
+    notes: "Rebased replacement for PR #57 after concurrent planning changes; no transport decision."
