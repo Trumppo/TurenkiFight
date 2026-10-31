@@ -127,8 +127,10 @@ tasks:
   - id: DESIGN-ROADMAP-01
     title: Reconcile current milestones, PRs and agent task queue
     assigned_role: planning-session
+    session_id: planning-session-20261031
     status: review
     priority: P0
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/40
     specification: docs/AGENT_SPRINT_2026-10-31.md
     branch: planning/agent-roadmap-reconciliation-20261031
     depends_on: []
@@ -142,7 +144,7 @@ tasks:
   - id: M15-VIS-02A
     title: Verify merged P2 retro art and owner visual approval
     assigned_role: graphics-session
-    status: review
+    status: done
     priority: P1
     specification: docs/visual/M1_5_VIS_02_DESIGN.md
     branch: feature/m1-5-vis-02a-p2-retro
@@ -221,6 +223,7 @@ tasks:
   - id: M2-TICK-HARDENING
     title: Review safe tick range and full-match deterministic buffer tests
     assigned_role: gameplay-session
+    session_id: gameplay-session-20261031
     status: review
     priority: P1
     specification: docs/AGENT_SPRINT_2026-10-31.md
@@ -273,7 +276,7 @@ tasks:
     priority: P1
     specification: docs/NETWORK_BENCHMARK_PLAN.md
     branch: planning/m2-benchmark-contract
-    depends_on: [DESIGN-ROADMAP-01]
+    depends_on: []
     scope: [docs/, benchmarks/]
     acceptance:
       - Use canonical codec and separate transport envelope in both alternatives
