@@ -1,7 +1,7 @@
 # TurenkiFight – Technical Architecture v0.4
 
-**Date:** 2026-10-24  
-**Status:** Proposed architecture, not yet implemented. **Network topology and authority placement are undecided pending comparative tests.** See [NETWORK_BENCHMARK_PLAN.md](NETWORK_BENCHMARK_PLAN.md).
+**Updated:** 2026-10-31  
+**Status:** Local deterministic game and transport-neutral protocol/session foundations implemented; network adapters, room service and online authority deployment remain unimplemented. **Network topology and authority placement are undecided pending comparative tests.** See [NETWORK_BENCHMARK_PLAN.md](NETWORK_BENCHMARK_PLAN.md), [M2 protocol QA](M2_INDEPENDENT_TESTER_REPORT.md) and [session envelope proposal](M2_SESSION_ENVELOPE_V1.md) (not yet owner-approved).
 
 ## High-level model
 
@@ -41,7 +41,8 @@ src/
     simulation/      # pure fixed-step rules, collision, combat
     modes/           # ScoreBrawlMode, future modes
     protocol/        # versioned messages, serialization
-    networking/      # local, WebRTC, WebSocket adapters
+    session/         # transport-neutral authorized session assembly (implemented foundation)
+    networking/      # proposed future WebRTC / WebSocket adapters
     input/           # keyboard/gamepad → player input frame
     presentation/    # Phaser scenes, camera, animation, HUD
     assets/          # stage art, sprites, audio
@@ -72,10 +73,14 @@ Simulation owns the truth of positions, health, scores and match state. Presenta
 
 ## Rendering and fixed camera
 
-- Target 384 × 216 logical pixels at 16:9, nearest-neighbor scaling.
+- Current logical camera: **640 × 360** at 16:9, nearest-neighbor pixel-art scaling. Earlier 384 × 216 was superseded.
 - Fixed world-to-screen transform; no following individual players.
 - Ground X/Y and jump Z; sort fighters by Y (feet) each frame.
 - Render/update frequencies are decoupled from simulation ticks. Visual effects cannot mutate authoritative state.
+
+## Current implementation boundary
+
+The browser currently supports a four-player local Score Brawl with deterministic simulation, presentation and input handling. Versioned canonical input/snapshot/event protocol and transport-neutral authorized session foundations have tests; they do **not** provide live multiplayer, network sockets, signaling, remote rooms or measured transport performance. The M2 session envelope is a proposal pending explicit owner approval. The in-memory benchmark work tests reproducibility and manifest correctness, not real network latency or throughput.
 
 ## Suggested wire messages
 
