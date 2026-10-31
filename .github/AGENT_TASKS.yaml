@@ -456,3 +456,65 @@ tasks:
     last_updated: "2026-10-31"
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/71
     notes: "PR #71 squash-merged as 23cd011 after all five checks passed (including retro visual QA). Old draft PR #38 closed; no visual assets or game rules changed."
+
+  - id: M2-BENCHMARK-INDEPENDENT-QA
+    title: Independently validate deterministic benchmark fixture and manifest
+    assigned_role: tester-session
+    status: blocked
+    priority: P1
+    specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
+    depends_on: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
+    scope: [tests/, docs/]
+    acceptance:
+      - Verify exact merged main SHA and independently rerun 7200 tick four-player fixture twice
+      - Verify stable input, state and event fingerprints plus malformed and NOT_MEASURED manifest rejection
+      - Publish PASS, PASS WITH LIMITATIONS or FAIL with commands, artifacts and limitations
+      - Explicitly exclude transport latency, bandwidth and NAT performance claims
+    last_updated: "2026-10-31"
+    notes: "Claim after benchmark implementation is merged; independent QA does not imply network benchmark acceptance."
+
+  - id: M1-5-RESPONSIVE-VISUAL-REVIEW
+    title: Review 3x desktop scaling and mobile HUD legibility
+    assigned_role: tester-session
+    status: ready
+    priority: P1
+    specification: docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md
+    depends_on: [M1-5-VIS-04]
+    scope: [docs/visual/, tests/browser/]
+    acceptance:
+      - Review 1920x1080 desktop and 390x844 mobile captures on exact current main SHA
+      - Distinguish readability defects from aesthetic preferences and document objective reproduction steps
+      - Verify native 640x360 clipping regression and published Pages assets when accessible
+      - Record remaining owner acceptance requirements without marking M1.5 accepted
+    last_updated: "2026-10-31"
+    notes: "Follow-up evidence for VIS05-02 and VIS05-03; do not duplicate the VIS-05 owner gate."
+
+  - id: M1-5-RESPONSIVE-VISUAL-FIX
+    title: Remediate confirmed desktop scaling or mobile HUD readability defects
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md
+    depends_on: [M1-5-RESPONSIVE-VISUAL-REVIEW]
+    scope: [src/game/presentation/, public/assets/, tests/browser/]
+    acceptance:
+      - Address only Tester-confirmed reproducible findings and preserve 640x360 logical camera
+      - Preserve fighter pose contracts, classic mode and deterministic gameplay
+      - Add targeted browser visual regression and obtain Tester retest
+    last_updated: "2026-10-31"
+    notes: "Do not start before Tester publishes actionable findings; no speculative redesign."
+
+  - id: M2-BENCHMARK-SCENARIO-PLAN
+    title: Specify next benchmark scenario coverage and measurement gates
+    assigned_role: planning-session
+    status: ready
+    priority: P2
+    specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
+    depends_on: [M2-BENCHMARK-HARNESS-DESIGN]
+    scope: [docs/]
+    acceptance:
+      - Define reproducible eight-player, jitter, packet loss and host-disconnect fixture acceptance
+      - Separate correctness-only in-memory scenarios from real transport measurements
+      - Define evidence and approval gates before selecting WS or WebRTC
+    last_updated: "2026-10-31"
+    notes: "Planning-only; no transport implementation or architecture selection."
