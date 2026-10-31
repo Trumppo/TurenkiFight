@@ -269,3 +269,37 @@ tasks:
       - CI and browser tests pass
     last_updated: "2026-10-31"
     notes: "No transport selection. Preserve current session authority API."
+
+  - id: M2-SESSION-ENVELOPE-DESIGN
+    title: Review transport-neutral session envelope v1 and lifecycle security gates
+    assigned_role: planning-session
+    session_id: planning-session-20261031-envelope
+    status: review
+    priority: P0
+    specification: docs/M2_SESSION_ENVELOPE_V1.md
+    branch: planning/m2-session-envelope-v1-contract
+    depends_on: [M2-PROTOCOL-INTEGRATION]
+    scope: [docs/M2_SESSION_ENVELOPE_V1.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Trusted connection identity and player ownership boundary documented
+      - Host loss, reconnect, sequence, tick and payload limits specified
+      - Gameplay and Tester receive independent implementation and negative-test gates
+      - Owner approves contract before production implementation
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/49
+    last_updated: "2026-10-31"
+    notes: "Design-only PR; no transport or protocol implementation and no merge authorization."
+  - id: M2-ENVELOPE-IMPLEMENTATION
+    title: Implement transport-neutral session envelope validation and adapter boundary
+    assigned_role: gameplay-session
+    status: blocked
+    priority: P0
+    specification: docs/M2_SESSION_ENVELOPE_V1.md
+    depends_on: [M2-SESSION-ENVELOPE-DESIGN, M2-SESSION-HARDENING]
+    scope: [src/game/session/, src/game/protocol/, tests/]
+    acceptance:
+      - Trusted adapter-supplied connection identity cannot be spoofed by payload
+      - Strict envelope and bounded parsing preserve canonical InputFrame
+      - Room isolation, replay, disconnect and tick bounds covered
+      - Independent Tester report and owner merge approval
+    last_updated: "2026-10-31"
+    notes: "Start only after Designer contract approval; no WebSocket/WebRTC implementation."
