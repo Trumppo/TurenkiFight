@@ -15,19 +15,21 @@ test('VIS-02B visual review sheet for all four retro fighters', async ({ page })
     const scale = 3, cellW = 40, cellH = 54;
     canvas.id = 'fighter-review-sheet';
     canvas.width = poses.length * cellW * scale;
-    canvas.height = 4 * cellH * scale;
+    canvas.height = (4 * cellH + 14) * scale;
     canvas.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;image-rendering:pixelated';
     const ctx = canvas.getContext('2d')!;
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = '#202938';
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.font = '10px monospace';
+    ctx.fillStyle = '#ffffff';
+    for (const [column,pose] of poses.entries()) ctx.fillText(pose, (column*cellW+1)*scale, 10*scale);
     for (const [row,id] of ['P1','P2','P3','P4'].entries()) {
       for (const [column,pose] of poses.entries()) {
         const image = textures.get(`fighter-${id}-${pose}-2`).getSourceImage();
-        ctx.drawImage(image,(column*cellW+4)*scale,(row*cellH+2)*scale,32*scale,48*scale);
+        ctx.drawImage(image,(column*cellW+4)*scale,(row*cellH+16)*scale,32*scale,48*scale);
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(id, (column*cellW+2)*scale,(row*cellH+cellH-1)*scale);
+        ctx.fillText(id, (column*cellW+2)*scale,(row*cellH+cellH+13)*scale);
       }
     }
     document.body.appendChild(canvas);
