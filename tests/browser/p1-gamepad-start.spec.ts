@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('P1 explicitly binds an unassigned gamepad Start; nonhost cannot start; reconnect retains host', async ({ page }) => {
+test('P1 explicitly binds an unassigned gamepad Start; nonhost cannot start; reconnect requires explicit host Start', async ({ page }) => {
   await page.addInitScript(() => {
     const pads = Array.from({ length: 4 }, (_, index) => ({
       index, connected: true, id: 'QA pad ' + index, mapping: 'standard',
@@ -51,14 +51,16 @@ test('P1 explicitly binds an unassigned gamepad Start; nonhost cannot start; rec
   expect((await inspect()).slots).toEqual([[1, 'P3'], [2, 'P4'], [0, 'P1']]);
   await button(0, 9, false);
 
-  // Disconnect must preserve ownership; reconnecting the same index restores the binding.
+  // Disconnect clears stale pad ownership. Reconnect never auto-claims P1;
+  // an explicit fresh Start may claim P1 again at results.
   await page.evaluate(() => {
     (window as typeof window & { __qaPads?: { connected: boolean }[] }).__qaPads![0].connected = false;
   });
-  await expect.poll(async () => (await inspect()).slots).toContainEqual([0, 'P1']);
+  await expect.poll(async () => (await inspect()).slots).not.toContainEqual([0, 'P1']);
   await page.evaluate(() => {
     (window as typeof window & { __qaPads?: { connected: boolean }[] }).__qaPads![0].connected = true;
   });
+  expect((await inspect()).slots).not.toContainEqual([0, 'P1']);
   const result = await page.evaluate(async () => {
     const scene = (window as typeof window & {
       __turenkiGame?: { scene: { getScene: (name: string) => { state: unknown } } };
@@ -73,6 +75,7 @@ test('P1 explicitly binds an unassigned gamepad Start; nonhost cannot start; rec
   expect(result).toBe('results');
   await button(0, 9, true);
   await expect.poll(async () => (await inspect()).phase).toBe('countdown');
+  expect((await inspect()).slots).toContainEqual([0, 'P1']);
   expect((await inspect()).roster).toEqual(['P1', 'P2', 'P3', 'P4']);
   await button(0, 9, false);
 });

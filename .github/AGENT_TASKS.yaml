@@ -353,7 +353,7 @@ tasks:
     title: Specify deterministic cross-transport benchmark harness and artifacts
     assigned_role: planning-session
     session_id: planning-session-20261031-harness
-    status: review
+    status: done
     priority: P1
     specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
     branch: planning/m2-benchmark-harness-spec
@@ -366,11 +366,11 @@ tasks:
       - CI and owner-approved merge
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/56
     last_updated: "2026-10-31"
-    notes: "Design only; no benchmark runs or performance claims."
+    notes: "Design-only PR #56 merged as ac97a34; no benchmark measurements or transport decision."
   - id: M2-BENCHMARK-HARNESS-IMPLEMENTATION
     title: Build deterministic fixture generator and in-memory benchmark adapter
     assigned_role: gameplay-session
-    status: blocked
+    status: ready
     priority: P1
     specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
     depends_on: [M2-BENCHMARK-HARNESS-DESIGN]
@@ -386,7 +386,7 @@ tasks:
     title: Reject unsafe tick arithmetic and verify 7200-tick canonical assembly
     assigned_role: gameplay-session
     session_id: gameplay-session-20261031
-    status: review
+    status: done
     priority: P0
     specification: docs/M2_SESSION_01_CONTRACT.md
     branch: feature/m2-safe-tick-current-main-2
@@ -396,6 +396,25 @@ tasks:
       - Reject start ticks whose bounded lead can overflow safe integers
       - Deterministic four-player 7200-tick assembly despite reversed arrival order
       - CI, browser smoke and game harness pass
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/58
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/59
     last_updated: "2026-10-31"
-    notes: "Rebased replacement for PR #57 after concurrent planning changes; no transport decision."
+    notes: "PR #59 squash-merged as d85f886 after four green CI checks; PR #57 is superseded."
+
+  - id: M1-5-GAMEPAD-REJOIN
+    title: Release disconnected gamepads and reclaim lobby slots without changing match roster
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261031-rejoin
+    status: review
+    priority: P0
+    specification: docs/M1_GAMEPLAY_CONTROLS.md
+    branch: feature/m1-5-gamepad-rejoin-current-main
+    depends_on: [M1-GAMEPLAY-QA]
+    scope: [src/game/presentation/StationScene.ts, tests/browser/gamepad-rejoin.spec.ts, tests/browser/p1-gamepad-start.spec.ts]
+    acceptance:
+      - Disconnect clears controller ownership and button edge state
+      - Explicit join can reclaim an existing unbound P2-P4 lobby slot
+      - Match roster remains stable and disconnected input is neutral
+      - Browser smoke, unit tests and CI pass
+    last_updated: "2026-10-31"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/71
+    notes: "Supersedes stale draft PR #38; limited input handling change, no visual or rules changes. CI pending."
