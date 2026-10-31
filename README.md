@@ -2,7 +2,7 @@
 
 TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting game with an 8-bit-inspired pixel-art aesthetic. Inspired by the energy of classic arcade fighters (including IK+), but with its own mechanics, art and identity.
 
-**Status (2026-10-31):** Playable M1 local four-player Score Brawl, accepted with limitations. Opt-in M1.5 retro visuals and transport-neutral M2 protocol/session foundations are implemented; online multiplayer is not yet available. See [roadmap](docs/ROADMAP.md).
+**Status (2026-10-31):** Playable M1 local four-player Score Brawl, accepted with limitations. Opt-in M1.5 retro visuals and transport-neutral M2 protocol/session foundations are implemented; M1.5 awaits independent visual/release checks and owner approval. Online multiplayer is not yet available. See [roadmap](docs/ROADMAP.md).
 
 ## Core vision
 
@@ -19,11 +19,26 @@ TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting 
 
 The static client is built and published through **GitHub Pages**. Online transport and room hosting are not implemented; WebSocket and WebRTC approaches remain candidates for measured experiments. Fully offline LAN will require locally serving the client and whichever backend/signaling components the selected design needs.
 
-## Design documents
+## Run locally
+
+```bash
+npm ci
+npm run dev
+```
+
+Open the local URL printed by Vite. To check changes, run `npm test`, `npm run build`, and `npm run test:browser` (Playwright browsers may need installation via `npx playwright install chromium`). GitHub Pages publishes the static browser client; it is not a multiplayer server.
+
+## Design and project status
 
 - [Game design](docs/GAME_DESIGN.md)
-- [Technical architecture](docs/ARCHITECTURE.md)
+- [Technical architecture](docs/ARCHITECTURE.md) and [architecture principles](docs/ARCHITECTURE_PRINCIPLES.md)
 - [Development roadmap](docs/ROADMAP.md)
+- [M1 acceptance report](docs/M1_ACCEPTANCE_REPORT.md)
+- [M1.5 independent visual evidence](docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md) — pending release acceptance
+- [M2 independent protocol QA](docs/M2_INDEPENDENT_TESTER_REPORT.md) — PASS WITH LIMITATIONS, not a network test
+- [M2 benchmark harness specification](docs/M2_BENCHMARK_HARNESS_SPEC.md) — in-memory correctness work, not measured transport performance
+
+The authoritative agent task queue is [`.github/AGENT_TASKS.yaml`](.github/AGENT_TASKS.yaml). Updating it does not automatically launch agents. Merge and milestone approval follow its coordination policy.
 
 ## Implemented stack and future transport candidates
 
