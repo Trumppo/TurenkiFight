@@ -36,6 +36,13 @@ for (const size of sizes) {
     expect(bounds!.height).toBeGreaterThan(0);
     expect(bounds!.width).toBeLessThanOrEqual(size.width + 1);
     expect(bounds!.height).toBeLessThanOrEqual(size.height + 1);
+    // Mobile fit must include the whole arena, not just a nonzero canvas size.
+    if (size.name === 'mobile') {
+      expect(bounds!.x, 'Mobile playfield must start inside the viewport').toBeGreaterThanOrEqual(0);
+      expect(bounds!.x + bounds!.width, 'Mobile playfield must fit horizontally').toBeLessThanOrEqual(size.width + 1);
+      expect(bounds!.y, 'Mobile playfield must start inside the viewport').toBeGreaterThanOrEqual(0);
+      expect(bounds!.y + bounds!.height, 'Mobile playfield must fit vertically').toBeLessThanOrEqual(size.height + 1);
+    }
     // A visible canvas may still be clipped below the viewport by page chrome.
     // At the native viewport the entire playfield must be visible without scrolling.
     if (size.name === 'native') {
