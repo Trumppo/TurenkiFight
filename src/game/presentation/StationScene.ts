@@ -82,11 +82,12 @@ export class StationScene extends Phaser.Scene {
     if (this.state.phase === 'lobby') {
       for (const pad of pads) {
         const join = !!pad.buttons[8]?.pressed;
-        if (join && !this.lastJoinButtons.get(pad.index) && !this.gamepadSlots.has(pad.index) && this.state.fighters.length < 4) {
-          const id = ['P2', 'P3', 'P4'].find(candidate => !this.state.fighters.some(f => f.id === candidate));
+        if (join && !this.lastJoinButtons.get(pad.index) && !this.gamepadSlots.has(pad.index)) {
+          const id = ['P2', 'P3', 'P4'].find(candidate => this.state.fighters.some(f => f.id === candidate) && ![...this.gamepadSlots.values()].includes(candidate))
+            ?? (this.state.fighters.length < 4 ? ['P2', 'P3', 'P4'].find(candidate => !this.state.fighters.some(f => f.id === candidate)) : undefined);
           if (!id) continue;
           this.gamepadSlots.set(pad.index, id);
-          this.state = createState([...this.state.fighters.map(f => f.id), id], 'lobby');
+          if (!this.state.fighters.some(f => f.id === id)) this.state = createState([...this.state.fighters.map(f => f.id), id], 'lobby');
         }
       }
     }
