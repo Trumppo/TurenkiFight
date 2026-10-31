@@ -1,10 +1,10 @@
 # TurenkiFight – WebSocket vs WebRTC Network Architecture Benchmark
 
-**Version:** 0.1  
+**Version:** 0.2  
 **Created:** 2026-10-24  
 **Status:** Test plan; no transport selected.
 
-> **Protocol reconciliation note (2026-10-31):** The `InputFrame` shape illustrated below is an early benchmark sketch, **not** the current M2 v1 wire contract. The implementation on `feature/m2-input-frame-contract` uses a versioned tick and canonical `inputs[]` array; see `docs/M2_INPUT_PROTOCOL.md` on that branch. Before building network adapters, use `docs/M2_INTEGRATION_GATE.md` to reconcile the simulation-boundary codec with a separate future session/transport envelope. Keep benchmark workloads identical across WebSocket and WebRTC. No transport has been selected.
+> **Current protocol baseline (2026-10-31):** The canonical M2 v1 `InputFrame`, `StateSnapshot` and event codecs are merged on `main` via PR #41. The proposed separate transport/session envelope is described in [M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md). Benchmark both architectures using the **same serialized canonical codec bytes**, validation policy and session semantics; measure transport framing separately. No transport has been selected.
 
 ## Decision to make
 
@@ -28,9 +28,9 @@ Do not mistake the two variants as an isolated transport-only A/B test: they als
 Implement the same framework-independent 60 Hz simulation, combat rules, input validation, room semantics, serialized protocol and snapshot policy in both variants. Start with 8 fighters in a fixed arena, seeded scripted input sequences and repeatable load tests. Run identical build revisions, client devices and network impairments. Avoid running a browser game renderer on every synthetic client when measuring server/transport scaling; separately run real-browser end-to-end tests.
 
 **Protocol:**
-- Input: `InputFrame {version, playerId, seq, tick, buttons, axisX, axisY}` at 30–60 Hz (measure both).
-- State: `StateSnapshot {version, tick, fighters, scores, matchClock}` at 10/20/30 Hz (measure all three).
-- Events: `HitEvent`, `KOEvent`, `RoomState`, `MatchEnd`, `Ping/Pong`.
+- Input: canonical versioned `InputFrame` with `tick` and `inputs[]` (see [M2_INPUT_PROTOCOL.md](M2_INPUT_PROTOCOL.md)); generate 30/60 frames per second and record byte size of actual encoded frames.
+- State: canonical `StateSnapshot` from the same protocol contract, sent at 10/20/30 Hz; record encoded bytes rather than assuming a schema.
+- Events: canonical `EventBatch` plus separate transport/session control messages (join, room status, ping/pong) from the proposed [session envelope](M2_SESSION_ENVELOPE_V1.md).
 - Explicit framing, size limits, player ownership validation, monotonically increasing sequence numbers, disconnect timeout and reconnect behavior.
 - Record exact payload bytes and overhead; use JSON initially, evaluate binary only after measuring.
 
@@ -45,6 +45,10 @@ Implement the same framework-independent 60 Hz simulation, combat rules, input v
 5. **Network emulation:** controlled added RTT 20/60/120 ms, jitter 0/10/30 ms, packet loss 0/1/3/5%, bandwidth caps; document whether impairment applies to one or both directions. Browser and Linux network shaping tools may differ.
 
 Use synchronized clocks when measuring one-way delays; otherwise report RTT and input-to-authoritative-acknowledgement or input-to-visible-result with the measurement method stated. Do not report one-way latency from unsynchronized clocks.
+
+## Reproducibility contract
+
+Each benchmark run must capture: Git commit SHA, protocol version, scenario ID, seed, scripted input fixture hash, participant count, per-browser local player count, adapter version, simulation tick rate, input/snapshot frequency, impairment settings, run start/end timestamps, transport topology, host hardware, browser/OS and TURN use. Use the same fixture and seed for both architectures, and report missing fields as **NOT MEASURED** rather than zero. Publish a machine-readable run manifest alongside summary metrics. Keep authority-placement overhead and pure transport overhead as separate measures.
 
 ## Workload matrix
 
