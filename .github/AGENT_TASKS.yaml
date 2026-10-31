@@ -199,10 +199,12 @@ tasks:
     title: Compare and propose next TurenkiFight arena visual concept
     assigned_role: graphics-session
     status: review
+    session_id: graphics-session-20261031-arena
     priority: P2
     specification: docs/visual/NEXT_ARENA_CONCEPT.md
     depends_on: [M1-5-VIS-04]
     branch: graphics/next-arena-concept-20261031
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/70
     scope:
       - docs/visual/NEXT_ARENA_CONCEPT.md
     acceptance:
