@@ -55,8 +55,9 @@ test('disconnected pad releases its slot; replacement joins without a phantom fi
   expect((await snapshot()).slots).toEqual([[1, 'P2']]);
 
   // During an active match, disconnect never removes a fighter or adds a new one.
-  await page.keyboard.press('Enter');
+  await page.keyboard.down('Enter');
   await expect.poll(async () => (await snapshot()).phase).toBe('countdown');
+  await page.keyboard.up('Enter');
   await page.evaluate(() => { (window as any).__pads[1] = null; });
   await expect.poll(async () => (await snapshot()).slots).toEqual([]);
   expect((await snapshot()).players).toEqual(['P1', 'P2']);
