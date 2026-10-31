@@ -193,6 +193,8 @@ tasks:
       - Document manual visual checks and obtain explicit owner acceptance
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
     notes: "Four-viewport automated screenshot coverage added; owner manual review and acceptance outstanding. CI trigger updated to include retro*.spec.ts."
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
+    notes: "Four-viewport visual screenshot QA merged as b6e6b12 with five green PR workflows; independent Tester review, Pages verification and explicit owner acceptance still required."
     last_updated: "2026-10-31"
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
