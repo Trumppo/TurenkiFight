@@ -195,6 +195,39 @@ tasks:
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
     notes: "Tester regression strengthens 4-viewport scene readiness, 640x360 camera and four-fighter pose asset checks; manual image review, Pages verification and explicit owner acceptance remain pending."
     last_updated: "2026-10-31"
+  - id: M2-VIS-ARENA-01
+    title: Compare and propose next TurenkiFight arena visual concept
+    assigned_role: graphics-session
+    status: review
+    priority: P2
+    specification: docs/visual/NEXT_ARENA_CONCEPT.md
+    depends_on: [M1-5-VIS-04]
+    branch: graphics/next-arena-concept-20261031
+    scope:
+      - docs/visual/NEXT_ARENA_CONCEPT.md
+    acceptance:
+      - Compare yläaste, K-kauppa, Mesku and kävelykatu
+      - Propose retro composition, palette and four-fighter readability rules
+      - Document modular graphics manifest and migration gates
+      - Obtain owner approval before selecting or implementing an arena
+    last_updated: "2026-10-31"
+    notes: "Concept-only; no new arena artwork or code. VIS-05 remains independent and in progress."
+  - id: M2-VIS-ARENA-ARCH
+    title: Introduce typed presentation-only arena manifest after concept approval
+    assigned_role: graphics-session
+    status: blocked
+    priority: P2
+    specification: docs/visual/NEXT_ARENA_CONCEPT.md
+    depends_on: [M2-VIS-ARENA-01, M1-5-VIS-05]
+    scope:
+      - src/game/presentation/
+      - tests/
+    acceptance:
+      - Preserve classic and retro station defaults and screenshots
+      - Resolve arena assets without simulation or input changes
+      - Unit tests and browser CI pass
+    last_updated: "2026-10-31"
+    notes: "Blocked on owner concept approval and independent M1.5 visual QA."
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
     assigned_role: planning-session
