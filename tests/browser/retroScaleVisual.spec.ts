@@ -52,6 +52,16 @@ for (const size of sizes) {
         'Native playfield bottom must fit in the browser viewport',
       ).toBeLessThanOrEqual(size.height + 1);
     }
+    if (size.name === 'mobile') {
+      // Confirm the full logical playfield is actually inside the visible window.
+      // The CSS bounds assertions above catch overflow; this checks both axes
+      // against the viewport after layout has settled.
+      await expect.poll(async () => canvas.evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        return rect.left >= 0 && rect.top >= 0 &&
+          rect.right <= window.innerWidth + 1 && rect.bottom <= window.innerHeight + 1;
+      })).toBe(true);
+    }
     mkdirSync('artifacts/visual', { recursive: true });
     await page.screenshot({
       path: `artifacts/visual/vis-05-arena-${size.name}.png`,
