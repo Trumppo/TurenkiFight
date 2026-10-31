@@ -184,6 +184,7 @@ tasks:
     status: in_progress
     priority: P1
     specification: docs/M1_5_VISUAL_UPGRADE.md
+    execution_brief: docs/visual/M1_5_TESTER_EXECUTION_BRIEF.md
     depends_on: [M1-5-VIS-03, M1-5-VIS-04]
     scope:
       - tests/browser/
@@ -195,6 +196,7 @@ tasks:
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
     notes: "PR #68 merged green; retro QA screenshot artifact verified present (run 41214564812, artifact 13047384075). Evidence and pending screenshot review, Pages verification and owner acceptance documented in docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md."
     last_updated: "2026-10-31"
+    next_action: "Tester: inspect actual screenshots and Pages, publish findings, then request owner acceptance; no automatic acceptance."
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
     assigned_role: planning-session
@@ -353,7 +355,7 @@ tasks:
     title: Specify deterministic cross-transport benchmark harness and artifacts
     assigned_role: planning-session
     session_id: planning-session-20261031-harness
-    status: review
+    status: done
     priority: P1
     specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
     branch: planning/m2-benchmark-harness-spec
@@ -366,11 +368,11 @@ tasks:
       - CI and owner-approved merge
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/56
     last_updated: "2026-10-31"
-    notes: "Design only; no benchmark runs or performance claims."
+    notes: "Design spec merged via PR #56; no benchmark runs or performance claims."
   - id: M2-BENCHMARK-HARNESS-IMPLEMENTATION
     title: Build deterministic fixture generator and in-memory benchmark adapter
     assigned_role: gameplay-session
-    status: blocked
+    status: ready
     priority: P1
     specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
     depends_on: [M2-BENCHMARK-HARNESS-DESIGN]
@@ -380,7 +382,7 @@ tasks:
       - Validated machine-readable run manifest and NOT_MEASURED semantics
       - CI unit tests and independent Tester gate
     last_updated: "2026-10-31"
-    notes: "No sockets or transport decision in first implementation slice."
+    notes: "Unblocked by merged PR #56; in-memory fixture and adapter only, no sockets or transport decision."
 
   - id: M2-SAFE-TICK-WINDOW
     title: Reject unsafe tick arithmetic and verify 7200-tick canonical assembly
@@ -399,3 +401,17 @@ tasks:
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/58
     last_updated: "2026-10-31"
     notes: "Rebased replacement for PR #57 after concurrent planning changes; no transport decision."
+
+  - id: M2-AGENT-HANDOFF-GATES
+    title: Reconcile M2 and M1.5 agent handoff and approval gates
+    assigned_role: planning-session
+    status: review
+    priority: P0
+    specification: docs/M2_AGENT_HANDOFF_2026-10-31.md
+    scope: [docs/M2_AGENT_HANDOFF_2026-10-31.md, docs/visual/M1_5_TESTER_EXECUTION_BRIEF.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Preserve independent Tester M1.5 and M2 gates
+      - Unblock in-memory benchmark only; keep unapproved envelope implementation blocked
+      - Reconcile agent status with current main
+    last_updated: "2026-10-31"
+    notes: "Replaces conflicted planning PRs #58 and #60; Tester VIS-05 remains in progress."
