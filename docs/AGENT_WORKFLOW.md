@@ -1,5 +1,7 @@
 # Hybrid agent workflow (M1)
 
+> **2026-10-31 update:** The original M1 role examples below are historical. Current Designer, Graphics, Gameplay and Tester assignments, dependencies and file boundaries are in [AGENT_SPRINT_2026-10-31.md](AGENT_SPRINT_2026-10-31.md) and [AGENT_TASKS.yaml](../.github/AGENT_TASKS.yaml). Agents still require explicit launch and task claim; a branch alone does not mean work is accepted.
+
 The shared source of task intent is [AGENT_TASKS.yaml](../.github/AGENT_TASKS.yaml). **No agent is launched automatically.** A human starts a Work/Codex session, gives it a role, and asks it to read this file and its `specification` document.
 
 ## Worker procedure
