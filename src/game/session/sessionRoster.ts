@@ -9,6 +9,7 @@ export class SessionRoster {
   private readonly connections = new Map<SessionConnectionId, Set<SessionPlayerId>>();
   private readonly owners = new Map<SessionPlayerId, SessionConnectionId>();
   private host: SessionConnectionId | null = null;
+  private hostAssigned = false;
 
   constructor(private readonly maxPlayers = 4) {
     if (!Number.isSafeInteger(maxPlayers) || maxPlayers < 1) throw new Error('Invalid player capacity');
@@ -24,7 +25,10 @@ export class SessionRoster {
     slots.add(playerId);
     this.connections.set(connectionId, slots);
     this.owners.set(playerId, connectionId);
-    if (this.host === null) this.host = connectionId;
+    if (!this.hostAssigned) {
+      this.host = connectionId;
+      this.hostAssigned = true;
+    }
   }
 
   owns(connectionId: SessionConnectionId, playerId: SessionPlayerId): boolean {
