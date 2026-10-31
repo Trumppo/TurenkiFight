@@ -1,6 +1,6 @@
 # M1.5 — Retro raster visual upgrade
 
-**Status:** planned; visual direction approved by project owner on 2026-10-30. M1 remains accepted. This is a visual-only milestone before M2 networking.
+**Status:** implementation integrated on main through PRs #21, #30, #36, #39, #44 and #47; independent visual QA is in review in PR #52. **M1.5 is not yet accepted by the owner.** Visual direction approved 2026-10-30; M1 remains accepted. This is a visual-only milestone before M2 networking.
 
 ## Art direction
 Use the early-1990s raster/pixel-art treatment explored in the Janne50v birthday card as a *style reference*, not its Dune setting or assets. TurenkiFight must remain recognizably Finnish, playful and arcade-readable. Keep the Turenki railway station and four distinguishable fighters. Original artwork only; do not copy sprites or backgrounds from commercial games.
@@ -21,3 +21,13 @@ Use the early-1990s raster/pixel-art treatment explored in the Janne50v birthday
 
 ## Boundaries and acceptance
 No changes to deterministic simulation, combat balance, mode rules, multiplayer architecture or join flow. Art assets must be modular, replaceable and independent of core logic. Preserve existing animation pose names and asset-loading contracts. Review a one-character/one-background prototype first; no claim that M1.5 is implemented or accepted until tested and explicitly approved.
+
+## Implementation and verification checkpoint — 2026-10-31
+
+- VIS-01: opt-in retro Turenki station and P1 proof, merged in PR #21.
+- VIS-02: P2 merged in PR #30; P3/P4 merged in PR #36; original 32 × 48 fighter cels, shared pose contracts.
+- VIS-03: station clock, architectural and signage details merged in PR #44; see `docs/visual/M1_5_VIS_03_STATION_REVIEW.md`.
+- VIS-04: retro scoreboard frame merged in PR #39 and damage flash merged in PR #47.
+- VIS-05: four-viewport screenshot and canvas-fit checks added in PR #52. Workflow trigger updated to include all `retro*.spec.ts` changes.
+
+**Outstanding release gates:** confirm the final PR #52 CI and its screenshots, review fighter readability, station, HUD and hit feedback manually at native, 2×/3× and mobile sizes, check published Pages assets, then obtain explicit owner acceptance. CI green is necessary but does not by itself constitute visual approval.
