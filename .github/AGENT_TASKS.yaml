@@ -193,7 +193,7 @@ tasks:
       - Verify production build, browser tests and Pages assets
       - Document manual visual checks and obtain explicit owner acceptance
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
-    notes: "Downloaded and inspected screenshot artifact 13047384075. Native 640x360 browser screenshot clips lower arena (VIS05-01); 3x scaling and mobile HUD readability require review. See docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md. CI green; Pages and owner acceptance pending."
+    notes: "PR #76 merged green; new screenshots (artifact 13048787716, run 41217236396) reviewed. VIS05-01 native clipping fixed and regression green. VIS05-02 desktop scale and VIS05-03 mobile HUD legibility pending review. Pages unavailable from tester environment; owner acceptance pending. See docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md."
     last_updated: "2026-10-31"
   - id: M2-VIS-ARENA-01
     title: Compare and propose next TurenkiFight arena visual concept
