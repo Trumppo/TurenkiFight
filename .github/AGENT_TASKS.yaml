@@ -319,6 +319,6 @@ tasks:
       - Define identical seed and fixture hashes for both transport architectures
       - Separate topology and transport overhead and record reproducible run manifests
       - CI and agent task validation pass before owner-approved merge
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/50
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/51
     last_updated: "2026-10-31"
     notes: "Planning-only update; no measured performance or transport decision."
