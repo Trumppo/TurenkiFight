@@ -34,7 +34,7 @@ Scene changes only route station asset loading and P1 texture replacement. No ch
 - Classic Playwright: 9 passed, 5 skipped (retro-only checks).
 - Expanded retro Playwright: 12 passed, 2 skipped (base-size-specific checks).
 - npm test: 39 passed. npm run build: passed with a large-chunk warning.
-- These are local results on the uncommitted follow-up worktree, not CI results for an updated PR head. Local screenshots are in artifacts/visual. Independent Tester rechecked sequential baseline retro, classic and expanded runs: prefixes remained separate and the helper reached two-player fighting before moving P1 with D. No CI on the updated head or physical-controller testing was performed.
+- These results are from the integrated local branch revision/m1-5-visual-proof and do not yet represent CI on the updated PR head. Local screenshots are in artifacts/visual. Independent Tester rechecked sequential baseline retro, classic and expanded runs: prefixes remained separate and the helper reached two-player fighting before moving P1 with D. No CI on the updated head or physical-controller testing was performed.
 
 ## Owner decision and scope
 Owner approved the visual direction represented by this prototype and authorized PR #21 merge on 2026-10-31. This approval is limited to the one-fighter/station proof; it does not accept M1.5 or authorize mass asset conversion. VIS-02 through VIS-05 remain separate work packages.
