@@ -11,7 +11,7 @@ Current opt-in retro P1 sprite is 32 × 48 pixels with a shared anatomical rig. 
 - Keep the supporting leg under the pelvis; draw the kicking leg in front of the jacket, with exactly two legs and two arms. Place the extension toe visibly ahead of the knee and torso, with at least 2 pixels of transparent canvas margin.
 - Drive both variants from the same anatomical rig, with a distinct render transform and character-specific proportions rather than duplicating pose definitions.
 - Compare four kick frames, all ten poses, native 640 × 360, 2×, 3× and mobile screenshots against the existing version. Check sprite origin, collisions, animation keys, 4-player gameplay and retro/classic toggle.
-- Keep the experiment opt-in and reversible. Do not switch P1 default art or merge the PR without visual approval.
+- Keep the experiment opt-in and reversible. The owner-approved PR may merge; selecting 48x64 as the default remains a separate decision.
 
 ## Acceptance criteria
 
@@ -23,4 +23,4 @@ Current opt-in retro P1 sprite is 32 × 48 pixels with a shared anatomical rig. 
 
 ## Current state
 
-The expanded sprite is implemented behind the opt-in build flag and included in the owner-approved PR #21 proof, but has not been selected as default. Current-revision CI and owner visual review remain pending.
+The expanded sprite is implemented behind the opt-in build flag and included in the owner-approved PR #21 proof, but has not been selected as default. Current-revision CI remains pending; owner visual review is complete for this prototype only.
