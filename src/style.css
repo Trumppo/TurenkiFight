@@ -6,3 +6,16 @@ p { color: #c2cbd2; }
 #game { width: 100%; max-width: 960px; margin: 16px auto; border: 4px solid #cfba86; }
 #game canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
 .instructions { font-size: 13px; line-height: 1.7; }
+
+/* Fit the complete playfield into short browser windows without changing
+   Phaser's logical 640x360 canvas or the deterministic simulation. */
+@media (max-height: 540px) {
+  main { padding: 4px 8px; }
+  h1 { font-size: 16px; line-height: 20px; margin: 0; }
+  main > p:not(.instructions) { font-size: 11px; line-height: 14px; margin: 2px 0; }
+  #game {
+    width: min(100%, calc((100dvh - 100px) * 16 / 9 + 8px));
+    margin: 4px auto;
+  }
+  .instructions { font-size: 10px; line-height: 12px; margin: 4px 0; }
+}
