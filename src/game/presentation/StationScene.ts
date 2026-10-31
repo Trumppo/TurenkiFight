@@ -49,6 +49,21 @@ export class StationScene extends Phaser.Scene {
     const hud = this.add.graphics().setDepth(1000);
     hud.fillStyle(0x172536, 0.92).fillRect(0, 0, VIEWPORT.logicalWidth, Math.max(35, VISUAL.hudHeight));
     hud.lineStyle(1, VISUAL.colors.cream).lineBetween(0, 35, VIEWPORT.logicalWidth, 35);
+    if (RETRO_PREVIEW) {
+      // Pixel-art scoreboard: crisp inset, corner pixels and four player slots.
+      hud.fillStyle(0x101a27, 1).fillRect(2, 2, VIEWPORT.logicalWidth - 4, 31);
+      hud.lineStyle(1, 0xc7a76a, 1).strokeRect(2, 2, VIEWPORT.logicalWidth - 4, 31);
+      hud.lineStyle(1, 0x526a70, 1);
+      for (let slot = 1; slot < 4; slot++) {
+        const x = Math.round(slot * VIEWPORT.logicalWidth / 4);
+        hud.lineBetween(x, 3, x, 32);
+      }
+      hud.fillStyle(0xf4d38d, 1);
+      for (const x of [3, VIEWPORT.logicalWidth - 5]) {
+        hud.fillRect(x, 3, 2, 2);
+        hud.fillRect(x, 30, 2, 2);
+      }
+    }
     this.scoreLabel = this.add.text(7, 6, '', { fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7' }).setDepth(1001).setVisible(false);
     this.hudTimer = this.add.text(192, 26, '02:00', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7' }).setOrigin(0.5, 0).setDepth(1001);
     this.statusLabel = this.add.text(192, 42, '', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7', backgroundColor: '#172536', align: 'center' }).setOrigin(0.5, 0).setDepth(1002);
