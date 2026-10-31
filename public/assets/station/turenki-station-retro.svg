@@ -72,4 +72,20 @@
 <!-- Station annex mullions and subtle reflections -->
 <g fill="#263e4a"><rect x="186" y="79" width="1" height="14"/><rect x="221" y="79" width="1" height="14"/><rect x="256" y="79" width="1" height="14"/><rect x="291" y="79" width="1" height="14"/></g>
 <g fill="#b7c9c4"><rect x="177" y="80" width="4" height="1"/><rect x="212" y="80" width="4" height="1"/><rect x="247" y="80" width="4" height="1"/><rect x="282" y="80" width="4" height="1"/></g>
+<!-- VIS-03: understated Finnish station cues stay behind the fighter plane. -->
+<!-- Platform clock, mounted on the annex fascia. -->
+<rect x="286" y="55" width="15" height="13" fill="#23333e"/>
+<rect x="288" y="57" width="11" height="9" fill="#d9d0b3"/>
+<rect x="293" y="58" width="1" height="4" fill="#334451"/>
+<rect x="293" y="61" width="4" height="1" fill="#334451"/>
+<!-- Warm roofline highlights and gutter downpipes. -->
+<g fill="#a1a6a0"><rect x="7" y="26" width="125" height="1"/><rect x="168" y="66" width="150" height="1"/></g>
+<g fill="#4a5050"><rect x="136" y="44" width="2" height="55"/><rect x="314" y="73" width="2" height="29"/></g>
+<!-- Poster frame and station service placard, away from combat silhouettes. -->
+<rect x="306" y="82" width="9" height="14" fill="#25343e"/>
+<rect x="307" y="83" width="7" height="12" fill="#d1b78c"/>
+<rect x="308" y="85" width="5" height="2" fill="#5b6f70"/>
+<rect x="308" y="89" width="4" height="1" fill="#5b6f70"/>
+<!-- Platform edge markings: sparse at the sides, no busy texture under players. -->
+<g fill="#c6ad7d"><rect x="5" y="109" width="19" height="1"/><rect x="296" y="109" width="19" height="1"/></g>
 </svg>
