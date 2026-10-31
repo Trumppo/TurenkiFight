@@ -36,6 +36,15 @@ for (const size of sizes) {
     expect(bounds!.height).toBeGreaterThan(0);
     expect(bounds!.width).toBeLessThanOrEqual(size.width + 1);
     expect(bounds!.height).toBeLessThanOrEqual(size.height + 1);
+    // A visible canvas may still be clipped below the viewport by page chrome.
+    // At the native viewport the entire playfield must be visible without scrolling.
+    if (size.name === 'native') {
+      expect(bounds!.y, 'Native playfield must not start above the viewport').toBeGreaterThanOrEqual(0);
+      expect(
+        bounds!.y + bounds!.height,
+        'Native playfield bottom must fit in the browser viewport',
+      ).toBeLessThanOrEqual(size.height + 1);
+    }
     mkdirSync('artifacts/visual', { recursive: true });
     await page.screenshot({
       path: `artifacts/visual/vis-05-arena-${size.name}.png`,
