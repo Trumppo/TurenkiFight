@@ -50,7 +50,14 @@ for (const [label, width, height] of [
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await expect(page.locator('#game canvas')).toBeVisible();
-    await page.keyboard.press('Shift');
+    await page.keyboard.down('Shift');
+    await expect.poll(() => page.evaluate(() => {
+      const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (name: string) => {
+        fighterSprites: Map<string, unknown>;
+      } } } }).__turenkiGame;
+      return game?.scene.getScene('StationScene').fighterSprites.size ?? 0;
+    })).toBeGreaterThanOrEqual(2);
+    await page.keyboard.up('Shift');
     await page.keyboard.press('Enter');
     await expect.poll(() => page.evaluate(() => {
       const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (name: string) => {
