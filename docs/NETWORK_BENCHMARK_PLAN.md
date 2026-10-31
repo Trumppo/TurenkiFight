@@ -4,6 +4,8 @@
 **Created:** 2026-10-24  
 **Status:** Test plan; no transport selected.
 
+> **Protocol reconciliation note (2026-10-31):** The `InputFrame` shape illustrated below is an early benchmark sketch, **not** the current M2 v1 wire contract. The implementation on `feature/m2-input-frame-contract` uses a versioned tick and canonical `inputs[]` array; see `docs/M2_INPUT_PROTOCOL.md` on that branch. Before building network adapters, use `docs/M2_INTEGRATION_GATE.md` to reconcile the simulation-boundary codec with a separate future session/transport envelope. Keep benchmark workloads identical across WebSocket and WebRTC. No transport has been selected.
+
 ## Decision to make
 
 Choose a network topology for a browser-based 2.5D party fighting game with configurable player count and LAN/remote-internet play. Compare:
