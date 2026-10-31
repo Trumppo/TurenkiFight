@@ -395,6 +395,6 @@ tasks:
       - Unblock Gameplay in-memory benchmark harness without sockets
       - Preserve explicit owner approval gate for envelope production schema
       - All required CI checks pass
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/57
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/58
     last_updated: "2026-10-31"
     notes: "Coordination only; QA acceptance and envelope owner approval remain outstanding."
