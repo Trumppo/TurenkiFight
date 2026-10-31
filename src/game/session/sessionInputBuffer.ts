@@ -11,7 +11,8 @@ export class SessionInputBuffer {
 
   constructor(startTick = 0, private readonly maxLead = 8, private readonly maxPlayers = 4) {
     if (![startTick, maxLead, maxPlayers].every(Number.isSafeInteger) ||
-      startTick < 0 || maxLead < 0 || maxLead > 120 || maxPlayers < 1 || maxPlayers > 4) {
+      startTick < 0 || startTick > Number.MAX_SAFE_INTEGER - maxLead - 1 ||
+      maxLead < 0 || maxLead > 120 || maxPlayers < 1 || maxPlayers > 4) {
       throw new Error('Invalid input buffer configuration');
     }
     this.nextTick = startTick;
