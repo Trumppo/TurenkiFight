@@ -2,7 +2,7 @@
 
 TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting game with an 8-bit-inspired pixel-art aesthetic. Inspired by the energy of classic arcade fighters (including IK+), but with its own mechanics, art and identity.
 
-**Status:** pre-production / prototype design v0.3 (2026-10-24). No playable build yet.
+**Status (2026-10-31):** Playable M1 local four-player Score Brawl, accepted with limitations. Opt-in M1.5 retro visuals and transport-neutral M2 protocol/session foundations are implemented; online multiplayer is not yet available. See [roadmap](docs/ROADMAP.md).
 
 ## Core vision
 
@@ -17,7 +17,7 @@ TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting 
 
 ## Planned distribution
 
-The static client will be built and published via **GitHub Pages**. A small separately hosted Linux backend will provide room/lobby coordination and WebRTC signaling, with an optional authoritative dedicated-game-server mode later. Browser-only offline LAN requires local hosting of the client and signaling.
+The static client is built and published through **GitHub Pages**. Online transport and room hosting are not implemented; WebSocket and WebRTC approaches remain candidates for measured experiments. Fully offline LAN will require locally serving the client and whichever backend/signaling components the selected design needs.
 
 ## Design documents
 
@@ -25,9 +25,9 @@ The static client will be built and published via **GitHub Pages**. A small sepa
 - [Technical architecture](docs/ARCHITECTURE.md)
 - [Development roadmap](docs/ROADMAP.md)
 
-## Candidate stack (not yet implemented)
+## Implemented stack and future transport candidates
 
-TypeScript, Vite, Phaser 3, Vitest, Playwright, WebRTC DataChannels, a small WebSocket signaling service, and optionally coturn. These are provisional technology choices subject to prototyping.
+The game uses TypeScript, Vite, Phaser 3, Vitest, Playwright and GitHub Actions. WebSocket, WebRTC DataChannels, signaling and optional TURN are **future experiment candidates**, not existing game networking.
 
 ## Project principles
 
