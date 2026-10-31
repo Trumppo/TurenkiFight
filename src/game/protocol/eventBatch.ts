@@ -1,44 +1,43 @@
-import type { GameEvent, Move } from '../simulation/types';
+import type { GameEvent } from '../simulation/types';
+import { parseGameEvent } from './gameEvent';
 
 export const EVENT_PROTOCOL_VERSION = 1 as const;
 export const MAX_EVENT_BATCH_BYTES = 8192;
+/**
+ * Roster size used by the event bound below. It matches `MAX_SNAPSHOT_FIGHTERS`
+ * in `stateSnapshot.ts` and `MAX_PLAYERS_PER_FRAME` in `inputFrame.ts`; a test
+ * keeps the three constants equal.
+ */
+export const MAX_EVENT_FIGHTERS = 4;
+/**
+ * Per-tick upper bound for the current simulation with a four-fighter roster:
+ * - `HitLanded`: at most one hit per attacker/target pair -> N * (N - 1) = 12
+ * - `Knockout`: each target can be knocked out once per tick -> N = 4
+ * - `Respawned`: each fighter can respawn once per tick -> N = 4
+ * - lifecycle (`MatchStarted`/`MatchEnded`): at most one, and never both -> 1
+ * Total 21. This is an upper bound, not a guarantee that every combination can
+ * occur in the same tick.
+ */
+export const MAX_EVENTS_PER_BATCH =
+  MAX_EVENT_FIGHTERS * (MAX_EVENT_FIGHTERS - 1) + 2 * MAX_EVENT_FIGHTERS + 1;
 export type EventBatch = { version: typeof EVENT_PROTOCOL_VERSION; tick: number; events: GameEvent[] };
 
-const types: GameEvent['type'][] = ['HitLanded', 'Knockout', 'Respawned', 'MatchStarted', 'MatchEnded'];
-const moves: Move[] = ['punch', 'kick', 'jumpkick'];
 const obj = (x: unknown): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x);
-const id = (x: unknown): x is string => typeof x === 'string' && x.length > 0 && x.length <= 64;
 const tick = (x: unknown): x is number => typeof x === 'number' && Number.isSafeInteger(x) && x >= 0;
 
-function parseEvent(value: unknown, batchTick: number): GameEvent {
-  if (!obj(value) || Object.keys(value).some(k => !['tick','type','attacker','target','move'].includes(k)) ||
-      value.tick !== batchTick || !types.includes(value.type as GameEvent['type'])) {
-    throw new Error('Malformed game event');
-  }
-  const type = value.type as GameEvent['type'];
-  if (type === 'HitLanded') {
-    if (!id(value.attacker) || !id(value.target) || value.attacker === value.target ||
-        !moves.includes(value.move as Move)) throw new Error('Invalid combat event');
-  } else if (type === 'Knockout') {
-    if (!id(value.attacker) || !id(value.target) || value.attacker === value.target || value.move !== undefined) throw new Error('Invalid knockout event');
-  } else if (type === 'Respawned') {
-    if (!id(value.target) || value.attacker !== undefined || value.move !== undefined) throw new Error('Invalid respawn event');
-  } else if (value.attacker !== undefined || value.target !== undefined || value.move !== undefined) {
-    throw new Error('Invalid lifecycle event');
-  }
-  return { tick: batchTick, type, ...(value.attacker !== undefined ? { attacker: value.attacker as string } : {}),
-    ...(value.target !== undefined ? { target: value.target as string } : {}),
-    ...(value.move !== undefined ? { move: value.move as Move } : {}) };
-}
-
-export function parseEventBatch(value: unknown): EventBatch {
+/**
+ * Strict batch parser. The wire format has no roster field, so participant
+ * membership is only checked when the host passes its session roster.
+ */
+export function parseEventBatch(value: unknown, roster?: ReadonlySet<string>): EventBatch {
   if (!obj(value) || Object.keys(value).length !== 3 ||
-      Object.keys(value).some(k => !['version','tick','events'].includes(k)) ||
+      Object.keys(value).some(k => !['version', 'tick', 'events'].includes(k)) ||
       value.version !== EVENT_PROTOCOL_VERSION || !tick(value.tick) || !Array.isArray(value.events)) {
     throw new Error('Invalid event batch');
   }
+  if (value.events.length > MAX_EVENTS_PER_BATCH) throw new Error('Event batch exceeds event count limit');
   return { version: EVENT_PROTOCOL_VERSION, tick: value.tick,
-    events: value.events.map((e: unknown) => parseEvent(e, value.tick as number)) };
+    events: value.events.map((event: unknown) => parseGameEvent(event, value.tick as number, roster)) };
 }
 
 export function encodeEventBatch(batch: EventBatch): string {

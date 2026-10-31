@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createState, step } from '../simulation/step';
+import { MOVES, createState, step } from '../simulation/step';
 import { stateSnapshotFingerprint } from './fingerprint';
+import { MAX_SNAPSHOT_TICK } from './stateSnapshot';
 import { MAX_REPLAY_CHECKPOINTS, MAX_REPLAY_FRAMES, verifyReplay } from './replay';
 
 describe('M2 replay verification', () => {
@@ -43,6 +44,31 @@ describe('M2 replay verification', () => {
     expect(() => verifyReplay({ ...record, frames: null } as unknown as typeof record)).toThrow(/malformed replay/);
     expect(() => verifyReplay({ ...record, checkpoints: [null] } as unknown as typeof record)).toThrow(/Invalid replay checkpoint/);
   });
+  it('fails closed instead of returning an unencodable final state', () => {
+    const terminal = { ...createState(['P1'], 'fighting'), tick: MAX_SNAPSHOT_TICK };
+    expect(() => verifyReplay({
+      version: 1,
+      initial: { version: 1, state: terminal },
+      frames: [{ version: 1, tick: MAX_SNAPSHOT_TICK, inputs: [] }],
+      checkpoints: [],
+    })).toThrow(/not encodable/);
+
+    const base = createState(['P1', 'P2'], 'fighting');
+    const punchFrames = MOVES.punch.active + MOVES.punch.recovery;
+    const counter = {
+      ...base,
+      fighters: [
+        { ...base.fighters[0], x: 100, y: 148, facing: 1 as const, attackMove: 'punch' as const, attackFrames: punchFrames, attackCooldown: punchFrames },
+        { ...base.fighters[1], x: 120, y: 148, hitsReceived: Number.MAX_SAFE_INTEGER - 3 },
+      ],
+    };
+    expect(() => verifyReplay({
+      version: 1,
+      initial: { version: 1, state: counter },
+      frames: [{ version: 1, tick: 0, inputs: [] }],
+      checkpoints: [],
+    })).toThrow(/not encodable/);
+  });
   it('rejects unknown replay envelope and checkpoint fields', () => {
     const { state: _state, ...record } = make();
     expect(() => verifyReplay({ ...record, unexpected: true } as unknown as typeof record)).toThrow(/malformed replay/);
@@ -54,6 +80,15 @@ describe('M2 replay verification', () => {
     expect(() => verifyReplay({ ...record, checkpoints: [record.checkpoints[0], record.checkpoints[0]] })).toThrow(/Invalid replay checkpoint/);
     expect(() => verifyReplay({ ...record, checkpoints: [{ tick: -1, fingerprint: '00000000' }] })).toThrow(/Invalid replay checkpoint/);
     expect(() => verifyReplay({ ...record, checkpoints: [{ tick: 0, fingerprint: 'not-a-hash' }] })).toThrow(/Invalid replay checkpoint/);
+  });
+  it('rejects non-string checkpoint fingerprints before pattern coercion', () => {
+    const { state: _state, ...record } = make();
+    for (const malformed of [12345678, { toString: () => 'abcdef01' }, new String('abcdef01'), ['abcdef01'], null]) {
+      expect(() => verifyReplay({
+        ...record,
+        checkpoints: [{ tick: 0, fingerprint: malformed }],
+      } as unknown as typeof record)).toThrow(/Invalid replay checkpoint/);
+    }
   });
   it('rejects corrupted checkpoints and skipped ticks', () => {
     const { state: _state, ...record } = make();

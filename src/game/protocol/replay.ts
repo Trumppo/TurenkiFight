@@ -1,7 +1,7 @@
 import type { InputFrame } from './inputFrame';
 import type { StateSnapshot } from './stateSnapshot';
 import { decodeInputFrame, encodeInputFrame } from './inputFrame';
-import { decodeStateSnapshot, encodeStateSnapshot } from './stateSnapshot';
+import { decodeStateSnapshot, encodeStateSnapshot, assertEncodableState } from './stateSnapshot';
 import { stateSnapshotFingerprint } from './fingerprint';
 import { step } from '../simulation/step';
 
@@ -35,7 +35,8 @@ export function verifyReplay(record: ReplayRecord): ReplayResult {
         Object.keys(point).length !== 2 ||
         Object.keys(point).some(key => !['tick', 'fingerprint'].includes(key)) ||
         !Number.isSafeInteger(point.tick) || point.tick < state.tick ||
-        !fingerprint.test(point.fingerprint) || checkpoints.has(point.tick)) throw new Error('Invalid replay checkpoint');
+        typeof point.fingerprint !== 'string' || !fingerprint.test(point.fingerprint) ||
+        checkpoints.has(point.tick)) throw new Error('Invalid replay checkpoint');
     checkpoints.set(point.tick, point.fingerprint);
   }
   const check = () => {
@@ -49,8 +50,12 @@ export function verifyReplay(record: ReplayRecord): ReplayResult {
     const frame = decodeInputFrame(encodeInputFrame(input));
     if (frame.tick !== state.tick) throw new Error('Non-contiguous replay input tick');
     state = step(state, frame.inputs);
+    // Fail closed on the first step result the snapshot codec would reject,
+    // instead of continuing with an untransportable state.
+    assertEncodableState(state);
     check();
   }
   if ([...checkpoints.keys()].some(tick => tick > state.tick)) throw new Error('Checkpoint beyond replay end');
+  assertEncodableState(state);
   return { final: { version: 1, state }, checked: checkpoints.size };
 }
