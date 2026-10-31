@@ -5,6 +5,7 @@ import { VISUAL } from './visualTheme';
 import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
 import { VIEWPORT, cameraScale } from './viewport';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
+import { createRetroP1Textures, RETRO_PREVIEW, RETRO_STATION_PATH } from './retroPrototype';
 
 export class StationScene extends Phaser.Scene {
   private state: GameState = createState(['P1'], 'lobby');
@@ -30,14 +31,17 @@ export class StationScene extends Phaser.Scene {
 
   preload(): void {
     const backdrop = VISUAL_ASSETS.station.backdrop;
-    this.load.svg(backdrop.key, publicAssetUrl(import.meta.env.BASE_URL, backdrop.path), { width: backdrop.width, height: backdrop.height });
+    const path = RETRO_PREVIEW ? RETRO_STATION_PATH : backdrop.path;
+    this.load.svg(backdrop.key, publicAssetUrl(import.meta.env.BASE_URL, path), { width: RETRO_PREVIEW ? 640 : backdrop.width, height: RETRO_PREVIEW ? 360 : backdrop.height });
   }
 
   create(): void {
     this.cameras.main.setZoom(cameraScale(this.scale.width, this.scale.height));
     this.cameras.main.centerOn(VIEWPORT.logicalWidth / 2, VIEWPORT.logicalHeight / 2);
     createFighterTextures(this);
-    this.add.image(0, 0, VISUAL_ASSETS.station.backdrop.key).setOrigin(0, 0).setDepth(-100);
+    if (RETRO_PREVIEW) createRetroP1Textures(this);
+    this.add.image(0, 0, VISUAL_ASSETS.station.backdrop.key).setOrigin(0, 0)
+      .setDisplaySize(VIEWPORT.logicalWidth, VIEWPORT.logicalHeight).setDepth(-100);
     const hud = this.add.graphics().setDepth(1000);
     hud.fillStyle(0x172536, 0.92).fillRect(0, 0, VIEWPORT.logicalWidth, Math.max(35, VISUAL.hudHeight));
     hud.lineStyle(1, VISUAL.colors.cream).lineBetween(0, 35, VIEWPORT.logicalWidth, 35);
