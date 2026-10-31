@@ -19,7 +19,7 @@ export class SessionInputBuffer {
 
   /** First valid input wins per player/tick. Sequence is monotonic per connection. */
   submit(connectionId: string, sequence: number, targetTick: number, input: PlayerInput): void {
-    if (!connectionId || typeof connectionId !== 'string' || !Number.isSafeInteger(sequence) || sequence < 0 ||
+    if (typeof connectionId !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(connectionId) || !Number.isSafeInteger(sequence) || sequence < 0 ||
       !Number.isSafeInteger(targetTick) || targetTick < this.nextTick ||
       targetTick - this.nextTick > this.maxLead) throw new Error('Stale, future or malformed input');
     if (!input || typeof input.playerId !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(input.playerId) ||
