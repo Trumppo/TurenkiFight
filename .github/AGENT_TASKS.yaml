@@ -122,3 +122,60 @@ tasks:
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/17
     last_updated: "2026-10-30"
     notes: "User explicitly accepted M1 on 2026-10-30 with documented limitations. Follow-up QA: physical gamepads, visual readability, 960x540 replay and published Pages console/network."
+
+  - id: M2-PROTOCOL-INTEGRATION
+    title: Integrate transport-neutral v1 codecs with authorized session ingress
+    assigned_role: gameplay-session
+    status: done
+    priority: P0
+    specification: docs/M2_INTEGRATION_GATE.md
+    branch: integration/m2-protocol-session-20261031
+    depends_on: [M1-GAMEPLAY]
+    scope:
+      - src/game/protocol/
+      - src/game/session/
+      - docs/M2_INPUT_PROTOCOL.md
+    acceptance:
+      - Preserve InputFrame StateSnapshot and EventBatch v1 contracts
+      - Authorize network-sourced player inputs before simulation
+      - Four-player 7200-tick regression and CI pass
+      - Merge only after explicit owner approval
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/41
+    last_updated: "2026-10-31"
+    notes: "Squash merged as 9486947 after green PR CI. Independent Tester signoff still outstanding; do not equate green CI with independent approval."
+  - id: M2-SESSION-HARDENING
+    title: Audit authoritative ingress, disconnect/reconnect and protocol compatibility
+    assigned_role: gameplay-session
+    status: in_progress
+    priority: P0
+    specification: docs/M2_SESSION_01_CONTRACT.md
+    branch: feature/m2-session-ingress-hardening
+    depends_on: [M2-PROTOCOL-INTEGRATION]
+    scope:
+      - src/game/session/
+      - src/game/protocol/
+    acceptance:
+      - Unauthorized submissions never mutate sequence or tick queue
+      - Reconnect requires explicit authorization and stale inputs are revoked
+      - Replay and malformed wire payloads are rejected
+      - Tests, build and browser CI pass
+    last_updated: "2026-10-31"
+    notes: "Transport-neutral only; no WebSocket/WebRTC selection or graphics changes. Independent Tester review required."
+  - id: M2-INDEPENDENT-TESTER-GATE
+    title: Independently verify merged M2 protocol and session integration
+    assigned_role: tester-session
+    status: ready
+    priority: P0
+    specification: docs/M2_INTEGRATION_GATE.md
+    branch: main
+    depends_on: [M2-PROTOCOL-INTEGRATION]
+    scope:
+      - src/game/protocol/
+      - src/game/session/
+      - docs/M2_INTEGRATION_GATE.md
+    acceptance:
+      - Record exact tested SHA and PASS PASS WITH LIMITATIONS or FAIL
+      - Verify malformed inputs, ownership, replay, disconnect and 7200 ticks
+      - Document remaining risks and reproducible failures
+    last_updated: "2026-10-31"
+    notes: "Tester agent must independently claim this task; an issue comment is not proof of execution."
