@@ -256,7 +256,7 @@ tasks:
     title: Test host authority, malformed identities and disconnect replay
     assigned_role: gameplay-session
     session_id: gameplay-session-20261031
-    status: in_progress
+    status: done
     priority: P0
     specification: docs/M2_SESSION_01_CONTRACT.md
     branch: feature/m2-ingress-identity-regressions
@@ -268,4 +268,23 @@ tasks:
       - Stale connection replay and reconnect are covered
       - CI and browser tests pass
     last_updated: "2026-10-31"
-    notes: "No transport selection. Preserve current session authority API."
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/45
+    notes: "Merged as f1cf444; all four required PR checks passed."
+
+  - id: M2-SESSION-BOUNDARY-QA
+    title: Verify session capacity, tick boundaries and canonical ordering
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261031
+    status: in_progress
+    priority: P0
+    specification: docs/M2_SESSION_01_CONTRACT.md
+    branch: feature/m2-session-boundary-qa
+    depends_on: [M2-INGRESS-IDENTITY-REGRESSION]
+    scope: [src/game/session/]
+    acceptance:
+      - Capacity overflow rejects without mutating roster
+      - Stale and future ticks reject without corrupting sequence state
+      - Canonical player order is independent of packet arrival
+      - Required CI checks pass
+    last_updated: "2026-10-31"
+    notes: "Pure TypeScript QA; no networking or presentation changes."
