@@ -46,3 +46,11 @@ The tester downloaded GitHub Actions artifact 13047384075 and opened the actual 
 - **OWNER SIGN-OFF PENDING:** no explicit M1.5 visual acceptance received. Keep task `in_progress` and integration review blocked until Pages verification and owner approval.
 
 Current verdict: **AUTOMATED PASS; VIS05-01 FIXED; RELEASE ACCEPTANCE PENDING**.
+
+## Mobile viewport regression work package — 2026-10-31
+
+- PR #83 adds mobile 390×844 canvas bounds assertions to the existing four-viewport retro visual QA test. It verifies left, top, right and bottom containment and rechecks the DOM bounds after layout settles.
+- The native 640×360 clipping regression and 1280×720 / 1920×1080 screenshot captures remain in the same test suite.
+- These assertions validate *geometry*, not the perceived readability of the in-canvas HUD, physical gamepad usability or mobile touch controls.
+- CI outcomes for PR #83 must be checked at the final commit SHA before merge. Local Playwright execution has not been independently performed in this GitHub-connector environment.
+- Live GitHub Pages verification and owner visual acceptance remain outstanding; VIS-05 must stay in progress.

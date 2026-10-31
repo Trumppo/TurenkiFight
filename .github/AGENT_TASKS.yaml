@@ -212,8 +212,8 @@ tasks:
       - Compare all fighters, station and HUD at 640x360, 2x, 3x and mobile
       - Verify production build, browser tests and Pages assets
       - Document manual visual checks and obtain explicit owner acceptance
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
-    notes: "PR #76 merged green; new screenshots (artifact 13048787716, run 41217236396) reviewed. VIS05-01 native clipping fixed and regression green. VIS05-02 desktop scale and VIS05-03 mobile HUD legibility pending review. Pages unavailable from tester environment; owner acceptance pending. See docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md."
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/83
+    notes: "PR #83 mobile viewport regression: all four head-SHA CI workflows green on 33ed340b0e23400a7489c5bdcfeb568a3a303441; owner merge approval pending. VIS05-01 fixed; VIS05-02 desktop scale and VIS05-03 mobile HUD readability need owner/device review. Pages verification and final M1.5 owner acceptance pending. See docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md."
     last_updated: "2026-10-31"
   - id: M2-VIS-ARENA-01
     title: Compare and propose next TurenkiFight arena visual concept
