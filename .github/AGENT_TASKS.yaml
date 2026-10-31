@@ -382,7 +382,7 @@ tasks:
     last_updated: "2026-10-31"
     session_id: gameplay-session-20261031-benchmark
     branch: feature/m2-benchmark-in-memory-fixture
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/72
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/73
     notes: "First in-memory deterministic fixture, SHA-256 replay and strict NOT_MEASURED manifest slice. Independent Tester gate remains outstanding; no sockets or transport decision."
 
   - id: M2-SAFE-TICK-WINDOW
