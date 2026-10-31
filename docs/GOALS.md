@@ -1,5 +1,7 @@
 # Pitkän matkan tavoitteet
 
+> **Ajantasainen tilanne 2026-10-31:** Alla oleva PR #21/#25 -suunnitelma on historiallinen. PR #21 on yhdistetty; PR #25:n protokollahaara on edelleen erillinen ja vaatii integraatiokatselmoinnin. PR:t #30, #32 ja #33–35 on yhdistetty. Neljän agentin ajantasainen tehtäväjono ja seuraavat sprintit: [AGENT_SPRINT_2026-10-31.md](AGENT_SPRINT_2026-10-31.md). Älä tulkitse alempia vanhoja draft-/head-tiloja nykytilaksi.
+
 Tämä on projektin päivitettävä tavoitedokumentti harness- ja agenttityölle. Aktiivinen tavoite on rajattu itsenäiseksi kokonaisuudeksi, jolla on todennettavat hyväksymisehdot. Päivitä tavoite omistajan päätöksen ja uuden näytön perusteella; älä merkitse suunnitelmaa toteutetuksi, hyväksytyksi tai yhdistetyksi ilman näyttöä ja omistajan lupaa.
 
 ## Kokonaistavoite: PR:t #21, #25 ja #28 omistajan päätöksentekoon
