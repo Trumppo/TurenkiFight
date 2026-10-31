@@ -290,7 +290,7 @@ tasks:
       - Owner approves contract before production implementation
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/49
     last_updated: "2026-10-31"
-    notes: "Design-only PR; no transport or protocol implementation and no merge authorization."
+    notes: "Design-only PR #49 merged as 77905d0 with green CI; contract remains proposal pending explicit design acceptance."
   - id: M2-ENVELOPE-IMPLEMENTATION
     title: Implement transport-neutral session envelope validation and adapter boundary
     assigned_role: gameplay-session
@@ -325,3 +325,22 @@ tasks:
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/50
     last_updated: "2026-10-31"
     notes: "Rebased replacement for PR #48 after main advanced; no networking or presentation changes."
+
+  - id: M2-BENCHMARK-CONTRACT
+    title: Align WS and WebRTC benchmark protocol with merged canonical v1 codecs
+    assigned_role: planning-session
+    session_id: planning-session-20261031-benchmark
+    status: review
+    priority: P1
+    specification: docs/NETWORK_BENCHMARK_PLAN.md
+    branch: planning/m2-benchmark-canonical-rebased
+    depends_on: [M2-PROTOCOL-INTEGRATION]
+    scope: [docs/NETWORK_BENCHMARK_PLAN.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Replace obsolete InputFrame sketch with canonical v1 codec references
+      - Define identical seed and fixture hashes for both transport architectures
+      - Separate topology and transport overhead and record reproducible run manifests
+      - CI and agent task validation pass before owner-approved merge
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
+    last_updated: "2026-10-31"
+    notes: "Supersedes conflicted PR #51; no measured performance or transport decision."
