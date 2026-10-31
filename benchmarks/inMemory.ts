@@ -79,7 +79,7 @@ export class InMemoryBenchmarkAdapter implements BenchmarkAdapter {
     this.owners = new Set(slots);
   }
   sendInput(encodedCanonicalFrame: string): void {
-    if (!this.connected || !this.state || this.owners.size !== 4) throw new Error('Benchmark not joined');
+    if (!this.connected || !this.state || this.owners.size === 0) throw new Error('Benchmark not joined');
     const frame: InputFrame = decodeInputFrame(encodedCanonicalFrame);
     if (frame.tick !== this.state.tick) throw new Error('Non-contiguous benchmark tick');
     if (frame.inputs.some(input => !this.owners.has(input.playerId))) throw new Error('Unauthorized benchmark input');
