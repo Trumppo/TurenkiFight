@@ -15,6 +15,21 @@ for (const size of sizes) {
     await page.goto('/');
     const canvas = page.locator('#game canvas');
     await expect(canvas).toBeVisible();
+    await expect.poll(() => page.evaluate(() => {
+      const game = (window as typeof window & { __turenkiGame?: {
+        scene: { getScene: (key: string) => {
+          sys: { isActive: () => boolean };
+          textures: { exists: (key: string) => boolean };
+        } };
+      } }).__turenkiGame;
+      const scene = game?.scene.getScene('StationScene');
+      return !!scene?.sys.isActive() && scene.textures.exists('station-backdrop') &&
+        ['P1', 'P2', 'P3', 'P4'].every(id =>
+          ['idle', 'punch', 'kick', 'hit', 'ko', 'respawn'].every(pose =>
+            scene.textures.exists(`fighter-${id}-${pose}-0`)));
+    })).toBe(true);
+    await expect(canvas).toHaveAttribute('width', '640');
+    await expect(canvas).toHaveAttribute('height', '360');
     const bounds = await canvas.boundingBox();
     expect(bounds).not.toBeNull();
     expect(bounds!.width).toBeGreaterThan(0);
