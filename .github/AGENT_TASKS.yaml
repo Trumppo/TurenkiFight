@@ -416,9 +416,9 @@ tasks:
       - CI unit tests and independent Tester gate
     last_updated: "2026-10-31"
     session_id: gameplay-session-20261031-benchmark
-    branch: feature/m2-benchmark-in-memory-fixture
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/73
-    notes: "PR #73 implementation complete and four CI checks green; independent Tester gate pending. No sockets, performance claims or transport decision."
+    branch: feature/m2-benchmark-harness-main-refresh
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/76
+    notes: "PR #73 superseded due to main conflicts; refreshed PR #76 awaits fresh CI and independent Tester gate. No sockets, performance claims or transport decision."
 
   - id: M2-SAFE-TICK-WINDOW
     title: Reject unsafe tick arithmetic and verify 7200-tick canonical assembly
