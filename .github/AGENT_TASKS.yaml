@@ -405,8 +405,11 @@ tasks:
   - id: M2-AGENT-HANDOFF-GATES
     title: Reconcile M2 and M1.5 agent handoff and approval gates
     assigned_role: planning-session
+    session_id: planning-session-20261031-reconcile
     status: review
     priority: P0
+    depends_on: []
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/72
     specification: docs/M2_AGENT_HANDOFF_2026-10-31.md
     scope: [docs/M2_AGENT_HANDOFF_2026-10-31.md, docs/visual/M1_5_TESTER_EXECUTION_BRIEF.md, .github/AGENT_TASKS.yaml]
     acceptance:
