@@ -193,7 +193,7 @@ tasks:
       - Verify production build, browser tests and Pages assets
       - Document manual visual checks and obtain explicit owner acceptance
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
-    notes: "PR #68 merged green; retro QA screenshot artifact verified present (run 41214564812, artifact 13047384075). Evidence and pending screenshot review, Pages verification and owner acceptance documented in docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md."
+    notes: "Downloaded and inspected screenshot artifact 13047384075. Native 640x360 browser screenshot clips lower arena (VIS05-01); 3x scaling and mobile HUD readability require review. See docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md. CI green; Pages and owner acceptance pending."
     last_updated: "2026-10-31"
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence

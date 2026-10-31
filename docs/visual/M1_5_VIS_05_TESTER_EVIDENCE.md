@@ -19,3 +19,17 @@ Date: 2026-10-31. Verdict: **IN PROGRESS — NOT OWNER ACCEPTED**.
 ## Decision
 
 Automated QA: **PASS** on the exact PR #68 head. Release/visual acceptance: **PENDING**. No claim of manual screenshot review, live Pages verification, or owner sign-off.
+
+## Independent screenshot review — 2026-10-31
+
+The tester downloaded GitHub Actions artifact 13047384075 and opened the actual PNGs, including `retro-match-native.png`, `retro-match-2x.png`, `retro-match-3x.png`, `retro-match-mobile.png`, `vis-02b-four-fighter-pose-sheet.png`, and `retro-P1-pose-sheet.png`.
+
+**Finding VIS05-01 — native browser clipping (release blocker):** The 640×360 *page screenshot* shows the large title/subtitle and HUD, but the lower arena and fighter feet extend beyond the captured viewport. A 640×360 logical canvas existing in the DOM does not guarantee the entire page composition fits a 640×360 browser window. Reproduce with a 640×360 browser viewport; check vertical scroll and the canvas bottom edge, then either adapt the surrounding page layout or clarify an explicit fullscreen mode.
+
+**Finding VIS05-02 — 3× desktop scaling (review needed):** At a 1920×1080 viewport the game remains comparatively small with substantial unused surrounding space. Assess whether a larger integer display scale should be offered without changing logical 640×360 simulation/camera.
+
+**Finding VIS05-03 — mobile readability (review needed):** On a 390×844 viewport the arena fits horizontally, but fighter labels, HUD and instructions are very small. Verify at physical-device viewing distance and consider responsive external text/controls.
+
+**Positive observations:** Four-fighter pose sheet shows differentiated colour/outfit silhouettes; P1 pose sheet includes idle, walk, depth, punch, kick, jump, jumpkick, hit, KO and respawn. The station sign and architecture are recognisable. These static frames do not establish animation timing or hit-feedback quality.
+
+**Updated gate:** Automated CI **PASS**; screenshot inspection **FAIL / NEEDS FIX** due to VIS05-01. Pages production verification and owner acceptance remain pending. Do not mark VIS-05 done.
