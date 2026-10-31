@@ -180,7 +180,7 @@ tasks:
   - id: M1-5-VIS-05
     title: Independent visual QA and M1.5 owner acceptance
     assigned_role: tester-session
-    status: blocked
+    status: ready
     priority: P1
     specification: docs/M1_5_VISUAL_UPGRADE.md
     depends_on: [M1-5-VIS-03, M1-5-VIS-04]
@@ -330,7 +330,7 @@ tasks:
     title: Align WS and WebRTC benchmark protocol with merged canonical v1 codecs
     assigned_role: planning-session
     session_id: planning-session-20261031-benchmark
-    status: review
+    status: done
     priority: P1
     specification: docs/NETWORK_BENCHMARK_PLAN.md
     branch: planning/m2-benchmark-canonical-rebased
@@ -343,4 +343,37 @@ tasks:
       - CI and agent task validation pass before owner-approved merge
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/53
     last_updated: "2026-10-31"
-    notes: "Supersedes conflicted PR #51; no measured performance or transport decision."
+    notes: "PR #53 merged as 0eacaae after all four CI checks passed; no measured performance or transport decision."
+
+  - id: M2-BENCHMARK-HARNESS-DESIGN
+    title: Specify deterministic cross-transport benchmark harness and artifacts
+    assigned_role: planning-session
+    session_id: planning-session-20261031-harness
+    status: review
+    priority: P1
+    specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
+    branch: planning/m2-benchmark-harness-spec
+    depends_on: [M2-BENCHMARK-CONTRACT]
+    scope: [docs/M2_BENCHMARK_HARNESS_SPEC.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Define reproducible scenario IDs and manifest schema
+      - Separate transport and authority measurements and missing values
+      - Define deterministic replay and adversarial acceptance tests
+      - CI and owner-approved merge
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/54
+    last_updated: "2026-10-31"
+    notes: "Design only; no benchmark runs or performance claims."
+  - id: M2-BENCHMARK-HARNESS-IMPLEMENTATION
+    title: Build deterministic fixture generator and in-memory benchmark adapter
+    assigned_role: gameplay-session
+    status: blocked
+    priority: P1
+    specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
+    depends_on: [M2-BENCHMARK-HARNESS-DESIGN]
+    scope: [benchmarks/, src/game/protocol/, tests/]
+    acceptance:
+      - Reproducible 7200 tick fixture and final fingerprints
+      - Validated machine-readable run manifest and NOT_MEASURED semantics
+      - CI unit tests and independent Tester gate
+    last_updated: "2026-10-31"
+    notes: "No sockets or transport decision in first implementation slice."
