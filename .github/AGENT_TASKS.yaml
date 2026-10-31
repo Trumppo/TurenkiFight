@@ -191,6 +191,8 @@ tasks:
       - Compare all fighters, station and HUD at 640x360, 2x, 3x and mobile
       - Verify production build, browser tests and Pages assets
       - Document manual visual checks and obtain explicit owner acceptance
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
+    notes: "Four-viewport automated screenshot coverage added; owner manual review and acceptance outstanding. CI trigger updated to include retro*.spec.ts."
     last_updated: "2026-10-31"
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
