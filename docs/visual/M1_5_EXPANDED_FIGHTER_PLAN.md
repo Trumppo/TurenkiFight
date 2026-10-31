@@ -4,9 +4,9 @@
 
 Current opt-in retro P1 sprite is 32 × 48 pixels with a shared anatomical rig. The 640 × 360 logical camera, fighter origin (0.5, 1), gameplay hitboxes and P2–P4 are unchanged. The forward kick currently approaches the right sprite boundary, limiting readable horizontal extension.
 
-## Proposed isolated experiment
+## Implemented opt-in experiment
 
-- Introduce an explicit **experimental** P1-only 48 × 64 pixel canvas, without changing the default 32 × 48 variant.
+- Implemented behind VITE_FIGHTER_CANVAS=expanded: experimental P1-only 48 × 64 pixel canvas, without changing the default 32 × 48 variant.
 - Keep world-space feet aligned: origin remains (0.5, 1), and any art coordinate conversion must preserve the floor contact point. Do not enlarge the gameplay collider or attack reach.
 - Keep the supporting leg under the pelvis; draw the kicking leg in front of the jacket, with exactly two legs and two arms. Place the extension toe visibly ahead of the knee and torso, with at least 2 pixels of transparent canvas margin.
 - Drive both variants from the same anatomical rig, with a distinct render transform and character-specific proportions rather than duplicating pose definitions.
@@ -19,8 +19,8 @@ Current opt-in retro P1 sprite is 32 × 48 pixels with a shared anatomical rig. 
 2. Extension is visibly horizontal, toe fully inside the canvas, and the boot overlaps the front of the torso.
 3. Standing feet and respawn placement do not jump when switching render sizes.
 4. CI, unit tests, Playwright smoke, deterministic gameplay and visual screenshot capture pass.
-5. The user approves the side-by-side visual comparison before enabling the new size.
+5. The user approves the side-by-side visual comparison before selecting it as default; it remains opt-in.
 
 ## Current state
 
-This document defines the design gate only. The expanded sprite has **not** yet been implemented or approved.
+The expanded sprite is implemented behind the opt-in build flag and included in the owner-approved PR #21 proof, but has not been selected as default. Current-revision CI and owner visual review remain pending.

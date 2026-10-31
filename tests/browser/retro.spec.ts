@@ -4,6 +4,38 @@ const retro = process.env.VITE_VISUAL_STYLE === 'retro';
 const expanded = retro && process.env.VITE_FIGHTER_CANVAS === 'expanded';
 const p1Width = expanded ? 48 : 32;
 const p1Height = expanded ? 64 : 48;
+const screenshotPrefix = expanded ? 'retro-expanded' : retro ? 'retro' : 'classic';
+
+async function startMatch(page: import('@playwright/test').Page): Promise<void> {
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { sys: { isActive: () => boolean } } } } }).__turenkiGame;
+    return !!game?.scene.getScene('StationScene')?.sys.isActive();
+  })).toBe(true);
+
+  // P2 joins with Shift; the host starts only after the second fighter is present.
+  await page.keyboard.down('Shift');
+  await expect.poll(() => page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { fighters: unknown[] } } } } }).__turenkiGame;
+    return game?.scene.getScene('StationScene')?.state.fighters.length ?? 0;
+  })).toBe(2);
+  await page.keyboard.up('Shift');
+
+  await page.keyboard.down('Enter');
+  await expect.poll(() => page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { phase: string } } } } }).__turenkiGame;
+    const phase = game?.scene.getScene('StationScene')?.state.phase;
+    return phase === 'countdown' || phase === 'fighting';
+  })).toBe(true);
+  await page.keyboard.up('Enter');
+
+  await expect.poll(() => page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { fighters: unknown[]; phase: string } } } } }).__turenkiGame;
+    const state = game?.scene.getScene('StationScene')?.state;
+    return state ? { roster: state.fighters.length, phase: state.phase } : undefined;
+  })).toEqual({ roster: 2, phase: 'fighting' });
+}
 
 test('station and P1 prototype render with stable legacy sprite API', async ({ page }) => {
   const errors: string[] = [];
@@ -79,7 +111,41 @@ for (const [label, width, height] of [
     const bounds = await canvas.boundingBox();
     expect(bounds).not.toBeNull();
     expect(bounds!.width / bounds!.height).toBeCloseTo(16 / 9, 1);
-    await page.screenshot({ path: `artifacts/visual/${retro ? 'retro' : 'classic'}-${label}.png`, animations: 'disabled' });
+    await page.screenshot({ path: `artifacts/visual/${screenshotPrefix}-${label}.png`, animations: 'disabled' });
+  });
+
+  test(`match screenshot ${label} with ${retro ? 'retro' : 'classic'} art`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await startMatch(page);
+    const canvas = page.locator('#game canvas');
+    await expect(canvas).toHaveAttribute('width', '640');
+    await expect(canvas).toHaveAttribute('height', '360');
+
+    const initialX = await page.evaluate(() => {
+      const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { fighters: { id: string; x: number }[] } } } } }).__turenkiGame!;
+      return game.scene.getScene('StationScene').state.fighters.find(fighter => fighter.id === 'P1')!.x;
+    });
+    await page.keyboard.down('d');
+    // The station sign ends near x=140 in world coordinates; move P1 fully beyond it.
+    await expect.poll(() => page.evaluate(() => {
+      const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { fighters: { id: string; x: number }[] } } } } }).__turenkiGame!;
+      return game.scene.getScene('StationScene').state.fighters.find(fighter => fighter.id === 'P1')!.x > 160;
+    })).toBe(true);
+    await page.keyboard.up('d');
+    const finalX = await page.evaluate(() => {
+      const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { fighters: { id: string; x: number }[] } } } } }).__turenkiGame!;
+      return game.scene.getScene('StationScene').state.fighters.find(fighter => fighter.id === 'P1')!.x;
+    });
+    expect(finalX).toBeGreaterThan(initialX);
+    expect(finalX).toBeGreaterThan(160);
+
+    const bounds = await canvas.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.width / bounds!.height).toBeCloseTo(16 / 9, 1);
+    await page.screenshot({
+      path: `artifacts/visual/${screenshotPrefix}-match-${label}.png`,
+      animations: 'disabled',
+    });
   });
 }
 
@@ -117,7 +183,7 @@ test('capture enlarged P1 pose sheet for visual acceptance', async ({ page }) =>
   const image = Buffer.from(sheet.split(',')[1], 'base64');
   const fs = await import('node:fs');
   fs.mkdirSync('artifacts/visual', { recursive: true });
-  fs.writeFileSync(`artifacts/visual/${expanded ? 'expanded' : 'retro'}-P1-pose-sheet.png`, image);
+  fs.writeFileSync(`artifacts/visual/${screenshotPrefix}-P1-pose-sheet.png`, image);
   expect(image.byteLength).toBeGreaterThan(1000);
 });
 
@@ -151,7 +217,7 @@ test('capture four-frame kick anatomy strip for acceptance', async ({ page }) =>
   const fs = await import('node:fs');
   fs.mkdirSync('artifacts/visual', { recursive: true });
   const image = Buffer.from(imageData.split(',')[1], 'base64');
-  fs.writeFileSync(`artifacts/visual/${expanded ? 'expanded' : 'retro'}-P1-kick-four-phases.png`, image);
+  fs.writeFileSync(`artifacts/visual/${screenshotPrefix}-P1-kick-four-phases.png`, image);
   expect(image.byteLength).toBeGreaterThan(1000);
 });
 
