@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mkdirSync } from 'node:fs';
 
 const retro = process.env.VITE_VISUAL_STYLE === 'retro';
 
@@ -57,6 +58,7 @@ for (const [label, width, height] of [
       } } } }).__turenkiGame;
       return game?.scene.getScene('StationScene').fighterSprites.size ?? 0;
     })).toBeGreaterThanOrEqual(2);
+    mkdirSync('artifacts/visual', { recursive: true });
     await page.screenshot({ path: `artifacts/visual/vis-02a-${retro ? 'retro' : 'classic'}-${label}.png`, animations: 'disabled' });
   });
 }
