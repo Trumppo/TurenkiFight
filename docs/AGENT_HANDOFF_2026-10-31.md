@@ -42,3 +42,8 @@ FIRST read the LATEST remote GitHub state: fetch origin, inspect main HEAD, PR #
 1. PR #25: current remote head and CI verified, no hidden local-only changes, independent Tester report, explicit owner merge approval.
 2. VIS-02: Designer scope, Graphics visual proof for P2–P4, Tester screenshots/QA, explicit owner approval before full integration.
 3. Roadmap: only mark complete after merged code and evidence; M1.5 milestone acceptance requires full four-fighter/HUD/effects QA.
+
+## Designer continuation — VIS-02 scope established
+- The next graphics design gate is now written in `docs/visual/M1_5_VIS_02_DESIGN.md` (VIS-02A P2 first, VIS-02B P3/P4 later, VIS-02C QA/polish). This is a proposal, not owner approval to implement or switch defaults.
+- Graphics must read that file AND fetch latest GitHub main/PRs before implementation. Tester must read it AND independently inspect actual latest commit and CI before review.
+- No gameplay, network, HUD or classic-mode behavior is changed by this planning PR.
