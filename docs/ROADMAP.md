@@ -4,7 +4,7 @@
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
- > **Current main checkpoint (2026-10-31):** M1 accepted with limitations. M1.5 four retro fighters, station and HUD polish have landed; independent visual QA identified viewport clipping and readability follow-ups, and owner acceptance is still pending. M2 canonical protocol, authorized ingress, hardening and independent protocol QA are merged (QA: PASS WITH LIMITATIONS). A deterministic in-memory benchmark harness is under PR review; no network transport, room server or architecture choice has shipped.
+> **Current main checkpoint (2026-10-31):** M1 accepted with limitations. M1.5 four retro fighters, station and HUD polish have landed; independent visual QA identified viewport clipping and readability follow-ups, and owner acceptance is still pending. M2 canonical protocol, authorized ingress, hardening and independent protocol QA are merged (QA: PASS WITH LIMITATIONS). A deterministic in-memory benchmark harness is under PR review; no network transport, room server or architecture choice has shipped.
 
 ## Milestone 0 – Project foundations
 
