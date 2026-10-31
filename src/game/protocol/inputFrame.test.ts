@@ -39,3 +39,38 @@ describe('M2 InputFrame v1', () => {
     expect(neutralPlayerInput('P2')).toEqual({ playerId: 'P2', moveX: 0, moveY: 0, jump: false });
   });
 });
+
+describe('M2 independent negative InputFrame boundaries', () => {
+  const valid = () => ({ version: 1 as const, tick: 0, inputs: [p('P1')] });
+
+  it('rejects non-safe ticks and malformed top-level payloads', () => {
+    for (const tick of [Number.MAX_SAFE_INTEGER + 1, NaN, Infinity, -Infinity, -1, 0.5, '0', null]) {
+      expect(() => parseInputFrame({ ...valid(), tick })).toThrow();
+    }
+    for (const payload of [null, [], 7, 'hello', { version: 1, tick: 0 }, { version: 1, tick: 0, inputs: {} }]) {
+      expect(() => parseInputFrame(payload)).toThrow();
+    }
+  });
+
+  it('rejects malformed identities, unknown fields and non-boolean controls', () => {
+    for (const playerId of ['', 'X'.repeat(65), 123, null]) {
+      expect(() => parseInputFrame({ ...valid(), inputs: [{ ...p('P1'), playerId }] })).toThrow();
+    }
+    for (const change of [{ moveY: Infinity }, { jump: 1 }, { kick: null }, { jumpkick: 'false' }, { attack: 0 }, { prototype: true }]) {
+      expect(() => parseInputFrame({ ...valid(), inputs: [{ ...p('P1'), ...change }] })).toThrow();
+    }
+  });
+
+  it('enforces UTF-8 wire byte caps before decoding and rejects invalid JSON', () => {
+    expect(() => decodeInputFrame(' '.repeat(4097))).toThrow(/size limit/);
+    expect(() => decodeInputFrame('💥'.repeat(1025))).toThrow(/size limit/);
+    expect(() => decodeInputFrame('not-json')).toThrow();
+  });
+
+  it('does not mutate caller input while canonicalizing player order', () => {
+    const inputs = [p('P2'), p('P1')];
+    const original = structuredClone(inputs);
+    expect(parseInputFrame({ version: 1, tick: 0, inputs }).inputs.map(x => x.playerId)).toEqual(['P1', 'P2']);
+    expect(inputs).toEqual(original);
+  });
+});
