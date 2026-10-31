@@ -507,14 +507,16 @@ tasks:
   - id: M2-BENCHMARK-SCENARIO-PLAN
     title: Specify next benchmark scenario coverage and measurement gates
     assigned_role: planning-session
-    status: ready
+    status: review
     priority: P2
-    specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
+    specification: docs/M2_BENCHMARK_SCENARIO_GATES.md
     depends_on: [M2-BENCHMARK-HARNESS-DESIGN]
-    scope: [docs/]
+    scope: [docs/M2_BENCHMARK_SCENARIO_GATES.md, .github/AGENT_TASKS.yaml]
     acceptance:
       - Define reproducible eight-player, jitter, packet loss and host-disconnect fixture acceptance
       - Separate correctness-only in-memory scenarios from real transport measurements
       - Define evidence and approval gates before selecting WS or WebRTC
     last_updated: "2026-10-31"
-    notes: "Planning-only; no transport implementation or architecture selection."
+    branch: planning/agent-backlog-refresh-20261031
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/81
+    notes: "Scenario gates prepared in PR #81; pending CI and owner approval. No transport implementation or architecture selection."
