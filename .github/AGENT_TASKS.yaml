@@ -404,7 +404,7 @@ tasks:
     title: Release disconnected gamepads and reclaim lobby slots without changing match roster
     assigned_role: gameplay-session
     session_id: gameplay-session-20261031-rejoin
-    status: in_progress
+    status: review
     priority: P0
     specification: docs/M1_GAMEPLAY_CONTROLS.md
     branch: feature/m1-5-gamepad-rejoin-current-main
@@ -416,4 +416,5 @@ tasks:
       - Match roster remains stable and disconnected input is neutral
       - Browser smoke, unit tests and CI pass
     last_updated: "2026-10-31"
-    notes: "Supersedes stale draft PR #38; limited input handling change, no visual or rules changes."
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/71
+    notes: "Supersedes stale draft PR #38; limited input handling change, no visual or rules changes. CI pending."
