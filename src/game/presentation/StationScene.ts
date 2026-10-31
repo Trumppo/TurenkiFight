@@ -7,6 +7,7 @@ import { VIEWPORT, cameraScale } from './viewport';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
 import { createRetroP1Textures, RETRO_PREVIEW, RETRO_STATION_PATH } from './retroPrototype';
 import { createRetroP2Textures } from './retroP2';
+import { createRetroExtraTextures } from './retroExtras';
 
 export class StationScene extends Phaser.Scene {
   private state: GameState = createState(['P1'], 'lobby');
@@ -43,6 +44,7 @@ export class StationScene extends Phaser.Scene {
     if (RETRO_PREVIEW) {
       createRetroP1Textures(this);
       createRetroP2Textures(this);
+      createRetroExtraTextures(this);
     }
     this.add.image(0, 0, VISUAL_ASSETS.station.backdrop.key).setOrigin(0, 0)
       .setDisplaySize(VIEWPORT.logicalWidth, VIEWPORT.logicalHeight).setDepth(-100);
