@@ -24,6 +24,7 @@ export class StationScene extends Phaser.Scene {
   private previous = new Map<string, { x: number; y: number; health: number }>();
   private hitFlash = new Map<string, number>();
   private gamepadSlots = new Map<number, string>();
+  private reclaimableGamepadSlots = new Set<string>();
   private lastStart = false;
   private lastPadStart = new Map<number, boolean>();
   private lastKeyboardJoin = false;
@@ -79,7 +80,12 @@ export class StationScene extends Phaser.Scene {
     // Release missing gamepads and their button-edge state. The roster remains
     // stable; an absent controller contributes no input until explicitly rejoined.
     const connected = new Set(pads.map(pad => pad.index));
-    for (const index of this.gamepadSlots.keys()) if (!connected.has(index)) this.gamepadSlots.delete(index);
+    for (const [index, id] of this.gamepadSlots) {
+      if (!connected.has(index)) {
+        if (id !== 'P1') this.reclaimableGamepadSlots.add(id);
+        this.gamepadSlots.delete(index);
+      }
+    }
     for (const index of this.lastPadStart.keys()) if (!connected.has(index)) this.lastPadStart.delete(index);
     for (const index of this.lastJoinButtons.keys()) if (!connected.has(index)) this.lastJoinButtons.delete(index);
     // The host occupies P1; every additional player must explicitly join.
@@ -95,10 +101,11 @@ export class StationScene extends Phaser.Scene {
         const join = !!pad.buttons[8]?.pressed;
         if (join && !this.lastJoinButtons.get(pad.index) && !this.gamepadSlots.has(pad.index)) {
           const assigned = new Set(this.gamepadSlots.values());
-          const id = ['P2', 'P3', 'P4'].find(candidate => this.state.fighters.some(f => f.id === candidate) && !assigned.has(candidate))
+          const id = ['P2', 'P3', 'P4'].find(candidate => this.reclaimableGamepadSlots.has(candidate) && this.state.fighters.some(f => f.id === candidate) && !assigned.has(candidate))
             ?? (this.state.fighters.length < 4 ? ['P2', 'P3', 'P4'].find(candidate => !this.state.fighters.some(f => f.id === candidate)) : undefined);
           if (!id) continue;
           this.gamepadSlots.set(pad.index, id);
+          this.reclaimableGamepadSlots.delete(id);
           if (!this.state.fighters.some(f => f.id === id)) this.state = createState([...this.state.fighters.map(f => f.id), id], 'lobby');
         }
       }
