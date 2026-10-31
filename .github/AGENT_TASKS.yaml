@@ -145,7 +145,7 @@ tasks:
   - id: M1-5-VIS-03
     title: Finish Turenki station original retro environment and layered readability
     assigned_role: graphics-session
-    status: ready
+    status: done
     priority: P1
     specification: docs/M1_5_VISUAL_UPGRADE.md
     depends_on: [M1-5-VIS-02]
@@ -157,11 +157,13 @@ tasks:
       - Recognisable Turenki railway station and uncluttered combat plane
       - Native, 2x, 3x and mobile comparisons documented
       - Original assets only; classic mode unaffected
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/44
+    notes: "Retro station refinement merged after four green PR checks; manual multi-scale acceptance remains VIS-05."
     last_updated: "2026-10-31"
   - id: M1-5-VIS-04
     title: Finish retro HUD and hit feedback
     assigned_role: graphics-session
-    status: ready
+    status: done
     priority: P1
     specification: docs/M1_5_VISUAL_UPGRADE.md
     depends_on: [M1-5-VIS-02]
@@ -174,7 +176,7 @@ tasks:
       - Classic mode and game rules unchanged
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/39
     last_updated: "2026-10-31"
-    notes: "Initial retro HUD frame merged; effect work and visual acceptance remain."
+    notes: "Retro HUD PR #39 and retro hit-flash PR #47 merged after green PR checks. Manual visual acceptance remains VIS-05."
   - id: M1-5-VIS-05
     title: Independent visual QA and M1.5 owner acceptance
     assigned_role: tester-session
