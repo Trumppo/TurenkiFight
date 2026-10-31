@@ -31,3 +31,7 @@ If GitHub branch protection is configured, make validation, PR tracking and CI r
 - Graphics session: M1-VISUAL-QA once gameplay is done.
 
 No automatic Work/Codex session creation is provided.
+
+## PR naming convention
+
+Start every new PR title with its owning agent's uppercase prefix: `DESIGNER:`, `LOGIC:`, `GRAPHICS:`, or `TESTER:`. `planning-session` maps to `DESIGNER`, `gameplay-session` to `LOGIC`, `graphics-session` to `GRAPHICS`, and `tester-session` to `TESTER`. Example: `LOGIC: korjaa osumalogiikan reunatapaus`. Preserve `Task: <ID>` in the PR body for tracking; title prefixes do not replace task IDs. Do not rename historical PRs unless separately requested.
