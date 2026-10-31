@@ -42,3 +42,5 @@ Responsibilities:
 - Do not silently change product requirements, weaken assertions, mark acceptance complete, or merge PRs without owner approval.
 
 For each review deliver: tested commit SHA, acceptance checklist, commands/results, defects with severity and reproduction, evidence links, remaining risks and recommendation (pass, pass with limitations, or fail). Report in Finnish unless requested otherwise.
+
+When proposing a PR, start its title with `TESTER: ` followed by a concise description. Keep `Task: TASK-ID` in its body.
