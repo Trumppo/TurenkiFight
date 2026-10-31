@@ -33,3 +33,16 @@ The tester downloaded GitHub Actions artifact 13047384075 and opened the actual 
 **Positive observations:** Four-fighter pose sheet shows differentiated colour/outfit silhouettes; P1 pose sheet includes idle, walk, depth, punch, kick, jump, jumpkick, hit, KO and respawn. The station sign and architecture are recognisable. These static frames do not establish animation timing or hit-feedback quality.
 
 **Updated gate:** Automated CI **PASS**; screenshot inspection **FAIL / NEEDS FIX** due to VIS05-01. Pages production verification and owner acceptance remain pending. Do not mark VIS-05 done.
+
+## Retest after PR #76 — 2026-10-31
+
+- Fix: PR #76 squash-merged to main as `bc60232559c84dd05bb2a587c3d6fb78369ccf7d`. It adds responsive short-viewport layout and a Playwright assertion that the native 640×360 canvas bottom fits inside the browser viewport.
+- All five PR-head workflow runs reported success, including M1.5 retro prototype visual QA run **41217236396**.
+- Downloaded and visually inspected fresh screenshot artifact **13048787716** (`m1-5-retro-screenshots`), including native, 2×, 3× and mobile match screenshots, four-fighter pose sheet and VIS-05 arena captures.
+- **VIS05-01 CLOSED:** native 640×360 screenshot now includes the full arena and bottom edge. Regression test is green. Earlier failing CI measured canvas bottom at y=465 against the 360-pixel viewport; fixed PR passed the same assertion.
+- **VIS05-02 OPEN / NON-BLOCKING REVIEW:** 1920×1080 desktop screenshot still leaves substantial unused surrounding space; scaling choice needs owner/design review.
+- **VIS05-03 OPEN / ACCESSIBILITY REVIEW:** 390×844 mobile capture fits, but in-canvas HUD text is small; validate legibility on a physical phone before claiming mobile quality.
+- **GitHub Pages NOT VERIFIED:** attempted to retrieve `https://trumppo.github.io/TurenkiFight/`; the public URL was inaccessible from this tester environment (including DNS failure from the container). Successful CI does not prove deployed assets or browser console/network health.
+- **OWNER SIGN-OFF PENDING:** no explicit M1.5 visual acceptance received. Keep task `in_progress` and integration review blocked until Pages verification and owner approval.
+
+Current verdict: **AUTOMATED PASS; VIS05-01 FIXED; RELEASE ACCEPTANCE PENDING**.
