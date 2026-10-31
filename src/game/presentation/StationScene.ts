@@ -59,6 +59,18 @@ export class StationScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     const pads = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter((p): p is Gamepad => p !== null) : [];
+    // Release disconnected controllers so their slots can be claimed again.
+    // Keep the roster intact during a match; an absent pad yields neutral input.
+    const connected = new Set(pads.map(pad => pad.index));
+    for (const index of this.gamepadSlots.keys()) {
+      if (!connected.has(index)) this.gamepadSlots.delete(index);
+    }
+    for (const index of this.lastPadStart.keys()) {
+      if (!connected.has(index)) this.lastPadStart.delete(index);
+    }
+    for (const index of this.lastJoinButtons.keys()) {
+      if (!connected.has(index)) this.lastJoinButtons.delete(index);
+    }
     // The host occupies P1; every additional player must explicitly join.
     const keyboardJoin = this.keys.SHIFT.isDown;
     if (this.state.phase === 'lobby' && keyboardJoin && !this.lastKeyboardJoin && !this.state.fighters.some(f => f.id === 'P2') && ![...this.gamepadSlots.values()].includes('P2')) {
