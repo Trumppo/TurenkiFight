@@ -290,7 +290,7 @@ tasks:
       - Owner approves contract before production implementation
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/49
     last_updated: "2026-10-31"
-    notes: "Design-only PR; no transport or protocol implementation and no merge authorization."
+    notes: "Design-only PR #49 merged as 77905d0. Owner contract acceptance remains separate; no transport or protocol implementation authorization."
   - id: M2-ENVELOPE-IMPLEMENTATION
     title: Implement transport-neutral session envelope validation and adapter boundary
     assigned_role: gameplay-session
@@ -311,7 +311,7 @@ tasks:
     title: Verify session capacity, tick boundaries and canonical ordering
     assigned_role: gameplay-session
     session_id: gameplay-session-20261031
-    status: review
+    status: done
     priority: P0
     specification: docs/M2_SESSION_01_CONTRACT.md
     branch: feature/m2-session-boundary-qa-current-main
@@ -324,4 +324,4 @@ tasks:
       - Required CI checks pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/50
     last_updated: "2026-10-31"
-    notes: "Rebased replacement for PR #48 after main advanced; no networking or presentation changes."
+    notes: "PR #50 merged as 4e91d7c; all four checks green. No networking or presentation changes."
