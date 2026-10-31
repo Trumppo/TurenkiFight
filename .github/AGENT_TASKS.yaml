@@ -409,7 +409,7 @@ tasks:
     specification: docs/M1_GAMEPLAY_CONTROLS.md
     branch: feature/m1-5-gamepad-rejoin-current-main
     depends_on: [M1-GAMEPLAY-QA]
-    scope: [src/game/presentation/StationScene.ts, tests/browser/gamepad-rejoin.spec.ts]
+    scope: [src/game/presentation/StationScene.ts, tests/browser/gamepad-rejoin.spec.ts, tests/browser/p1-gamepad-start.spec.ts]
     acceptance:
       - Disconnect clears controller ownership and button edge state
       - Explicit join can reclaim an existing unbound P2-P4 lobby slot
