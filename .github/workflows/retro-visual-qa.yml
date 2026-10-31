@@ -4,7 +4,7 @@ on:
     paths:
       - 'src/game/presentation/**'
       - 'public/assets/station/**'
-      - 'tests/browser/retro.spec.ts'
+      - 'tests/browser/retro*.spec.ts'
       - '.github/workflows/retro-visual-qa.yml'
   workflow_dispatch:
 jobs:
