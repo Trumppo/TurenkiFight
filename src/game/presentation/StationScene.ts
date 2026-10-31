@@ -157,7 +157,15 @@ export class StationScene extends Phaser.Scene {
       const frame = Math.floor(this.state.tick / (pose === 'idle' ? 15 : 6)) % 4;
       const x = Math.round(f.x), y = Math.round(f.y);
       this.shadows.get(f.id)!.setPosition(x, y).setDepth(y - 0.2).setVisible(f.koTimer === 0);
-      this.fighterSprites.get(f.id)!.setTexture(fighterKey(f.id, pose, frame)).setPosition(x, y - Math.round(f.z)).setFlipX(f.facing < 0).setDepth(y);
+      const sprite = this.fighterSprites.get(f.id)!;
+      sprite.setTexture(fighterKey(f.id, pose, frame)).setPosition(x, y - Math.round(f.z)).setFlipX(f.facing < 0).setDepth(y);
+      // Retro-only high-contrast hit confirmation. Clear tint on the first non-hit frame
+      // so reused sprites never retain a flash after KO, respawn or a new match.
+      if (RETRO_PREVIEW && (this.hitFlash.get(f.id) ?? 0) > this.state.tick && this.state.tick % 6 < 3) {
+        sprite.setTintFill(0xffe3a0);
+      } else {
+        sprite.clearTint();
+      }
       this.labels.get(f.id)!.setPosition(x, y - Math.round(f.z) - 47).setDepth(y + 0.1);
       this.previous.set(f.id, { x: f.x, y: f.y, health: f.health });
     }
