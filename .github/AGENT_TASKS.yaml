@@ -178,7 +178,7 @@ tasks:
   - id: M1-5-VIS-05
     title: Independent visual QA and M1.5 owner acceptance
     assigned_role: tester-session
-    status: ready
+    status: blocked
     priority: P1
     specification: docs/M1_5_VISUAL_UPGRADE.md
     depends_on: [M1-5-VIS-03, M1-5-VIS-04]
@@ -193,7 +193,7 @@ tasks:
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
     assigned_role: planning-session
-    status: ready
+    status: blocked
     priority: P1
     specification: docs/ROADMAP.md
     depends_on: [M1-5-VIS-05]
@@ -224,6 +224,7 @@ tasks:
   - id: M2-SESSION-HARDENING
     title: Verify ingress denial, sequence replay and disconnect/reconnect safety
     assigned_role: gameplay-session
+    session_id: gameplay-session-20261031
     status: review
     priority: P0
     specification: docs/M2_SESSION_01_CONTRACT.md
@@ -235,6 +236,7 @@ tasks:
       - Disconnect revokes future inputs and reconnect requires fresh authorization
       - CI, browser and test harness pass
     last_updated: "2026-10-31"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/43
     notes: "No WebSocket/WebRTC decision. Review branch replaces conflicted PR #42."
   - id: M2-INDEPENDENT-TESTER-GATE
     title: Independently verify merged M2 protocol and ingress
