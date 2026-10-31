@@ -2,7 +2,7 @@
 
 TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting game with an 8-bit-inspired pixel-art aesthetic. Inspired by the energy of classic arcade fighters (including IK+), but with its own mechanics, art and identity.
 
-**Status:** pre-production / prototype design v0.3 (2026-10-24). No playable build yet.
+**Status (2026-10-31):** M1 local four-player Score Brawl is playable and owner-accepted with documented limitations. M1.5 retro graphics are in progress; M2 transport-neutral session foundations exist, but network multiplayer is not implemented. See [current sprint and evidence](docs/AGENT_SPRINT_2026-10-31.md).
 
 ## Core vision
 
@@ -17,7 +17,7 @@ TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting 
 
 ## Planned distribution
 
-The static client will be built and published via **GitHub Pages**. A small separately hosted Linux backend will provide room/lobby coordination and WebRTC signaling, with an optional authoritative dedicated-game-server mode later. Browser-only offline LAN requires local hosting of the client and signaling.
+The static client will be built and published via **GitHub Pages**. Network room/lobby coordination and transport are future experiments: a central WebSocket server and a WebRTC browser-host design will be benchmarked before a topology decision. Browser-only offline LAN requires local hosting of the client and signaling.
 
 ## Design documents
 
@@ -25,9 +25,9 @@ The static client will be built and published via **GitHub Pages**. A small sepa
 - [Technical architecture](docs/ARCHITECTURE.md)
 - [Development roadmap](docs/ROADMAP.md)
 
-## Candidate stack (not yet implemented)
+## Implemented stack and network candidates
 
-TypeScript, Vite, Phaser 3, Vitest, Playwright, WebRTC DataChannels, a small WebSocket signaling service, and optionally coturn. These are provisional technology choices subject to prototyping.
+The browser prototype uses TypeScript, Vite, Phaser 3, Vitest, Playwright and GitHub Actions. WebSocket and WebRTC are **unselected network architecture candidates**, not implemented multiplayer transports. See [benchmark plan](docs/NETWORK_BENCHMARK_PLAN.md).
 
 ## Project principles
 
