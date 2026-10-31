@@ -180,7 +180,8 @@ tasks:
   - id: M1-5-VIS-05
     title: Independent visual QA and M1.5 owner acceptance
     assigned_role: tester-session
-    status: ready
+    session_id: tester-session-20261031-vis05
+    status: claimed
     priority: P1
     specification: docs/M1_5_VISUAL_UPGRADE.md
     depends_on: [M1-5-VIS-03, M1-5-VIS-04]
@@ -192,7 +193,7 @@ tasks:
       - Verify production build, browser tests and Pages assets
       - Document manual visual checks and obtain explicit owner acceptance
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
-    notes: "Four-viewport visual screenshot QA merged as b6e6b12 with five green PR workflows; independent Tester review, Pages verification and explicit owner acceptance still required."
+    notes: "Tester claimed independent M1.5 visual QA. Verify screenshot evidence, Pages assets and browser coverage; final owner acceptance remains explicit and pending."
     last_updated: "2026-10-31"
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
