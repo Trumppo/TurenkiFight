@@ -417,8 +417,8 @@ tasks:
     last_updated: "2026-10-31"
     session_id: gameplay-session-20261031-benchmark
     branch: feature/m2-benchmark-harness-main-refresh
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/76
-    notes: "PR #73 superseded due to main conflicts; refreshed PR #76 awaits fresh CI and independent Tester gate. No sockets, performance claims or transport decision."
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/79
+    notes: "PR #73 superseded due to main conflicts; refreshed PR #79 awaits fresh CI and independent Tester gate. No sockets, performance claims or transport decision."
 
   - id: M2-SAFE-TICK-WINDOW
     title: Reject unsafe tick arithmetic and verify 7200-tick canonical assembly
