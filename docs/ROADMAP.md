@@ -1,10 +1,10 @@
 # TurenkiFight – Prototype Roadmap v0.4
 
-**Updated:** 2026-10-31. Milestones, not calendar commitments. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
+**Updated:** 2026-10-31 (documentation sync). Milestones, not calendar commitments. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
-> **Current main checkpoint (2026-10-31):** M1 accepted with limitations. M1.5 VIS-01, P2, P3/P4 and initial retro HUD merged (#21, #30, #36, #39), but full visual acceptance remains open. M2 v1 protocol and authorized session integration merged (#41); session hardening #43 merged. No online transport, room server or architecture selection exists. Earlier PR #25 branch remains a historical integration source; do not treat it as the sole active M2 integration gate.
+ > **Current main checkpoint (2026-10-31):** M1 accepted with limitations. M1.5 four retro fighters, station and HUD polish have landed; independent visual QA identified viewport clipping and readability follow-ups, and owner acceptance is still pending. M2 canonical protocol, authorized ingress, hardening and independent protocol QA are merged (QA: PASS WITH LIMITATIONS). A deterministic in-memory benchmark harness is under PR review; no network transport, room server or architecture choice has shipped.
 
 ## Milestone 0 – Project foundations
 
@@ -34,17 +34,17 @@
 
 ## Milestone 1.5 – Retro raster visual upgrade
 
-**Status: IMPLEMENTATION IN PROGRESS; milestone acceptance pending.** Art direction approved 2026-10-30. Early-1990s raster aesthetic inspired by Janne50v card technique, not its Dune theme. Keep 640 × 360 logical camera and prototype a 320 × 180 art grid before full conversion.
+**Status: VISUAL IMPLEMENTATION MERGED; QA AND OWNER ACCEPTANCE PENDING.** Art direction approved 2026-10-30. Early-1990s raster aesthetic inspired by Janne50v card technique, not its Dune theme. The logical camera remains 640 × 360. See [independent visual QA evidence](visual/M1_5_VIS_05_TESTER_EVIDENCE.md).
 
 - [x] Approve one fighter and Turenki station visual proof (PR #21; not full M1.5 acceptance)
-- [ ] Finish four fighters, station, HUD and impact effects without changing gameplay (fighters P1–P4 and initial HUD merged; station polish/effects remain)
-- [ ] Pass automated and manual visual QA at native, integer-scaled and mobile sizes
+- [x] Implement four retro fighters, station, HUD and impact effects without changing gameplay (merged; visual acceptance separate)
+- [ ] Pass automated and manual visual QA at native, integer-scaled and mobile sizes (native viewport clipping VIS05-01 identified; retest/release checks and mobile readability review required)
 
 **Exit:** user-approved visual upgrade with unchanged deterministic gameplay and green tests. See [M1.5 visual upgrade plan](M1_5_VISUAL_UPGRADE.md).
 
 ## Milestone 2 – Shared multiplayer foundations (transport-neutral)
 
-**Status: PARTIALLY IMPLEMENTED.** Canonical v1 protocol and authorized ingress are merged in PR #41; hardening #43 merged. This is not a live network session. Independent tester report and repeatable benchmark harness remain required.
+**Status: PARTIALLY IMPLEMENTED.** Canonical v1 protocol, authorized ingress, hardening and [independent Tester gate](M2_INDEPENDENT_TESTER_REPORT.md) are merged; Tester verdict is PASS WITH LIMITATIONS. An in-memory deterministic benchmark harness is in PR review, not a measured network comparison. This is not a live network session. Session envelope contract approval remains outstanding.
 
 - [ ] Finalize versioned InputFrame, StateSnapshot, event and room protocol schemas (input/snapshot/event v1 implemented; room lifecycle not finalized)
 - [ ] Separate simulation, authority, rendering, mode rules and transport adapters (simulation/authority separation implemented; network adapters pending)
