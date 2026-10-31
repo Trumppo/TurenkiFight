@@ -353,7 +353,7 @@ tasks:
     title: Specify deterministic cross-transport benchmark harness and artifacts
     assigned_role: planning-session
     session_id: planning-session-20261031-harness
-    status: review
+    status: done
     priority: P1
     specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
     branch: planning/m2-benchmark-harness-spec
@@ -366,11 +366,11 @@ tasks:
       - CI and owner-approved merge
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/56
     last_updated: "2026-10-31"
-    notes: "Design only; no benchmark runs or performance claims."
+    notes: "Design-only PR #56 merged as ac97a34; no benchmark measurements or transport decision."
   - id: M2-BENCHMARK-HARNESS-IMPLEMENTATION
     title: Build deterministic fixture generator and in-memory benchmark adapter
     assigned_role: gameplay-session
-    status: blocked
+    status: review
     priority: P1
     specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
     depends_on: [M2-BENCHMARK-HARNESS-DESIGN]
@@ -380,7 +380,10 @@ tasks:
       - Validated machine-readable run manifest and NOT_MEASURED semantics
       - CI unit tests and independent Tester gate
     last_updated: "2026-10-31"
-    notes: "No sockets or transport decision in first implementation slice."
+    session_id: gameplay-session-20261031-benchmark
+    branch: feature/m2-benchmark-in-memory-fixture
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/72
+    notes: "First in-memory deterministic fixture, SHA-256 replay and strict NOT_MEASURED manifest slice. Independent Tester gate remains outstanding; no sockets or transport decision."
 
   - id: M2-SAFE-TICK-WINDOW
     title: Reject unsafe tick arithmetic and verify 7200-tick canonical assembly
