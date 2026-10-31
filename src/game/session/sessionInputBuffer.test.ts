@@ -53,4 +53,23 @@ describe('M2 bounded input buffer', () => {
     b.submit('a', 1, 0, input('P1'));
     expect(b.consume().inputs).toEqual([input('P1')]);
   });
+
+  it('rejects unsafe tick windows before accepting a match', () => {
+    expect(() => new SessionInputBuffer(Number.MAX_SAFE_INTEGER, 1)).toThrow(/configuration/);
+    expect(() => new SessionInputBuffer(Number.MAX_SAFE_INTEGER - 1, 1)).toThrow(/configuration/);
+    expect(() => new SessionInputBuffer(Number.MAX_SAFE_INTEGER - 2, 1)).not.toThrow();
+  });
+
+  it('assembles a 120-second four-player match deterministically despite arrival order', () => {
+    const a = new SessionInputBuffer(0, 8, 4);
+    const b = new SessionInputBuffer(0, 8, 4);
+    const players = ['P1', 'P2', 'P3', 'P4'];
+    for (let tick = 0; tick < 7200; tick++) {
+      for (const playerId of players) a.submit(playerId, tick, tick, input(playerId));
+      for (const playerId of [...players].reverse()) b.submit(playerId, tick, tick, input(playerId));
+      expect(a.consume()).toEqual(b.consume());
+    }
+    expect(a.bufferedTicks).toBe(0);
+    expect(b.bufferedTicks).toBe(0);
+  });
 });
