@@ -74,3 +74,26 @@ describe('M2 independent negative InputFrame boundaries', () => {
     expect(inputs).toEqual(original);
   });
 });
+
+describe('M2 independent four-player 7200-tick replay', () => {
+  it('preserves deterministic final state under reversed per-tick arrival order', () => {
+    const players = ['P1', 'P2', 'P3', 'P4'];
+    let forward = createState(players, 'fighting');
+    let reverse = createState(players, 'fighting');
+    for (let tick = 0; tick < 7200; tick++) {
+      const inputs = players.map((playerId, index) => ({
+        playerId,
+        moveX: ((tick + index) % 3 - 1) as -1 | 0 | 1,
+        moveY: 0 as const,
+        jump: tick % (31 + index) === 0,
+        punch: tick % (19 + index) === 0,
+      }));
+      const frameA = decodeInputFrame(encodeInputFrame({ version: 1, tick, inputs }));
+      const frameB = decodeInputFrame(encodeInputFrame({ version: 1, tick, inputs: [...inputs].reverse() }));
+      expect(frameA).toEqual(frameB);
+      forward = step(forward, frameA.inputs);
+      reverse = step(reverse, frameB.inputs);
+    }
+    expect(forward).toEqual(reverse);
+  });
+});
