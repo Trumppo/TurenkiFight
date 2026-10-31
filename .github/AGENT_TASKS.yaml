@@ -193,7 +193,7 @@ tasks:
       - Verify production build, browser tests and Pages assets
       - Document manual visual checks and obtain explicit owner acceptance
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
-    notes: "Tester regression strengthens 4-viewport scene readiness, 640x360 camera and four-fighter pose asset checks; manual image review, Pages verification and explicit owner acceptance remain pending."
+    notes: "PR #68 merged green; retro QA screenshot artifact verified present (run 41214564812, artifact 13047384075). Evidence and pending screenshot review, Pages verification and owner acceptance documented in docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md."
     last_updated: "2026-10-31"
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
