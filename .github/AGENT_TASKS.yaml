@@ -122,3 +122,85 @@ tasks:
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/17
     last_updated: "2026-10-30"
     notes: "User explicitly accepted M1 on 2026-10-30 with documented limitations. Follow-up QA: physical gamepads, visual readability, 960x540 replay and published Pages console/network."
+
+  - id: M1-5-VIS-02
+    title: Four distinct retro fighter sprites and pose contract
+    assigned_role: graphics-session
+    status: done
+    priority: P1
+    specification: docs/M1_5_VISUAL_UPGRADE.md
+    branch: feature/m1-5-vis-02b-p3-p4-retro
+    depends_on: [M1-VISUAL-QA]
+    scope:
+      - src/game/presentation/retroP2.ts
+      - src/game/presentation/retroExtras.ts
+      - tests/browser/retroExtras.spec.ts
+    acceptance:
+      - P1 through P4 have distinct 32x48 retro artwork
+      - All ten poses and four frames per pose have browser coverage
+      - Classic rendering and deterministic gameplay remain unchanged
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/36
+    last_updated: "2026-10-31"
+    notes: "P2 PR #30 and P3/P4 PR #36 merged. CI green on PR heads; final owner visual acceptance remains part of VIS-05."
+  - id: M1-5-VIS-03
+    title: Finish Turenki station original retro environment and layered readability
+    assigned_role: graphics-session
+    status: ready
+    priority: P1
+    specification: docs/M1_5_VISUAL_UPGRADE.md
+    depends_on: [M1-5-VIS-02]
+    scope:
+      - public/assets/station/
+      - docs/visual/
+      - tests/browser/
+    acceptance:
+      - Recognisable Turenki railway station and uncluttered combat plane
+      - Native, 2x, 3x and mobile comparisons documented
+      - Original assets only; classic mode unaffected
+    last_updated: "2026-10-31"
+  - id: M1-5-VIS-04
+    title: Finish retro HUD and hit feedback
+    assigned_role: graphics-session
+    status: ready
+    priority: P1
+    specification: docs/M1_5_VISUAL_UPGRADE.md
+    depends_on: [M1-5-VIS-02]
+    scope:
+      - src/game/presentation/
+      - tests/browser/
+    acceptance:
+      - Retro scoreboard foundation from PR #39 is refined
+      - HP, scores, timer, KO, respawn and hit cues remain readable
+      - Classic mode and game rules unchanged
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/39
+    last_updated: "2026-10-31"
+    notes: "Initial retro HUD frame merged; effect work and visual acceptance remain."
+  - id: M1-5-VIS-05
+    title: Independent visual QA and M1.5 owner acceptance
+    assigned_role: tester-session
+    status: ready
+    priority: P1
+    specification: docs/M1_5_VISUAL_UPGRADE.md
+    depends_on: [M1-5-VIS-03, M1-5-VIS-04]
+    scope:
+      - tests/browser/
+      - docs/visual/
+    acceptance:
+      - Compare all fighters, station and HUD at 640x360, 2x, 3x and mobile
+      - Verify production build, browser tests and Pages assets
+      - Document manual visual checks and obtain explicit owner acceptance
+    last_updated: "2026-10-31"
+  - id: M1-5-INTEGRATION-REVIEW
+    title: Coordinate M1.5 release and roadmap evidence
+    assigned_role: planning-session
+    status: ready
+    priority: P1
+    specification: docs/ROADMAP.md
+    depends_on: [M1-5-VIS-05]
+    scope:
+      - docs/ROADMAP.md
+      - docs/M1_5_VISUAL_UPGRADE.md
+    acceptance:
+      - Reconcile stale milestone labels with merged PR evidence
+      - Ensure milestone is not marked accepted before owner approval
+    last_updated: "2026-10-31"
