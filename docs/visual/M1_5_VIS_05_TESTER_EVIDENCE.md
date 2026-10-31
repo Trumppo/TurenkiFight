@@ -54,3 +54,11 @@ Current verdict: **AUTOMATED PASS; VIS05-01 FIXED; RELEASE ACCEPTANCE PENDING**.
 - These assertions validate *geometry*, not the perceived readability of the in-canvas HUD, physical gamepad usability or mobile touch controls.
 - CI outcomes for PR #83 must be checked at the final commit SHA before merge. Local Playwright execution has not been independently performed in this GitHub-connector environment.
 - Live GitHub Pages verification and owner visual acceptance remain outstanding; VIS-05 must stay in progress.
+
+## Production retro mode deployment correction — 2026-10-31
+
+Owner confirmed that the published game starts, ends, supports movement/combat, KO and respawn, but still displays the old graphics. Investigation found that `RETRO_PREVIEW` is selected at **build time** by `VITE_VISUAL_STYLE === 'retro'` in `src/game/presentation/retroPrototype.ts`, while `.github/workflows/deploy.yml` previously ran an unconfigured `npm run build` (classic by default).
+
+This work package sets `VITE_VISUAL_STYLE: retro` **only on the GitHub Pages production build step**. It retains the explicit opt-in in source and avoids changing development/classic-mode defaults. The existing retro Playwright suite runs separately in CI.
+
+**Verification gate:** merge only after PR CI passes and owner approves; then verify the GitHub Pages deployment workflow succeeds and refresh the live site to confirm the retro station, four retro fighters and retro HUD. A green PR CI does not prove the Pages deployment has occurred. Keep M1.5 release acceptance pending until the published retro visuals are confirmed.
