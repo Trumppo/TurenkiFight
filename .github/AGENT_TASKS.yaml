@@ -360,7 +360,7 @@ tasks:
       - Separate transport and authority measurements and missing values
       - Define deterministic replay and adversarial acceptance tests
       - CI and owner-approved merge
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/54
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/56
     last_updated: "2026-10-31"
     notes: "Design only; no benchmark runs or performance claims."
   - id: M2-BENCHMARK-HARNESS-IMPLEMENTATION
