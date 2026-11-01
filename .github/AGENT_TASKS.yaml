@@ -238,7 +238,8 @@ tasks:
   - id: M2-VIS-ARENA-ARCH
     title: Introduce typed presentation-only arena manifest after concept approval
     assigned_role: graphics-session
-    status: ready
+    session_id: graphics-session-20261102-mesku
+    status: review
     priority: P2
     specification: docs/visual/NEXT_ARENA_CONCEPT.md
     depends_on: [M2-VIS-ARENA-01, M1-5-VIS-05]
@@ -253,6 +254,8 @@ tasks:
       - Verify four-fighter silhouette readability and HUD contrast at 640x360, 1280x720, 1920x1080 and 390x844
       - Unit tests and browser CI pass
     last_updated: "2026-10-31"
+    last_updated: "2026-11-02"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/118
     last_updated: "2026-11-02"
     notes: "Owner deferred new arena selection and implementation on 2026-11-01; revisit after M2 networking gates. Concept PR #70 remains the reference."
   - id: M1-5-INTEGRATION-REVIEW
@@ -825,7 +828,7 @@ tasks:
     title: Add the audio engine, unlock path, buses and the cue bridge
     assigned_role: graphics-session
     session_id: graphics-session-20261102-audio
-    status: review
+    status: done
     priority: P1
     specification: docs/M7_AUDIO_PLAN.md
     depends_on: [M1-5-RESPONSIVE-VISUAL-FIX]

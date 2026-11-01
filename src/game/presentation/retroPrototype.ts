@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { fighterKey, POSES, FRAMES_PER_POSE } from './fighterSprites';
 import { fighterRig } from './fighterRig';
+import { ARENA_MANIFESTS } from './arenaVisuals';
 
 /** Original 1990s arcade-inspired martial artist, not a licensed character. */
 export const RETRO_PREVIEW = import.meta.env.VITE_VISUAL_STYLE === 'retro';
 export const EXPANDED_P1_CANVAS = import.meta.env.VITE_FIGHTER_CANVAS === 'expanded';
 export const RETRO_P1_SIZE = EXPANDED_P1_CANVAS ? { width: 48, height: 64 } : { width: 32, height: 48 };
-export const RETRO_STATION_PATH = 'assets/station/turenki-station-retro.svg';
+export const RETRO_STATION_PATH = ARENA_MANIFESTS.station.variants.retro.backdropPath;
 export const RETRO_PALETTE = {
   ink: '#151c28', outline: '#27313b', skin: '#dca47f', light: '#ffd4a0',
   hair: '#4b342d', coat: '#9c3d3e', coatLight: '#df7654',

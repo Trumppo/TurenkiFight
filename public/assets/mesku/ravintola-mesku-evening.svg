@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180" shape-rendering="crispEdges">
+  <!-- Original evening restaurant backdrop, authored on the 320×180 pixel-art grid. -->
+  <rect width="320" height="180" fill="#36434b"/>
+  <!-- Quiet blue-violet dusk sky, kept restrained beneath the top HUD. -->
+  <rect y="0" width="320" height="34" fill="#384953"/>
+  <rect x="20" y="14" width="3" height="3" fill="#9aa7a0"/>
+  <rect x="256" y="9" width="2" height="2" fill="#9aa7a0"/>
+  <rect x="275" y="21" width="3" height="2" fill="#778c8f"/>
+  <!-- Low tree line and neighboring roof silhouettes. -->
+  <path d="M0 71h16V57h8V48h8v13h8V51h8v20h23V62h10V54h8V46h9v25h14V57h10v14h13V59h9v12h17V53h8V42h9v29h17V60h9v11h15V56h11v15h18V48h9v23h20v16H0Z" fill="#29393f"/>
+  <g fill="#45534f">
+    <rect x="6" y="61" width="3" height="10"/><rect x="52" y="62" width="3" height="9"/>
+    <rect x="263" y="61" width="4" height="10"/><rect x="302" y="58" width="3" height="13"/>
+  </g>
+  <!-- Fictional Finnish neighborhood restaurant: low timber-and-stucco facade. -->
+  <rect x="38" y="42" width="244" height="63" fill="#6a5750"/>
+  <rect x="34" y="39" width="252" height="5" fill="#292f34"/>
+  <rect x="43" y="45" width="234" height="4" fill="#92735d"/>
+  <rect x="48" y="49" width="224" height="54" fill="#786155"/>
+  <rect x="48" y="49" width="224" height="2" fill="#a18063"/>
+  <!-- Broad, high-contrast sign above the platform boundary. -->
+  <rect x="76" y="52" width="168" height="17" fill="#222b31"/>
+  <rect x="79" y="54" width="162" height="13" fill="#303e43"/>
+  <text x="160" y="64" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" letter-spacing="1" fill="#f0c47c">RAVINTOLA MESKU</text>
+  <!-- Warm but dim window light; outlines preserve the fighters' color contrast. -->
+  <g>
+    <rect x="62" y="73" width="52" height="28" fill="#29363a"/>
+    <rect x="65" y="76" width="46" height="22" fill="#b27e4d"/>
+    <rect x="68" y="78" width="40" height="18" fill="#c0915b"/>
+    <rect x="84" y="76" width="3" height="22" fill="#3c4140"/>
+    <rect x="65" y="86" width="46" height="2" fill="#55483f"/>
+
+    <rect x="206" y="73" width="52" height="28" fill="#29363a"/>
+    <rect x="209" y="76" width="46" height="22" fill="#b27e4d"/>
+    <rect x="212" y="78" width="40" height="18" fill="#c0915b"/>
+    <rect x="228" y="76" width="3" height="22" fill="#3c4140"/>
+    <rect x="209" y="86" width="46" height="2" fill="#55483f"/>
+  </g>
+  <!-- Recessed entrance and modest awning, all details end above the platform. -->
+  <rect x="136" y="72" width="48" height="33" fill="#493f3b"/>
+  <rect x="141" y="76" width="38" height="29" fill="#202b31"/>
+  <rect x="145" y="79" width="30" height="26" fill="#3f524f"/>
+  <rect x="149" y="82" width="22" height="23" fill="#29383d"/>
+  <rect x="167" y="91" width="2" height="2" fill="#dfbd83"/>
+  <rect x="131" y="70" width="58" height="4" fill="#3b4140"/>
+  <rect x="135" y="68" width="50" height="2" fill="#a47a55"/>
+  <!-- Small wall lamps cast localized amber pools without tinting the whole scene. -->
+  <g fill="#d1a467">
+    <rect x="53" y="71" width="4" height="5"/><rect x="263" y="71" width="4" height="5"/>
+    <rect x="54" y="77" width="2" height="7" opacity=".45"/><rect x="264" y="77" width="2" height="7" opacity=".45"/>
+  </g>
+  <rect x="46" y="101" width="228" height="4" fill="#554943"/>
+  <rect x="38" y="105" width="244" height="2" fill="#8f775f"/>
+  <!-- Clean combat plane: subdued asphalt, no texture inside the fighter field. -->
+  <rect y="108" width="320" height="72" fill="#666a64"/>
+  <rect y="108" width="320" height="2" fill="#d2ae79"/>
+  <rect y="110" width="320" height="2" fill="#424b4a"/>
+  <!-- Sparse accents are confined to the outermost 18 art pixels. -->
+  <g fill="#555e59">
+    <rect x="4" y="133" width="11" height="1"/><rect x="5" y="156" width="13" height="1"/>
+    <rect x="305" y="137" width="11" height="1"/><rect x="302" y="162" width="14" height="1"/>
+  </g>
+  <g fill="#78664f">
+    <rect x="0" y="104" width="15" height="3"/><rect x="4" y="100" width="8" height="4"/>
+    <rect x="305" y="104" width="15" height="3"/><rect x="308" y="100" width="8" height="4"/>
+  </g>
+</svg>
