@@ -14,6 +14,7 @@ import {
 import { runLocalMeasurement } from '../benchmarks/local/measure';
 import { hasUnignoredWorkingTreeChanges, readWorkingTree } from '../benchmarks/local/provenance';
 import { summarizeBytes, summarizeSamples } from '../benchmarks/local/statistics';
+import { summaryFileText, writeSummaryFile } from '../benchmarks/local/summary';
 
 /**
  * These tests are deliberately non-vacuous:
@@ -186,6 +187,31 @@ describe('working tree provenance', () => {
 });
 
 describe('local measurement manifest', () => {
+  it('writes exactly one trailing newline and no blank line at EOF', async () => {
+    const run = await sections();
+    const manifest = createLocalManifest({
+      runId: 'local-summary-1',
+      provenance: provenanceFor(run),
+      sections: run,
+    });
+    const text = summaryFileText(manifest);
+    expect(text).toContain('# Single-machine local measurement `local-summary-1`');
+    expect(text.endsWith('\n')).toBe(true);
+    expect(text.endsWith('\n\n')).toBe(false);
+
+    const directory = mkdtempSync(joinPath(tmpdir(), 'turenkifight-summary-'));
+    try {
+      const path = joinPath(directory, 'local-summary-1.md');
+      writeSummaryFile(path, manifest);
+      const written = readFileSync(path, 'utf8');
+      expect(written).toBe(text);
+      expect(written.endsWith('\n')).toBe(true);
+      expect(written.endsWith('\n\n')).toBe(false);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it('records local numbers with network fields untouched and rejects every network claim', async () => {
     const run = await sections();
     const manifest = createLocalManifest({
