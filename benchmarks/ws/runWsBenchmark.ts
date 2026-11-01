@@ -3,6 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { decodeInputFrame } from '../../src/game/protocol/inputFrame';
 import { encodeStateSnapshot } from '../../src/game/protocol/stateSnapshot';
+import { TICK_RATE } from '../../src/game/simulation/step';
 import type { PlayerInput } from '../../src/game/simulation/types';
 import type { SnapshotHz } from '../../src/game/networking/wsMessages';
 import type { SessionClientHandlers } from '../../src/game/networking/wsSessionClient';
@@ -11,7 +12,8 @@ import { startWsServer } from '../../server/ws/wsServer';
 import { openNodeSession, type NodeSession } from '../../server/ws/nodeWsClient';
 import { InMemoryBenchmarkAdapter } from '../inMemory';
 import { createRoster, generateFixture, sha256 } from '../scenarios';
-import { createWsPrototypeManifest } from './wsManifest';
+import { DEFAULT_MANUAL_BARRIER_TIMEOUT_MS, driveManualTicks } from './manualTickDriver';
+import { createWsPrototypeManifest, type WsBenchmarkTickMode } from './wsManifest';
 
 /**
  * Bounded loopback WebSocket prototype runner.
@@ -21,13 +23,27 @@ import { createWsPrototypeManifest } from './wsManifest';
  * fingerprints as the in-memory reference for the bounded tick range. It does
  * not measure latency, bandwidth, CPU or tick pacing, and it writes those
  * fields as NOT_MEASURED.
+ *
+ * Two pacing modes exist and are recorded in the manifest:
+ * - `interval` (default) lets the server's 60 Hz timers drive the match, which
+ *   approximates real-time pacing but still records no pacing measurement.
+ * - `manual` submits a bounded input window, waits for the server to prove it
+ *   consumed it, then steps ticks on demand. It is a deterministic correctness
+ *   mode; a 7200-tick run finishes quickly and must not be read as real-time.
  */
 
 const DEFAULT_TICKS = 300;
+const MAX_TICKS = 7200;
 const MAX_LEAD_TICKS = 8;
 const START_DELAY_MS = 400;
 const FIRST_TICK_DELAY_MS = 250;
-const RUN_TIMEOUT_MS = 30000;
+/**
+ * Wall-clock guard only. A 7200-tick interval run legitimately needs 120 s, so
+ * the default is derived from the tick count instead of a fixed 30 s.
+ */
+const RUN_TIMEOUT_BASE_MS = 30000;
+const MANUAL_TICK_BUDGET_MS = 5;
+const MAX_RUN_TIMEOUT_MS = 30 * 60 * 1000;
 
 type Deferred<T> = {
   promise: Promise<T>;
@@ -82,6 +98,19 @@ function snapshotRate(raw: string | undefined): SnapshotHz {
   return value as SnapshotHz;
 }
 
+function tickModeArgument(raw: string | undefined): WsBenchmarkTickMode {
+  if (raw === undefined) return 'interval';
+  if (raw !== 'interval' && raw !== 'manual') throw new Error(`Invalid tick mode: ${raw}`);
+  return raw;
+}
+
+/** Hang guard derived from the tick count, never a measured duration. */
+function defaultRunTimeoutMs(tickMode: WsBenchmarkTickMode, ticks: number): number {
+  return tickMode === 'interval'
+    ? RUN_TIMEOUT_BASE_MS + Math.ceil((ticks * 1000) / TICK_RATE)
+    : RUN_TIMEOUT_BASE_MS + ticks * MANUAL_TICK_BUDGET_MS;
+}
+
 function decodeSchedule(frames: string[][], players: readonly string[], ticks: number): PlayerInput[][] {
   if (frames.length !== 7200) throw new Error('Invalid fixture');
   const schedule: PlayerInput[][] = [];
@@ -104,24 +133,37 @@ type ClientRuntime = {
   nextToSend: number;
   matchStarted: boolean;
   lateTicks: number;
+  lastPong: number;
   denials: Map<string, number>;
 };
 
 async function main(): Promise<void> {
-  const ticks = positiveInteger(argument('ticks'), DEFAULT_TICKS, 7200, 'tick count');
+  const ticks = positiveInteger(argument('ticks'), DEFAULT_TICKS, MAX_TICKS, 'tick count');
   const snapshotHz = snapshotRate(argument('snapshot-hz'));
+  const tickMode = tickModeArgument(argument('tick-mode'));
+  const timeoutMs = positiveInteger(
+    argument('timeout-ms'),
+    defaultRunTimeoutMs(tickMode, ticks),
+    MAX_RUN_TIMEOUT_MS,
+    'run timeout',
+  );
   const players = createRoster(4);
   const fixture = generateFixture('BASE-4-60-20');
   const schedule = decodeSchedule(fixture.framesByTick as string[][], players, ticks);
 
   const runComplete = deferred<number>();
   const fatal = deferred<never>();
+  // The race that observes this rejection is only installed after joins and the
+  // manual tick loop. Attach a handler now so an early failure cannot surface
+  // as an unhandled rejection and take the process down without diagnostics.
+  void fatal.promise.catch(() => undefined);
   const runtimes: ClientRuntime[] = [];
   let server: Awaited<ReturnType<typeof startWsServer>> | null = null;
   let pumpTimer: ReturnType<typeof setInterval> | null = null;
   let timeout: ReturnType<typeof setTimeout> | null = null;
   let closed = false;
   let settled = false;
+  let fatalError: Error | null = null;
 
   const shutdown = async (): Promise<void> => {
     if (closed) return;
@@ -144,7 +186,8 @@ async function main(): Promise<void> {
 
   const fail = (error: unknown): void => {
     if (settled) return;
-    fatal.reject(error instanceof Error ? error : new Error(String(error)));
+    fatalError = error instanceof Error ? error : new Error(String(error));
+    fatal.reject(fatalError);
   };
 
   const pump = (): void => {
@@ -175,7 +218,7 @@ async function main(): Promise<void> {
       maxTicks: ticks,
       startDelayMs: START_DELAY_MS,
       firstTickDelayMs: FIRST_TICK_DELAY_MS,
-      tickMode: 'interval',
+      tickMode,
     });
     const url = `ws://127.0.0.1:${server.port}`;
 
@@ -188,6 +231,7 @@ async function main(): Promise<void> {
         nextToSend: 0,
         matchStarted: false,
         lateTicks: 0,
+        lastPong: 0,
         denials: new Map<string, number>(),
       };
       const handlers: SessionClientHandlers = {
@@ -197,9 +241,16 @@ async function main(): Promise<void> {
         },
         onMatchStart: () => {
           runtime.matchStarted = true;
-          pump();
+          // Manual mode submits windows from the driver, never from a snapshot.
+          if (tickMode === 'interval') pump();
         },
-        onSnapshot: () => pump(),
+        onSnapshot: () => {
+          if (tickMode === 'interval') pump();
+        },
+        onPong: sequence => {
+          // Monotonic acknowledgement used by the manual input barrier.
+          if (sequence > runtime.lastPong) runtime.lastPong = sequence;
+        },
         onError: error => {
           runtime.denials.set(error.code, (runtime.denials.get(error.code) ?? 0) + 1);
           if (error.code === 'late-tick') runtime.lateTicks += 1;
@@ -236,11 +287,40 @@ async function main(): Promise<void> {
       const clients = runtimes
         .map(runtime => `${runtime.playerId}:joined=${runtime.session.client.sessionState}:started=${runtime.matchStarted}:next=${runtime.nextToSend}:serverTick=${runtime.session.client.serverTick}`)
         .join(',');
-      fail(new Error(`Benchmark did not finish within ${RUN_TIMEOUT_MS} ms (${state}; ${clients})`));
-    }, RUN_TIMEOUT_MS);
+      fail(new Error(
+        `Benchmark did not finish within ${timeoutMs} ms (tickMode=${tickMode}; ${state}; ${clients})`,
+      ));
+    }, timeoutMs);
 
     await Promise.all(joins);
-    pumpTimer = setInterval(pump, 5);
+
+    if (tickMode === 'manual') {
+      // The transport schedules neither the start delay nor a tick timer, so the
+      // benchmark starts the match and advances the authority itself. Every
+      // submitted window is confirmed by a pong barrier before stepping, so no
+      // tick is consumed with missing fixture input.
+      const manualServer = server;
+      if (!manualServer.room.beginMatch()) throw new Error('Could not start the manual benchmark match');
+      await driveManualTicks({
+        ticks,
+        nextTick: () => manualServer.room.tick,
+        stepOnce: () => manualServer.stepOnce(),
+        clients: runtimes.map(runtime => ({
+          submitInput: tick => {
+            const input = schedule[tick].find(candidate => candidate.playerId === runtime.playerId);
+            if (!input) throw new Error('Fixture lost a player input');
+            runtime.session.client.submitInput(tick, [input]);
+            runtime.nextToSend = tick + 1;
+          },
+          ping: () => runtime.session.client.ping(),
+          lastPongSequence: () => runtime.lastPong,
+        })),
+        barrierTimeoutMs: DEFAULT_MANUAL_BARRIER_TIMEOUT_MS,
+        abortReason: () => fatalError,
+      });
+    } else {
+      pumpTimer = setInterval(pump, 5);
+    }
 
     const completedTick = await Promise.race([runComplete.promise, fatal.promise]);
     settled = true;
@@ -275,6 +355,7 @@ async function main(): Promise<void> {
       snapshotHz,
       maxLeadTicks: MAX_LEAD_TICKS,
       boundedTicks: ticks,
+      tickMode,
       correctness: {
         finalTick: server.room.tick,
         matchesInMemoryReference:
@@ -298,6 +379,8 @@ async function main(): Promise<void> {
       scenarioId: manifest.scenarioId,
       boundedTicks: manifest.boundedTicks,
       snapshotHz: manifest.snapshotHz,
+      tickMode: manifest.tickMode,
+      pacing: manifest.pacing,
       finalTick: manifest.correctness.finalTick,
       matchesInMemoryReference: manifest.correctness.matchesInMemoryReference,
       lateTicks: manifest.correctness.lateTicks,

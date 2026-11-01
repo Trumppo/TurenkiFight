@@ -7,9 +7,22 @@ import { SUPPORTED_SNAPSHOT_HZ, type SnapshotHz } from '../../src/game/networkin
  * Only bounded-tick correctness fingerprints are recorded. Latency, bandwidth,
  * CPU and tick pacing are explicitly NOT_MEASURED: this run uses a local
  * ephemeral port on one machine and is not a transport comparison.
+ *
+ * `tickMode` and `pacing` make the difference between a timer-driven run and an
+ * on-demand correctness run explicit, so a fast 7200-tick pass can never be
+ * mistaken for a real-time pacing measurement.
  */
+export type WsBenchmarkTickMode = 'interval' | 'manual';
+
+/**
+ * `timer-driven-approximation` uses real 60 Hz timers but still records no
+ * pacing number; `unsynchronized-correctness` steps as fast as loopback I/O
+ * allows and is a correctness mode only.
+ */
+export type WsBenchmarkPacing = 'timer-driven-approximation' | 'unsynchronized-correctness';
+
 export type WsPrototypeManifest = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   kind: 'ws-prototype-run';
   runId: string;
   scenarioId: 'BASE-4-60-20';
@@ -26,6 +39,8 @@ export type WsPrototypeManifest = {
   snapshotHz: SnapshotHz;
   maxLeadTicks: number;
   boundedTicks: number;
+  tickMode: WsBenchmarkTickMode;
+  pacing: WsBenchmarkPacing;
   fixtureSha256: string;
   seed: number;
   environment: {
@@ -62,6 +77,7 @@ export type WsPrototypeManifestInput = {
   snapshotHz: SnapshotHz;
   maxLeadTicks: number;
   boundedTicks: number;
+  tickMode: WsBenchmarkTickMode;
   correctness: WsPrototypeManifest['correctness'];
 };
 
@@ -75,6 +91,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const nonnegative = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 const hash = (value: unknown): value is string => typeof value === 'string' && HASH.test(value);
+
+export function pacingForTickMode(tickMode: WsBenchmarkTickMode): WsBenchmarkPacing {
+  return tickMode === 'interval' ? 'timer-driven-approximation' : 'unsynchronized-correctness';
+}
 
 function validateCorrectness(value: unknown): asserts value is WsPrototypeManifest['correctness'] {
   if (!isRecord(value) ||
@@ -92,7 +112,7 @@ function validateCorrectness(value: unknown): asserts value is WsPrototypeManife
 
 export function createWsPrototypeManifest(input: WsPrototypeManifestInput): WsPrototypeManifest {
   const manifest: WsPrototypeManifest = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: 'ws-prototype-run',
     runId: input.runId,
     scenarioId: 'BASE-4-60-20',
@@ -109,6 +129,8 @@ export function createWsPrototypeManifest(input: WsPrototypeManifestInput): WsPr
     snapshotHz: input.snapshotHz,
     maxLeadTicks: input.maxLeadTicks,
     boundedTicks: input.boundedTicks,
+    tickMode: input.tickMode,
+    pacing: pacingForTickMode(input.tickMode),
     fixtureSha256: input.fixtureSha256,
     seed: input.seed,
     environment: {
@@ -136,10 +158,10 @@ export function validateWsPrototypeManifest(value: unknown): asserts value is Ws
       !exactKeys(value, [
         'schemaVersion', 'kind', 'runId', 'scenarioId', 'scenarioVersion', 'commitSha', 'architecture',
         'authority', 'transport', 'protocolVersion', 'serverMessageVersion', 'players', 'simulationHz',
-        'inputHz', 'snapshotHz', 'maxLeadTicks', 'boundedTicks', 'fixtureSha256', 'seed', 'environment',
-        'result', 'measurements', 'correctness',
+        'inputHz', 'snapshotHz', 'maxLeadTicks', 'boundedTicks', 'tickMode', 'pacing', 'fixtureSha256',
+        'seed', 'environment', 'result', 'measurements', 'correctness',
       ]) ||
-      value.schemaVersion !== 1 || value.kind !== 'ws-prototype-run' ||
+      value.schemaVersion !== 2 || value.kind !== 'ws-prototype-run' ||
       typeof value.runId !== 'string' || !RUN_ID.test(value.runId) ||
       value.scenarioId !== 'BASE-4-60-20' || value.scenarioVersion !== 1 ||
       typeof value.commitSha !== 'string' || !COMMIT.test(value.commitSha) ||
@@ -150,6 +172,8 @@ export function validateWsPrototypeManifest(value: unknown): asserts value is Ws
       !nonnegative(value.maxLeadTicks) || (value.maxLeadTicks as number) < 1 ||
       !nonnegative(value.boundedTicks) || (value.boundedTicks as number) < 1 ||
       (value.boundedTicks as number) > 7200 ||
+      (value.tickMode !== 'interval' && value.tickMode !== 'manual') ||
+      value.pacing !== pacingForTickMode(value.tickMode) ||
       typeof value.fixtureSha256 !== 'string' || !HASH.test(value.fixtureSha256) ||
       !nonnegative(value.seed) || (value.seed as number) < 1 || (value.seed as number) > 0xffffffff) {
     throw new Error('Invalid WS prototype manifest');

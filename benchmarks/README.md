@@ -51,11 +51,23 @@ The adapter tests are correctness checks, not WS/WebRTC comparisons or evidence 
 
 ## WebSocket architecture-A prototype (loopback)
 
-`npm run bench:ws` exercises a bounded BASE-4 loopback run through a prototype authoritative `ws`
-server and Node synthetic clients. It writes a `NOT_MEASURED` manifest under `benchmarks/out/` and
-compares bounded state/event fingerprints with the in-memory reference. See
-[`ws/README.md`](ws/README.md). This is not a transport selection and records no latency, bandwidth or
-tick-pacing measurements.
+`npm run bench:ws` exercises a BASE-4 loopback run through a prototype authoritative `ws` server and
+Node synthetic clients. It writes a `NOT_MEASURED` manifest under `benchmarks/out/` and compares
+state/event fingerprints with the in-memory reference. See [`ws/README.md`](ws/README.md). This is not
+a transport selection and records no latency, bandwidth or tick-pacing measurements.
+
+Two pacing modes are recorded in the manifest:
+
+- `--tick-mode=interval` (default) lets the server's 60 Hz timers advance the match. It approximates
+  real-time pacing, but `tickPacing` stays `NOT_MEASURED`, so it is not a measurement either.
+- `--tick-mode=manual` advances ticks on demand after a pong barrier proves every input window was
+  consumed. It is a deterministic correctness mode; `npm run bench:ws -- --ticks=7200
+  --tick-mode=manual` reaches `finalTick: 7200` in seconds and matches the in-memory reference
+  (`de544fcd…` state, `5bb44bd6…` ordered events, a non-empty event stream). A fast run must never be
+  read as real-time pacing.
+
+Neither mode is a transport measurement. The wall-clock guard is derived from the tick count (or set
+with `--timeout-ms`) because a legitimate 7200-tick real-time run needs 120 s.
 
 ## WebRTC architecture-B prototype (loopback correctness only)
 
