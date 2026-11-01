@@ -761,7 +761,7 @@ tasks:
     title: Add a served browser client that joins a remote match and renders interpolated snapshots
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-online-client
-    status: review
+    status: done
     priority: P1
     specification: docs/M7_ONLINE_TEST_HARNESS.md
     depends_on: [M7-ONLINE-SERVER-MODE]
@@ -778,6 +778,7 @@ tasks:
       - A browser test proves the page joins, sends input and renders a snapshot against a local server, skipping with a reason when a socket cannot bind
       - npm test, npm run build, npm run test:browser and git diff --check pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/114
+    last_updated: "2026-11-02"
     last_updated: "2026-11-02"
     notes: "This is the page the owner uses on this machine. Prediction is out of scope; document the resulting input latency instead of hiding it."
 
