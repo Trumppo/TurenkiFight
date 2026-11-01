@@ -11,7 +11,21 @@
       <h1>TurenkiFight</h1>
       <p>Turengin rautatieasema · 2.5D arena prototype</p>
       <div id="game" aria-label="TurenkiFight game canvas"></div>
-      <p class="instructions">P1: WASD + F (isku) · P2: nuolinäppäimet + L (isku) · Välilyönti: hyppy (P1)</p>
+      <details class="controls">
+        <summary>Näppäinkartta – pelaajat 1 ja 2</summary>
+        <table aria-label="Pelaajien näppäinkartta">
+          <thead><tr><th>Toiminto</th><th>Pelaaja 1</th><th>Pelaaja 2</th></tr></thead>
+          <tbody>
+            <tr><th>Liikkuminen</th><td>W / A / S / D</td><td>Nuolinäppäimet</td></tr>
+            <tr><th>Hyppy</th><td>Välilyönti</td><td>K</td></tr>
+            <tr><th>Lyönti</th><td>F</td><td>L</td></tr>
+            <tr><th>Potku</th><td>G</td><td>J</td></tr>
+            <tr><th>Hyppypotku</th><td>H</td><td>U</td></tr>
+            <tr><th>Liity peliin</th><td>Isäntä (automaattisesti)</td><td>Vaihto (Shift), aulassa</td></tr>
+            <tr><th>Aloita ottelu / uusi ottelu</th><td>Enter</td><td>Pelaaja 1 aloittaa</td></tr>
+          </tbody>
+        </table>
+      </details>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

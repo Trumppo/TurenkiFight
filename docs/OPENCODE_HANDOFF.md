@@ -57,4 +57,4 @@ Design decisions in docs/GAME_DESIGN_DECISIONS.md are approved *conceptually*, n
 
 ## User approval gates
 
-The owner starts OpenCode and selects Designer (or accepts the configured default), connects the approved provider account, and verifies `/models`. The owner reviews the Tester report and PR checks before merging. Git push, merge, secret access and destructive operations remain approval-gated by the configuration and by the owner workflow.
+The owner starts OpenCode and selects Designer (or accepts the configured default), connects the approved provider account, and verifies `/models`. The owner reviews the Tester report and PR checks before merging. In this workspace agents may push branches and open pull requests; merging, secret access and destructive history rewrites (force-push, `git reset --hard`) remain owner-gated or denied by configuration.
