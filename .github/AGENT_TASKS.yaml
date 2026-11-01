@@ -507,6 +507,7 @@ tasks:
   - id: M2-BENCHMARK-SCENARIO-PLAN
     title: Specify next benchmark scenario coverage and measurement gates
     assigned_role: planning-session
+    session_id: designer-session-20261031-scenarios
     status: review
     priority: P2
     specification: docs/M2_BENCHMARK_SCENARIO_GATES.md
