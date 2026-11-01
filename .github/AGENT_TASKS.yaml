@@ -506,7 +506,7 @@ tasks:
     title: Implement executable benchmark scenarios and fail-closed envelope encoding
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-scenarios
-    status: review
+    status: done
     priority: P1
     specification: docs/M2_BENCHMARK_SCENARIO_GATES.md
     depends_on: [M2-BENCHMARK-HARNESS-IMPLEMENTATION, M2-ENVELOPE-IMPLEMENTATION, M2-BENCHMARK-SCENARIO-PLAN]
@@ -554,7 +554,7 @@ tasks:
     title: Prototype browser-host WebRTC DataChannel session and bounded benchmark
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-webrtc
-    status: review
+    status: done
     priority: P1
     specification: docs/M2_SESSION_ENVELOPE_V1.md
     depends_on: [M2-BENCHMARK-SCENARIO-IMPLEMENTATION, M2-ENVELOPE-IMPLEMENTATION, M2-WS-PROTOTYPE]
@@ -576,7 +576,27 @@ tasks:
       - Focused tests, npm test, build, bench:webrtc, git diff --check and agent task validation pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/100
     last_updated: "2026-11-02"
-    notes: "Designer fills the PR URL. Architecture B prototype only: no production security claims, no NAT/TURN provisioning and no transport decision. Signaling relays control messages only; the WS prototype is unchanged."
+    notes: "PR #100 merged as ac19645 after independent Tester PASS: 18/18 injected-DataChannel tests, 223/223 full suite, two-page Chromium test stable across four runs, signaling room-scoped and free of authority code, 7200-tick loopback run matching the in-memory reference (state de544fcd, events 5bb44bd6), bundle free of server code. Not transport-selection evidence: no NAT/TURN/latency measurement exists."
+
+  - id: M2-FULL-LENGTH-BENCHMARK
+    title: Make full-length 7200-tick benchmark runs executable and pin non-empty event fingerprints
+    assigned_role: gameplay-session
+    status: ready
+    priority: P0
+    specification: docs/M2_BENCHMARK_SCENARIO_GATES.md
+    depends_on: [M2-WS-PROTOTYPE, M2-WEBRTC-PROTOTYPE, M2-BENCHMARK-SCENARIO-IMPLEMENTATION]
+    scope:
+      - benchmarks/
+      - tests/
+      - .github/AGENT_TASKS.yaml
+    acceptance:
+      - npm run bench:ws -- --ticks=7200 completes with finalTick 7200 instead of aborting on the current 30 s wall-clock guard
+      - Both prototypes produce the same 7200-tick final-state and ordered-event fingerprints for the same fixture and seed
+      - The 7200-tick fingerprints are pinned by a regression test whose ordered-event list is non-empty
+      - Fast and real-time tick modes are labelled honestly; no latency, bandwidth, CPU or tick-pacing value is invented
+      - Docs state which mode approximates real-time pacing and which exists only for deterministic correctness runs
+      - npm test, npm run build, git diff --check and agent task validation pass
+    notes: "Designer follow-up from PR #98 and PR #100. Measured 2026-11-02 on main ac19645: npm run bench:webrtc -- --ticks=7200 completes and matches the in-memory reference (de544fcd / 5bb44bd6), but npm run bench:ws -- --ticks=7200 aborts at the 30000 ms guard while still at tick 1761. Full-length WS evidence therefore does not exist in the repository yet. Do not turn any of this into a transport decision."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility

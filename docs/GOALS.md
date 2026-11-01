@@ -33,7 +33,9 @@ Omistajan päätökset 2026-11-01: **areenatyö lykätty** myöhemmäksi, **VIS0
 
 ## Aktiivinen tavoite 2026-11-02: M2-kuljetuspäätös evidence-gatella
 
-**Tila:** Session envelope -sopimus on hyväksytty ja sen ensimmäinen transport-neutraali toteutus on katselmoitavana (PR #94). Verkkokuljetusta ei ole valittu, eikä verkkopeliä ole toteutettu. M2:n benchmark harness on yhdistetty ja itsenäisesti validoitu korrektiuden osalta; suorituskykymittauksia ei ole.
+**Tila (päivitetty 2026-11-02, `main` `ac19645`):** Vaiheet 1–3 ovat valmiit ja yhdistetty: envelope-sopimus toteutettuna (PR #94, `ce8c5a1`), skenaariot ajettavina (PR #97, `dcf7f8d`), WS-arkkitehtuuri A (PR #98, `db3112b`) ja WebRTC-arkkitehtuuri B (PR #100, `ac19645`). Kaikki neljä ovat läpäisseet itsenäisen Tester-gaten. Verkkokuljetusta **ei ole valittu**, verkkopeliä ei ole toteutettu, eikä yhtään suorituskykylukua ole mitattu: jokainen manifesti on edelleen `NOT_MEASURED`.
+
+Avoin korrektiusaukko ennen mittausvaihetta: `npm run bench:ws -- --ticks=7200` keskeytyy 30 sekunnin vartijan vuoksi tickissä 1761, joten täyden 120 sekunnin WS-ajon näyttöä ei ole repositoriossa. WebRTC-ajo vastaavalla pituudella valmistuu ja täsmää in-memory-referenssiin (`de544fcd…` / `5bb44bd6…`). Ero korjataan tehtävässä `M2-FULL-LENGTH-BENCHMARK`.
 
 ### Tavoite
 
@@ -43,19 +45,20 @@ Tuota mitattu, toistettava näyttö WebSocket-palvelimen ja WebRTC-selainhostin 
 
 - M1 hyväksytty rajoituksin 2026-10-30; M1.5 hyväksytty rajoituksin 2026-11-01.
 - M2 v1 -kodeekit, authorized ingress ja hardening ovat `main`issa (#41, #43) ja itsenäisesti arvioitu (PASS WITH LIMITATIONS).
-- Session envelope -sopimus on hyväksytty ([M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md)); toteutus on työpuussa/PR:ssä.
+- Session envelope -sopimus on hyväksytty ([M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md)) ja toteutettu (`src/game/session/`, PR #94).
 - Benchmark harness ja sen itsenäinen korrektius-QA ovat valmiit (PR #79, #93); manifesti ja fixtuurit ovat toistettavia.
-- Skenaariogate on dokumentoitu ([M2_BENCHMARK_SCENARIO_GATES.md](M2_BENCHMARK_SCENARIO_GATES.md)); mittaussuunnitelma on [NETWORK_BENCHMARK_PLAN.md](NETWORK_BENCHMARK_PLAN.md).
+- Skenaariogate on dokumentoitu ([M2_BENCHMARK_SCENARIO_GATES.md](M2_BENCHMARK_SCENARIO_GATES.md)) ja skenaariot ovat ajettavissa (PR #97); mittaussuunnitelma on [NETWORK_BENCHMARK_PLAN.md](NETWORK_BENCHMARK_PLAN.md).
+- Molemmat arkkitehtuuriprototyypit ovat `main`issa ja itsenäisesti testattuja: WS `server/ws/**` (PR #98), WebRTC `server/signaling/**` + `src/game/networking/**` (PR #100).
 - WS/WebRTC-valinta on **avoin** eikä sitä saa päätellä yhdestä mittarista.
 
 ### Työvaiheet
 
-1. **Envelope toteutus maaliin.** Gameplay saattaa PR #94:n katselmointikuntoon; Tester antaa itsenäisen negatiivisen testauksen (spoofing, cross-room, replay, myöhäiset/future-tickit, monipaikkainen omistajuus, reconnect). Vasta vihreän CI:n ja Tester-raportin jälkeen merge. Ei soketteja tässä siivussa.
-2. **Skenaariot toteutuskelpoisiksi.** Määritä 4 ja 8 pelaajan, 30/60 Hz inputin, 10/20/30 Hz snapshotin, viiveen/jitterin/lossin ja host-exitin tapaukset ajettaviksi harnessilla. Ei keksittyjä raja-arvoja: perusta kodeekkien ja sessionikkunan rajoihin.
-3. **Sama työkuorma molemmille arkkitehtuureille.** Rakenna WS-palvelinprototyyppi (Milestone 3) ja WebRTC-selainhost + signalointi (Milestone 4) erillisiin PR:iin, mutta samoilla seedeillä, fixtuureilla ja snapshottitiheyksillä. Loopback ei ole LAN-näyttöä.
-4. **Mittaa.** Vähintään 5 × 120 s ajoa keskeisistä tapauksista fyysisellä LANilla ja internetillä, mukaan lukien pakettihäviö, jitter, NAT/CGNAT ja TURN-relay. Kirjaa p50/p95/p99, tick-duration, tavut/s, CPU/RAM, join-onnistuminen ja kustannusarvio. Tallennukset `benchmarks/results/` (ei salaisuuksia, ei yksityisiä IP:itä).
-5. **Päätä evidence-gatella.** Julkaise `benchmarks/RESULTS.md` ja `docs/adr/0001-network-topology.md`. Jos molemmat kelpaavat, suosi yksinkertaisempaa ja luotettavampaa; valinta on omistajan päätös.
-6. **Siivoa.** Poista vanhentuneet paikalliset työpuut ja sulje vanhentuneet haarat vasta, kun niiden sisältö on todistetusti mainissa.
+1. **Envelope toteutus maaliin.** ✅ Tehty: PR #94 (`ce8c5a1`). Tester antoi PASS WITH LIMITATIONS: 46/46 itsenäistä hyökkäystä ja 48 000 kutsun deterministinen fuzz, ei toteutusvirheitä, ei tilan mutaatiota hylkäyksissä. Testerin jatkohuomiot kirjattu (encode-puolen kokoraja korjattiin PR:ssä #97; merkkijonopohjainen virheluokittelu on yhä avoin).
+2. **Skenaariot toteutuskelpoisiksi.** ✅ Tehty: PR #97 (`dcf7f8d`). Kahdeksan skenaario-ID:tä, 4/8 pelaajan rosterit, impairment vain konfiguraationa, `FAIL-4-HOST-EXIT` ja `FAIL-4-RECONNECT` session-gaten kautta, baseline-sormenjäljet pinnattu.
+3. **Sama työkuorma molemmille arkkitehtuureille.** ✅ Tehty korrektiuden osalta: WS PR #98 (`db3112b`), WebRTC PR #100 (`ac19645`); molemmat Tester-gaten läpäisseet. Sama seed `12345` ja fixtuuri `7fddf007…`. **Avoin:** täysimittainen 7200 tickin WS-ajo ei vielä onnistu (tehtävä `M2-FULL-LENGTH-BENCHMARK`).
+4. **Mittaa.** ⛔ **Estetty:** vaatii omistajan hallitseman fyysisen LANin, internet-yhteyden ja TURN-palvelun. Agentit eivät voi tuottaa näitä lukuja eikä niitä saa keksiä.
+5. **Päätä evidence-gatella.** ⏳ Odottaa vaihetta 4. `benchmarks/RESULTS.md` ja `docs/adr/0001-network-topology.md` kirjoitetaan vasta mitatusta aineistosta.
+6. **Siivoa.** ⏳ Vanhentuneet paikalliset työpuut poistetaan, kun niiden sisältö on todistetusti `main`issa.
 
 ### Tiedostorajaus ja omistus
 
@@ -70,8 +73,8 @@ Tuota mitattu, toistettava näyttö WebSocket-palvelimen ja WebRTC-selainhostin 
 - `npm test`, `npm run build`, `npm run test:browser` vihreät jokaisella PR-headilla; kirjaa mitä itse ajoit.
 - `git diff --check` puhdas.
 - Envelope: negatiiviset testit hylkäävät spoofatun pelaajan, cross-room-viestin, replayed sequencen, myöhäisen ja liian aikaisen tickin, ylisuuren payloadin sekä reconnectin ilman uutta joinia.
-- Benchmarkit: sama seed ja fixtuuri tuottavat identtiset loppu- ja tapahtumasormenjäljet molemmilla arkkitehtuureilla ennen kuin yhtään suorituskykylukua raportoidaan.
-- ADR:ään ei merkitä valintaa ilman vähintään viittä mitattua ajoa keskeisistä tapauksista ja raportoituja rajoitteita.
+- Benchmarkit: sama seed ja fixtuuri tuottavat identtiset loppu- ja tapahtumasormenjäljet molemmilla arkkitehtuureilla ennen kuin yhtään suorituskykylukua raportoidaan. (300 tickin ajo tuottaa tyhjän tapahtumalistan; ei-tyhjä tapahtumaketju vaatii 7200 tickiä.)
+- ADR:ään ei merkitä valinta ilman vähintään viittä mitattua ajoa keskeisistä tapauksista ja raportoituja rajoitteita.
 
 ### Riskit ja rajat
 
@@ -85,7 +88,9 @@ Tuota mitattu, toistettava näyttö WebSocket-palvelimen ja WebRTC-selainhostin 
 
 Työ tehdään omassa haarassa, yksi PR per yhtenäinen työpaketti (`DESIGNER:`/`LOGIC:`/`GRAPHICS:`/`TESTER:`-etuliite, `Task: <id>` kuvauksessa). Aja CI ja korjaa havainnot samassa PR:ssä. Älä yhdistä ilman omistajan lupaa. Jokainen milestone-hyväksyntä ja kuljetusvalinta on erillinen omistajapäätös.
 
-**Omistajan päätökset, jotka ovat vielä auki:** (1) PR #94:n ja tulevien PR:ien merget, (2) WS/WebRTC-valinta mittausten jälkeen, (3) lisenssit (M0).
+**Omistajan päätökset, jotka ovat vielä auki:** (1) WS/WebRTC-valinta mittausten jälkeen, (2) lisenssit (M0), (3) mittausympäristön järjestäminen (LAN, internet, TURN) — vain omistaja voi tuottaa sen.
+
+**Omistajan jo tekemät päätökset tässä tavoitteessa:** envelope-sopimus 2026-11-01; PR:ien #94, #96, #97, #98, #99, #100 merget on hyväksytty ja yhdistetty.
 
 ## Tavoitedokumentin päivityskäytäntö
 

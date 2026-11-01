@@ -1,10 +1,10 @@
 # TurenkiFight – Prototype Roadmap v0.4
 
-**Updated:** 2026-11-01. Milestones, not calendar commitments. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
+**Updated:** 2026-11-02. Milestones, not calendar commitments. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
-> **Current main checkpoint (2026-11-01, `main` at `3ed2ca1`):** M1 accepted with limitations. **M1.5 accepted with documented limitations by the owner on 2026-11-01** — see [M1.5 acceptance report](M1_5_ACCEPTANCE_REPORT.md); VIS05-02 (3× scaling) and VIS05-03 (mobile readability) remain follow-ups. M2 v1 protocol and authorized session ingress are merged (#41, #43) and independently reviewed (PASS WITH LIMITATIONS). The session envelope is still a **proposal**; the deterministic in-memory benchmark harness merged as PR #79, and CI dependencies are pinned with a committed lockfile (PR #88). No online transport, room server or architecture selection exists; PR #25 was closed unmerged and its content was integrated through #41/#43.
+> **Current main checkpoint (2026-11-02, `main` at `ac19645`):** M1 and M1.5 accepted with documented limitations. M2 is implemented at the transport-neutral level: v1 protocol and authorized ingress (#41, #43), owner-approved session envelope with its implementation (#92, #94), executable benchmark scenarios (#97), and independent Tester gates on every slice. Both architecture prototypes exist and are correctness-tested: central WebSocket authority (#98, `server/ws/**`) and browser-host WebRTC with a signaling relay (#100, `server/signaling/**`, `src/game/networking/**`). **No transport is selected and no performance number exists** — every manifest field is `NOT_MEASURED`. Full 7200-tick WS runs currently abort on a 30 s guard (`M2-FULL-LENGTH-BENCHMARK`). PR #25 was closed unmerged and its content was integrated through #41/#43.
 
 ## Milestone 0 – Project foundations
 
@@ -47,20 +47,22 @@
 
 ## Milestone 2 – Shared multiplayer foundations (transport-neutral)
 
-**Status: PARTIALLY IMPLEMENTED.** Canonical v1 protocol and authorized ingress are merged in PR #41 with hardening in #43, and independently reviewed as PASS WITH LIMITATIONS ([report](M2_INDEPENDENT_TESTER_REPORT.md)). This is not a live network session. The **session envelope contract is owner-approved (2026-11-01)** and its transport-neutral implementation is the next slice ([M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md)); the deterministic in-memory benchmark harness merged in PR #79 and provides correctness fixtures only, not transport measurements.
+**Status: IMPLEMENTED AT THE TRANSPORT-NEUTRAL LEVEL.** Canonical v1 protocol and authorized ingress are merged in PR #41 with hardening in #43, independently reviewed as PASS WITH LIMITATIONS ([report](M2_INDEPENDENT_TESTER_REPORT.md)). The **session envelope contract is owner-approved (2026-11-01)** and implemented in `src/game/session/**` (PR #94, independent Tester PASS WITH LIMITATIONS). The deterministic in-memory benchmark harness merged as PR #79 and the documented scenarios are executable as PR #97; both provide correctness fixtures only, not transport measurements.
 
-- [ ] Finalize versioned InputFrame, StateSnapshot, event and room protocol schemas (input/snapshot/event v1 implemented; room lifecycle and session envelope not implemented)
-- [ ] Separate simulation, authority, rendering, mode rules and transport adapters (simulation/ingress separation implemented; network adapters pending)
-- [ ] Implement scripted bots, replay checksums, benchmark telemetry and synthetic clients (in-memory fixture and manifest in review, PR #79)
-- [ ] Establish identical test workloads for both architectures
-- [ ] Add baseline latency, tick duration and bandwidth measurements
+- [x] Finalize versioned InputFrame, StateSnapshot and event schemas; room lifecycle covered by the session envelope and its trusted gateway
+- [x] Separate simulation, authority, rendering, mode rules and transport adapters (transport adapters exist for WS and WebRTC)
+- [x] Implement scripted fixtures, replay checksums, benchmark telemetry and synthetic clients (PR #79, #93, #97)
+- [x] Establish identical test workloads for both architectures (same seed `12345`, fixture `7fddf007…`, 300-tick loopback)
+- [ ] Add baseline latency, tick duration and bandwidth measurements (blocked: requires owner-provided network environment)
 
 **Exit:** one shared simulation/protocol can be driven by both transport prototypes.
 
 ## Milestone 3 – Architecture experiment A: central WebSocket server
 
-- [ ] Implement central authoritative 60 Hz TypeScript game session
-- [ ] Implement WSS/WS room join, input processing, state snapshots and disconnections
+**Status: CORRECTNESS PROTOTYPE MERGED (PR #98, `db3112b`), INDEPENDENT TESTER PASS WITH LIMITATIONS.** Loopback only; no authentication, TLS, rate limiting or host migration. Full 120 s runs are not executable yet (`M2-FULL-LENGTH-BENCHMARK`).
+
+- [x] Implement central authoritative 60 Hz TypeScript game session (`server/ws/authoritativeWsSession.ts`)
+- [x] Implement WS room join, input processing, state snapshots and disconnections (prototype; no production security)
 - [ ] Measure 4/8/12/16 clients on physical LAN and across internet
 - [ ] Test loss/jitter, CPU, bandwidth and cost
 
@@ -68,15 +70,19 @@
 
 ## Milestone 4 – Architecture experiment B: WebRTC browser host
 
-- [ ] Implement WebSocket room signaling and browser-host authoritative session
-- [ ] Implement WebRTC DataChannel star topology and client connection lifecycle
+**Status: CORRECTNESS PROTOTYPE MERGED (PR #100, `ac19645`), INDEPENDENT TESTER PASS.** Loopback ICE only; the benchmark emulates the DataChannel, so no NAT/TURN path is exercised.
+
+- [x] Implement WebSocket room signaling and browser-host authoritative session (`server/signaling/**`, `webrtcHostSession.ts`)
+- [x] Implement WebRTC DataChannel star topology and client connection lifecycle (one host, up to four clients)
 - [ ] Test direct connectivity, NAT/CGNAT, STUN and TURN-relayed scenarios
 - [ ] Measure same workload, snapshot/input rates and impairments as experiment A
-- [ ] Test host exit and recovery limitations
+- [x] Test host exit behaviour: host loss terminates the session without authority migration
 
 **Exit:** measured WebRTC baseline directly comparable to A.
 
 ## Milestone 5 – Architecture decision (evidence gate)
+
+**Status: BLOCKED.** Both prototypes are correctness-ready, but no measured run exists, so nothing may be decided. Requires the owner to provide LAN/internet machines and a TURN service.
 
 - [ ] Collect >= 5 measured 120 s runs per key case
 - [ ] Evaluate responsiveness p50/p95/p99, reliability, correctness, CPU, RAM and bandwidth
