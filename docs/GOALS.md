@@ -109,6 +109,8 @@ Työ tehdään omassa haarassa, yksi PR per yhtenäinen työpaketti (`DESIGNER:`
 
 **Päätetty 2026-11-02:** kuljetusvalinta — arkkitehtuuri A, keskitetty WebSocket-auktoriteetti ([ADR 0001](adr/0001-network-topology.md)). B jää vaihtoehdoksi; WebTransport on kirjattu seuraavaksi uudelleenarviointikandidaatiksi.
 
+**Omistajan päätökset 2026-11-02 (M7):** VIS05-02/VIS05-03 hyväksytty sellaisenaan; areenaksi valittu **Ravintola Mesku**.
+
 **Omistajan jo tekemät päätökset tässä tavoitteessa:** envelope-sopimus 2026-11-01; PR:ien #94–#107 merget on hyväksytty ja yhdistetty; 2026-11-02 milestone 5 -portti muutettu lähdekatsaukseksi ja yhden koneen mittauksiksi, painotuksena latenssi ja liikkeen sujuvuus.
 
 ## Aktiivinen tavoite 2026-11-02: M7 — paikallisen pelin polish
@@ -125,9 +127,9 @@ Saata paikallinen neljän pelaajan peli visuaalisesti ja luettavuudeltaan hyväk
 
 2. **Korjaukset vain vahvistettuihin löydöksiin (Graphics).** Tehtävä `M1-5-RESPONSIVE-VISUAL-FIX`. Säilytä 640×360-looginen kamera, pelaajamäärät, pose-sopimukset ja deterministinen simulaatio. Lisää kohdennettu selainregressiotesti jokaiselle korjatulle löydökselle. Ei uusia taidetyylejä tässä vaiheessa.
 
-3. **Uudelleentestaus ja omistajan visuaalinen hyväksyntä (Tester + omistaja).** Tester toistaa kuvat ja vertaa ennen/jälkeen. Omistaja katsoo tuloksen ja hyväksyy tai palauttaa. Vasta hyväksynnän jälkeen VIS05-02/VIS05-03 merkitään suljetuiksi.
+3. **Uudelleentestaus ja omistajan visuaalinen hyväksyntä (Tester + omistaja).** ✅ Tehty: PR #112 (`715cd8a`). Tester antoi PASS WITH LIMITATIONS ja sulki molemmat löydökset uusintatarkistuksessa; **omistaja hyväksyi tuloksen 2026-11-02**. VIS05-02 ja VIS05-03 ovat suljettuja.
 
-4. **Areena omistajan valinnalla.** Tehtävä `M2-VIS-ARENA-ARCH` on backlogissa ja vaatii eksplisiittisen areenavalinnan: [NEXT_ARENA_CONCEPT.md](visual/NEXT_ARENA_CONCEPT.md) vertaa yläastetta, K-kauppaa, Meskua ja kävelykadua (PR #70, konsepti vain). Omistaja valitsee konseptin; sen jälkeen toteutetaan tyypitetty, presentaatio-only areenamanifesti ilman simulaatiomuutoksia.
+4. **Areena omistajan valinnalla.** ✅ Valinta tehty 2026-11-02: **Ravintola Mesku** ([NEXT_ARENA_CONCEPT.md](visual/NEXT_ARENA_CONCEPT.md), PR #70 konsepti). Toteutus on aktivoitu tehtävässä `M2-VIS-ARENA-ARCH`: ensin tyypitetty, presentaatio-only areenamanifesti (asema ensimmäisenä manifestina, oletukset ja kuvat ennallaan), sitten Mesku toisena areenana 320×180-ruudukolla ja konseptin paletilla. Ei simulaatio- eikä pelisääntömuutoksia.
 
 5. **Valinnainen myöhemmin:** ääni, osumapalautteen hienosäätö ja tasapainotus. Ei kuulu tämän tavoitteen hyväksymisehtoihin, ellei omistaja erikseen pyydä.
 
