@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#172536" />
+    <title>TurenkiFight – Online match</title>
+  </head>
+  <body class="online-page">
+    <main>
+      <header class="page-header">
+        <h1>TurenkiFight online</h1>
+        <p>Remote authoritative match · snapshots only · no prediction</p>
+      </header>
+
+      <section id="online-setup" class="online-panel" aria-label="Online connection">
+        <form id="online-connect-form" class="online-form" autocomplete="off">
+          <label for="server-url">Server</label>
+          <input id="server-url" name="server" type="text" inputmode="url"
+            placeholder="ws://127.0.0.1:8787" value="ws://127.0.0.1:8787" />
+          <label for="player-slot">Slot</label>
+          <select id="player-slot" name="player">
+            <option value="P1" selected>P1</option>
+            <option value="P2">P2</option>
+            <option value="P3">P3</option>
+            <option value="P4">P4</option>
+          </select>
+          <button id="online-connect" type="submit">Connect</button>
+        </form>
+        <p id="online-error" class="online-error" hidden></p>
+      </section>
+
+      <section class="online-panel online-link" aria-label="Connection state and network metrics">
+        <p id="online-status" role="status" aria-live="polite" data-state="idle">Not connected.</p>
+        <p id="online-metrics">LINK idle · RTT — · SNAP 0 · TICK 0</p>
+        <p id="online-note" class="online-note">
+          No prediction or client authority: the world is drawn by interpolating the last two
+          authoritative snapshots. Input is sampled at 60 Hz and sent a few ticks ahead. Observed
+          action latency is therefore RTT plus up to one snapshot interval, plus a small input
+          scheduling lead.
+        </p>
+        <p id="online-keys" class="online-note" aria-live="polite"></p>
+      </section>
+
+      <div id="game" aria-label="TurenkiFight online game canvas">
+        <section id="fight-hud" aria-label="Match HUD">
+          <div class="hud-toolbar">
+            <strong id="match-timer" aria-label="Match time">--:--</strong>
+            <span id="match-status" aria-live="polite">ONLINE · NOT CONNECTED</span>
+          </div>
+          <div id="player-hud" aria-label="Players and scores">
+            <div class="hud-player" data-player="P1"><strong class="hud-name">P1</strong><span class="hud-score" aria-label="Score">0</span><span class="hud-health">HP —</span></div>
+            <div class="hud-player" data-player="P2"><strong class="hud-name">P2</strong><span class="hud-score" aria-label="Score">0</span><span class="hud-health">HP —</span></div>
+            <div class="hud-player" data-player="P3"><strong class="hud-name">P3</strong><span class="hud-score" aria-label="Score">0</span><span class="hud-health">HP —</span></div>
+            <div class="hud-player" data-player="P4"><strong class="hud-name">P4</strong><span class="hud-score" aria-label="Score">0</span><span class="hud-health">HP —</span></div>
+          </div>
+        </section>
+      </div>
+
+      <details class="controls">
+        <summary>Keyboard map – P1 and P2</summary>
+        <table aria-label="Keyboard map">
+          <thead><tr><th>Action</th><th>Player 1</th><th>Player 2</th></tr></thead>
+          <tbody>
+            <tr><th>Move</th><td>W / A / S / D</td><td>Arrow keys</td></tr>
+            <tr><th>Jump</th><td>Space</td><td>K</td></tr>
+            <tr><th>Punch</th><td>F</td><td>L</td></tr>
+            <tr><th>Kick</th><td>G</td><td>J</td></tr>
+            <tr><th>Jump kick</th><td>H</td><td>U</td></tr>
+          </tbody>
+        </table>
+        <p>P3 and P4 use the P1 keyboard layout. Leave the page to close the session cleanly.</p>
+      </details>
+    </main>
+    <script type="module" src="/src/online.ts"></script>
+  </body>
+</html>

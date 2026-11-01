@@ -3,6 +3,11 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/browser',
   timeout: 30_000,
+  // The visual suite starts real Phaser matches and waits for simulation phases.
+  // Two parallel Chromium workers starve those rAF loops on slower machines, so
+  // the existing 2x screenshot checks intermittently never reach `fighting`.
+  // One worker is both deterministic and no slower for this suite.
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.GAME_HARNESS ? [['github'], ['html', { open: 'never', outputFolder: 'playwright-report' }]] : (process.env.CI ? 'github' : 'list'),
   use: { baseURL: 'http://127.0.0.1:4173', trace: 'retain-on-failure', video: process.env.GAME_HARNESS ? 'retain-on-failure' : 'off' },
