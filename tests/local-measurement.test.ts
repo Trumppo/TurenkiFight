@@ -4,10 +4,12 @@ import { tmpdir } from 'node:os';
 import { join as joinPath, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  LOCAL_EVENT_LOOP_INTERPRETATION,
   LOCAL_NOT_MEASURED,
   createLocalManifest,
   snapshotSampleCount,
   validateLocalManifest,
+  type LocalEventLoopLag,
   type LocalMeasurementSections,
   type LocalProvenance,
 } from '../benchmarks/local/manifest';
@@ -60,6 +62,34 @@ function provenanceFor(run: LocalMeasurementSections): LocalProvenance {
       wsServerMessage: 1,
     },
   };
+}
+
+function measuredEventLoop(): LocalEventLoopLag {
+  return {
+    status: 'MEASURED',
+    unit: 'nanoseconds',
+    sampleCount: 322,
+    min: 1000,
+    mean: 15_000_000,
+    p50: 15_400_959,
+    p95: 16_113_663,
+    p99: 16_220_159,
+    max: 20_873_215,
+    probeTicks: 300,
+    probeIntervalMicroseconds: 16_667,
+    histogramResolutionMilliseconds: 10,
+    interpretation: LOCAL_EVENT_LOOP_INTERPRETATION,
+  };
+}
+
+async function eventLoopManifest(): Promise<Loose> {
+  const run = await sections();
+  const manifest = createLocalManifest({
+    runId: 'local-eventloop-1',
+    provenance: provenanceFor(run),
+    sections: { ...run, eventLoopLag: measuredEventLoop() },
+  });
+  return JSON.parse(JSON.stringify(manifest)) as Loose;
 }
 
 function shape(value: unknown): unknown {
@@ -210,6 +240,97 @@ describe('local measurement manifest', () => {
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
+  });
+
+  it('rejects impossible low-sample distributions but accepts a genuinely tiny one', async () => {
+    const base = await eventLoopManifest();
+    const clone = (): Loose => JSON.parse(JSON.stringify(base)) as Loose;
+
+    // One sample cannot contain four distinct observed percentile values.
+    const impossible = clone();
+    impossible.eventLoopLag = {
+      ...impossible.eventLoopLag,
+      sampleCount: 1,
+      min: 1,
+      mean: 3,
+      p50: 2,
+      p95: 3,
+      p99: 4,
+      max: 5,
+    };
+    expect(() => validateLocalManifest(impossible)).toThrow(/Invalid local measurement manifest/);
+
+    // The same fabricated block with two distinct values is still impossible.
+    const twoValues = clone();
+    twoValues.eventLoopLag = {
+      ...twoValues.eventLoopLag,
+      sampleCount: 1,
+      min: 1,
+      mean: 1.5,
+      p50: 1,
+      p95: 2,
+      p99: 2,
+      max: 2,
+    };
+    expect(() => validateLocalManifest(twoValues)).toThrow(/Invalid local measurement manifest/);
+
+    // A real one-sample distribution may legitimately have equal values.
+    const tiny = clone();
+    tiny.eventLoopLag = {
+      ...tiny.eventLoopLag,
+      sampleCount: 1,
+      min: 1,
+      mean: 1,
+      p50: 1,
+      p95: 1,
+      p99: 1,
+      max: 1,
+      probeTicks: 1,
+    };
+    expect(() => validateLocalManifest(tiny)).not.toThrow();
+  });
+
+  it('rejects implausible event-loop sample counts and zero probe ticks', async () => {
+    const base = await eventLoopManifest();
+    const clone = (): Loose => JSON.parse(JSON.stringify(base)) as Loose;
+
+    // 300 ticks at 16.667 ms with 10 ms histogram resolution bounds the
+    // plausible sample count to ceil(300 * 16667 / 10000) + 2 = 503.
+    const tooMany = clone();
+    tooMany.eventLoopLag.sampleCount = 1000;
+    expect(() => validateLocalManifest(tooMany)).toThrow(/Invalid local measurement manifest/);
+
+    const zeroTicks = clone();
+    zeroTicks.eventLoopLag.probeTicks = 0;
+    expect(() => validateLocalManifest(zeroTicks)).toThrow(/Invalid local measurement manifest/);
+
+    const atBound = clone();
+    atBound.eventLoopLag.sampleCount = 503;
+    expect(() => validateLocalManifest(atBound)).not.toThrow();
+  });
+
+  it('rejects ordinal violations and a wrong event-loop interpretation note', async () => {
+    const base = await eventLoopManifest();
+    const clone = (): Loose => JSON.parse(JSON.stringify(base)) as Loose;
+
+    const mutations: Array<(value: Loose) => void> = [
+      value => { value.eventLoopLag.p50 = value.eventLoopLag.p95 + 1; },
+      value => { value.eventLoopLag.p99 = value.eventLoopLag.max + 1; },
+      value => { value.eventLoopLag.min = value.eventLoopLag.p50 + 1; },
+      value => { value.eventLoopLag.p95 = 'fast'; },
+      value => { value.eventLoopLag.interpretation = 'not the note'; },
+    ];
+    for (const mutate of mutations) {
+      const tampered = clone();
+      mutate(tampered);
+      expect(() => validateLocalManifest(tampered)).toThrow(/Invalid local measurement manifest/);
+    }
+
+    // Committed schema-v1 results predate the note; it is optional when absent
+    // but must be the exact factual note when present.
+    const legacy = clone();
+    delete legacy.eventLoopLag.interpretation;
+    expect(() => validateLocalManifest(legacy)).not.toThrow();
   });
 
   it('records local numbers with network fields untouched and rejects every network claim', async () => {

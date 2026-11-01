@@ -8,6 +8,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import {
+  LOCAL_EVENT_LOOP_INTERPRETATION,
   LOCAL_MANIFEST_VERSION,
   LOCAL_NOT_MEASURED,
   type LocalMeasurementManifest,
@@ -74,7 +75,8 @@ export function renderSummary(manifest: LocalMeasurementManifest): string {
     lines.push('| ---: | ---: | ---: | ---: |');
     lines.push(`| ${fixed(manifest.eventLoopLag.p50, 0)} | ${fixed(manifest.eventLoopLag.p95, 0)} | ${fixed(manifest.eventLoopLag.p99, 0)} | ${fixed(manifest.eventLoopLag.max, 0)} |`);
     lines.push('');
-    lines.push('This is the delay histogram of a timer-paced harness loop. It includes the platform timer floor (legacy Windows timers quantise to about 15.6 ms), so compare values above that floor, not the floor itself.');
+    lines.push(LOCAL_EVENT_LOOP_INTERPRETATION);
+    lines.push('Compare values above that floor, not the floor itself.');
   } else {
     lines.push(`${LOCAL_NOT_MEASURED}: ${manifest.eventLoopLag.reason}`);
   }

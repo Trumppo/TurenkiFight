@@ -16,6 +16,7 @@ import { MATCH_TICKS, TICK_RATE, createState, step } from '../../src/game/simula
 import type { GameState, PlayerInput } from '../../src/game/simulation/types';
 import { generateFixture } from '../scenarios';
 import {
+  LOCAL_EVENT_LOOP_INTERPRETATION,
   LOCAL_SNAPSHOT_RATES,
   snapshotSampleCount,
   type LocalEventLoopLag,
@@ -326,6 +327,7 @@ async function measureEventLoopLag(loaded: LoadedFixture, ticks: number): Promis
     probeTicks: ticks,
     probeIntervalMicroseconds: Math.round(intervalMs * 1000),
     histogramResolutionMilliseconds: EVENT_LOOP_HISTOGRAM_RESOLUTION_MS,
+    interpretation: LOCAL_EVENT_LOOP_INTERPRETATION,
   };
 }
 

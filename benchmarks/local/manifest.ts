@@ -31,6 +31,13 @@ export type LocalSnapshotHz = (typeof LOCAL_SNAPSHOT_RATES)[number];
 export const LOCAL_DIRTY_EXCLUSIONS = ['benchmarks/results/'] as const;
 export type LocalDirtyExclusion = (typeof LOCAL_DIRTY_EXCLUSIONS)[number];
 
+/**
+ * Fixed interpretation note attached to measured event-loop blocks. It is a
+ * factual caveat, not a measurement or a claim about browsers.
+ */
+export const LOCAL_EVENT_LOOP_INTERPRETATION =
+  'Paced harness timer measurement: p50 is dominated by the platform timer floor (about 15.6 ms on legacy Windows timers); not browser frame pacing.';
+
 export type LocalScope = {
   measurement: 'single-machine';
   networkAccess: 'none';
@@ -152,6 +159,8 @@ export type LocalEventLoopLag =
       probeTicks: number;
       probeIntervalMicroseconds: number;
       histogramResolutionMilliseconds: number;
+      /** Optional for backwards compatibility with committed schema-v1 results. */
+      interpretation?: typeof LOCAL_EVENT_LOOP_INTERPRETATION;
     };
 
 export type LocalNetworkFields = {
@@ -236,8 +245,16 @@ const validDistribution = (value: unknown, unit: DurationUnit): value is SampleD
   const p95 = value.p95 as number;
   const p99 = value.p99 as number;
   const max = value.max as number;
-  return min <= p50 && p50 <= p95 && p95 <= p99 && p99 <= max &&
-    mean >= min - EPSILON && mean <= max + EPSILON;
+  if (!(min <= p50 && p50 <= p95 && p95 <= p99 && p99 <= max &&
+      mean >= min - EPSILON && mean <= max + EPSILON)) {
+    return false;
+  }
+  // `min` and the nearest-rank percentiles are observed samples, so a sample
+  // set of size n can contain at most n distinct reported values. This rejects
+  // impossible blocks such as `sampleCount: 1` with four distinct percentiles,
+  // while still accepting a genuinely tiny distribution whose values are equal.
+  const observedValues = new Set([min, p50, p95, p99, max]);
+  return observedValues.size <= (value.sampleCount as number);
 };
 
 const validByteSummary = (value: unknown): value is ByteSummary => {
@@ -455,32 +472,69 @@ function validateProcessResources(value: unknown, ticks: number): value is Local
     (value.wallClockMicroseconds as number) > 0;
 }
 
+/**
+ * `monitorEventLoopDelay` samples roughly once per histogram resolution, while
+ * the probe schedules one simulation tick per `probeIntervalMicroseconds`.
+ * Those are independent timers, so the observer can collect more samples than
+ * there are probe ticks: the committed 300-tick runs at 10 ms resolution and a
+ * 16.67 ms interval report 320-323 samples. A duration/resolution bound plus a
+ * two-sample boundary tolerance is therefore used instead of `probeTicks + 2`,
+ * which would reject the actual measured results. This is a plausibility bound,
+ * not an observed rate.
+ */
+const EVENT_LOOP_SAMPLE_TOLERANCE = 2;
+
+function maxPlausibleEventLoopSamples(
+  probeTicks: number,
+  probeIntervalMicroseconds: number,
+  histogramResolutionMilliseconds: number,
+): number {
+  const probeDurationMicroseconds = probeTicks * probeIntervalMicroseconds;
+  const resolutionMicroseconds = histogramResolutionMilliseconds * 1000;
+  return Math.ceil(probeDurationMicroseconds / resolutionMicroseconds) + EVENT_LOOP_SAMPLE_TOLERANCE;
+}
+
 function validateEventLoopLag(value: unknown): value is LocalEventLoopLag {
   if (!isRecord(value)) return false;
   if (value.status === 'NOT_MEASURED') {
     return exactKeys(value, ['status', 'reason']) && nonEmptyString(value.reason);
   }
   if (value.status !== 'MEASURED') return false;
-  return exactKeys(value, [
+  const baseKeys = [
     'status', 'unit', 'sampleCount', 'min', 'mean', 'p50', 'p95', 'p99', 'max',
     'probeTicks', 'probeIntervalMicroseconds', 'histogramResolutionMilliseconds',
-  ]) &&
-    validDistribution(
-      {
-        unit: value.unit,
-        sampleCount: value.sampleCount,
-        min: value.min,
-        mean: value.mean,
-        p50: value.p50,
-        p95: value.p95,
-        p99: value.p99,
-        max: value.max,
-      },
-      'nanoseconds',
-    ) &&
-    positiveInteger(value.probeTicks, 7200) &&
-    positiveInteger(value.probeIntervalMicroseconds, 1_000_000) &&
-    positiveInteger(value.histogramResolutionMilliseconds, 1000);
+  ];
+  // The interpretation note is optional so schema-v1 results committed before
+  // it existed still validate; when present it must be the exact factual note.
+  if (!exactKeys(value, baseKeys) && !exactKeys(value, [...baseKeys, 'interpretation'])) return false;
+  if (value.interpretation !== undefined &&
+      value.interpretation !== LOCAL_EVENT_LOOP_INTERPRETATION) {
+    return false;
+  }
+  if (!validDistribution(
+    {
+      unit: value.unit,
+      sampleCount: value.sampleCount,
+      min: value.min,
+      mean: value.mean,
+      p50: value.p50,
+      p95: value.p95,
+      p99: value.p99,
+      max: value.max,
+    },
+    'nanoseconds',
+  ) ||
+      !positiveInteger(value.probeTicks, 7200) ||
+      !positiveInteger(value.probeIntervalMicroseconds, 1_000_000) ||
+      !positiveInteger(value.histogramResolutionMilliseconds, 1000)) {
+    return false;
+  }
+  const maximumSamples = maxPlausibleEventLoopSamples(
+    value.probeTicks as number,
+    value.probeIntervalMicroseconds as number,
+    value.histogramResolutionMilliseconds as number,
+  );
+  return (value.sampleCount as number) <= maximumSamples;
 }
 
 function validateNetwork(value: unknown): value is LocalNetworkFields {
