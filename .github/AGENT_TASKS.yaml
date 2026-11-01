@@ -201,7 +201,7 @@ tasks:
     title: Independent visual QA and M1.5 owner acceptance
     assigned_role: tester-session
     session_id: tester-session-20261031-vis05
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/M1_5_VISUAL_UPGRADE.md
     depends_on: [M1-5-VIS-03, M1-5-VIS-04]
@@ -213,8 +213,8 @@ tasks:
       - Verify production build, browser tests and Pages assets
       - Document manual visual checks and obtain explicit owner acceptance
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/83
-    notes: "PR #83 mobile viewport regression: all four head-SHA CI workflows green on 33ed340b0e23400a7489c5bdcfeb568a3a303441; owner merge approval pending. VIS05-01 fixed; VIS05-02 desktop scale and VIS05-03 mobile HUD readability need owner/device review. Pages verification and final M1.5 owner acceptance pending. See docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md."
-    last_updated: "2026-10-31"
+    notes: "Owner accepted M1.5 with documented limitations on 2026-11-01; see docs/M1_5_ACCEPTANCE_REPORT.md. VIS05-01 fixed by PR #76 and retested. VIS05-02 (3x scaling) and VIS05-03 (mobile HUD readability) remain documented follow-ups, not release blockers. Pages build now uses retro mode (PR #85); deployed page was observed loading the retro station asset without console errors."
+    last_updated: "2026-11-01"
   - id: M2-VIS-ARENA-01
     title: Compare and propose next TurenkiFight arena visual concept
     assigned_role: graphics-session
@@ -253,17 +253,21 @@ tasks:
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
     assigned_role: planning-session
-    status: blocked
+    session_id: designer-session-20261101
+    status: in_progress
     priority: P1
-    specification: docs/ROADMAP.md
+    specification: docs/M1_5_ACCEPTANCE_REPORT.md
     depends_on: [M1-5-VIS-05]
     scope:
       - docs/ROADMAP.md
       - docs/M1_5_VISUAL_UPGRADE.md
+      - docs/M1_5_ACCEPTANCE_REPORT.md
     acceptance:
       - Reconcile stale milestone labels with merged PR evidence
-      - Ensure milestone is not marked accepted before owner approval
-    last_updated: "2026-10-31"
+      - Record owner acceptance and its documented limitations
+      - Ensure no later milestone is marked accepted before owner approval
+    last_updated: "2026-11-01"
+    notes: "M1.5 accepted with limitations on 2026-11-01; acceptance recorded in docs/M1_5_ACCEPTANCE_REPORT.md. Roadmap, architecture and goal documents reconciled on the same work package. VIS05-02/VIS05-03 remain follow-ups."
 
   - id: M2-PROTOCOL-INTEGRATION
     title: Integrate transport-neutral v1 codecs with authorized session ingress
@@ -434,11 +438,11 @@ tasks:
       - Reproducible 7200 tick fixture and final fingerprints
       - Validated machine-readable run manifest and NOT_MEASURED semantics
       - CI unit tests and independent Tester gate
-    last_updated: "2026-10-31"
+    last_updated: "2026-11-01"
     session_id: gameplay-session-20261031-benchmark
-    branch: feature/m2-benchmark-in-memory-fixture
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/73
-    notes: "PR #73 implementation complete and four CI checks green; independent Tester gate pending. No sockets, performance claims or transport decision."
+    branch: feature/m2-benchmark-harness-main-refresh
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/79
+    notes: "PR #79 is the current conflict-free implementation PR on main and its CI checks are green; independent Tester gate is in progress. PR #73 is superseded. No sockets, performance claims or transport decision."
 
   - id: M2-SAFE-TICK-WINDOW
     title: Reject unsafe tick arithmetic and verify 7200-tick canonical assembly
