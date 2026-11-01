@@ -88,6 +88,13 @@ code that ran.
 No private IP address, hostname, user name or absolute path is written. The
 `--out` flag is intentionally excluded from the recorded argument list.
 
+### Evidence limitation
+
+The manifest is internally consistent but not provenance-verified. Raw samples
+are not stored, so a coherently edited manifest cannot be distinguished from a
+real run. If stronger evidence is ever needed, raw samples must be archived
+outside the repository or the manifest must be signed at write time.
+
 ## Reproducing and adding a result
 
 ```sh

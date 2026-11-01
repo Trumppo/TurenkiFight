@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "kind": "single-machine-local-measurement",
-  "runId": "local-20261101T175132697Z",
+  "runId": "local-20261101T180955605Z",
   "scope": {
     "measurement": "single-machine",
     "networkAccess": "none",
@@ -16,7 +16,7 @@
     "architecture": "x64",
     "cpuModel": "Intel(R) Core(TM) i5-7600K CPU @ 3.80GHz",
     "logicalCores": 4,
-    "gitCommitSha": "22d0446d6c4fea3ae6bb70f633c7959ed51e0c73",
+    "gitCommitSha": "77fbe69137e7128f43eaff5ae8ca66257cf221d3",
     "workingTreeDirty": false,
     "dirtyExclusions": [
       "benchmarks/results/"
@@ -179,13 +179,13 @@
     "unit": "microseconds",
     "sampleCount": 7200,
     "min": 1.2,
-    "mean": 4.855222222222209,
-    "p50": 1.8,
-    "p95": 4.9,
-    "p99": 18.7,
-    "max": 8520.6,
-    "totalWallClockMicroseconds": 36037.7,
-    "ticksPerSecondWallClock": 199790.77466098004
+    "mean": 3.965819444444473,
+    "p50": 1.7,
+    "p95": 4.4,
+    "p99": 6.8,
+    "max": 8180.4,
+    "totalWallClockMicroseconds": 29620.8,
+    "ticksPerSecondWallClock": 243072.43558580457
   },
   "snapshotTiming": [
     {
@@ -195,22 +195,22 @@
       "encode": {
         "unit": "microseconds",
         "sampleCount": 1200,
-        "min": 17.3,
-        "mean": 27.000166666666672,
-        "p50": 19.7,
-        "p95": 44.3,
-        "p99": 177.2,
-        "max": 972.2
+        "min": 17.6,
+        "mean": 24.010666666666697,
+        "p50": 19.3,
+        "p95": 34.4,
+        "p99": 71.5,
+        "max": 749.4
       },
       "decode": {
         "unit": "microseconds",
         "sampleCount": 1200,
-        "min": 9.3,
-        "mean": 16.48641666666665,
-        "p50": 11.3,
-        "p95": 28.3,
-        "p99": 76.6,
-        "max": 821.1
+        "min": 9.5,
+        "mean": 12.768416666666688,
+        "p50": 11,
+        "p95": 21.1,
+        "p99": 34.2,
+        "max": 104.2
       }
     },
     {
@@ -220,22 +220,22 @@
       "encode": {
         "unit": "microseconds",
         "sampleCount": 2400,
-        "min": 16.5,
-        "mean": 23.683333333333383,
-        "p50": 18.1,
-        "p95": 35.9,
-        "p99": 106.4,
-        "max": 1511.3
+        "min": 15.9,
+        "mean": 20.967291666666718,
+        "p50": 17.7,
+        "p95": 29.3,
+        "p99": 63.4,
+        "max": 573.3
       },
       "decode": {
         "unit": "microseconds",
         "sampleCount": 2400,
-        "min": 8.2,
-        "mean": 14.09420833333332,
-        "p50": 9.6,
-        "p95": 23.1,
-        "p99": 79.6,
-        "max": 1224
+        "min": 7.9,
+        "mean": 11.65825000000002,
+        "p50": 9.2,
+        "p95": 17.9,
+        "p99": 40.8,
+        "max": 438.3
       }
     },
     {
@@ -245,48 +245,49 @@
       "encode": {
         "unit": "microseconds",
         "sampleCount": 3600,
-        "min": 16.2,
-        "mean": 25.988472222222352,
-        "p50": 18.1,
-        "p95": 40.6,
-        "p99": 110.7,
-        "max": 2660.8
+        "min": 15.9,
+        "mean": 19.79358333333344,
+        "p50": 17.2,
+        "p95": 25.3,
+        "p99": 51.4,
+        "max": 1207.3
       },
       "decode": {
         "unit": "microseconds",
         "sampleCount": 3600,
-        "min": 7.8,
-        "mean": 14.193972222222198,
-        "p50": 9.4,
-        "p95": 23,
-        "p99": 71,
-        "max": 1612.8
+        "min": 7.7,
+        "mean": 10.092250000000057,
+        "p50": 8.7,
+        "p95": 13.5,
+        "p99": 30.8,
+        "max": 531.7
       }
     }
   ],
   "processResources": {
     "scope": "measured-tick-loop",
     "tickCount": 7200,
-    "wallClockMicroseconds": 36037.7,
-    "cpuUserMicroseconds": 46000,
+    "wallClockMicroseconds": 29620.8,
+    "cpuUserMicroseconds": 16000,
     "cpuSystemMicroseconds": 0,
-    "cpuTotalMicroseconds": 46000,
-    "peakRssBytes": 123490304,
-    "rssAfterRunBytes": 122191872
+    "cpuTotalMicroseconds": 16000,
+    "peakRssBytes": 123936768,
+    "rssAfterRunBytes": 122474496
   },
   "eventLoopLag": {
     "status": "MEASURED",
     "unit": "nanoseconds",
-    "sampleCount": 321,
-    "min": 12804096,
-    "mean": 15578147.09034268,
-    "p50": 15556607,
-    "p95": 16113663,
-    "p99": 16277503,
-    "max": 23052287,
+    "sampleCount": 323,
+    "min": 9781248,
+    "mean": 15488713.312693499,
+    "p50": 15474687,
+    "p95": 16080895,
+    "p99": 16326655,
+    "max": 20529151,
     "probeTicks": 300,
     "probeIntervalMicroseconds": 16667,
-    "histogramResolutionMilliseconds": 10
+    "histogramResolutionMilliseconds": 10,
+    "interpretation": "Paced harness timer measurement: p50 is dominated by the platform timer floor (about 15.6 ms on legacy Windows timers); not browser frame pacing."
   },
   "network": {
     "latency": "NOT_MEASURED",
