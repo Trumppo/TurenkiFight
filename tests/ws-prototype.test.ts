@@ -486,6 +486,18 @@ describe('M2 WebSocket prototype manifest', () => {
     tickMode,
     correctness,
   });
+  const networkManifest = () => createWsPrototypeManifest({
+    runId: 'ws-base4-1',
+    commitSha: 'b'.repeat(40),
+    fixtureSha256: 'c'.repeat(64),
+    seed: 12345,
+    snapshotHz: 20,
+    maxLeadTicks: 8,
+    boundedTicks: 300,
+    tickMode: 'manual',
+    topology: { role: 'server-coordinator', bindHostProvided: true, bindPortProvided: true },
+    correctness,
+  });
 
   it('records only correctness fingerprints and keeps performance NOT_MEASURED', () => {
     const value = manifest();
@@ -496,11 +508,73 @@ describe('M2 WebSocket prototype manifest', () => {
     expect(value.environment).toEqual({
       bindAddress: '127.0.0.1', tls: false, os: 'NOT_MEASURED', browser: 'NOT_MEASURED', cpu: 'NOT_MEASURED',
     });
+    // The default manifest describes the single-process loopback role.
+    expect(value.topology).toEqual({
+      role: 'loopback',
+      mode: 'loopback',
+      bindHostProvided: false,
+      bindPortProvided: false,
+      clientCount: 4,
+      clientsInProcess: true,
+      tls: false,
+    });
+  });
+
+  it('records a split topology without disclosing the bind address', () => {
+    const value = networkManifest();
+    expect(value.schemaVersion).toBe(3);
+    expect(value.topology).toEqual({
+      role: 'server-coordinator',
+      mode: 'network',
+      bindHostProvided: true,
+      bindPortProvided: true,
+      clientCount: 4,
+      clientsInProcess: false,
+      tls: false,
+    });
+    // A network manifest must not contain the operator's bind host.
+    expect(value.environment.bindAddress).toBe('NOT_RECORDED');
+    expect(JSON.stringify(value)).not.toContain('ws://');
+    expect(value.result).toBe('NOT_MEASURED');
+    expect(value.measurements).toEqual(manifest().measurements);
+  });
+
+  it('rejects an inconsistent, partially specified or unmeasured topology', () => {
+    // A split role must have explicit bind inputs; otherwise it is not addressable.
+    expect(() => createWsPrototypeManifest({
+      runId: 'ws-base4-1', commitSha: 'b'.repeat(40), fixtureSha256: 'c'.repeat(64), seed: 12345,
+      snapshotHz: 20, maxLeadTicks: 8, boundedTicks: 300, tickMode: 'manual',
+      topology: { role: 'server-coordinator' }, correctness,
+    })).toThrow();
+    // The loopback role must not claim an explicit bind.
+    expect(() => createWsPrototypeManifest({
+      runId: 'ws-base4-1', commitSha: 'b'.repeat(40), fixtureSha256: 'c'.repeat(64), seed: 12345,
+      snapshotHz: 20, maxLeadTicks: 8, boundedTicks: 300, tickMode: 'interval',
+      topology: { role: 'loopback', bindPortProvided: true }, correctness,
+    })).toThrow();
+
+    const base = manifest();
+    const relabelled = structuredClone(base) as unknown as { topology: { mode: unknown } };
+    relabelled.topology.mode = 'network';
+    expect(() => validateWsPrototypeManifest(relabelled)).toThrow();
+    const inProcess = structuredClone(networkManifest()) as unknown as { topology: { clientsInProcess: unknown } };
+    inProcess.topology.clientsInProcess = true;
+    expect(() => validateWsPrototypeManifest(inProcess)).toThrow();
+    const wrongClientCount = structuredClone(networkManifest()) as unknown as { topology: { clientCount: unknown } };
+    wrongClientCount.topology.clientCount = 1;
+    expect(() => validateWsPrototypeManifest(wrongClientCount)).toThrow();
+    const tls = structuredClone(networkManifest()) as unknown as { topology: { tls: unknown } };
+    tls.topology.tls = true;
+    expect(() => validateWsPrototypeManifest(tls)).toThrow();
+    // A split manifest that leaks a bind address is rejected too.
+    const leaked = structuredClone(networkManifest()) as unknown as { environment: { bindAddress: unknown } };
+    leaked.environment.bindAddress = '192.0.2.10';
+    expect(() => validateWsPrototypeManifest(leaked)).toThrow();
   });
 
   it('distinguishes timer-driven pacing from an unsynchronized correctness run', () => {
     const interval = manifest('interval');
-    expect(interval.schemaVersion).toBe(2);
+    expect(interval.schemaVersion).toBe(3);
     expect(interval.tickMode).toBe('interval');
     expect(interval.pacing).toBe('timer-driven-approximation');
     expect(interval.measurements.tickPacing).toBe('NOT_MEASURED');
@@ -517,10 +591,13 @@ describe('M2 WebSocket prototype manifest', () => {
     const unknownMode = structuredClone(manifest()) as unknown as { tickMode: unknown };
     unknownMode.tickMode = 'realtime';
     expect(() => validateWsPrototypeManifest(unknownMode)).toThrow();
-    // Schema v1 manifests did not record a tick mode and are no longer accepted.
+    // Schema v2 manifests had no topology block and are no longer accepted.
     const oldSchema = structuredClone(manifest()) as unknown as { schemaVersion: unknown };
-    oldSchema.schemaVersion = 1;
+    oldSchema.schemaVersion = 2;
     expect(() => validateWsPrototypeManifest(oldSchema)).toThrow();
+    const missingTopology = structuredClone(manifest()) as unknown as { topology?: unknown };
+    delete missingTopology.topology;
+    expect(() => validateWsPrototypeManifest(missingTopology)).toThrow();
   });
 
   it('rejects substituted numbers, inconsistent fingerprints and invalid bounds', () => {
@@ -540,9 +617,16 @@ describe('M2 WebSocket prototype manifest', () => {
       correctness: { ...correctness, matchesInMemoryReference: false },
     })).toThrow();
 
-    const withMeasurement = structuredClone(base) as unknown as { measurements: { latency: unknown } };
-    withMeasurement.measurements.latency = 0;
-    expect(() => validateWsPrototypeManifest(withMeasurement)).toThrow();
+    const withMeasurement = structuredClone(base) as unknown as {
+      measurements: Record<string, unknown>;
+    };
+    for (const field of ['latency', 'bandwidth', 'cpu', 'tickPacing']) {
+      // Zero or any other number is not a substitute for an explicit absence.
+      withMeasurement.measurements[field] = 0;
+      expect(() => validateWsPrototypeManifest(withMeasurement)).toThrow();
+      withMeasurement.measurements[field] = 'NOT_MEASURED';
+    }
+    expect(() => validateWsPrototypeManifest(withMeasurement)).not.toThrow();
     expect(() => createWsPrototypeManifest({
       runId: 'ws-base4-1', commitSha: 'short', fixtureSha256: 'c'.repeat(64), seed: 12345,
       snapshotHz: 20, maxLeadTicks: 8, boundedTicks: 300, tickMode: 'interval', correctness,
