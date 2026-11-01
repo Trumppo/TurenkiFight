@@ -475,7 +475,7 @@ describe('M2 WebSocket prototype manifest', () => {
     lateTicks: 0,
     deniedMessages: 0,
   };
-  const manifest = () => createWsPrototypeManifest({
+  const manifest = (tickMode: 'interval' | 'manual' = 'interval') => createWsPrototypeManifest({
     runId: 'ws-base4-1',
     commitSha: 'b'.repeat(40),
     fixtureSha256: 'c'.repeat(64),
@@ -483,6 +483,7 @@ describe('M2 WebSocket prototype manifest', () => {
     snapshotHz: 20,
     maxLeadTicks: 8,
     boundedTicks: 300,
+    tickMode,
     correctness,
   });
 
@@ -497,20 +498,45 @@ describe('M2 WebSocket prototype manifest', () => {
     });
   });
 
+  it('distinguishes timer-driven pacing from an unsynchronized correctness run', () => {
+    const interval = manifest('interval');
+    expect(interval.schemaVersion).toBe(2);
+    expect(interval.tickMode).toBe('interval');
+    expect(interval.pacing).toBe('timer-driven-approximation');
+    expect(interval.measurements.tickPacing).toBe('NOT_MEASURED');
+
+    const manual = manifest('manual');
+    expect(manual.tickMode).toBe('manual');
+    expect(manual.pacing).toBe('unsynchronized-correctness');
+    expect(manual.measurements).toEqual(interval.measurements);
+
+    // A fast run must not be re-labelled as an approximation of real time.
+    const relabelled = structuredClone(manual) as unknown as { pacing: unknown };
+    relabelled.pacing = 'timer-driven-approximation';
+    expect(() => validateWsPrototypeManifest(relabelled)).toThrow();
+    const unknownMode = structuredClone(manifest()) as unknown as { tickMode: unknown };
+    unknownMode.tickMode = 'realtime';
+    expect(() => validateWsPrototypeManifest(unknownMode)).toThrow();
+    // Schema v1 manifests did not record a tick mode and are no longer accepted.
+    const oldSchema = structuredClone(manifest()) as unknown as { schemaVersion: unknown };
+    oldSchema.schemaVersion = 1;
+    expect(() => validateWsPrototypeManifest(oldSchema)).toThrow();
+  });
+
   it('rejects substituted numbers, inconsistent fingerprints and invalid bounds', () => {
     const base = manifest();
     expect(() => createWsPrototypeManifest({
       runId: 'ws-base4-1', commitSha: 'b'.repeat(40), fixtureSha256: 'c'.repeat(64), seed: 12345,
-      snapshotHz: 20, maxLeadTicks: 8, boundedTicks: 0, correctness,
+      snapshotHz: 20, maxLeadTicks: 8, boundedTicks: 0, tickMode: 'interval', correctness,
     })).toThrow();
     expect(() => createWsPrototypeManifest({
       runId: 'ws-base4-1', commitSha: 'b'.repeat(40), fixtureSha256: 'c'.repeat(64), seed: 12345,
-      snapshotHz: 20, maxLeadTicks: 8, boundedTicks: 300,
+      snapshotHz: 20, maxLeadTicks: 8, boundedTicks: 300, tickMode: 'interval',
       correctness: { ...correctness, finalTick: 301 },
     })).toThrow();
     expect(() => createWsPrototypeManifest({
       runId: 'ws-base4-1', commitSha: 'b'.repeat(40), fixtureSha256: 'c'.repeat(64), seed: 12345,
-      snapshotHz: 20, maxLeadTicks: 8, boundedTicks: 300,
+      snapshotHz: 20, maxLeadTicks: 8, boundedTicks: 300, tickMode: 'interval',
       correctness: { ...correctness, matchesInMemoryReference: false },
     })).toThrow();
 
@@ -519,7 +545,7 @@ describe('M2 WebSocket prototype manifest', () => {
     expect(() => validateWsPrototypeManifest(withMeasurement)).toThrow();
     expect(() => createWsPrototypeManifest({
       runId: 'ws-base4-1', commitSha: 'short', fixtureSha256: 'c'.repeat(64), seed: 12345,
-      snapshotHz: 20, maxLeadTicks: 8, boundedTicks: 300, correctness,
+      snapshotHz: 20, maxLeadTicks: 8, boundedTicks: 300, tickMode: 'interval', correctness,
     })).toThrow();
   });
 });
