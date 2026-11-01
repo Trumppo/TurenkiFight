@@ -547,7 +547,7 @@ tasks:
       - Focused tests, npm test, build, bench:ws, git diff --check and agent task validation pass
     last_updated: "2026-11-02"
     branch: feature/m2-ws-prototype
-    pull_request: pending
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/98
     notes: "Prototype only: architecture A, no client prediction/rollback, no deployment, no WebRTC and no production security claim. Loopback correctness only; latency, bandwidth, CPU and tick pacing remain NOT_MEASURED. Designer replaces pull_request with the real URL."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
