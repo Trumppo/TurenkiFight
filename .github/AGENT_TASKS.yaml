@@ -519,7 +519,7 @@ tasks:
       - Focused and full tests, build, diff check and agent task validation pass
     last_updated: "2026-11-02"
     branch: feature/m2-benchmark-scenarios
-    pull_request: pending
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/97
     notes: "PR URL to be filled when the owner opens the PR. No sockets, measured results or transport decision. Impairment is metadata only. Eight-player final state uses a harness-local digest because the v1 snapshot codec caps four fighters; the cap is unchanged. Optional less-string-dependent gateway error classification was not changed."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
