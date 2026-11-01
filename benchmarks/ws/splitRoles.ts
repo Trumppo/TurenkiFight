@@ -68,6 +68,14 @@ export type ServerRoleResult = {
   readonly manifest: WsPrototypeManifest;
   readonly manifestPath: string | null;
   readonly url: string | null;
+  /** Every accepted client envelope the observer saw (joins, inputs, pings). */
+  readonly acceptedMessages: number;
+  /**
+   * Denials by decision source. `deniedMessages` in the manifest is the sum;
+   * this split lets a coordinator see whether the gateway or the room rejected
+   * an envelope without changing the manifest schema.
+   */
+  readonly deniedBySource: { readonly gateway: number; readonly room: number };
 };
 
 export type ClientRoleOptions = {
@@ -186,6 +194,12 @@ type RosterObservation = {
   readonly joins: Map<string, readonly string[]>;
   readonly nextInputTick: Map<string, number>;
   readonly denials: Map<string, number>;
+  /** Denials decided by the gateway (returned from `handleMessage`). */
+  gatewayDenials: number;
+  /** Denials decided by the room before the gateway (reported by the session). */
+  roomDenials: number;
+  /** Accepted envelopes the observer saw; pinned by the regression tests. */
+  acceptedMessages: number;
   lateTicks: number;
   violation: Error | null;
   /** Wakes the current barrier as soon as a client envelope was observed. */
@@ -220,12 +234,15 @@ function observeEnvelope(state: RosterObservation, event: WsServerEnvelopeEvent)
   signalProgress(state);
   if (!event.accepted) {
     countDenial(state.denials, event.code);
+    if (event.source === 'room') state.roomDenials += 1;
+    else state.gatewayDenials += 1;
     if (event.code === 'late-tick') state.lateTicks += 1;
     if (FATAL_DENIALS.has(event.code) && state.violation === null) {
       state.violation = new Error(`Unexpected server denial during the split run: ${event.code}`);
     }
     return;
   }
+  state.acceptedMessages += 1;
   if (state.violation !== null) return;
   switch (event.kind) {
     case 'join-request':
@@ -282,6 +299,9 @@ export async function runServerRole(options: ServerRoleOptions): Promise<ServerR
     joins: new Map(),
     nextInputTick: new Map(),
     denials: new Map(),
+    gatewayDenials: 0,
+    roomDenials: 0,
+    acceptedMessages: 0,
     lateTicks: 0,
     violation: null,
     wake: null,
@@ -374,7 +394,13 @@ export async function runServerRole(options: ServerRoleOptions): Promise<ServerR
       writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
     }
 
-    return { manifest, manifestPath, url };
+    return {
+      manifest,
+      manifestPath,
+      url,
+      acceptedMessages: state.acceptedMessages,
+      deniedBySource: { gateway: state.gatewayDenials, room: state.roomDenials },
+    };
   } finally {
     if (server) await server.close();
   }

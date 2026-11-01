@@ -431,6 +431,8 @@ async function runServerCli(): Promise<void> {
     matchesInMemoryReference: result.manifest.correctness.matchesInMemoryReference,
     lateTicks: result.manifest.correctness.lateTicks,
     deniedMessages: result.manifest.correctness.deniedMessages,
+    deniedBySource: result.deniedBySource,
+    acceptedMessages: result.acceptedMessages,
     result: result.manifest.result,
     measurements: result.manifest.measurements,
   })}\n`);

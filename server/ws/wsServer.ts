@@ -14,17 +14,24 @@ import {
  * Read-only observation of one client envelope after the session handled it.
  *
  * This exists so a benchmark coordinator can prove that every expected client
- * supplied fixture input for a tick before stepping it. It never validates,
- * rewrites or short-circuits an envelope: the audience is the existing
- * `SessionEnvelopeGateway` decision, and an observation callback that throws is
- * contained.
+ * supplied fixture input for a tick before stepping it, and so its denial audit
+ * is complete. It never validates, rewrites or short-circuits an envelope: the
+ * authority is the existing `SessionEnvelopeGateway` decision plus the room's
+ * lifecycle checks, and an observation callback that throws is contained.
+ *
+ * `source` records where a denial was decided:
+ * - `gateway`: `SessionEnvelopeGateway` rejected the envelope (ownership,
+ *   sequence, tick window, replay, malformed payload, ...);
+ * - `room`: the authoritative session rejected it before the gateway saw it
+ *   (`session-closed`, `match-started`, `match-complete`, `unknown-player`,
+ *   `not-started`).
  */
 export type WsServerEnvelopeEvent =
   | { connectionId: string; accepted: true; kind: 'join-request'; playerIds: readonly string[] }
   | { connectionId: string; accepted: true; kind: 'input'; targetTick: number }
   | { connectionId: string; accepted: true; kind: 'ping'; sequence: number }
   | { connectionId: string; accepted: true; kind: 'leave-request' }
-  | { connectionId: string; accepted: false; code: string };
+  | { connectionId: string; accepted: false; code: string; source: 'gateway' | 'room' };
 
 /**
  * Thin Node WebSocket transport around `AuthoritativeWsSession`.
@@ -84,7 +91,7 @@ function projectionMessage(message: string): boolean {
 }
 
 function envelopeEvent(connectionId: string, result: SessionEnvelopeResult): WsServerEnvelopeEvent {
-  if (!result.accepted) return { connectionId, accepted: false, code: result.code };
+  if (!result.accepted) return { connectionId, accepted: false, code: result.code, source: 'gateway' };
   const envelope = result.envelope;
   switch (envelope.kind) {
     case 'join-request':
@@ -122,12 +129,15 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
 
   // A benchmark observer must never influence authority: a throwing callback is
   // reported and dropped, exactly like a failed outgoing encode.
-  const observeEnvelope = (connectionId: string, result: SessionEnvelopeResult): void => {
+  const notifyEnvelope = (event: WsServerEnvelopeEvent): void => {
     try {
-      onClientEnvelope?.(envelopeEvent(connectionId, result));
+      onClientEnvelope?.(event);
     } catch (error) {
       process.stderr.write(`ws prototype: envelope observer failed: ${String(error)}\n`);
     }
+  };
+  const observeResult = (connectionId: string, result: SessionEnvelopeResult): void => {
+    notifyEnvelope(envelopeEvent(connectionId, result));
   };
 
   const sockets = new Map<string, WebSocket>();
@@ -237,6 +247,11 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
         setTimeout(closeSockets, CLOSE_FLUSH_MS);
       }
     },
+    // Room-level denials are sent to the client by the session itself; this hook
+    // only reports the already-decided code to the benchmark observer.
+    onRoomDenial: (connectionId, code) => {
+      notifyEnvelope({ connectionId, accepted: false, code, source: 'room' });
+    },
   });
 
   const wss = new WebSocketServer({ host, port: config.port, maxPayload: MAX_SESSION_ENVELOPE_BYTES });
@@ -281,7 +296,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
     socket.on('message', (data: RawData) => {
       // Trusted context is the socket's allocated ID, never a payload field.
       const result = room.handleMessage(connectionId, rawBytes(data));
-      if (result !== null && onClientEnvelope) observeEnvelope(connectionId, result);
+      if (result !== null && onClientEnvelope) observeResult(connectionId, result);
     });
     socket.on('close', () => {
       if (!sockets.delete(connectionId)) return;

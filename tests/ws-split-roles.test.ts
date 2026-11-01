@@ -4,8 +4,15 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it, type TestContext } from 'vitest';
 import WebSocket from 'ws';
+import { encodeClientEnvelope } from '../src/game/session/sessionEnvelope';
+import { AuthoritativeWsSession } from '../server/ws/authoritativeWsSession';
+import {
+  startWsServer,
+  type WsServerEnvelopeEvent,
+  type WsServerHandle,
+} from '../server/ws/wsServer';
 import { openNodeSession, type NodeSession } from '../server/ws/nodeWsClient';
-import { inMemoryReferenceFingerprints } from '../benchmarks/ws/benchmarkSetup';
+import { inMemoryReferenceFingerprints, loadWsBenchmarkSchedule } from '../benchmarks/ws/benchmarkSetup';
 import {
   runClientRole,
   runServerRole,
@@ -22,7 +29,9 @@ import { validateWsPrototypeManifest, type WsPrototypeManifest } from '../benchm
  * on an ephemeral loopback port and pins the same 7200-tick fingerprints as the
  * single-process benchmark and the WebRTC prototype. Negative tests cover a
  * missing client, a roster spread over the wrong number of connections and an
- * unexpected extra connection.
+ * unexpected extra connection. Denial-audit tests prove room-level denials
+ * (`not-started`, `unknown-player`, `session-closed`) reach the observer and are
+ * counted with gateway-level denials.
  *
  * Nothing here measures latency, bandwidth, CPU or tick pacing, and a split
  * loopback run is not LAN or internet evidence.
@@ -119,14 +128,18 @@ async function startServer(ctx: TestContext, overrides: Partial<ServerRoleOption
 }
 
 const openSessions: NodeSession[] = [];
+const openServers: WsServerHandle[] = [];
 
-afterEach(() => {
+afterEach(async () => {
   for (const session of openSessions.splice(0)) {
     try {
       session.close();
     } catch {
       // Already closed.
     }
+  }
+  for (const server of openServers.splice(0)) {
+    await server.close();
   }
 });
 
@@ -135,6 +148,22 @@ async function rawSession(url: string): Promise<NodeSession> {
   openSessions.push(session);
   return session;
 }
+
+async function waitFor<T>(
+  label: string,
+  check: () => T | undefined | false,
+  timeoutMs = 5000,
+): Promise<T> {
+  const startedAt = Date.now();
+  for (;;) {
+    const value = check();
+    if (value) return value;
+    if (Date.now() - startedAt > timeoutMs) throw new Error(`Timed out waiting for ${label}`);
+    await new Promise(resolveDelay => setTimeout(resolveDelay, 10));
+  }
+}
+
+const controls = (playerId: string) => ({ playerId, moveX: 1 as const, moveY: 0 as const, jump: false });
 
 describe('M2 split WebSocket benchmark roles', () => {
   it('reproduces the pinned 7200-tick fingerprints through separate roles', async (ctx: TestContext) => {
@@ -179,6 +208,12 @@ describe('M2 split WebSocket benchmark roles', () => {
     expect(manifest.correctness.matchesInMemoryReference).toBe(true);
     expect(manifest.correctness.lateTicks).toBe(0);
     expect(manifest.correctness.deniedMessages).toBe(0);
+    // Accepted observations are pinned: four accepted joins plus one accepted
+    // fixture input per player per tick. The denial audit must not add, drop or
+    // duplicate an accepted event, so this count is identical to the run on
+    // 1f5aff9.
+    expect(roleResult.acceptedMessages).toBe(PLAYERS.length + PLAYERS.length * FULL_TICKS);
+    expect(roleResult.deniedBySource).toEqual({ gateway: 0, room: 0 });
     // The split path must reproduce the same pinned fingerprints as the
     // single-process loopback and WebRTC prototype runs.
     expect(manifest.correctness.finalStateSha256).toBe(FULL_FINAL_STATE_SHA256);
@@ -334,6 +369,170 @@ describe('M2 split WebSocket benchmark roles', () => {
       }
     }
   }, 180000);
+});
+
+describe('M2 split benchmark denial audit', () => {
+  it('surfaces room-level and gateway-level denials to the transport observer', async (ctx: TestContext) => {
+    const events: WsServerEnvelopeEvent[] = [];
+    let server: WsServerHandle;
+    try {
+      server = await startWsServer({
+        port: 0,
+        host: '127.0.0.1',
+        tickMode: 'manual',
+        snapshotHz: 20,
+        startDelayMs: 0,
+        firstTickDelayMs: 0,
+        onClientEnvelope: event => events.push(event),
+      });
+      openServers.push(server);
+    } catch (error) {
+      const code = bindingFailure(error);
+      ctx.skip(code === null
+        ? `Local WebSocket server could not start: ${error instanceof Error ? error.message : String(error)}`
+        : `Local WebSocket binding unavailable (${code})`);
+      return;
+    }
+    const url = `ws://127.0.0.1:${server.port}`;
+
+    // Room-level denial: an input before the match is running never reaches the
+    // gateway and still has to be visible to the audit.
+    const early = await rawSession(url);
+    early.client.join(['P1']);
+    await waitFor('P1 join', () => early.client.sessionState === 'joined');
+    early.client.submitInput(0, [controls('P1')]);
+    await waitFor('not-started denial', () => events.some(event => !event.accepted && event.code === 'not-started'));
+
+    // Room-level denial: a join claim outside the configured roster.
+    const rogue = await rawSession(url);
+    rogue.client.join(['P9']);
+    await waitFor('unknown-player denial', () =>
+      events.some(event => !event.accepted && event.code === 'unknown-player'));
+
+    // Gateway-level denial: a ping from a connection the gateway never joined.
+    rogue.sendRaw(encodeClientEnvelope({ version: 1, kind: 'ping', sequence: 1 }));
+    await waitFor('not-joined denial', () => events.some(event => !event.accepted && event.code === 'not-joined'));
+
+    const denials = events.filter(event => !event.accepted);
+    expect(denials).toHaveLength(3);
+    expect(denials).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'not-started', source: 'room' }),
+      expect.objectContaining({ code: 'unknown-player', source: 'room' }),
+      expect.objectContaining({ code: 'not-joined', source: 'gateway' }),
+    ]));
+    // Accepted observations are unchanged: only P1's join was accepted, and no
+    // denial is duplicated or re-emitted as an accepted event.
+    const accepted = events.filter(event => event.accepted);
+    expect(accepted).toHaveLength(1);
+    expect(accepted[0]).toMatchObject({ kind: 'join-request', playerIds: ['P1'] });
+    expect(server.room.playerCount).toBe(1);
+    expect(server.room.phase).toBe('lobby');
+  }, 30000);
+
+  it('counts a room-level denial in the coordinator manifest audit', async (ctx: TestContext) => {
+    const ticks = 60;
+    const { schedule } = loadWsBenchmarkSchedule(ticks);
+    const joined = deferred<void>();
+    const notStarted = deferred<void>();
+    const ready = deferred<NodeSession>();
+    const deniedCodes: string[] = [];
+    let session: NodeSession | null = null;
+    let started = false;
+    let nextToSend = 0;
+
+    const pump = (): void => {
+      if (!started || session === null) return;
+      const maxSend = Math.min(ticks - 1, session.client.serverTick + 7);
+      while (nextToSend <= maxSend) {
+        const input = schedule[nextToSend].find(candidate => candidate.playerId === 'P4');
+        if (!input) throw new Error('Fixture lost P4 input');
+        session.client.submitInput(nextToSend, [input]);
+        nextToSend += 1;
+      }
+    };
+
+    const server = await startServer(ctx, {
+      ticks,
+      timeoutMs: 60000,
+      onRosterComplete: async () => {
+        const active = await ready.promise;
+        // The raw client must have seen its accepted join before it can submit.
+        await Promise.race([
+          joined.promise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('P4 join was not acknowledged')), 5000)),
+        ]);
+        // Deliberate room-level denial: the match is still `starting`, so any
+        // input is rejected with `not-started` before the gateway sees it.
+        active.client.submitInput(0, [schedule[0].find(candidate => candidate.playerId === 'P4')!]);
+        await Promise.race([
+          notStarted.promise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('not-started denial did not arrive')), 5000)),
+        ]);
+      },
+    });
+
+    session = await openNodeSession({
+      url: server.url,
+      handlers: {
+        onJoinResult: result => {
+          if (result.accepted) joined.resolve();
+          else joined.reject(new Error(`P4 join denied: ${result.code ?? 'unknown'}`));
+        },
+        onMatchStart: () => {
+          started = true;
+          pump();
+        },
+        onSnapshot: () => pump(),
+        onError: error => {
+          deniedCodes.push(error.code);
+          if (error.code === 'not-started') notStarted.resolve();
+        },
+      },
+    });
+    openSessions.push(session);
+    ready.resolve(session);
+    session.client.join(['P4']);
+
+    const clients = await Promise.allSettled(
+      ['P1', 'P2', 'P3'].map(playerId => runClientRole({ url: server.url, playerId, ticks, timeoutMs: 60000 })),
+    );
+    const roleResult = await server.result;
+
+    expect(clients.every(entry => entry.status === 'fulfilled')).toBe(true);
+    expect(deniedCodes.filter(code => code === 'not-started')).toHaveLength(1);
+    expect(roleResult.manifest.correctness.deniedMessages).toBe(1);
+    expect(roleResult.deniedBySource).toEqual({ gateway: 0, room: 1 });
+    expect(roleResult.acceptedMessages).toBe(PLAYERS.length + PLAYERS.length * ticks);
+    expect(roleResult.manifest.correctness.lateTicks).toBe(0);
+    expect(roleResult.manifest.correctness.matchesInMemoryReference).toBe(true);
+    const reference = inMemoryReferenceFingerprints(ticks);
+    expect(roleResult.manifest.correctness.finalStateSha256).toBe(reference.finalStateSha256);
+    expect(roleResult.manifest.correctness.orderedEventsSha256).toBe(reference.orderedEventsSha256);
+  }, 60000);
+
+  it('surfaces the defensive session-closed room denial without changing the client-visible result', () => {
+    const events: string[] = [];
+    const room = new AuthoritativeWsSession({
+      onOutgoing: (_target, message) => events.push(
+        `out:${message.kind}${message.kind === 'error' ? `:${message.code}` : ''}`,
+      ),
+      onRoomDenial: (connectionId, code) => events.push(`denied:${connectionId}:${code}`),
+    });
+    room.addConnection('conn-1');
+    // `close()` clears connections before setting the phase, so the transport
+    // cannot reach this defensive branch today. Pin it directly so a future
+    // lifecycle change cannot silently drop `session-closed` from the audit.
+    (room as unknown as { phaseValue: string }).phaseValue = 'closed';
+    const result = room.handleMessage('conn-1', encodeClientEnvelope({
+      version: 1,
+      kind: 'ping',
+      sequence: 1,
+    }));
+    // The authority decision, return value and client-visible error are
+    // unchanged; the observation happens after the error is emitted.
+    expect(result).toBeNull();
+    expect(events).toEqual(['out:welcome', 'out:error:session-closed', 'denied:conn-1:session-closed']);
+  });
 });
 
 type Runner = {

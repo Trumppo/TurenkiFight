@@ -16,7 +16,8 @@ evidence for any transport decision.
   `SessionEnvelopeGateway` and deterministic `step()`. Four-player BASE-4 roster, 60 Hz ticks.
 - `server/ws/wsServer.ts` — Node `ws` transport. A trusted `conn-N` identity is allocated per socket;
   the client payload can never set it. An optional benchmark-only envelope observer and connection
-  cap let a coordinator prove the roster and input barrier; neither can change validation.
+  cap let a coordinator prove the roster and input barrier and audit every denial (gateway- and
+  room-level); neither can change validation.
 - `server/ws/nodeWsClient.ts` — Node synthetic client used by the benchmark and integration tests.
 - `src/game/networking/wsSessionClient.ts` — transport-injected client core (browser-safe).
 - `src/game/networking/browserWsAdapter.ts` — browser adapter using the global `WebSocket` API only.
@@ -120,6 +121,23 @@ The validator is strict: it rejects numeric measurement substitutes, an
 inconsistent role/mode/`clientsInProcess`/bind combination, a manifest without a
 topology block, and a split manifest that discloses a bind address.
 
+`deniedMessages` is an audit count, not a performance metric. In the
+coordinator manifest it counts every denial the authoritative session emitted
+for a client envelope:
+
+- gateway-level denials decided by `SessionEnvelopeGateway` (ownership,
+  sequence, tick window, replay, malformed payload, ...), and
+- room-level denials decided before the gateway (`session-closed`,
+  `match-started`, `match-complete`, `unknown-player`, `not-started`).
+
+The single-line `ws-benchmark-server-result` reports the same total together
+with its split as `deniedBySource: { gateway, room }` and the number of accepted
+envelope observations as `acceptedMessages`. The manifest keeps one total and the
+split is reported on the result line, so the v3 schema is unchanged. The client
+role's `deniedMessages` counts the `error` messages that client actually
+received, which already includes both sources; a client cannot distinguish them,
+so it does not pretend to.
+
 The `bench:ws` script runs through `vite-node`, which ships as a dependency of
 the existing `vitest` devDependency; no additional runner package is declared.
 
@@ -191,7 +209,10 @@ socket on an ephemeral port and pins the same 7200-tick fingerprints, runs the
 CLI roles as separate processes over loopback, and covers the negative cases: a
 missing client, a roster spread over too few connections (explicit bounded
 failure) and an unexpected fifth connection (closed with 1008 without
-corrupting the run).
+corrupting the run). Denial-audit tests prove that `not-started` and
+`unknown-player` reach the transport observer and the coordinator manifest,
+that the defensive `session-closed` branch is reported, and that a normal run's
+accepted-envelope count and authority fingerprints are unchanged.
 
 ## Dependencies and bundle boundary
 
