@@ -1,49 +1,61 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { decodeInputFrame } from '../../src/game/protocol/inputFrame';
 import { encodeStateSnapshot } from '../../src/game/protocol/stateSnapshot';
-import { TICK_RATE } from '../../src/game/simulation/step';
-import type { PlayerInput } from '../../src/game/simulation/types';
-import type { SnapshotHz } from '../../src/game/networking/wsMessages';
 import type { SessionClientHandlers } from '../../src/game/networking/wsSessionClient';
-import { SUPPORTED_SNAPSHOT_HZ } from '../../src/game/networking/wsMessages';
 import { startWsServer } from '../../server/ws/wsServer';
 import { openNodeSession, type NodeSession } from '../../server/ws/nodeWsClient';
 import { InMemoryBenchmarkAdapter } from '../inMemory';
 import { createRoster, generateFixture, sha256 } from '../scenarios';
+import {
+  DEFAULT_TICKS,
+  FIRST_TICK_DELAY_MS,
+  MAX_LEAD_TICKS,
+  MAX_RUN_TIMEOUT_MS,
+  MAX_TICKS,
+  START_DELAY_MS,
+  WS_BENCHMARK_ROSTER,
+  argument,
+  decodeFixtureSchedule,
+  defaultRunTimeoutMs,
+  positiveInteger,
+  snapshotRate,
+  tickModeArgument,
+} from './benchmarkSetup';
 import { DEFAULT_MANUAL_BARRIER_TIMEOUT_MS, driveManualTicks } from './manualTickDriver';
+import { runClientRole, runServerRole } from './splitRoles';
 import { createWsPrototypeManifest, type WsBenchmarkTickMode } from './wsManifest';
 
 /**
- * Bounded loopback WebSocket prototype runner.
+ * Bounded WebSocket prototype runner with three explicit roles.
  *
- * It verifies that the authoritative server accepts the same deterministic
- * BASE-4 fixture through real sockets and produces the same state/event
- * fingerprints as the in-memory reference for the bounded tick range. It does
- * not measure latency, bandwidth, CPU or tick pacing, and it writes those
- * fields as NOT_MEASURED.
+ * - `--mode=loopback` (default) keeps the original single-process behaviour:
+ *   one process starts the server and four synthetic clients over an ephemeral
+ *   loopback port and writes the manifest. Its behaviour and output are
+ *   unchanged.
+ * - `--mode=server` binds an explicit `--host`/`--port`, prints one
+ *   machine-readable ready line, waits for exactly the configured roster, runs
+ *   the authoritative session and writes the coordinator manifest.
+ * - `--mode=client --url=ws://host:port --player=P1` runs one synthetic client
+ *   on an arbitrary machine and exits; the server role owns the manifest.
+ *
+ * Every role verifies that the authoritative server accepts the same
+ * deterministic BASE-4 fixture through real sockets and produces the same
+ * state/event fingerprints as the in-memory reference for the bounded tick
+ * range. None of them measures latency, bandwidth, CPU or tick pacing; those
+ * fields stay NOT_MEASURED in every manifest. A split run only proves that the
+ * roles can execute across processes and machines — it selects no transport.
  *
  * Two pacing modes exist and are recorded in the manifest:
  * - `interval` (default) lets the server's 60 Hz timers drive the match, which
  *   approximates real-time pacing but still records no pacing measurement.
- * - `manual` submits a bounded input window, waits for the server to prove it
- *   consumed it, then steps ticks on demand. It is a deterministic correctness
- *   mode; a 7200-tick run finishes quickly and must not be read as real-time.
+ * - `manual` submits a bounded input window, proves the server consumed it, then
+ *   steps ticks on demand. It is a deterministic correctness mode; a 7200-tick
+ *   run finishes quickly and must not be read as real-time.
  */
 
-const DEFAULT_TICKS = 300;
-const MAX_TICKS = 7200;
-const MAX_LEAD_TICKS = 8;
-const START_DELAY_MS = 400;
-const FIRST_TICK_DELAY_MS = 250;
-/**
- * Wall-clock guard only. A 7200-tick interval run legitimately needs 120 s, so
- * the default is derived from the tick count instead of a fixed 30 s.
- */
-const RUN_TIMEOUT_BASE_MS = 30000;
-const MANUAL_TICK_BUDGET_MS = 5;
-const MAX_RUN_TIMEOUT_MS = 30 * 60 * 1000;
+const MODES = ['loopback', 'server', 'client'] as const;
+type WsBenchmarkMode = (typeof MODES)[number];
 
 type Deferred<T> = {
   promise: Promise<T>;
@@ -74,57 +86,23 @@ function deferred<T>(): Deferred<T> {
   };
 }
 
-function argument(name: string): string | undefined {
-  const prefix = `--${name}=`;
-  const inline = process.argv.find(entry => entry.startsWith(prefix));
-  if (inline) return inline.slice(prefix.length);
-  const index = process.argv.indexOf(`--${name}`);
-  return index === -1 ? undefined : process.argv[index + 1];
+function modeArgument(raw: string | undefined): WsBenchmarkMode {
+  if (raw === undefined) return 'loopback';
+  if (!MODES.includes(raw as WsBenchmarkMode)) {
+    throw new Error(`Invalid mode: ${raw} (expected ${MODES.join(', ')})`);
+  }
+  return raw as WsBenchmarkMode;
 }
 
-function positiveInteger(raw: string | undefined, fallback: number, max: number, label: string): number {
-  if (raw === undefined) return fallback;
+function portArgument(raw: string | undefined): number {
+  if (raw === undefined) throw new Error('Server mode requires an explicit --port');
   const value = Number(raw);
-  if (!Number.isSafeInteger(value) || value < 1 || value > max) throw new Error(`Invalid ${label}: ${raw}`);
+  if (!Number.isSafeInteger(value) || value < 0 || value > 65535) throw new Error(`Invalid port: ${raw}`);
   return value;
 }
 
-function snapshotRate(raw: string | undefined): SnapshotHz {
-  if (raw === undefined) return 20;
-  const value = Number(raw);
-  if (!SUPPORTED_SNAPSHOT_HZ.includes(value as SnapshotHz)) {
-    throw new Error(`Unsupported snapshot rate: ${raw}`);
-  }
-  return value as SnapshotHz;
-}
-
-function tickModeArgument(raw: string | undefined): WsBenchmarkTickMode {
-  if (raw === undefined) return 'interval';
-  if (raw !== 'interval' && raw !== 'manual') throw new Error(`Invalid tick mode: ${raw}`);
-  return raw;
-}
-
-/** Hang guard derived from the tick count, never a measured duration. */
-function defaultRunTimeoutMs(tickMode: WsBenchmarkTickMode, ticks: number): number {
-  return tickMode === 'interval'
-    ? RUN_TIMEOUT_BASE_MS + Math.ceil((ticks * 1000) / TICK_RATE)
-    : RUN_TIMEOUT_BASE_MS + ticks * MANUAL_TICK_BUDGET_MS;
-}
-
-function decodeSchedule(frames: string[][], players: readonly string[], ticks: number): PlayerInput[][] {
-  if (frames.length !== 7200) throw new Error('Invalid fixture');
-  const schedule: PlayerInput[][] = [];
-  for (let tick = 0; tick < ticks; tick++) {
-    const tickFrames = frames[tick];
-    if (tickFrames.length !== 1) throw new Error('Invalid BASE-4 fixture framing');
-    const frame = decodeInputFrame(tickFrames[0]);
-    if (frame.tick !== tick || frame.inputs.length !== players.length) throw new Error('Invalid fixture tick');
-    for (const playerId of players) {
-      if (!frame.inputs.some(input => input.playerId === playerId)) throw new Error('Invalid fixture roster');
-    }
-    schedule.push(frame.inputs);
-  }
-  return schedule;
+function currentCommitSha(): string {
+  return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: process.cwd(), encoding: 'utf8' }).trim();
 }
 
 type ClientRuntime = {
@@ -137,7 +115,7 @@ type ClientRuntime = {
   denials: Map<string, number>;
 };
 
-async function main(): Promise<void> {
+async function runLoopback(): Promise<void> {
   const ticks = positiveInteger(argument('ticks'), DEFAULT_TICKS, MAX_TICKS, 'tick count');
   const snapshotHz = snapshotRate(argument('snapshot-hz'));
   const tickMode = tickModeArgument(argument('tick-mode'));
@@ -149,7 +127,7 @@ async function main(): Promise<void> {
   );
   const players = createRoster(4);
   const fixture = generateFixture('BASE-4-60-20');
-  const schedule = decodeSchedule(fixture.framesByTick as string[][], players, ticks);
+  const schedule = decodeFixtureSchedule(fixture.framesByTick, players, ticks);
 
   const runComplete = deferred<number>();
   const fatal = deferred<never>();
@@ -346,7 +324,7 @@ async function main(): Promise<void> {
       total + [...runtime.denials.values()].reduce((sum, count) => sum + count, 0), 0);
 
     const runId = `ws-base4-${Date.now()}`;
-    const commitSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: process.cwd(), encoding: 'utf8' }).trim();
+    const commitSha = currentCommitSha();
     const manifest = createWsPrototypeManifest({
       runId,
       commitSha,
@@ -391,6 +369,110 @@ async function main(): Promise<void> {
   } finally {
     await shutdown();
   }
+}
+
+async function runServerCli(): Promise<void> {
+  const ticks = positiveInteger(argument('ticks'), DEFAULT_TICKS, MAX_TICKS, 'tick count');
+  const snapshotHz = snapshotRate(argument('snapshot-hz'));
+  const tickMode = tickModeArgument(argument('tick-mode'));
+  const timeoutMs = positiveInteger(
+    argument('timeout-ms'),
+    defaultRunTimeoutMs(tickMode, ticks),
+    MAX_RUN_TIMEOUT_MS,
+    'run timeout',
+  );
+  const host = argument('host');
+  if (host === undefined || host.length === 0) {
+    throw new Error('Server mode requires an explicit --host (for example --host=0.0.0.0)');
+  }
+  const port = portArgument(argument('port'));
+  const runId = `ws-base4-server-${Date.now()}`;
+  const commitSha = currentCommitSha();
+
+  const result = await runServerRole({
+    host,
+    port,
+    ticks,
+    snapshotHz,
+    tickMode,
+    timeoutMs,
+    commitSha,
+    runId,
+    ...(argument('out') === undefined ? {} : { outPath: argument('out') as string }),
+    onReady: info => {
+      // One machine-readable line on stdout so clients on other machines can
+      // connect. A wildcard bind has no usable URL; host/port are separate.
+      process.stdout.write(`${JSON.stringify({
+        kind: 'ws-benchmark-server-ready',
+        role: 'server-coordinator',
+        url: info.url,
+        host: info.host,
+        port: info.port,
+        players: [...WS_BENCHMARK_ROSTER],
+        boundedTicks: ticks,
+        snapshotHz,
+        tickMode,
+        maxLeadTicks: MAX_LEAD_TICKS,
+      })}\n`);
+    },
+  });
+
+  process.stdout.write(`${JSON.stringify({
+    kind: 'ws-benchmark-server-result',
+    role: 'server-coordinator',
+    manifest: result.manifestPath,
+    scenarioId: result.manifest.scenarioId,
+    boundedTicks: result.manifest.boundedTicks,
+    snapshotHz: result.manifest.snapshotHz,
+    tickMode: result.manifest.tickMode,
+    pacing: result.manifest.pacing,
+    topology: result.manifest.topology,
+    finalTick: result.manifest.correctness.finalTick,
+    matchesInMemoryReference: result.manifest.correctness.matchesInMemoryReference,
+    lateTicks: result.manifest.correctness.lateTicks,
+    deniedMessages: result.manifest.correctness.deniedMessages,
+    deniedBySource: result.deniedBySource,
+    acceptedMessages: result.acceptedMessages,
+    result: result.manifest.result,
+    measurements: result.manifest.measurements,
+  })}\n`);
+}
+
+async function runClientCli(): Promise<void> {
+  const ticks = positiveInteger(argument('ticks'), DEFAULT_TICKS, MAX_TICKS, 'tick count');
+  const tickMode = tickModeArgument(argument('tick-mode'));
+  const timeoutMs = positiveInteger(
+    argument('timeout-ms'),
+    defaultRunTimeoutMs(tickMode, ticks),
+    MAX_RUN_TIMEOUT_MS,
+    'run timeout',
+  );
+  const url = argument('url');
+  if (url === undefined || url.length === 0) throw new Error('Client mode requires --url=ws://host:port');
+  const playerId = argument('player');
+  if (playerId === undefined || playerId.length === 0) {
+    throw new Error(`Client mode requires --player (one of ${WS_BENCHMARK_ROSTER.join(', ')})`);
+  }
+
+  const result = await runClientRole({ url, playerId, ticks, timeoutMs });
+  process.stdout.write(`${JSON.stringify({
+    kind: 'ws-benchmark-client-result',
+    role: 'client',
+    playerId: result.playerId,
+    boundedTicks: ticks,
+    finalTick: result.finalTick,
+    submittedTicks: result.submittedTicks,
+    lateTicks: result.lateTicks,
+    deniedMessages: result.deniedMessages,
+    denials: result.denials,
+  })}\n`);
+}
+
+async function main(): Promise<void> {
+  const mode = modeArgument(argument('mode'));
+  if (mode === 'server') return runServerCli();
+  if (mode === 'client') return runClientCli();
+  return runLoopback();
 }
 
 main().catch(error => {

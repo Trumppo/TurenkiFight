@@ -50,6 +50,14 @@ export type WsSessionOptions = {
   maxTicks?: number;
   onOutgoing?: (targetConnectionId: string | null, message: WsServerMessage) => void;
   onPhaseChange?: (phase: WsSessionPhase) => void;
+  /**
+   * Benchmark-only observation of room-level denials that are decided before
+   * the gateway sees the envelope (`session-closed`, `match-started`,
+   * `match-complete`, `unknown-player`, `not-started`). Gateway-level denials are
+   * returned from `handleMessage` instead. This hook cannot accept, rewrite or
+   * reorder anything; it exists so a coordinator can audit every denial.
+   */
+  onRoomDenial?: (connectionId: string, code: string) => void;
 };
 
 export type WsStepResult = {
@@ -75,6 +83,7 @@ export class AuthoritativeWsSession {
   private readonly maxTicks: number | null;
   private readonly onOutgoing: (targetConnectionId: string | null, message: WsServerMessage) => void;
   private readonly onPhaseChange: (phase: WsSessionPhase) => void;
+  private readonly onRoomDenial: (connectionId: string, code: string) => void;
 
   private readonly connections = new Set<string>();
   private readonly ownership = new Map<string, string[]>();
@@ -111,6 +120,7 @@ export class AuthoritativeWsSession {
     this.maxTicks = options.maxTicks ?? null;
     this.onOutgoing = options.onOutgoing ?? (() => undefined);
     this.onPhaseChange = options.onPhaseChange ?? (() => undefined);
+    this.onRoomDenial = options.onRoomDenial ?? (() => undefined);
     this.gateway = new SessionEnvelopeGateway({
       roomId,
       ...(options.maxLead === undefined ? {} : { maxLead: options.maxLead }),
@@ -163,35 +173,36 @@ export class AuthoritativeWsSession {
     }
 
     if (this.phaseValue === 'closed') {
-      this.emitError(connectionId, 'session-closed', 'Session is closed', header);
-      return null;
+      return this.denyRoom(connectionId, 'session-closed', 'Session is closed', header);
     }
 
     if (header?.kind === 'join-request') {
       if (this.phaseValue !== 'lobby') {
-        this.emitError(
+        return this.denyRoom(
           connectionId,
           this.phaseValue === 'results' ? 'match-complete' : 'match-started',
           'Roster is frozen after the match has started',
           header,
         );
-        return null;
       }
       // A configured BASE-4 session never accepts an arbitrary slot name.
       if ((header.playerIds ?? []).some(playerId => !this.playerIdSet.has(playerId))) {
-        this.emitError(connectionId, 'unknown-player', 'Join claims a player outside the configured roster', header);
-        return null;
+        return this.denyRoom(
+          connectionId,
+          'unknown-player',
+          'Join claims a player outside the configured roster',
+          header,
+        );
       }
     }
 
     if (header?.kind === 'input' && this.phaseValue !== 'running') {
-      this.emitError(
+      return this.denyRoom(
         connectionId,
         this.phaseValue === 'results' ? 'match-complete' : 'not-started',
         'Authoritative match has not started',
         header,
       );
-      return null;
     }
 
     const result = this.gateway.handle(this.binding(connectionId), data);
@@ -362,6 +373,26 @@ export class AuthoritativeWsSession {
 
   private emit(targetConnectionId: string | null, message: WsServerMessage): void {
     this.onOutgoing(targetConnectionId, message);
+  }
+
+  /**
+   * Emits a room-level denial and reports it to the benchmark observer. The
+   * client-visible error message and the `null` return are unchanged; the
+   * observer runs afterwards and can never alter the decision.
+   */
+  private denyRoom(
+    connectionId: string,
+    code: string,
+    message: string,
+    header: ClientEnvelopeHeader | null,
+  ): null {
+    this.emitError(connectionId, code, message, header);
+    try {
+      this.onRoomDenial(connectionId, code);
+    } catch {
+      // Observation must never affect authority.
+    }
+    return null;
   }
 
   private setPhase(phase: WsSessionPhase): void {

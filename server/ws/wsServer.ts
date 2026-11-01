@@ -3,11 +3,35 @@ import { WebSocket, WebSocketServer, type RawData } from 'ws';
 import { TICK_RATE } from '../../src/game/simulation/step';
 import { encodeWsServerMessage, type SnapshotHz } from '../../src/game/networking/wsMessages';
 import { MAX_SESSION_ENVELOPE_BYTES } from '../../src/game/session/sessionEnvelope';
+import type { SessionEnvelopeResult } from '../../src/game/session/sessionEnvelopeGateway';
 import {
   AuthoritativeWsSession,
   type WsSessionPhase,
   type WsStepResult,
 } from './authoritativeWsSession';
+
+/**
+ * Read-only observation of one client envelope after the session handled it.
+ *
+ * This exists so a benchmark coordinator can prove that every expected client
+ * supplied fixture input for a tick before stepping it, and so its denial audit
+ * is complete. It never validates, rewrites or short-circuits an envelope: the
+ * authority is the existing `SessionEnvelopeGateway` decision plus the room's
+ * lifecycle checks, and an observation callback that throws is contained.
+ *
+ * `source` records where a denial was decided:
+ * - `gateway`: `SessionEnvelopeGateway` rejected the envelope (ownership,
+ *   sequence, tick window, replay, malformed payload, ...);
+ * - `room`: the authoritative session rejected it before the gateway saw it
+ *   (`session-closed`, `match-started`, `match-complete`, `unknown-player`,
+ *   `not-started`).
+ */
+export type WsServerEnvelopeEvent =
+  | { connectionId: string; accepted: true; kind: 'join-request'; playerIds: readonly string[] }
+  | { connectionId: string; accepted: true; kind: 'input'; targetTick: number }
+  | { connectionId: string; accepted: true; kind: 'ping'; sequence: number }
+  | { connectionId: string; accepted: true; kind: 'leave-request' }
+  | { connectionId: string; accepted: false; code: string; source: 'gateway' | 'room' };
 
 /**
  * Thin Node WebSocket transport around `AuthoritativeWsSession`.
@@ -30,6 +54,14 @@ export type WsServerConfig = {
   firstTickDelayMs?: number;
   /** `interval` drives 60 Hz with timers; `manual` lets tests call stepOnce. */
   tickMode?: 'interval' | 'manual';
+  /**
+   * Benchmark-only transport cap. Sockets beyond the cap are closed before they
+   * are registered, so an unexpected connection cannot join or delay a run.
+   * Undefined keeps the transport unbounded as before.
+   */
+  maxConnections?: number;
+  /** Benchmark-only, read-only envelope observation; never affects semantics. */
+  onClientEnvelope?: (event: WsServerEnvelopeEvent) => void;
 };
 
 export type WsServerHandle = {
@@ -58,6 +90,21 @@ function projectionMessage(message: string): boolean {
   return message === 'snapshot' || message === 'match-start' || message === 'match-end' || message === 'run-complete';
 }
 
+function envelopeEvent(connectionId: string, result: SessionEnvelopeResult): WsServerEnvelopeEvent {
+  if (!result.accepted) return { connectionId, accepted: false, code: result.code, source: 'gateway' };
+  const envelope = result.envelope;
+  switch (envelope.kind) {
+    case 'join-request':
+      return { connectionId, accepted: true, kind: 'join-request', playerIds: [...envelope.playerIds] };
+    case 'input':
+      return { connectionId, accepted: true, kind: 'input', targetTick: envelope.targetTick };
+    case 'ping':
+      return { connectionId, accepted: true, kind: 'ping', sequence: envelope.sequence };
+    case 'leave-request':
+      return { connectionId, accepted: true, kind: 'leave-request' };
+  }
+}
+
 export async function startWsServer(config: WsServerConfig): Promise<WsServerHandle> {
   if (!Number.isSafeInteger(config?.port) || config.port < 0 || config.port > 65535) {
     throw new Error('Invalid WebSocket port');
@@ -68,9 +115,30 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
   if (!nonnegativeInteger(startDelayMs) || !nonnegativeInteger(firstTickDelayMs)) {
     throw new Error('Invalid start delay');
   }
+  const maxConnections = config.maxConnections ?? null;
+  if (maxConnections !== null && (!nonnegativeInteger(maxConnections) || maxConnections < 1)) {
+    throw new Error('Invalid connection limit');
+  }
+  const onClientEnvelope = config.onClientEnvelope ?? null;
+  if (onClientEnvelope !== null && typeof onClientEnvelope !== 'function') {
+    throw new Error('Invalid envelope observer');
+  }
   const tickMode = config.tickMode ?? 'interval';
   if (tickMode !== 'interval' && tickMode !== 'manual') throw new Error('Invalid tick mode');
   const tickIntervalMs = 1000 / TICK_RATE;
+
+  // A benchmark observer must never influence authority: a throwing callback is
+  // reported and dropped, exactly like a failed outgoing encode.
+  const notifyEnvelope = (event: WsServerEnvelopeEvent): void => {
+    try {
+      onClientEnvelope?.(event);
+    } catch (error) {
+      process.stderr.write(`ws prototype: envelope observer failed: ${String(error)}\n`);
+    }
+  };
+  const observeResult = (connectionId: string, result: SessionEnvelopeResult): void => {
+    notifyEnvelope(envelopeEvent(connectionId, result));
+  };
 
   const sockets = new Map<string, WebSocket>();
   let nextConnectionId = 1;
@@ -179,6 +247,11 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
         setTimeout(closeSockets, CLOSE_FLUSH_MS);
       }
     },
+    // Room-level denials are sent to the client by the session itself; this hook
+    // only reports the already-decided code to the benchmark observer.
+    onRoomDenial: (connectionId, code) => {
+      notifyEnvelope({ connectionId, accepted: false, code, source: 'room' });
+    },
   });
 
   const wss = new WebSocketServer({ host, port: config.port, maxPayload: MAX_SESSION_ENVELOPE_BYTES });
@@ -205,6 +278,12 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
       socket.close(1001, 'server closed');
       return;
     }
+    if (maxConnections !== null && sockets.size >= maxConnections) {
+      // Reject before registration so an unexpected peer cannot join, occupy a
+      // slot or otherwise disturb the authoritative run.
+      socket.close(1008, 'connection limit reached');
+      return;
+    }
     const connectionId = `conn-${nextConnectionId++}`;
     sockets.set(connectionId, socket);
     try {
@@ -216,7 +295,8 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
     }
     socket.on('message', (data: RawData) => {
       // Trusted context is the socket's allocated ID, never a payload field.
-      room.handleMessage(connectionId, rawBytes(data));
+      const result = room.handleMessage(connectionId, rawBytes(data));
+      if (result !== null && onClientEnvelope) observeResult(connectionId, result);
     });
     socket.on('close', () => {
       if (!sockets.delete(connectionId)) return;

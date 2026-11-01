@@ -6,6 +6,8 @@
 
 > **Current protocol baseline (2026-10-31):** The canonical M2 v1 `InputFrame`, `StateSnapshot` and event codecs are merged on `main` via PR #41. The proposed separate transport/session envelope is described in [M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md). Benchmark both architectures using the **same serialized canonical codec bytes**, validation policy and session semantics; measure transport framing separately. No transport has been selected.
 
+> **Runner prerequisite (2026-11-02):** `benchmarks/ws/` now splits into `--mode=loopback` (default), `--mode=server` and `--mode=client` roles, so a correctness run can span machines on a LAN or the internet. The runner executes the split path but reports **no** latency, bandwidth, CPU or tick-pacing numbers; every measurement field stays `NOT_MEASURED`. See [benchmarks/ws/README.md](../benchmarks/ws/README.md). NAT/TURN, TLS and authentication remain absent and no transport has been selected.
+
 ## Decision to make
 
 Choose a network topology for a browser-based 2.5D party fighting game with configurable player count and LAN/remote-internet play. Compare:
