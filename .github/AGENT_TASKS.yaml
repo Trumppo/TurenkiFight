@@ -526,7 +526,7 @@ tasks:
     title: Prototype authoritative WebSocket session and bounded benchmark driver
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-ws
-    status: review
+    status: done
     priority: P1
     specification: docs/M2_SESSION_ENVELOPE_V1.md
     depends_on: [M2-BENCHMARK-SCENARIO-IMPLEMENTATION, M2-ENVELOPE-IMPLEMENTATION]
@@ -548,7 +548,7 @@ tasks:
     last_updated: "2026-11-02"
     branch: feature/m2-ws-prototype
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/98
-    notes: "Prototype only: architecture A, no client prediction/rollback, no deployment, no WebRTC and no production security claim. Loopback correctness only; latency, bandwidth, CPU and tick pacing remain NOT_MEASURED. Designer replaces pull_request with the real URL."
+    notes: "PR #98 merged as db3112b after independent Tester PASS WITH LIMITATIONS: 57/57 adversarial checks, 18/18 focused tests, 205/205 full suite, deterministic 300-tick loopback fingerprints, bundle free of Node WS code. Follow-ups: full 7200-tick event-ordering run, rate limiting, and broadcast filtering for unjoined sockets."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
