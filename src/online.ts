@@ -4,6 +4,8 @@ import { OnlineMatchController, type OnlineConnectionState } from './game/networ
 import { OnlineScene } from './game/presentation/OnlineScene';
 import { KEYBOARD_LAYOUTS, keyboardPlayerInput } from './game/input/keyboardMapping';
 import { VIEWPORT } from './game/presentation/viewport';
+import { resolveArenaSelection } from './game/presentation/arenaVisuals';
+import { RETRO_PREVIEW } from './game/presentation/retroPrototype';
 
 /**
  * Online entry page.
@@ -26,6 +28,12 @@ const STATE_LABEL: Record<OnlineConnectionState, string> = {
 };
 
 const params = new URLSearchParams(window.location.search);
+const arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic');
+const pageDescription = document.querySelector('.page-header p');
+if (pageDescription) {
+  if (arenaSelection.notice) pageDescription.textContent = arenaSelection.notice;
+  else if (arenaSelection.manifest.id !== 'station') pageDescription.textContent = `Remote authoritative match · arena: ${arenaSelection.manifest.displayName}`;
+}
 const serverParam = params.get('server')?.trim() ?? '';
 const playerParam = (params.get('player')?.trim().toUpperCase() ?? '');
 const setup = document.getElementById('online-setup') as HTMLElement;
@@ -153,7 +161,7 @@ const game = new Phaser.Game({
   pixelArt: true,
   antialias: false,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [new OnlineScene(controller, updatePanel)],
+  scene: [new OnlineScene(controller, updatePanel, arenaSelection)],
 });
 
 let left = false;
@@ -206,6 +214,10 @@ if (import.meta.env.DEV) {
     audioDiagnostics(): { state: string; muted: boolean; volume: number } {
       const scene = game.scene.getScene('OnlineScene') as OnlineScene | null;
       return scene?.audioDiagnostics() ?? { state: 'not-ready', muted: false, volume: 0.55 };
+    },
+    arenaTextureExists(): boolean {
+      const scene = game.scene.getScene('OnlineScene');
+      return !!scene?.textures.exists('arena-mesku-backdrop');
     },
   };
 }

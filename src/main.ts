@@ -2,6 +2,15 @@ import Phaser from 'phaser';
 import { StationScene } from './game/presentation/StationScene';
 import './style.css';
 import { VIEWPORT } from './game/presentation/viewport';
+import { resolveArenaSelection } from './game/presentation/arenaVisuals';
+import { RETRO_PREVIEW } from './game/presentation/retroPrototype';
+
+const arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic');
+const pageDescription = document.querySelector('.page-header p');
+if (pageDescription) {
+  if (arenaSelection.notice) pageDescription.textContent = arenaSelection.notice;
+  else if (arenaSelection.manifest.id !== 'station') pageDescription.textContent = `${arenaSelection.manifest.displayName} · evening 2.5D arena prototype`;
+}
 
 const displayScale = new URLSearchParams(window.location.search).get('scale') === '2' ? '2' : 'fit';
 if (displayScale === '2') document.body.classList.add('integer-scale-2');
@@ -25,7 +34,7 @@ const game = new Phaser.Game({
   pixelArt: true,
   antialias: false,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [StationScene],
+  scene: [new StationScene(arenaSelection)],
 });
 
 // Development-only browser test hook; omitted from production bundles.

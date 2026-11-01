@@ -4,14 +4,16 @@ import type { GameState, PlayerInput, Fighter } from '../simulation/types';
 import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
 import { VIEWPORT, cameraScale } from './viewport';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
-import { createRetroP1Textures, RETRO_PREVIEW, RETRO_STATION_PATH } from './retroPrototype';
+import { createRetroP1Textures, RETRO_PREVIEW } from './retroPrototype';
 import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
 import { keyboardPlayerInput } from '../input/keyboardMapping';
 import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
 import { CueBridge } from './audio/cueBridge';
+import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
 
 export class StationScene extends Phaser.Scene {
+  private readonly arenaSelection: ArenaSelection;
   private state: GameState = createState(['P1'], 'lobby');
   private elapsedMs = 0;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -34,12 +36,24 @@ export class StationScene extends Phaser.Scene {
   private audio?: AudioPresentation;
   private audioBridge?: CueBridge;
 
-  constructor() { super('StationScene'); }
+  constructor(arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic')) {
+    super('StationScene');
+    this.arenaSelection = arenaSelection;
+  }
 
   preload(): void {
     const backdrop = VISUAL_ASSETS.station.backdrop;
-    const path = RETRO_PREVIEW ? RETRO_STATION_PATH : backdrop.path;
-    this.load.svg(backdrop.key, publicAssetUrl(import.meta.env.BASE_URL, path), { width: RETRO_PREVIEW ? 640 : backdrop.width, height: RETRO_PREVIEW ? 360 : backdrop.height });
+    const key = arenaBackdropTextureKey(this.arenaSelection.manifest.id);
+    const path = this.arenaSelection.backdropPath;
+    const retro = this.arenaSelection.style === 'retro';
+    this.load.svg(key, publicAssetUrl(import.meta.env.BASE_URL, path), { width: retro ? 640 : backdrop.width, height: retro ? 360 : backdrop.height });
+    this.load.on('loaderror', (file: Phaser.Loader.File) => {
+      if (file.key !== key) return;
+      const message = `Could not load ${this.arenaSelection.manifest.displayName} arena art: ${path}`;
+      console.error(message);
+      const description = document.getElementById('arena-description');
+      if (description) description.textContent = message;
+    });
   }
 
   create(): void {
@@ -51,8 +65,16 @@ export class StationScene extends Phaser.Scene {
       createRetroP2Textures(this);
       createRetroExtraTextures(this);
     }
-    this.add.image(0, 0, VISUAL_ASSETS.station.backdrop.key).setOrigin(0, 0)
-      .setDisplaySize(VIEWPORT.logicalWidth, VIEWPORT.logicalHeight).setDepth(-100);
+    const textureKey = arenaBackdropTextureKey(this.arenaSelection.manifest.id);
+    const backgroundDepth = this.arenaSelection.layers.find(layer => layer.id === 'architecture')?.depth ?? -100;
+    if (this.textures.exists(textureKey)) {
+      this.add.image(0, 0, textureKey).setOrigin(0, 0)
+        .setDisplaySize(VIEWPORT.logicalWidth, VIEWPORT.logicalHeight).setDepth(backgroundDepth);
+    } else {
+      this.add.text(12, 42, `ARENA ART ERROR\n${this.arenaSelection.manifest.displayName}\n${this.arenaSelection.backdropPath}`, {
+        color: '#fff1b7', backgroundColor: '#172536', fontFamily: 'monospace', fontSize: '14px', padding: { x: 8, y: 6 },
+      }).setDepth(1000);
+    }
     // Scores, player labels and match status are rendered in the responsive
     // DOM HUD. It occupies the reserved scoreboard band on desktop and moves
     // above the playfield on narrow screens.
