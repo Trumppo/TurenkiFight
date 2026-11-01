@@ -238,7 +238,7 @@ tasks:
   - id: M2-VIS-ARENA-ARCH
     title: Introduce typed presentation-only arena manifest after concept approval
     assigned_role: graphics-session
-    status: blocked
+    status: backlog
     priority: P2
     specification: docs/visual/NEXT_ARENA_CONCEPT.md
     depends_on: [M2-VIS-ARENA-01, M1-5-VIS-05]
@@ -250,7 +250,7 @@ tasks:
       - Resolve arena assets without simulation or input changes
       - Unit tests and browser CI pass
     last_updated: "2026-10-31"
-    notes: "Blocked only on explicit owner approval of an arena concept; M1.5 visual QA is accepted (2026-11-01)."
+    notes: "Owner deferred new arena selection and implementation on 2026-11-01; revisit after M2 networking gates. Concept PR #70 remains the reference."
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
     assigned_role: planning-session
@@ -359,7 +359,7 @@ tasks:
   - id: M2-ENVELOPE-IMPLEMENTATION
     title: Implement transport-neutral session envelope validation and adapter boundary
     assigned_role: gameplay-session
-    status: blocked
+    status: ready
     priority: P0
     specification: docs/M2_SESSION_ENVELOPE_V1.md
     depends_on: [M2-SESSION-ENVELOPE-DESIGN, M2-SESSION-HARDENING]
@@ -370,7 +370,7 @@ tasks:
       - Room isolation, replay, disconnect and tick bounds covered
       - Independent Tester report and owner merge approval
     last_updated: "2026-10-31"
-    notes: "Start only after Designer contract approval; no WebSocket/WebRTC implementation."
+    notes: "Owner approved the envelope contract on 2026-11-01 (multi-slot connections, first-valid-wins, late input rejected, reconnect is a fresh join, no tick wrap). Implement the transport-neutral decoder and adapter boundary without sockets; transport choice remains open."
 
   - id: M2-SESSION-BOUNDARY-QA
     title: Verify session capacity, tick boundaries and canonical ordering
@@ -502,7 +502,7 @@ tasks:
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
-    status: ready
+    status: backlog
     priority: P1
     specification: docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md
     depends_on: [M1-5-VIS-04]
@@ -513,12 +513,12 @@ tasks:
       - Verify native 640x360 clipping regression and published Pages assets when accessible
       - Record remaining owner acceptance requirements without marking M1.5 accepted
     last_updated: "2026-10-31"
-    notes: "Follow-up evidence for VIS05-02 and VIS05-03 after owner accepted M1.5 on 2026-11-01. This does not reopen milestone acceptance; it produces actionable findings for M1-5-RESPONSIVE-VISUAL-FIX."
+    notes: "Deferred by the owner on 2026-11-01 to Milestone 7 polish. M1.5 remains accepted; this does not reopen it. When claimed, produce actionable evidence for M1-5-RESPONSIVE-VISUAL-FIX."
 
   - id: M1-5-RESPONSIVE-VISUAL-FIX
     title: Remediate confirmed desktop scaling or mobile HUD readability defects
     assigned_role: graphics-session
-    status: blocked
+    status: backlog
     priority: P1
     specification: docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md
     depends_on: [M1-5-RESPONSIVE-VISUAL-REVIEW]
@@ -528,7 +528,7 @@ tasks:
       - Preserve fighter pose contracts, classic mode and deterministic gameplay
       - Add targeted browser visual regression and obtain Tester retest
     last_updated: "2026-10-31"
-    notes: "Do not start before Tester publishes actionable findings; no speculative redesign."
+    notes: "Deferred to Milestone 7 polish alongside M1-5-RESPONSIVE-VISUAL-REVIEW. Do not start before Tester publishes actionable findings."
 
   - id: M2-BENCHMARK-SCENARIO-PLAN
     title: Specify next benchmark scenario coverage and measurement gates

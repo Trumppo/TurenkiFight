@@ -41,13 +41,13 @@
 - [x] Pass automated visual QA at native, integer-scaled and mobile sizes, including viewport regression fixes (PRs #52, #68, #76, #83)
 - [x] Publish retro mode in the production Pages build (PR #85) and confirm the published page requests the retro station asset
 
-**Accepted limitations / follow-ups:** VIS05-02 (1920×1080 uses substantial unused space; larger integer display scale may be desirable), VIS05-03 (in-canvas HUD text is small at 390×844; physical-device legibility unverified), physical gamepad hardware unverified, and the Playwright full suite shows load-sensitive flakiness in the 120 s harness. The 48×64 P1 canvas remains an opt-in experiment, not the default.
+**Accepted limitations / follow-ups:** VIS05-02 (1920×1080 uses substantial unused space; larger integer display scale may be desirable) and VIS05-03 (in-canvas HUD text is small at 390×844; physical-device legibility unverified) are **deferred to Milestone 7 polish** by the owner on 2026-11-01. Physical gamepad hardware remains unverified, and the Playwright full suite shows load-sensitive flakiness in the 120 s harness. The 48×64 P1 canvas remains an opt-in experiment, not the default.
 
 **Exit:** user-approved visual upgrade with unchanged deterministic gameplay and green tests; owner accepted the milestone with the limitations above. See [M1.5 visual upgrade plan](M1_5_VISUAL_UPGRADE.md).
 
 ## Milestone 2 – Shared multiplayer foundations (transport-neutral)
 
-**Status: PARTIALLY IMPLEMENTED.** Canonical v1 protocol and authorized ingress are merged in PR #41 with hardening in #43, and independently reviewed as PASS WITH LIMITATIONS ([report](M2_INDEPENDENT_TESTER_REPORT.md)). This is not a live network session. The session envelope remains a proposal ([M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md)); the deterministic in-memory benchmark harness merged in PR #79 and provides correctness fixtures only, not transport measurements.
+**Status: PARTIALLY IMPLEMENTED.** Canonical v1 protocol and authorized ingress are merged in PR #41 with hardening in #43, and independently reviewed as PASS WITH LIMITATIONS ([report](M2_INDEPENDENT_TESTER_REPORT.md)). This is not a live network session. The **session envelope contract is owner-approved (2026-11-01)** and its transport-neutral implementation is the next slice ([M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md)); the deterministic in-memory benchmark harness merged in PR #79 and provides correctness fixtures only, not transport measurements.
 
 - [ ] Finalize versioned InputFrame, StateSnapshot, event and room protocol schemas (input/snapshot/event v1 implemented; room lifecycle and session envelope not implemented)
 - [ ] Separate simulation, authority, rendering, mode rules and transport adapters (simulation/ingress separation implemented; network adapters pending)
@@ -100,7 +100,7 @@
 
 ## Milestone 7 – Polish and future modes
 
-- [ ] Refine pixel art, sound, hit feedback, balancing and readability
+- [ ] Refine pixel art, sound, hit feedback, balancing and readability (includes deferred VIS05-02/VIS05-03 scaling and mobile legibility work)
 - [ ] Add Last Man Standing and Deathmatch as independent modes
 - [ ] Revisit dedicated hosting and rollback only if measurements justify them
 
