@@ -707,7 +707,8 @@ tasks:
   - id: M7-ONLINE-SERVER-MODE
     title: Serve a real authoritative match over WebSocket instead of the benchmark fixture driver
     assigned_role: gameplay-session
-    status: ready
+    session_id: gameplay-session-20261102-online-server
+    status: review
     priority: P0
     specification: docs/M7_ONLINE_TEST_HARNESS.md
     depends_on: [M2-WS-PROTOTYPE]
@@ -723,6 +724,8 @@ tasks:
       - A fifth connection is rejected before registration; a disconnect revokes its slots without changing authority rules
       - Integration tests cover join, start, one accepted input per slot, extra-connection rejection and clean shutdown on an ephemeral port
       - Simulation rules, protocol semantics and presentation are unchanged; npm test, npm run build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/111
+    last_updated: "2026-11-02"
     notes: "First slice of the owner-requested online test harness (2026-11-02). It exists so a human browser and a remote agent can play the same match. No TLS, authentication or rate limiting is implied."
 
   - id: M7-BOT-CLIENT
