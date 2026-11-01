@@ -1,10 +1,10 @@
 # TurenkiFight – Prototype Roadmap v0.4
 
-**Updated:** 2026-11-02. Milestones, not calendar commitments. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
+**Updated:** 2026-11-02. Milestones, not calendar commitments. **Milestone 5 gate changed by the owner on 2026-11-02:** the transport decision is based on a literature review plus single-machine measurements; LAN/internet/TURN runs are no longer required and were never performed. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
-> **Current main checkpoint (2026-11-02, `main` at `56fa1ab`):** M1 and M1.5 accepted with documented limitations. M2 is implemented at the transport-neutral level: v1 protocol and authorized ingress (#41, #43), owner-approved session envelope with its implementation (#92, #94), executable benchmark scenarios (#97), and independent Tester gates on every slice. Both architecture prototypes exist and are correctness-tested: central WebSocket authority (#98, `server/ws/**`) and browser-host WebRTC with a signaling relay (#100, `server/signaling/**`, `src/game/networking/**`). **No transport is selected and no performance number exists** — every manifest field is `NOT_MEASURED`. Both architectures now complete 7200-tick runs with identical final-state and ordered-event fingerprints (`de544fcd…` / `5bb44bd6…`, 47 events) under the same fixture and seed; that is correctness evidence, not a measurement. PR #25 was closed unmerged and its content was integrated through #41/#43.
+> **Current main checkpoint (2026-11-02, `main` at `cc44f2c`):** M1 and M1.5 accepted with documented limitations. M2 is implemented at the transport-neutral level: v1 protocol and authorized ingress (#41, #43), owner-approved session envelope with its implementation (#92, #94), executable benchmark scenarios (#97), and independent Tester gates on every slice. Both architecture prototypes exist and are correctness-tested: central WebSocket authority (#98, `server/ws/**`) and browser-host WebRTC with a signaling relay (#100, `server/signaling/**`, `src/game/networking/**`). **No transport is selected and no performance number exists** — every manifest field is `NOT_MEASURED`. Both architectures now complete 7200-tick runs with identical final-state and ordered-event fingerprints (`de544fcd…` / `5bb44bd6…`, 47 events) under the same fixture and seed; that is correctness evidence, not a measurement. PR #25 was closed unmerged and its content was integrated through #41/#43.
 
 ## Milestone 0 – Project foundations
 
@@ -59,7 +59,7 @@
 
 ## Milestone 3 – Architecture experiment A: central WebSocket server
 
-**Status: CORRECTNESS PROTOTYPE MERGED (PR #98, `db3112b`), INDEPENDENT TESTER PASS WITH LIMITATIONS.** Loopback only; no authentication, TLS, rate limiting or host migration. Full 7200-tick runs are executable via `npm run bench:ws -- --ticks=7200 --tick-mode=manual` (PR #102); `interval` remains the real-time approximation.
+**Status: CORRECTNESS PROTOTYPE MERGED (PR #98, `db3112b`), INDEPENDENT TESTER PASS WITH LIMITATIONS.** Loopback only; no authentication, TLS, rate limiting or host migration. Full 7200-tick runs are executable via `npm run bench:ws -- --ticks=7200 --tick-mode=manual` (PR #102), and the benchmark now has separate server and client roles for multi-machine runs (PR #104). `interval` remains the real-time approximation.
 
 - [x] Implement central authoritative 60 Hz TypeScript game session (`server/ws/authoritativeWsSession.ts`)
 - [x] Implement WS room join, input processing, state snapshots and disconnections (prototype; no production security)
@@ -70,7 +70,7 @@
 
 ## Milestone 4 – Architecture experiment B: WebRTC browser host
 
-**Status: CORRECTNESS PROTOTYPE MERGED (PR #100, `ac19645`), INDEPENDENT TESTER PASS.** Loopback ICE only; the benchmark emulates the DataChannel, so no NAT/TURN path is exercised.
+**Status: CORRECTNESS PROTOTYPE MERGED (PR #100, `ac19645`), INDEPENDENT TESTER PASS.** Loopback ICE only; the benchmark emulates the DataChannel, so no NAT/TURN path is exercised. A served browser harness for two-machine runs remains in the backlog (`M2-NETWORK-ADDRESSABLE-WEBRTC-HARNESS`) because the owner removed the LAN measurement requirement on 2026-11-02.
 
 - [x] Implement WebSocket room signaling and browser-host authoritative session (`server/signaling/**`, `webrtcHostSession.ts`)
 - [x] Implement WebRTC DataChannel star topology and client connection lifecycle (one host, up to four clients)
@@ -80,18 +80,17 @@
 
 **Exit:** measured WebRTC baseline directly comparable to A.
 
-## Milestone 5 – Architecture decision (evidence gate)
+## Milestone 5 – Architecture decision (literature + single-machine evidence)
 
-**Status: BLOCKED.** Both prototypes are correctness-ready, but no measured run exists, so nothing may be decided. Requires the owner to provide LAN/internet machines and a TURN service.
+**Status: READY TO START.** The owner changed the gate on 2026-11-02: no LAN, internet or TURN runs are required. The decision rests on documented sources plus single-machine measurements, weighted toward low latency and smooth motion.
 
-- [ ] Collect >= 5 measured 120 s runs per key case
-- [ ] Evaluate responsiveness p50/p95/p99, reliability, correctness, CPU, RAM and bandwidth
-- [ ] Verify physical LAN, fully offline LAN and remote-internet use cases
-- [ ] Estimate operating costs including TURN where relevant
-- [ ] Publish results in `benchmarks/RESULTS.md`
-- [ ] Write `docs/adr/0001-network-topology.md` with decision, evidence and reconsideration criteria
+- [ ] Measure what does not need a network: bytes per input and snapshot per player, snapshot size at 10/20/30 Hz, tick duration p50/p95/p99 over 7200 ticks, snapshot encode cost, process CPU and memory
+- [ ] Review sources for transport behaviour (TCP head-of-line blocking, SCTP/UDP DataChannels), NAT/CGNAT and TURN cost, browser support and backgrounding
+- [ ] Write `docs/adr/0001-network-topology.md` with sources, measurements, weighting, open risks and reconsideration criteria
+- [ ] State explicitly in the ADR that no network environment was measured
+- [ ] Publish supporting numbers in `benchmarks/RESULTS.md`
 
-**Exit:** a documented choice based on results; no predetermined winner. See [benchmark plan](NETWORK_BENCHMARK_PLAN.md).
+**Exit:** a documented, traceable choice; no predetermined winner. Network behaviour that was not measured is recorded as a risk, not as evidence. See [benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
 ## Milestone 6 – Multiplayer productization
 

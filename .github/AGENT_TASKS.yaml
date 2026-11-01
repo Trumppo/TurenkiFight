@@ -605,7 +605,7 @@ tasks:
     title: Split the WebSocket benchmark into server and client roles so runs can span machines
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-splitws
-    status: review
+    status: done
     priority: P0
     specification: docs/NETWORK_BENCHMARK_PLAN.md
     depends_on: [M2-FULL-LENGTH-BENCHMARK]
@@ -623,7 +623,79 @@ tasks:
       - npm test, npm run build, git diff --check and agent task validation pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/104
     last_updated: "2026-11-02"
-    notes: "Designer finding 2026-11-02: benchmarks/ws/runWsBenchmark.ts hardcodes host 127.0.0.1 and port 0 and starts the server plus all four synthetic clients in one process, so the LAN/internet measurement required by the active goal cannot be executed by any environment the owner provides. This task is a prerequisite for milestone 5, not a measurement and not a transport decision."
+    notes: "PR #104 merged as cc44f2c after two independent Tester passes. A genuine five-process 7200-tick run reproduces the pinned fingerprints (de544fcd / 5bb44bd6), every client submits 7200 ticks with 0 late and 0 denied, and manifests record topology network/4 clients/NOT_RECORDED with all measurements NOT_MEASURED. TESTER-104a (room-level denials invisible to the observer) was fixed in b89e4eb: deniedMessages now sums gateway and room denials with deniedBySource. Limits: ws:// only, no TLS/auth/TURN, and a network topology manifest is still not LAN or internet evidence."
+
+
+  - id: M2-NETWORK-ADDRESSABLE-WEBRTC-HARNESS
+    title: Provide a served browser harness so architecture B can be exercised across machines
+    assigned_role: gameplay-session
+    status: backlog
+    priority: P0
+    specification: docs/NETWORK_BENCHMARK_PLAN.md
+    depends_on: [M2-WEBRTC-PROTOTYPE, M2-NETWORK-ADDRESSABLE-WS-BENCHMARK]
+    scope:
+      - src/game/networking/
+      - benchmarks/webrtc/
+      - benchmarks/pages/
+      - tests/
+      - docs/
+      - .github/AGENT_TASKS.yaml
+    acceptance:
+      - A served page lets one browser become the authoritative host and other browsers join as clients over real RTCPeerConnection sessions
+      - The signaling server binds a configurable host/port so two machines on a LAN can connect without code edits
+      - The page reports join success, accepted input and snapshot reception, and states explicitly that it measures nothing
+      - A documented procedure lets the owner run the host on one machine and clients on another, including the ICE/TURN configuration points that remain unprovisioned
+      - Automated tests cover the harness wiring without requiring two machines; any browser test stays honest about loopback-only ICE
+      - No latency, bandwidth, CPU or tick-pacing value is produced or implied; simulation, protocol and presentation rules are unchanged
+      - npm test, npm run build, git diff --check and agent task validation pass
+    notes: "DEFERRED by the owner decision on 2026-11-02: LAN and internet measurement is no longer required, so this harness is not on the critical path. Keep it as the way to validate the transport decision later if real network behaviour becomes a product requirement. Designer finding that motivated it: benchmarks/webrtc emulates the DataChannel in one process"
+
+
+  - id: M2-SINGLE-MACHINE-MEASUREMENTS
+    title: Measure codec bytes, tick duration, snapshot cost and process resources on one machine
+    assigned_role: gameplay-session
+    status: ready
+    priority: P0
+    specification: docs/NETWORK_BENCHMARK_PLAN.md
+    depends_on: [M2-NETWORK-ADDRESSABLE-WS-BENCHMARK, M2-FULL-LENGTH-BENCHMARK]
+    scope:
+      - benchmarks/
+      - tests/
+      - docs/
+      - .github/AGENT_TASKS.yaml
+    acceptance:
+      - Measured bytes per input envelope and per snapshot for 4 players at 10/20/30 Hz, reported per player and per tick
+      - Simulation tick duration p50/p95/p99 over 7200 ticks, measured in the same environment and reported with hardware and Node version
+      - Snapshot encode and decode duration distributions, and process CPU time plus peak memory for a 7200-tick run
+      - Every measured field is labelled with its provenance (command, sample count, environment) and no network field is invented
+      - Network latency, jitter, loss, join success and TURN cost remain NOT_MEASURED in manifests and results
+      - Results are written to benchmarks/results/ without secrets, private addresses or hostnames
+      - The measurement run is reproducible from a documented command and does not change simulation or gameplay behaviour
+      - npm test, npm run build, git diff --check and agent task validation pass
+    notes: "Owner approved 2026-11-02 that the transport decision is based on literature plus single-machine measurements, weighted toward low latency and smooth motion. These numbers are honest local facts, not network evidence. A measurement is only reported when the command that produced it is committed."
+
+  - id: M2-TRANSPORT-DECISION-ADR
+    title: Write the transport decision ADR from sources and single-machine measurements
+    assigned_role: planning-session
+    status: backlog
+    priority: P0
+    specification: docs/NETWORK_BENCHMARK_PLAN.md
+    depends_on: [M2-SINGLE-MACHINE-MEASUREMENTS]
+    scope:
+      - docs/adr/
+      - docs/GOALS.md
+      - docs/ROADMAP.md
+      - benchmarks/RESULTS.md
+      - .github/AGENT_TASKS.yaml
+    acceptance:
+      - ADR 0001 records the decision, the weighted criteria (latency and smooth motion first) and the rejected alternative with reasons
+      - Every transport claim cites a source with publisher, title, version or date, and what it does or does not prove
+      - The ADR embeds the single-machine measurement results and states explicitly that no LAN, internet or TURN run was performed
+      - Known risks are recorded, including browser-host authority and cheatability, host departure ending the match, NAT/CGNAT, TURN cost and browser backgrounding
+      - Reconsideration criteria are explicit and measurable
+      - benchmarks/RESULTS.md publishes the local numbers without presenting them as network results
+      - The owner approves the selection before it is marked decided
+    notes: "Owner decision 2026-11-02 changed the milestone 5 gate: no network runs required; decision basis is literature plus single-machine measurements. Promote to ready once M2-SINGLE-MACHINE-MEASUREMENTS is merged. This task must not claim measured network behaviour, and must not present a preference as evidence."
 
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
