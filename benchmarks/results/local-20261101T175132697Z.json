@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "kind": "single-machine-local-measurement",
+  "runId": "local-20261101T175132697Z",
+  "scope": {
+    "measurement": "single-machine",
+    "networkAccess": "none",
+    "transportSelection": "NOT_A_TRANSPORT_DECISION"
+  },
+  "provenance": {
+    "command": "npm run measure:local",
+    "cliArguments": [],
+    "nodeVersion": "v26.5.1",
+    "platform": "win32",
+    "osRelease": "10.0.19045",
+    "architecture": "x64",
+    "cpuModel": "Intel(R) Core(TM) i5-7600K CPU @ 3.80GHz",
+    "logicalCores": 4,
+    "gitCommitSha": "22d0446d6c4fea3ae6bb70f633c7959ed51e0c73",
+    "workingTreeDirty": false,
+    "dirtyExclusions": [
+      "benchmarks/results/"
+    ],
+    "fixtureSha256": "7fddf007fc1910d9944d409864fad101e70d0956d864f60a700135f6205b1790",
+    "seed": 12345,
+    "measuredTicks": 7200,
+    "warmupTicks": 600,
+    "warmupPolicy": "discarded-separate-state-replay",
+    "snapshotRatesHz": [
+      10,
+      20,
+      30
+    ],
+    "codecVersions": {
+      "inputFrame": 1,
+      "stateSnapshot": 1,
+      "sessionEnvelope": 1,
+      "wsServerMessage": 1
+    }
+  },
+  "methodology": {
+    "tickTimer": "process.hrtime.bigint",
+    "percentiles": "nearest-rank",
+    "byteCounting": "utf8-byte-length-of-canonical-encoding",
+    "inputEnvelopeSampling": "one-envelope-per-client-per-tick",
+    "snapshotSampling": "encode-and-decode-once-per-emitted-snapshot",
+    "processResources": "process.cpuUsage-and-process.resourceUsage.maxRSS"
+  },
+  "codecBytes": {
+    "inputs": {
+      "scenarioId": "BASE-4-60-20",
+      "players": 4,
+      "inputHz": 60,
+      "sequencePolicy": "tick+1-per-client",
+      "bundledCanonicalPerTick": {
+        "unit": "bytes",
+        "sampleCount": 7200,
+        "min": 411,
+        "mean": 417.8436111111111,
+        "max": 423
+      },
+      "bundledCanonicalBytesPerTick": 417.8436111111111,
+      "bundledCanonicalBytesPerSecond": 25070.616666666665,
+      "perClientCanonical": {
+        "unit": "bytes",
+        "sampleCount": 28800,
+        "min": 127,
+        "mean": 131.34527777777777,
+        "max": 133
+      },
+      "perClientCanonicalBytesPerTick": 131.34527777777777,
+      "perClientCanonicalBytesPerSecond": 7880.716666666666,
+      "perClientEnvelope": {
+        "unit": "bytes",
+        "sampleCount": 28800,
+        "min": 192,
+        "mean": 202.03736111111112,
+        "max": 204
+      },
+      "perClientEnvelopeOverhead": {
+        "unit": "bytes",
+        "sampleCount": 28800,
+        "min": 65,
+        "mean": 70.69208333333333,
+        "max": 71
+      },
+      "perClientEnvelopeBytesPerTick": 202.03736111111112,
+      "perClientEnvelopeBytesPerSecond": 12122.241666666667,
+      "aggregateUpstreamBytesPerSecond": 48488.96666666667
+    },
+    "snapshots": [
+      {
+        "snapshotHz": 10,
+        "sampleCount": 1200,
+        "canonical": {
+          "unit": "bytes",
+          "sampleCount": 1200,
+          "min": 1156,
+          "mean": 1222.0241666666666,
+          "max": 1406
+        },
+        "serverMessage": {
+          "unit": "bytes",
+          "sampleCount": 1200,
+          "min": 1199,
+          "mean": 1265.0241666666666,
+          "max": 1449
+        },
+        "serverMessageOverhead": {
+          "unit": "bytes",
+          "sampleCount": 1200,
+          "min": 43,
+          "mean": 43,
+          "max": 43
+        },
+        "bytesPerSimulationTickPerClient": 203.67069444444442,
+        "bytesPerSecondPerClient": 12220.241666666665,
+        "bytesPerSecondServerAggregate": 48880.96666666666
+      },
+      {
+        "snapshotHz": 20,
+        "sampleCount": 2400,
+        "canonical": {
+          "unit": "bytes",
+          "sampleCount": 2400,
+          "min": 1156,
+          "mean": 1221.68875,
+          "max": 1450
+        },
+        "serverMessage": {
+          "unit": "bytes",
+          "sampleCount": 2400,
+          "min": 1199,
+          "mean": 1264.68875,
+          "max": 1493
+        },
+        "serverMessageOverhead": {
+          "unit": "bytes",
+          "sampleCount": 2400,
+          "min": 43,
+          "mean": 43,
+          "max": 43
+        },
+        "bytesPerSimulationTickPerClient": 407.2295833333334,
+        "bytesPerSecondPerClient": 24433.775,
+        "bytesPerSecondServerAggregate": 97735.1
+      },
+      {
+        "snapshotHz": 30,
+        "sampleCount": 3600,
+        "canonical": {
+          "unit": "bytes",
+          "sampleCount": 3600,
+          "min": 1156,
+          "mean": 1221.9177777777777,
+          "max": 1406
+        },
+        "serverMessage": {
+          "unit": "bytes",
+          "sampleCount": 3600,
+          "min": 1199,
+          "mean": 1264.9177777777777,
+          "max": 1449
+        },
+        "serverMessageOverhead": {
+          "unit": "bytes",
+          "sampleCount": 3600,
+          "min": 43,
+          "mean": 43,
+          "max": 43
+        },
+        "bytesPerSimulationTickPerClient": 610.9588888888889,
+        "bytesPerSecondPerClient": 36657.53333333333,
+        "bytesPerSecondServerAggregate": 146630.13333333333
+      }
+    ]
+  },
+  "simulationTicks": {
+    "unit": "microseconds",
+    "sampleCount": 7200,
+    "min": 1.2,
+    "mean": 4.855222222222209,
+    "p50": 1.8,
+    "p95": 4.9,
+    "p99": 18.7,
+    "max": 8520.6,
+    "totalWallClockMicroseconds": 36037.7,
+    "ticksPerSecondWallClock": 199790.77466098004
+  },
+  "snapshotTiming": [
+    {
+      "snapshotHz": 10,
+      "sampleCount": 1200,
+      "iterationsPerSnapshot": 1,
+      "encode": {
+        "unit": "microseconds",
+        "sampleCount": 1200,
+        "min": 17.3,
+        "mean": 27.000166666666672,
+        "p50": 19.7,
+        "p95": 44.3,
+        "p99": 177.2,
+        "max": 972.2
+      },
+      "decode": {
+        "unit": "microseconds",
+        "sampleCount": 1200,
+        "min": 9.3,
+        "mean": 16.48641666666665,
+        "p50": 11.3,
+        "p95": 28.3,
+        "p99": 76.6,
+        "max": 821.1
+      }
+    },
+    {
+      "snapshotHz": 20,
+      "sampleCount": 2400,
+      "iterationsPerSnapshot": 1,
+      "encode": {
+        "unit": "microseconds",
+        "sampleCount": 2400,
+        "min": 16.5,
+        "mean": 23.683333333333383,
+        "p50": 18.1,
+        "p95": 35.9,
+        "p99": 106.4,
+        "max": 1511.3
+      },
+      "decode": {
+        "unit": "microseconds",
+        "sampleCount": 2400,
+        "min": 8.2,
+        "mean": 14.09420833333332,
+        "p50": 9.6,
+        "p95": 23.1,
+        "p99": 79.6,
+        "max": 1224
+      }
+    },
+    {
+      "snapshotHz": 30,
+      "sampleCount": 3600,
+      "iterationsPerSnapshot": 1,
+      "encode": {
+        "unit": "microseconds",
+        "sampleCount": 3600,
+        "min": 16.2,
+        "mean": 25.988472222222352,
+        "p50": 18.1,
+        "p95": 40.6,
+        "p99": 110.7,
+        "max": 2660.8
+      },
+      "decode": {
+        "unit": "microseconds",
+        "sampleCount": 3600,
+        "min": 7.8,
+        "mean": 14.193972222222198,
+        "p50": 9.4,
+        "p95": 23,
+        "p99": 71,
+        "max": 1612.8
+      }
+    }
+  ],
+  "processResources": {
+    "scope": "measured-tick-loop",
+    "tickCount": 7200,
+    "wallClockMicroseconds": 36037.7,
+    "cpuUserMicroseconds": 46000,
+    "cpuSystemMicroseconds": 0,
+    "cpuTotalMicroseconds": 46000,
+    "peakRssBytes": 123490304,
+    "rssAfterRunBytes": 122191872
+  },
+  "eventLoopLag": {
+    "status": "MEASURED",
+    "unit": "nanoseconds",
+    "sampleCount": 321,
+    "min": 12804096,
+    "mean": 15578147.09034268,
+    "p50": 15556607,
+    "p95": 16113663,
+    "p99": 16277503,
+    "max": 23052287,
+    "probeTicks": 300,
+    "probeIntervalMicroseconds": 16667,
+    "histogramResolutionMilliseconds": 10
+  },
+  "network": {
+    "latency": "NOT_MEASURED",
+    "jitter": "NOT_MEASURED",
+    "packetLoss": "NOT_MEASURED",
+    "joinSuccess": "NOT_MEASURED",
+    "turnCost": "NOT_MEASURED",
+    "bandwidth": "NOT_MEASURED",
+    "measuredNetworks": 0
+  }
+}
