@@ -18,7 +18,7 @@ work_packages:
   - id: WP-M2-BENCHMARK-VALIDATION
     title: Benchmark correctness and independent evidence
     assigned_role: tester-session
-    status: ready
+    status: done
     task_ids: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
     depends_on: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
     branch: tester/wp-m2-benchmark-validation
@@ -486,7 +486,8 @@ tasks:
   - id: M2-BENCHMARK-INDEPENDENT-QA
     title: Independently validate deterministic benchmark fixture and manifest
     assigned_role: tester-session
-    status: ready
+    session_id: tester-session-20261101-benchqa
+    status: done
     priority: P1
     specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
     depends_on: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
@@ -497,7 +498,7 @@ tasks:
       - Publish PASS, PASS WITH LIMITATIONS or FAIL with commands, artifacts and limitations
       - Explicitly exclude transport latency, bandwidth and NAT performance claims
     last_updated: "2026-10-31"
-    notes: "PR #79 merged as b3b0166 with independent Tester PASS; ready to claim for a post-merge independent revalidation. Does not imply network benchmark acceptance."
+    notes: "Independent post-merge QA PASS on main b4fa0a0 (2026-11-01): fixture 7fddf007..., final state de544fcd..., ordered events 5bb44bd6... reproducible across separate runs; manifest and adapter negative cases rejected; no sockets, no measured network claims, no gameplay changes. Scope is correctness only, not transport performance."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
