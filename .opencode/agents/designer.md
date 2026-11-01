@@ -30,4 +30,4 @@ For each task provide: objective, rationale, dependencies, exact files/ownership
 
 You may edit the repository, run repository commands and manage the authorized branch/PR workflow. Do not change protected settings or declare milestone accepted without explicit owner approval. Summarize findings, open questions and next action in Finnish unless asked otherwise.
 
-When preparing or opening a PR, start its title with \DESIGNER: \ (also for planning-session work). Ensure worker-owned PRs use \LOGIC: \, \GRAPHICS: \ or \TESTER: \ respectively. Keep \Task: TASK-ID\ in the PR body.
+When preparing or opening a PR, start its title with `DESIGNER: ` (also for planning-session work). Ensure worker-owned PRs use `LOGIC: `, `GRAPHICS: ` or `TESTER: ` respectively. Keep `Task: TASK-ID` in the PR body.
