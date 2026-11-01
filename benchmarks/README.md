@@ -56,3 +56,11 @@ server and Node synthetic clients. It writes a `NOT_MEASURED` manifest under `be
 compares bounded state/event fingerprints with the in-memory reference. See
 [`ws/README.md`](ws/README.md). This is not a transport selection and records no latency, bandwidth or
 tick-pacing measurements.
+
+## WebRTC architecture-B prototype (loopback correctness only)
+
+`npm run bench:webrtc` drives four client cores through an emulated ordered DataChannel pair into a
+browser-host `WebrtcHostSession`, which reuses the existing authoritative session and gateway. It
+writes a `NOT_MEASURED` manifest under `benchmarks/out/` and compares bounded state/event
+fingerprints with the in-memory reference. See [`webrtc/README.md`](webrtc/README.md). It opens no
+ICE/DTLS/TURN path and records no latency, bandwidth, CPU or tick-pacing measurement.

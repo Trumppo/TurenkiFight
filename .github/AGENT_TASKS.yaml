@@ -550,6 +550,34 @@ tasks:
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/98
     notes: "PR #98 merged as db3112b after independent Tester PASS WITH LIMITATIONS: 57/57 adversarial checks, 18/18 focused tests, 205/205 full suite, deterministic 300-tick loopback fingerprints, bundle free of Node WS code. Follow-ups: full 7200-tick event-ordering run, rate limiting, and broadcast filtering for unjoined sockets."
 
+  - id: M2-WEBRTC-PROTOTYPE
+    title: Prototype browser-host WebRTC DataChannel session and bounded benchmark
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261102-webrtc
+    status: review
+    priority: P1
+    specification: docs/M2_SESSION_ENVELOPE_V1.md
+    depends_on: [M2-BENCHMARK-SCENARIO-IMPLEMENTATION, M2-ENVELOPE-IMPLEMENTATION, M2-WS-PROTOTYPE]
+    branch: feature/m2-webrtc-prototype
+    scope:
+      - server/signaling/
+      - src/game/networking/
+      - benchmarks/webrtc/
+      - tests/
+      - package.json
+      - .github/AGENT_TASKS.yaml
+    acceptance:
+      - Signaling relay is room-scoped and carries only offer/answer/ICE, separate from SessionEnvelopeGateway input handling
+      - Browser host reuses the existing authoritative session and gateway; clients exchange canonical envelopes over DataChannel
+      - Browser RTCPeerConnection adapter implements the same client core interface as the WebSocket adapter without Phaser scene changes
+      - Deterministic injected-DataChannel unit tests cover identity, authorization, disconnect and no authority migration
+      - One real-browser Playwright test joins a slot and one accepted input, skipping with an explicit reason when WebRTC is unavailable
+      - Bounded npm run bench:webrtc writes a NOT_MEASURED manifest without inventing latency or bandwidth values
+      - Focused tests, npm test, build, bench:webrtc, git diff --check and agent task validation pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/100
+    last_updated: "2026-11-02"
+    notes: "Designer fills the PR URL. Architecture B prototype only: no production security claims, no NAT/TURN provisioning and no transport decision. Signaling relays control messages only; the WS prototype is unchanged."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
