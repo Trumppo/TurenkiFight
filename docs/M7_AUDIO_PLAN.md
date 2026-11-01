@@ -42,6 +42,18 @@ simulation events ──▶ presentation event bridge ──▶ AudioDirector �
 - **Controls**: master volume slider, music and effects balance, and a mute toggle. Persist the
   settings locally. No audio may start before the player's first gesture.
 
+## 2b. Owner clarification, 2026-11-02
+
+For now only **generic placeholder sounds** are required, together with the technology that plays them.
+Real samples, sound design and mixing come later. Consequences:
+
+- `M7-AUDIO-CORE` ships the engine, the unlock path, the buses, the complete cue list and simple
+  placeholder voices; it must not chase polish.
+- Placeholder cues are defined in one clearly named table so they can be replaced without touching
+  callers.
+- `M7-AUDIO-MIX` (real samples and balance) and `M7-AUDIO-ACCEPTANCE` (owner listening) stay in the
+  backlog until the owner asks for them.
+
 ## 3. Acceptance criteria
 
 1. Music starts after the first user gesture and loops without gaps or clicks; it stops or ducks when
