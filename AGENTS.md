@@ -10,7 +10,7 @@ Keep simulation headless and deterministic, separate from Phaser rendering. Keep
 
 ## OpenCode multi-agent workflow
 
-`opencode.json` makes `designer` the default primary agent. Designer may invoke only `gameplay`, `graphics` and `tester`; `subagent_depth: 1` prevents worker-to-worker delegation. Workers must not push, merge or perform destructive Git operations. Their edit permissions are scoped by role in `.opencode/agents/*.md`.
+`opencode.json` makes `designer` the default primary agent. Designer may invoke only `gameplay`, `graphics` and `tester`; `subagent_depth: 1` prevents worker-to-worker delegation. In this workspace the project configuration allows agents to edit files, run commands, push branches and open pull requests. Merging remains owner-gated by project policy, and force-push plus `git reset --hard` are denied by configuration.
 
 Designer first reads the current repository and task specification, then creates a small task with ownership and acceptance criteria. Gameplay and Graphics implement independent slices, Tester verifies the resulting changes and returns reproducible findings to Designer. Defects go back to the owning worker and Tester re-checks them. Designer reviews the evidence and prepares a PR; the owner approves and merges it.
 
