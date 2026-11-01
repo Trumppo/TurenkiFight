@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "bench:ws": "vite-node benchmarks/ws/runWsBenchmark.ts",
+    "bench:webrtc": "vite-node benchmarks/webrtc/runWebrtcBenchmark.ts",
+    "signaling:dev": "vite-node server/signaling/devSignalingServer.ts",
     "test:browser": "playwright test"
   },
   "dependencies": {
