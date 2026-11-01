@@ -582,7 +582,7 @@ tasks:
     title: Make full-length 7200-tick benchmark runs executable and pin non-empty event fingerprints
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-fulllength
-    status: review
+    status: done
     priority: P0
     specification: docs/M2_BENCHMARK_SCENARIO_GATES.md
     depends_on: [M2-WS-PROTOTYPE, M2-WEBRTC-PROTOTYPE, M2-BENCHMARK-SCENARIO-IMPLEMENTATION]
@@ -599,7 +599,29 @@ tasks:
       - npm test, npm run build, git diff --check and agent task validation pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/102
     last_updated: "2026-11-02"
-    notes: "Designer follow-up from PR #98 and PR #100. Measured 2026-11-02 on main ac19645: npm run bench:webrtc -- --ticks=7200 completes and matches the in-memory reference (de544fcd / 5bb44bd6), but npm run bench:ws -- --ticks=7200 aborts at the 30000 ms guard while still at tick 1761. Full-length WS evidence therefore does not exist in the repository yet. Do not turn any of this into a transport decision."
+    notes: "PR #102 merged as 56fa1ab after independent Tester PASS: both 7200-tick runs repeatable and fingerprint-identical (state de544fcd, events 5bb44bd6 with 47 events), barrier attacks held, rejected input cannot leak into the next tick, manifests stay NOT_MEASURED, 230/230 tests. Known limits: the manifest validator checks shape and pacing pairing but not provenance, the 66 s manual guard is a wall-clock guard, and the 8-player scenario is not wired because the four-slot ingress rejects it."
+
+  - id: M2-NETWORK-ADDRESSABLE-WS-BENCHMARK
+    title: Split the WebSocket benchmark into server and client roles so runs can span machines
+    assigned_role: gameplay-session
+    status: ready
+    priority: P0
+    specification: docs/NETWORK_BENCHMARK_PLAN.md
+    depends_on: [M2-FULL-LENGTH-BENCHMARK]
+    scope:
+      - benchmarks/ws/
+      - tests/
+      - .github/AGENT_TASKS.yaml
+    acceptance:
+      - A server role binds an explicit host/port and waits for the configured player count before starting
+      - A client role connects to a remote URL and drives the same scripted fixture as the server role
+      - Loopback behaviour and every existing benchmark test stay unchanged by default
+      - Manifests record topology role and whether the run was loopback or network, without private addresses or secrets
+      - A two-process loopback integration test proves the split path reproduces the pinned 7200-tick fingerprints
+      - No latency, bandwidth, CPU or tick-pacing value is produced; every measurement field stays NOT_MEASURED
+      - npm test, npm run build, git diff --check and agent task validation pass
+    notes: "Designer finding 2026-11-02: benchmarks/ws/runWsBenchmark.ts hardcodes host 127.0.0.1 and port 0 and starts the server plus all four synthetic clients in one process, so the LAN/internet measurement required by the active goal cannot be executed by any environment the owner provides. This task is a prerequisite for milestone 5, not a measurement and not a transport decision."
+
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility

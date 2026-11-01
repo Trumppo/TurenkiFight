@@ -33,9 +33,9 @@ Omistajan päätökset 2026-11-01: **areenatyö lykätty** myöhemmäksi, **VIS0
 
 ## Aktiivinen tavoite 2026-11-02: M2-kuljetuspäätös evidence-gatella
 
-**Tila (päivitetty 2026-11-02, `main` `ac19645`):** Vaiheet 1–3 ovat valmiit ja yhdistetty: envelope-sopimus toteutettuna (PR #94, `ce8c5a1`), skenaariot ajettavina (PR #97, `dcf7f8d`), WS-arkkitehtuuri A (PR #98, `db3112b`) ja WebRTC-arkkitehtuuri B (PR #100, `ac19645`). Kaikki neljä ovat läpäisseet itsenäisen Tester-gaten. Verkkokuljetusta **ei ole valittu**, verkkopeliä ei ole toteutettu, eikä yhtään suorituskykylukua ole mitattu: jokainen manifesti on edelleen `NOT_MEASURED`.
+**Tila (päivitetty 2026-11-02, `main` `56fa1ab`):** Vaiheet 1–3 ovat valmiit ja yhdistetty: envelope-sopimus toteutettuna (PR #94, `ce8c5a1`), skenaariot ajettavina (PR #97, `dcf7f8d`), WS-arkkitehtuuri A (PR #98, `db3112b`), WebRTC-arkkitehtuuri B (PR #100, `ac19645`) ja täysimittainen 7200 tickin ajo molemmille (PR #102, `56fa1ab`). Kaikki viisi ovat läpäisseet itsenäisen Tester-gaten. Verkkokuljetusta **ei ole valittu**, verkkopeliä ei ole toteutettu, eikä yhtään suorituskykylukua ole mitattu: jokainen manifesti on edelleen `NOT_MEASURED`.
 
-Avoin korrektiusaukko ennen mittausvaihetta: `npm run bench:ws -- --ticks=7200` keskeytyy 30 sekunnin vartijan vuoksi tickissä 1761, joten täyden 120 sekunnin WS-ajon näyttöä ei ole repositoriossa. WebRTC-ajo vastaavalla pituudella valmistuu ja täsmää in-memory-referenssiin (`de544fcd…` / `5bb44bd6…`). Ero korjataan tehtävässä `M2-FULL-LENGTH-BENCHMARK`.
+Täysimittainen korrektiusnäyttö on nyt olemassa: sekä WS että WebRTC ajavat 7200 tickiä samalla fixtuurilla `7fddf007…` ja seedillä `12345` ja tuottavat identtiset sormenjäljet — lopputila `de544fcd7fae…` ja 47 tapahtuman järjestys `5bb44bd6fc11…` (ei `sha256("[]")`). Toistettavuus varmistettu kahdella ajolla per arkkitehtuuri. Tämä on korrektiusnäyttö, ei suorituskykymittaus.
 
 ### Tavoite
 
@@ -55,8 +55,8 @@ Tuota mitattu, toistettava näyttö WebSocket-palvelimen ja WebRTC-selainhostin 
 
 1. **Envelope toteutus maaliin.** ✅ Tehty: PR #94 (`ce8c5a1`). Tester antoi PASS WITH LIMITATIONS: 46/46 itsenäistä hyökkäystä ja 48 000 kutsun deterministinen fuzz, ei toteutusvirheitä, ei tilan mutaatiota hylkäyksissä. Testerin jatkohuomiot kirjattu (encode-puolen kokoraja korjattiin PR:ssä #97; merkkijonopohjainen virheluokittelu on yhä avoin).
 2. **Skenaariot toteutuskelpoisiksi.** ✅ Tehty: PR #97 (`dcf7f8d`). Kahdeksan skenaario-ID:tä, 4/8 pelaajan rosterit, impairment vain konfiguraationa, `FAIL-4-HOST-EXIT` ja `FAIL-4-RECONNECT` session-gaten kautta, baseline-sormenjäljet pinnattu.
-3. **Sama työkuorma molemmille arkkitehtuureille.** ✅ Tehty korrektiuden osalta: WS PR #98 (`db3112b`), WebRTC PR #100 (`ac19645`); molemmat Tester-gaten läpäisseet. Sama seed `12345` ja fixtuuri `7fddf007…`. **Avoin:** täysimittainen 7200 tickin WS-ajo ei vielä onnistu (tehtävä `M2-FULL-LENGTH-BENCHMARK`).
-4. **Mittaa.** ⛔ **Estetty:** vaatii omistajan hallitseman fyysisen LANin, internet-yhteyden ja TURN-palvelun. Agentit eivät voi tuottaa näitä lukuja eikä niitä saa keksiä.
+3. **Sama työkuorma molemmille arkkitehtuureille.** ✅ Tehty: WS PR #98 (`db3112b`), WebRTC PR #100 (`ac19645`), täysimittainen ajo PR #102 (`56fa1ab`). Molemmat arkkitehtuurit tuottavat 7200 tickillä identtiset sormenjäljet samasta seedistä ja fixtuurista; Tester toisti ajon kahdesti kummallakin.
+4. **Mittaa.** ⛔ **Estetty kahdesta syystä.** (a) Vaaditaan omistajan hallitsema fyysinen LAN, internet-yhteys ja TURN-palvelu. (b) WS-ajuri sitoo `127.0.0.1`-osoitteeseen ja käynnistää serverin sekä kaikki neljä synteettistä clienttiä samassa prosessissa, joten koneparit tai internet-ajo ei ole mahdollinen millään ympäristöllä ennen kuin ajuri jaetaan serveri- ja clienttirooleihin (tehtävä `M2-NETWORK-ADDRESSABLE-WS-BENCHMARK`). Agentit eivät voi tuottaa mittauslukuja eikä niitä saa keksiä.
 5. **Päätä evidence-gatella.** ⏳ Odottaa vaihetta 4. `benchmarks/RESULTS.md` ja `docs/adr/0001-network-topology.md` kirjoitetaan vasta mitatusta aineistosta.
 6. **Siivoa.** ⏳ Vanhentuneet paikalliset työpuut poistetaan, kun niiden sisältö on todistetusti `main`issa.
 
@@ -81,6 +81,7 @@ Tuota mitattu, toistettava näyttö WebSocket-palvelimen ja WebRTC-selainhostin 
 - Session envelope suojaa vain muodon ja omistajuuden; se ei ole autentikointi, salaus eikä DoS-suoja. Transport adapterin on todennettava connection ID.
 - Fyysistä gamepad-laitteistoa ei ole varmennettu; testit käyttävät simuloituja ohjaimia.
 - Playwright-sarja on kuormaherkkä (120 s harness aikakatkaisi kerran rinnakkaisajossa); flakeä seurataan.
+- WS-manifestin validaattori tarkistaa muodon ja `tickMode`/`pacing`-parin, ei provenanssia: käsin muokattu manifesti voisi väittää reaaliaikapacingia. Estävä kerros on regressiotesti, joka ajaa prosessin itse (Tester, PR #102).
 - Selaintuki WebRTC:lle, TURN-kustannukset ja CGNAT käyttäytyminen ovat avoimia, kunnes mitataan.
 - VIS05-02/VIS05-03 ja areenatyö on tarkoituksella siirretty myöhemmäksi; älä avaa niitä ilman omistajan päätöstä.
 
