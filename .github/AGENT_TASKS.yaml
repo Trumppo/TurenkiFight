@@ -238,7 +238,7 @@ tasks:
   - id: M2-VIS-ARENA-ARCH
     title: Introduce typed presentation-only arena manifest after concept approval
     assigned_role: graphics-session
-    status: backlog
+    status: ready
     priority: P2
     specification: docs/visual/NEXT_ARENA_CONCEPT.md
     depends_on: [M2-VIS-ARENA-01, M1-5-VIS-05]
@@ -248,8 +248,12 @@ tasks:
     acceptance:
       - Preserve classic and retro station defaults and screenshots
       - Resolve arena assets without simulation or input changes
+      - Implement the owner-selected Ravintola Mesku as a second arena on the 320x180 retro grid with the concept palette
+      - Keep the station as the default arena and preserve its classic and retro screenshots unchanged
+      - Verify four-fighter silhouette readability and HUD contrast at 640x360, 1280x720, 1920x1080 and 390x844
       - Unit tests and browser CI pass
     last_updated: "2026-10-31"
+    last_updated: "2026-11-02"
     notes: "Owner deferred new arena selection and implementation on 2026-11-01; revisit after M2 networking gates. Concept PR #70 remains the reference."
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
@@ -847,6 +851,7 @@ tasks:
       - Add targeted browser visual regression and obtain Tester retest
     last_updated: "2026-11-02"
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/112
+    last_updated: "2026-11-02"
     last_updated: "2026-11-02"
     notes: "Deferred to Milestone 7 polish alongside M1-5-RESPONSIVE-VISUAL-REVIEW. Do not start before Tester publishes actionable findings."
 

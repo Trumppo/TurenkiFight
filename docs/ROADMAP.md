@@ -108,8 +108,8 @@
 
 **Status: ACTIVE (owner selection 2026-11-02).** Scope for this goal is the deferred M1.5 readability work plus the arena decision; simulation, determinism and gameplay rules stay unchanged.
 
-- [ ] VIS05-02 / VIS05-03: reproduce and measure the desktop scaling and mobile legibility findings, then fix only confirmed defects (Tester review first, Graphics fix second, owner visual acceptance last)
-- [ ] Arena: owner selects a concept from [NEXT_ARENA_CONCEPT.md](visual/NEXT_ARENA_CONCEPT.md) (concept-only PR #70), then a typed presentation-only arena manifest is implemented
+- [x] VIS05-02 / VIS05-03: measured (`docs/visual/M1_5_VIS_05_REVIEW_2026-11-02.md`), fixed with an integer 2× option and a responsive external HUD (PR #112), Tester re-checked, **owner accepted visually on 2026-11-02**
+- [ ] Arena: **owner selected Ravintola Mesku on 2026-11-02**; implement the typed presentation-only arena manifest with the station as the first manifest, then Mesku as the second arena
 - [ ] Online test harness so a remote agent and this machine can play the same real match: server mode, headless bot, served browser client, network metrics ([plan](M7_ONLINE_TEST_HARNESS.md))
 - [ ] Sound, hit feedback and balancing (optional for this goal; needs a separate owner request)
 - [ ] Add Last Man Standing and Deathmatch as independent modes
