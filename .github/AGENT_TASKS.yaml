@@ -502,6 +502,26 @@ tasks:
     last_updated: "2026-10-31"
     notes: "Independent post-merge QA PASS on main b4fa0a0 (2026-11-01): fixture 7fddf007..., final state de544fcd..., ordered events 5bb44bd6... reproducible across separate runs; manifest and adapter negative cases rejected; no sockets, no measured network claims, no gameplay changes. Scope is correctness only, not transport performance."
 
+  - id: M2-BENCHMARK-SCENARIO-IMPLEMENTATION
+    title: Implement executable benchmark scenarios and fail-closed envelope encoding
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261102-scenarios
+    status: review
+    priority: P1
+    specification: docs/M2_BENCHMARK_SCENARIO_GATES.md
+    depends_on: [M2-BENCHMARK-HARNESS-IMPLEMENTATION, M2-ENVELOPE-IMPLEMENTATION, M2-BENCHMARK-SCENARIO-PLAN]
+    scope: [benchmarks/, src/game/session/, tests/, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Executable 4- and 8-player fixtures declare input and snapshot rates and treat impairment as configuration metadata only
+      - Host-exit and reconnect scenarios run through the existing session envelope gateway with documented observable outcomes
+      - Deterministic bounded 7200-tick replays and NOT_MEASURED manifests; no invented performance numbers
+      - encodeClientEnvelope fails closed above the documented byte cap with a regression test; cap unchanged
+      - Focused and full tests, build, diff check and agent task validation pass
+    last_updated: "2026-11-02"
+    branch: feature/m2-benchmark-scenarios
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/97
+    notes: "PR URL to be filled when the owner opens the PR. No sockets, measured results or transport decision. Impairment is metadata only. Eight-player final state uses a harness-local digest because the v1 snapshot codec caps four fighters; the cap is unchanged. Optional less-string-dependent gateway error classification was not changed."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
