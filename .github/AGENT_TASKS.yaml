@@ -581,7 +581,8 @@ tasks:
   - id: M2-FULL-LENGTH-BENCHMARK
     title: Make full-length 7200-tick benchmark runs executable and pin non-empty event fingerprints
     assigned_role: gameplay-session
-    status: ready
+    session_id: gameplay-session-20261102-fulllength
+    status: review
     priority: P0
     specification: docs/M2_BENCHMARK_SCENARIO_GATES.md
     depends_on: [M2-WS-PROTOTYPE, M2-WEBRTC-PROTOTYPE, M2-BENCHMARK-SCENARIO-IMPLEMENTATION]
@@ -596,6 +597,8 @@ tasks:
       - Fast and real-time tick modes are labelled honestly; no latency, bandwidth, CPU or tick-pacing value is invented
       - Docs state which mode approximates real-time pacing and which exists only for deterministic correctness runs
       - npm test, npm run build, git diff --check and agent task validation pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/102
+    last_updated: "2026-11-02"
     notes: "Designer follow-up from PR #98 and PR #100. Measured 2026-11-02 on main ac19645: npm run bench:webrtc -- --ticks=7200 completes and matches the in-memory reference (de544fcd / 5bb44bd6), but npm run bench:ws -- --ticks=7200 aborts at the 30000 ms guard while still at tick 1761. Full-length WS evidence therefore does not exist in the repository yet. Do not turn any of this into a transport decision."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
