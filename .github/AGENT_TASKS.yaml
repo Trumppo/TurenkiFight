@@ -655,7 +655,7 @@ tasks:
     title: Measure codec bytes, tick duration, snapshot cost and process resources on one machine
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-measure
-    status: review
+    status: done
     priority: P0
     specification: docs/NETWORK_BENCHMARK_PLAN.md
     depends_on: [M2-NETWORK-ADDRESSABLE-WS-BENCHMARK, M2-FULL-LENGTH-BENCHMARK]
@@ -675,12 +675,13 @@ tasks:
       - npm test, npm run build, git diff --check and agent task validation pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/107
     last_updated: "2026-11-02"
-    notes: "Owner approved 2026-11-02 that the transport decision is based on literature plus single-machine measurements, weighted toward low latency and smooth motion. These numbers are honest local facts, not network evidence. A measurement is only reported when the command that produced it is committed."
+    notes: "PR #107 merged as 09834c7 after independent Tester PASS WITH LIMITATIONS (TESTER-107a fixed: fabricated event-loop distributions and implausible sample counts are now rejected, and the floor-dominated p50 carries an explicit interpretation note). Measured: input 202.0 B/tick per client (12 122 B/s), snapshots 1 264.7 B and 24 434 B/s per client at 20 Hz, tick p50 1.7-1.9 / p95 4.4-4.5 / p99 6.8-8.4 us across two runs, 7200 ticks in 29.6-32.0 ms, peak RSS 118.2-118.8 MiB. No network field is measured; a coherently edited manifest cannot be distinguished from a real run, so raw samples must be archived if stronger evidence is ever needed."
 
   - id: M2-TRANSPORT-DECISION-ADR
     title: Write the transport decision ADR from sources and single-machine measurements
     assigned_role: planning-session
-    status: backlog
+    session_id: planning-session-20261102-adr
+    status: done
     priority: P0
     specification: docs/NETWORK_BENCHMARK_PLAN.md
     depends_on: [M2-SINGLE-MACHINE-MEASUREMENTS]
@@ -698,7 +699,9 @@ tasks:
       - Reconsideration criteria are explicit and measurable
       - benchmarks/RESULTS.md publishes the local numbers without presenting them as network results
       - The owner approves the selection before it is marked decided
-    notes: "Owner decision 2026-11-02 changed the milestone 5 gate: no network runs required; decision basis is literature plus single-machine measurements. Promote to ready once M2-SINGLE-MACHINE-MEASUREMENTS is merged. This task must not claim measured network behaviour, and must not present a preference as evidence."
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/108
+    last_updated: "2026-11-02"
+    notes: "PR #108 merged after the owner approved ADR 0001 on 2026-11-02: architecture A, central authoritative WebSocket server. An independent audit found stale figures taken from superseded result files; they were corrected against the committed manifests (tick p99 6.8-8.4 us, peak RSS 118.2-118.8 MiB, downstream 0.2 Mbit/s per client and 0.8 Mbit/s server) before approval. Architecture B stays as an evaluated alternative; WebTransport is the leading reconsideration candidate. Milestone 5 acceptance as a whole is still a separate owner action."
 
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
