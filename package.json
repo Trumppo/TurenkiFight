@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "serve:match": "vite-node server/ws/serveMatch.ts",
+    "bot": "vite-node benchmarks/bot/cli.ts",
     "bench:ws": "vite-node benchmarks/ws/runWsBenchmark.ts",
     "bench:webrtc": "vite-node benchmarks/webrtc/runWebrtcBenchmark.ts",
     "measure:local": "vite-node benchmarks/local/runLocalMeasurements.ts",

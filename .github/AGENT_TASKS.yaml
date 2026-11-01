@@ -708,7 +708,7 @@ tasks:
     title: Serve a real authoritative match over WebSocket instead of the benchmark fixture driver
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-online-server
-    status: review
+    status: done
     priority: P0
     specification: docs/M7_ONLINE_TEST_HARNESS.md
     depends_on: [M2-WS-PROTOTYPE]
@@ -726,12 +726,13 @@ tasks:
       - Simulation rules, protocol semantics and presentation are unchanged; npm test, npm run build and git diff --check pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/111
     last_updated: "2026-11-02"
-    notes: "First slice of the owner-requested online test harness (2026-11-02). It exists so a human browser and a remote agent can play the same match. No TLS, authentication or rate limiting is implied."
+    notes: "PR #111 merged as 7b994dc after independent Tester PASS WITH LIMITATIONS: 5/5 focused tests, 259/259 full suite, four-client real match with snapshots at ~46-47 ms, fifth connection closed 1008 without disturbing ticks, clean quit in ~143 ms, no fixture or manifest leakage, benchmark suites unaffected. Designer also verified a wildcard 0.0.0.0 bind reachable through the LAN address. Known limits: SIGINT not exercised on Windows spawning, no multi-host LAN test yet, no TLS/auth/rate limiting, no metrics."
 
   - id: M7-BOT-CLIENT
     title: Add a headless bot client that fills player slots over the network and records metrics
     assigned_role: gameplay-session
-    status: backlog
+    session_id: gameplay-session-20261102-bot
+    status: review
     priority: P0
     specification: docs/M7_ONLINE_TEST_HARNESS.md
     depends_on: [M7-ONLINE-SERVER-MODE]
@@ -748,6 +749,8 @@ tasks:
       - Two-process loopback tests prove a bot fills the roster and reproduces the pinned session fingerprints
       - "No invented network values: fields that were not measured are absent or NOT_MEASURED"
       - npm test, npm run build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/113
+    last_updated: "2026-11-02"
     notes: "Recommended first way for a remote agent to play: no browser, no GPU, real network path. A Playwright bot can reuse the same server later."
 
   - id: M7-ONLINE-BROWSER-CLIENT
@@ -814,7 +817,7 @@ tasks:
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
     session_id: tester-session-20261102-vis05
-    status: review
+    status: done
     priority: P1
     specification: docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md
     depends_on: [M1-5-VIS-04]
@@ -827,13 +830,13 @@ tasks:
       - "Quantify each finding: unused viewport area, rendered HUD pixel size, integer scale factor and canvas bounds"
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/110
     last_updated: "2026-11-02"
-    notes: "Activated 2026-11-02: the owner selected Milestone 7 polish as the next long-term goal. Deferred by the owner on 2026-11-01 to Milestone 7 polish."
+    notes: "PR #110 merged as bbd022f with the measured review. VIS05-02 confirmed as a design decision: 1920x1080 uses 25% of the viewport at a fractional 1.5 scale, 75% unused, HUD 25-27.5 px and legible; a 2x integer scale would fit. VIS05-03 confirmed at measurement level: 390x844 renders at 0.559x with 9.3-10.3 px HUD text; physical device unverified. Owner decisions 2026-11-02: integer 2x option and responsive external HUD."
 
   - id: M1-5-RESPONSIVE-VISUAL-FIX
     title: Remediate confirmed desktop scaling or mobile HUD readability defects
     assigned_role: graphics-session
     session_id: graphics-session-20261102-visfix
-    status: review
+    status: done
     priority: P1
     specification: docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md
     depends_on: [M1-5-RESPONSIVE-VISUAL-REVIEW]
