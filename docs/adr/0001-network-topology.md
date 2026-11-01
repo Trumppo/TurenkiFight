@@ -31,14 +31,14 @@ discarded. Full manifests and summaries are committed under `benchmarks/results/
 | Snapshot, 20 Hz, canonical / server message | `1 221.7 B` / `1 264.7 B` |
 | Downstream per client at 20 Hz | `24 434 B/s` |
 | Downstream server total at 20 Hz (4 clients) | `97 735 B/s` |
-| Simulation tick duration | p50 `1.70 µs`, p95 `4.50 µs`, p99 `7.40 µs` |
-| Snapshot codec at 20 Hz | encode p50 `17.8 µs` / p95 `30.8 µs`; decode p50 `9.2 µs` / p95 `18.8 µs` |
-| Process | ~`29 ms` wall for 7200 ticks, peak RSS `117.8 MiB` (process lifetime) |
+| Simulation tick duration (run 1 / run 2) | p50 `1.7` / `1.9 µs`, p95 `4.4` / `4.5 µs`, p99 `6.8` / `8.4 µs` |
+| Snapshot codec at 20 Hz (run 1 / run 2) | encode p50 `17.7` / `17.7 µs`, p95 `29.3` / `28.5 µs`; decode p50 `9.2` / `8.9 µs`, p95 `17.9` / `17.1 µs` |
+| Process (run 1 / run 2) | wall `29.6` / `32.0 ms` for 7200 ticks; peak RSS `118.2` / `118.8 MiB` (process lifetime) |
 
 Interpretation: the simulation and codecs are not the constraint at this scale. Bandwidth is small:
-about 0.1 Mbit/s downstream per client at 20 Hz, 0.4 Mbit/s for a four-client server. Nothing here
-distinguishes the transports; everything distinguishing happens on the network, which we did not
-measure.
+about 0.2 Mbit/s downstream per client at 20 Hz (`24 434 B/s`), about 0.8 Mbit/s for a four-client
+server (`97 735 B/s`). Nothing here distinguishes the transports; everything distinguishing happens
+on the network, which we did not measure.
 
 ## What the sources say
 
@@ -57,7 +57,8 @@ Full citations and exact scope are in [M2_TRANSPORT_EVIDENCE_REVIEW.md](../M2_TR
   their timers stop (Chrome Page Lifecycle API), so a host that switches tabs ends the authoritative
   loop while clients keep sending. Host departure already ends the match in our prototype, with no
   migration.
-- Browser support is not a blocker for DataChannels (MDN, Baseline since January 2020).
+- Browser support is not a blocker for DataChannels: MDN lists the interface as Baseline, widely
+  available (accessed 2026-11-02).
 
 ## Decision
 
@@ -71,8 +72,9 @@ Rationale, in order:
    produce hard stalls or a dead match, which is a worse outcome for "smooth motion" than TCP
    head-of-line blocking at our payload sizes. A at least degrades gradually.
 2. **The measured workload leaves little room for TCP to hurt.** ~12 kB/s upstream per client and
-   ~24 kB/s downstream at 20 Hz is a trivial load. A retransmit costs roughly one RTT on one stream;
-   with 1.2 kB snapshots that is a short delay, not congestion collapse.
+   ~24 kB/s downstream at 20 Hz is a trivial load. A retransmit costs at least one RTT plus the
+   retransmission itself on that stream; with 1.2 kB snapshots that is a short delay, not congestion
+   collapse.
 3. **B's latency advantage is not free or currently realised.** It needs an unreliable, unordered
    channel *and* redundant input transmission, and neither is implemented or measured. Choosing B
    now would mean adopting an unbuilt, unmeasured input policy on the strength of an unmeasured

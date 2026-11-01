@@ -675,7 +675,7 @@ tasks:
       - npm test, npm run build, git diff --check and agent task validation pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/107
     last_updated: "2026-11-02"
-    notes: "PR #107 merged as 09834c7 after independent Tester PASS WITH LIMITATIONS (TESTER-107a fixed: fabricated event-loop distributions and implausible sample counts are now rejected, and the floor-dominated p50 carries an explicit interpretation note). Measured: input 202.0 B/tick per client (12 122 B/s), snapshots 1 264.7 B and 24 434 B/s per client at 20 Hz, tick p50 1.70 / p95 4.50 / p99 7.40 us, 7200 ticks in ~29 ms, peak RSS 117.8 MiB. No network field is measured; a coherently edited manifest cannot be distinguished from a real run, so raw samples must be archived if stronger evidence is ever needed."
+    notes: "PR #107 merged as 09834c7 after independent Tester PASS WITH LIMITATIONS (TESTER-107a fixed: fabricated event-loop distributions and implausible sample counts are now rejected, and the floor-dominated p50 carries an explicit interpretation note). Measured: input 202.0 B/tick per client (12 122 B/s), snapshots 1 264.7 B and 24 434 B/s per client at 20 Hz, tick p50 1.7-1.9 / p95 4.4-4.5 / p99 6.8-8.4 us across two runs, 7200 ticks in 29.6-32.0 ms, peak RSS 118.2-118.8 MiB. No network field is measured; a coherently edited manifest cannot be distinguished from a real run, so raw samples must be archived if stronger evidence is ever needed."
 
   - id: M2-TRANSPORT-DECISION-ADR
     title: Write the transport decision ADR from sources and single-machine measurements
