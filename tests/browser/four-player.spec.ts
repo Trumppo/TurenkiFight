@@ -36,16 +36,23 @@ test('four local fighters can join through simulated gamepads', async ({ page })
     const game = (window as typeof window & {
       __turenkiGame?: { scene: { getScene: (key: string) => {
         state: { phase: string; fighters: { id: string }[] };
-        playerHud: Map<string, { text: string }>;
-        hudTimer: { text: string };
         gamepadSlots: Map<number, string>;
       } } }
     }).__turenkiGame!;
     const scene = game.scene.getScene('StationScene');
     return {
       phase: scene.state.phase,
-      timer: scene.hudTimer.text,
-      panels: scene.state.fighters.map(f => scene.playerHud.get(f.id)?.text),
+      timer: document.getElementById('match-timer')?.textContent,
+      panels: scene.state.fighters.map(f => {
+        const card = document.querySelector<HTMLElement>(`.hud-player[data-player="${f.id}"]`)!;
+        return {
+          id: f.id,
+          name: card.querySelector('.hud-name')?.textContent,
+          score: card.querySelector('.hud-score')?.textContent,
+          health: card.querySelector('.hud-health')?.textContent,
+          label: card.getAttribute('aria-label'),
+        };
+      }),
       pads: [...scene.gamepadSlots.values()],
     };
   });
@@ -53,8 +60,8 @@ test('four local fighters can join through simulated gamepads', async ({ page })
   expect(hud.timer).toBe('02:00');
   expect(hud.panels).toHaveLength(4);
   for (const [i, panel] of hud.panels.entries()) {
-    expect(panel).toContain(`P${i + 1} HP 100`);
-    expect(panel).toContain('0');
+    const id = `P${i + 1}`;
+    expect(panel).toEqual({ id, name: id, score: '0', health: 'HP 100', label: `${id}, score 0, health 100` });
   }
   expect(hud.pads).toEqual(['P3', 'P4']);
   await page.keyboard.down('Enter');
@@ -73,8 +80,12 @@ test('four local fighters can join through simulated gamepads', async ({ page })
     for (let i = 0; i < simulation.COUNTDOWN_TICKS + simulation.MATCH_TICKS; i++) state = simulation.step(state, []);
     scene.state = state;
     scene.drawFighters();
-    return { phase: state.phase, remaining: state.remainingTicks, roster: state.fighters.length };
+    return { phase: state.phase, remaining: state.remainingTicks, roster: state.fighters.length,
+      timer: document.getElementById('match-timer')?.textContent,
+      status: document.getElementById('match-status')?.textContent };
   });
-  expect(result).toEqual({ phase: 'results', remaining: 0, roster: 4 });
+  expect(result).toMatchObject({ phase: 'results', remaining: 0, roster: 4, timer: '00:00' });
+  expect(result.status).toContain('RESULTS');
+  expect(result.status).toContain('ENTER: REMATCH');
   expect(errors).toEqual([]);
 });
