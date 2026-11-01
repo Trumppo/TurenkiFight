@@ -655,7 +655,7 @@ tasks:
     title: Measure codec bytes, tick duration, snapshot cost and process resources on one machine
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-measure
-    status: review
+    status: done
     priority: P0
     specification: docs/NETWORK_BENCHMARK_PLAN.md
     depends_on: [M2-NETWORK-ADDRESSABLE-WS-BENCHMARK, M2-FULL-LENGTH-BENCHMARK]
@@ -675,7 +675,7 @@ tasks:
       - npm test, npm run build, git diff --check and agent task validation pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/107
     last_updated: "2026-11-02"
-    notes: "Owner approved 2026-11-02 that the transport decision is based on literature plus single-machine measurements, weighted toward low latency and smooth motion. These numbers are honest local facts, not network evidence. A measurement is only reported when the command that produced it is committed."
+    notes: "PR #107 merged as 09834c7 after independent Tester PASS WITH LIMITATIONS (TESTER-107a fixed: fabricated event-loop distributions and implausible sample counts are now rejected, and the floor-dominated p50 carries an explicit interpretation note). Measured: input 202.0 B/tick per client (12 122 B/s), snapshots 1 264.7 B and 24 434 B/s per client at 20 Hz, tick p50 1.70 / p95 4.50 / p99 7.40 us, 7200 ticks in ~29 ms, peak RSS 117.8 MiB. No network field is measured; a coherently edited manifest cannot be distinguished from a real run, so raw samples must be archived if stronger evidence is ever needed."
 
   - id: M2-TRANSPORT-DECISION-ADR
     title: Write the transport decision ADR from sources and single-machine measurements

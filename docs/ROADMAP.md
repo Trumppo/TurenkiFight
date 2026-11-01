@@ -4,7 +4,7 @@
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
-> **Current main checkpoint (2026-11-02, `main` at `cc44f2c`):** M1 and M1.5 accepted with documented limitations. M2 is implemented at the transport-neutral level: v1 protocol and authorized ingress (#41, #43), owner-approved session envelope with its implementation (#92, #94), executable benchmark scenarios (#97), and independent Tester gates on every slice. Both architecture prototypes exist and are correctness-tested: central WebSocket authority (#98, `server/ws/**`) and browser-host WebRTC with a signaling relay (#100, `server/signaling/**`, `src/game/networking/**`). **No transport is selected and no performance number exists** — every manifest field is `NOT_MEASURED`. Both architectures now complete 7200-tick runs with identical final-state and ordered-event fingerprints (`de544fcd…` / `5bb44bd6…`, 47 events) under the same fixture and seed; that is correctness evidence, not a measurement. PR #25 was closed unmerged and its content was integrated through #41/#43.
+> **Current main checkpoint (2026-11-02, `main` at `09834c7`):** M1 and M1.5 accepted with documented limitations. M2 is implemented at the transport-neutral level: v1 protocol and authorized ingress (#41, #43), owner-approved session envelope with its implementation (#92, #94), executable benchmark scenarios (#97), and independent Tester gates on every slice. Both architecture prototypes exist and are correctness-tested: central WebSocket authority (#98, `server/ws/**`) and browser-host WebRTC with a signaling relay (#100, `server/signaling/**`, `src/game/networking/**`). **No transport is selected and no performance number exists** — every manifest field is `NOT_MEASURED`. Both architectures now complete 7200-tick runs with identical final-state and ordered-event fingerprints (`de544fcd…` / `5bb44bd6…`, 47 events) under the same fixture and seed; that is correctness evidence, not a measurement. PR #25 was closed unmerged and its content was integrated through #41/#43.
 
 ## Milestone 0 – Project foundations
 
@@ -82,15 +82,16 @@
 
 ## Milestone 5 – Architecture decision (literature + single-machine evidence)
 
-**Status: READY TO START.** The owner changed the gate on 2026-11-02: no LAN, internet or TURN runs are required. The decision rests on documented sources plus single-machine measurements, weighted toward low latency and smooth motion.
+**Status: PROPOSAL AWAITING OWNER APPROVAL.** The owner changed the gate on 2026-11-02: no LAN, internet or TURN runs are required. The decision rests on documented sources plus single-machine measurements, weighted toward low latency and smooth motion.
 
-- [ ] Measure what does not need a network: bytes per input and snapshot per player, snapshot size at 10/20/30 Hz, tick duration p50/p95/p99 over 7200 ticks, snapshot encode cost, process CPU and memory
-- [ ] Review sources for transport behaviour (TCP head-of-line blocking, SCTP/UDP DataChannels), NAT/CGNAT and TURN cost, browser support and backgrounding
-- [ ] Write `docs/adr/0001-network-topology.md` with sources, measurements, weighting, open risks and reconsideration criteria
-- [ ] State explicitly in the ADR that no network environment was measured
-- [ ] Publish supporting numbers in `benchmarks/RESULTS.md`
+- [x] Measure what does not need a network: bytes per input and snapshot per player, snapshot size at 10/20/30 Hz, tick duration p50/p95/p99 over 7200 ticks, snapshot encode cost, process CPU and memory (PR #107)
+- [x] Review sources for transport behaviour (TCP head-of-line blocking, SCTP/UDP DataChannels), NAT/CGNAT and TURN cost, browser support and backgrounding (PR #106)
+- [x] Write `docs/adr/0001-network-topology.md` with sources, measurements, weighting, open risks and reconsideration criteria — **proposal: architecture A, central WebSocket authority**
+- [x] State explicitly in the ADR that no network environment was measured
+- [ ] Owner approves or changes the proposed selection
+- [ ] Publish the summary alongside the committed local results
 
-**Exit:** a documented, traceable choice; no predetermined winner. Network behaviour that was not measured is recorded as a risk, not as evidence. See [benchmark plan](NETWORK_BENCHMARK_PLAN.md).
+**Exit:** a documented, traceable choice approved by the owner; no predetermined winner. Network behaviour that was not measured is recorded as a risk, not as evidence. See [benchmark plan](NETWORK_BENCHMARK_PLAN.md) and [ADR 0001](adr/0001-network-topology.md).
 
 ## Milestone 6 – Multiplayer productization
 
