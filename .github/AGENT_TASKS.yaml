@@ -680,7 +680,8 @@ tasks:
   - id: M2-TRANSPORT-DECISION-ADR
     title: Write the transport decision ADR from sources and single-machine measurements
     assigned_role: planning-session
-    status: backlog
+    session_id: planning-session-20261102-adr
+    status: review
     priority: P0
     specification: docs/NETWORK_BENCHMARK_PLAN.md
     depends_on: [M2-SINGLE-MACHINE-MEASUREMENTS]
@@ -698,6 +699,8 @@ tasks:
       - Reconsideration criteria are explicit and measurable
       - benchmarks/RESULTS.md publishes the local numbers without presenting them as network results
       - The owner approves the selection before it is marked decided
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/108
+    last_updated: "2026-11-02"
     notes: "Owner decision 2026-11-02 changed the milestone 5 gate: no network runs required; decision basis is literature plus single-machine measurements. Promote to ready once M2-SINGLE-MACHINE-MEASUREMENTS is merged. This task must not claim measured network behaviour, and must not present a preference as evidence."
 
 
