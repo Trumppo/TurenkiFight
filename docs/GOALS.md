@@ -27,17 +27,17 @@ Saata projekti tilaan, jossa (1) M1.5:n hyväksyntä ja sen rajoitukset on kirja
 - M1 on hyväksytty rajoituksin 2026-10-30 ([M1 acceptance report](M1_ACCEPTANCE_REPORT.md)).
 - M1.5:n visuaalinen toteutus on `main`issa: VIS-01 #21, P2 #30, P3/P4 #36, HUD #39, asema #44, hit-flash #47, viewport-korjaukset #76/#83, retro-tuotantobuild #85. VIS-05:n automaattinen QA ja kuvakatselmus on tehty; VIS05-02 (3×-skaalaus) ja VIS05-03 (mobiilin luettavuus) jäävät kirjatuiksi jatkoseurannoiksi.
 - M2 v1 -kodeekit ja session ingress ovat `main`issa (#41, #43) ja riippumaton Tester-gate on annettu ([M2 independent tester report](M2_INDEPENDENT_TESTER_REPORT.md)). Session envelope on yhä **ehdotus** ([M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md)).
-- Benchmark harness -toteutus on avoin PR #79; se vaatii riippumattoman Tester-gaten ennen mergeä.
+- Benchmark harness on yhdistetty (PR #79, merge b3b0166) riippumattoman Tester-gaten PASSin jälkeen; M2-BENCHMARK-INDEPENDENT-QA on nyt ready.
 - WebSocket vs WebRTC -päätös pysyy **auki**, kunnes molemmat on mitattu ([NETWORK_BENCHMARK_PLAN.md](NETWORK_BENCHMARK_PLAN.md)).
 
 ### Työvaiheet
 
 1. **Dokumentaation reconciliation (tämä työpaketti).** Päivitä `docs/GOALS.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `.github/AGENT_TASKS.yaml` ja kirjaa M1.5:n hyväksyntä uuteen `docs/M1_5_ACCEPTANCE_REPORT.md`-tiedostoon. Poista vanhentuneet väitteet PR #25:stä aktiivisena porttina. Tämä ei muuta pelikoodia eikä hyväksy verkkoarkkitehtuuria.
 2. **M1.5-julkaisun varmistus.** Varmista, että tuotanto-Pages palvelee retrobuildia ja ettei konsolissa/verkossa ole virheitä. Tarvittaessa lisää pieni savutesti tai dokumentoitu manuaalinen tarkistus; älä muuta visuaalisuuntaa ilman uutta omistajapäätöstä.
-3. **Benchmark harness -gate.** Tester arvioi PR #79:n (fixture-toistettavuus, manifestin NOT_MEASURED-semantiikka, negatiiviset testit). PASSin jälkeen omistaja hyväksyy mergen. Tämän jälkeen `WP-M2-BENCHMARK-VALIDATION` voi käynnistyä.
+3. **Benchmark harness -gate: valmis.** Tester antoi PR #79:lle PASSin (fixture-toistettavuus, NOT_MEASURED-manifesti, negatiiviset testit) ja PR yhdistettiin (`b3b0166`). Seuraavaksi `M2-BENCHMARK-INDEPENDENT-QA` validoi yhdistetyn toteutuksen itsenäisesti.
 4. **Session envelope -päätös.** Omistaja päättää omistajuusmallin (connection→player), duplikaatti- ja myöhäisen inputin politiikan, tikkijakauman ja reconnect-käytännön. Vasta sen jälkeen `M2-ENVELOPE-IMPLEMENTATION` voidaan avata. Ei WS/WebRTC-valintaa tässä vaiheessa.
 5. **Kuljetusbenchmarkit.** Vasta kun envelope ja harness ovat valmiit, toteutetaan A (WebSocket) ja B (WebRTC) samoilla syötteillä ja mitataan ≥5 ajoa skenaariota kohden. Tulos kirjataan `benchmarks/RESULTS.md`:hen ja ADR:ään; valinta on erillinen omistajapäätös.
-6. **Underhåll (rinnalla):** CI:n riippuvuusvakaus (issue #23: `package-lock.json` + `npm ci`), `test-results/`/`artifacts/` `.gitignore`en, avoimien planning-PR:ien (#77, #80, #81, #82) siivous ja vanhentuneiden työpuiden poisto.
+6. **Underhåll (rinnalla):** CI:n riippuvuusvakaus ja `.gitignore` on tehty (PR #88); avoimet planning-PR:t on yhdistetty. Jäljellä: vanhentuneiden paikallisten työpuiden siivous ja tulevien benchmark-skenaarioiden valmistelu.
 
 ### Tiedostorajaus ja omistus
 
