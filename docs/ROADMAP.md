@@ -4,7 +4,7 @@
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
-> **Current main checkpoint (2026-11-01, `main` at `3ed2ca1`):** M1 accepted with limitations. **M1.5 accepted with documented limitations by the owner on 2026-11-01** — see [M1.5 acceptance report](M1_5_ACCEPTANCE_REPORT.md); VIS05-02 (3× scaling) and VIS05-03 (mobile readability) remain follow-ups. M2 v1 protocol and authorized session ingress are merged (#41, #43) and independently reviewed (PASS WITH LIMITATIONS). The session envelope is still a **proposal** and the deterministic benchmark harness is in review (PR #79). No online transport, room server or architecture selection exists; PR #25 was closed unmerged and its content was integrated through #41/#43.
+> **Current main checkpoint (2026-11-01, `main` at `3ed2ca1`):** M1 accepted with limitations. **M1.5 accepted with documented limitations by the owner on 2026-11-01** — see [M1.5 acceptance report](M1_5_ACCEPTANCE_REPORT.md); VIS05-02 (3× scaling) and VIS05-03 (mobile readability) remain follow-ups. M2 v1 protocol and authorized session ingress are merged (#41, #43) and independently reviewed (PASS WITH LIMITATIONS). The session envelope is still a **proposal**; the deterministic in-memory benchmark harness merged as PR #79, and CI dependencies are pinned with a committed lockfile (PR #88). No online transport, room server or architecture selection exists; PR #25 was closed unmerged and its content was integrated through #41/#43.
 
 ## Milestone 0 – Project foundations
 
@@ -47,7 +47,7 @@
 
 ## Milestone 2 – Shared multiplayer foundations (transport-neutral)
 
-**Status: PARTIALLY IMPLEMENTED.** Canonical v1 protocol and authorized ingress are merged in PR #41 with hardening in #43, and independently reviewed as PASS WITH LIMITATIONS ([report](M2_INDEPENDENT_TESTER_REPORT.md)). This is not a live network session. The session envelope remains a proposal ([M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md)) and the deterministic benchmark harness is in review (PR #79).
+**Status: PARTIALLY IMPLEMENTED.** Canonical v1 protocol and authorized ingress are merged in PR #41 with hardening in #43, and independently reviewed as PASS WITH LIMITATIONS ([report](M2_INDEPENDENT_TESTER_REPORT.md)). This is not a live network session. The session envelope remains a proposal ([M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md)); the deterministic in-memory benchmark harness merged in PR #79 and provides correctness fixtures only, not transport measurements.
 
 - [ ] Finalize versioned InputFrame, StateSnapshot, event and room protocol schemas (input/snapshot/event v1 implemented; room lifecycle and session envelope not implemented)
 - [ ] Separate simulation, authority, rendering, mode rules and transport adapters (simulation/ingress separation implemented; network adapters pending)
