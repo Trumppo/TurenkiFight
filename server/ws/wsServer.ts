@@ -34,6 +34,17 @@ export type WsServerEnvelopeEvent =
   | { connectionId: string; accepted: false; code: string; source: 'gateway' | 'room' };
 
 /**
+ * Read-only transport/lifecycle observation for an operator-facing server role.
+ * It is reported after the decision was made, so a throwing callback (or slow
+ * logging sink) can never accept, reject, reorder or delay a client envelope.
+ */
+export type WsServerEvent =
+  | { kind: 'connection-opened'; connectionId: string; connections: number }
+  | { kind: 'connection-closed'; connectionId: string; connections: number }
+  | { kind: 'connection-rejected'; reason: 'connection-limit' | 'server-closed' }
+  | { kind: 'phase'; phase: WsSessionPhase };
+
+/**
  * Thin Node WebSocket transport around `AuthoritativeWsSession`.
  *
  * The only trusted identity a socket gets is the ID allocated here; nothing in
@@ -55,13 +66,22 @@ export type WsServerConfig = {
   /** `interval` drives 60 Hz with timers; `manual` lets tests call stepOnce. */
   tickMode?: 'interval' | 'manual';
   /**
-   * Benchmark-only transport cap. Sockets beyond the cap are closed before they
-   * are registered, so an unexpected connection cannot join or delay a run.
+   * `auto` (default) begins the match once the roster is full. `manual` leaves
+   * the session in `starting` until the caller invokes `room.beginMatch()`, so
+   * an operator can hold the start. Neither mode changes roster or authority
+   * rules: `beginMatch()` still requires every configured slot to be claimed.
+   */
+  startMode?: 'auto' | 'manual';
+  /**
+   * Transport cap. Sockets beyond the cap are closed before they are registered,
+   * so an unexpected connection cannot join, occupy a slot or delay a run.
    * Undefined keeps the transport unbounded as before.
    */
   maxConnections?: number;
   /** Benchmark-only, read-only envelope observation; never affects semantics. */
   onClientEnvelope?: (event: WsServerEnvelopeEvent) => void;
+  /** Read-only connection/phase observation for an operator-facing server. */
+  onServerEvent?: (event: WsServerEvent) => void;
 };
 
 export type WsServerHandle = {
@@ -75,6 +95,8 @@ export type WsServerHandle = {
 const DEFAULT_START_DELAY_MS = 250;
 const DEFAULT_FIRST_TICK_DELAY_MS = 150;
 const CLOSE_FLUSH_MS = 100;
+/** Bounded wait for the graceful close handshake during shutdown. */
+const CLOSE_SETTLE_MS = 500;
 
 function nonnegativeInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
@@ -123,8 +145,14 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
   if (onClientEnvelope !== null && typeof onClientEnvelope !== 'function') {
     throw new Error('Invalid envelope observer');
   }
+  const onServerEvent = config.onServerEvent ?? null;
+  if (onServerEvent !== null && typeof onServerEvent !== 'function') {
+    throw new Error('Invalid server event observer');
+  }
   const tickMode = config.tickMode ?? 'interval';
   if (tickMode !== 'interval' && tickMode !== 'manual') throw new Error('Invalid tick mode');
+  const startMode = config.startMode ?? 'auto';
+  if (startMode !== 'auto' && startMode !== 'manual') throw new Error('Invalid start mode');
   const tickIntervalMs = 1000 / TICK_RATE;
 
   // A benchmark observer must never influence authority: a throwing callback is
@@ -138,6 +166,13 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
   };
   const observeResult = (connectionId: string, result: SessionEnvelopeResult): void => {
     notifyEnvelope(envelopeEvent(connectionId, result));
+  };
+  const notifyServerEvent = (event: WsServerEvent): void => {
+    try {
+      onServerEvent?.(event);
+    } catch (error) {
+      process.stderr.write(`ws prototype: server event observer failed: ${String(error)}\n`);
+    }
   };
 
   const sockets = new Map<string, WebSocket>();
@@ -196,7 +231,8 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
   }
 
   function scheduleStart(): void {
-    if (tickMode !== 'interval' || closed) return;
+    // Manual mode never starts on its own; the caller invokes `beginMatch()`.
+    if (tickMode !== 'interval' || closed || startMode !== 'auto') return;
     if (room.phase !== 'starting') return;
     startTimer = setTimeout(() => {
       startTimer = null;
@@ -235,6 +271,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
       }
     },
     onPhaseChange: (phase: WsSessionPhase) => {
+      notifyServerEvent({ kind: 'phase', phase });
       if (phase === 'lobby') {
         if (startTimer) clearTimeout(startTimer);
         startTimer = null;
@@ -274,13 +311,16 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
     process.stderr.write(`ws prototype: server error: ${error.message}\n`);
   });
 
-  wss.on('connection', socket => {    if (closed) {
+  wss.on('connection', socket => {
+    if (closed) {
+      notifyServerEvent({ kind: 'connection-rejected', reason: 'server-closed' });
       socket.close(1001, 'server closed');
       return;
     }
     if (maxConnections !== null && sockets.size >= maxConnections) {
       // Reject before registration so an unexpected peer cannot join, occupy a
       // slot or otherwise disturb the authoritative run.
+      notifyServerEvent({ kind: 'connection-rejected', reason: 'connection-limit' });
       socket.close(1008, 'connection limit reached');
       return;
     }
@@ -290,9 +330,11 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
       room.addConnection(connectionId);
     } catch {
       sockets.delete(connectionId);
+      notifyServerEvent({ kind: 'connection-rejected', reason: 'server-closed' });
       socket.close(1008, 'registration denied');
       return;
     }
+    notifyServerEvent({ kind: 'connection-opened', connectionId, connections: sockets.size });
     socket.on('message', (data: RawData) => {
       // Trusted context is the socket's allocated ID, never a payload field.
       const result = room.handleMessage(connectionId, rawBytes(data));
@@ -301,6 +343,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
     socket.on('close', () => {
       if (!sockets.delete(connectionId)) return;
       room.disconnect(connectionId);
+      notifyServerEvent({ kind: 'connection-closed', connectionId, connections: sockets.size });
     });
     socket.on('error', () => {
       try {
@@ -323,9 +366,38 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
       if (closed) return;
       closed = true;
       clearTimers();
+      // Wait for the graceful close handshake so every socket's `close` handler
+      // runs `room.disconnect`. Clearing the map first would strand the room in
+      // its last phase even though no connection remains.
+      const pending = [...sockets.values()];
+      if (pending.length > 0) {
+        await new Promise<void>(resolve => {
+          let remaining = pending.length;
+          const finish = (): void => {
+            clearTimeout(timer);
+            resolve();
+          };
+          const timer = setTimeout(finish, CLOSE_SETTLE_MS);
+          for (const socket of pending) {
+            socket.once('close', () => {
+              remaining -= 1;
+              if (remaining === 0) finish();
+            });
+          }
+          for (const socket of pending) {
+            try {
+              socket.close(1000, 'server stopping');
+            } catch {
+              remaining -= 1;
+              if (remaining === 0) finish();
+            }
+          }
+        });
+      }
+      // An unresponsive peer must not keep a stopped server alive.
       for (const socket of sockets.values()) {
         try {
-          socket.close(1000, 'server stopping');
+          socket.terminate();
         } catch {
           // Already closed.
         }

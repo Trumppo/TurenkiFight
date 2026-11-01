@@ -28,6 +28,28 @@ npm run dev
 
 Open the local URL printed by Vite. To check changes, run `npm test`, `npm run build`, and `npm run test:browser` (Playwright browsers may need installation via `npx playwright install chromium`). GitHub Pages publishes the static browser client; it is not a multiplayer server.
 
+## Serve a real authoritative match (LAN or VPN only)
+
+`npm run serve:match` hosts one real match over WebSocket for up to four players. It reuses the authoritative session and envelope gateway; it is not the benchmark fixture runner and writes no manifest.
+
+```bash
+npm run serve:match -- --host=127.0.0.1 --port=8787 --players=4 --snapshot-hz=20
+```
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `--host` | `127.0.0.1` | Bind address. Use `0.0.0.0` to accept LAN peers; a wildcard bind prints no URL. |
+| `--port` | `8787` | Bind port; `0` selects an ephemeral port. |
+| `--players` | `4` | Claimable slots `P1`..`PN`, 1-4. |
+| `--snapshot-hz` | `20` | Snapshot rate: 10, 20 or 30. Ticks stay at 60 Hz. |
+| `--start` | `auto` | `auto` starts when every slot is claimed; `manual` waits for an explicit `start` line on stdin. |
+
+The command prints exactly one machine-readable ready line on stdout (for example `{"kind":"match-server-ready","url":"ws://127.0.0.1:8787",...}`) and human-readable status on stderr. Type `start` to request an explicit start (the roster must still be full) and `quit` to stop. Ctrl+C/SIGINT and SIGTERM stop the 60 Hz loop and close every socket.
+
+A fifth connection is closed before registration with close code `1008`, so extra peers cannot join or disturb a running match. A mid-match disconnect revokes that connection's slots under the existing session rules; if the host disconnects, the session closes (`host-lost`) rather than migrating authority.
+
+**Security and latency:** `ws://` is unencrypted and has no authentication or rate limiting. Use it only on a LAN or over a VPN/SSH tunnel, never exposed to the open internet. The online client does not exist yet and prediction is out of scope for it, so expect input latency of roughly the round-trip time plus up to one snapshot interval (50 ms at 20 Hz) once it lands.
+
 ## Design and project status
 
 - [Game design](docs/GAME_DESIGN.md)

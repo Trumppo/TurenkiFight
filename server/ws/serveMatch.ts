@@ -1,0 +1,135 @@
+import {
+  formatMatchReadyLine,
+  parseServeMatchArgs,
+  serveMatchUsage,
+  startMatchServer,
+  type MatchServerHandle,
+  type MatchStartFailureReason,
+} from './matchServer';
+
+/**
+ * CLI entry for `npm run serve:match`.
+ *
+ * One machine-readable JSON ready line goes to stdout so another process can
+ * find the URL; everything a human reads goes to stderr. SIGINT/SIGTERM stop the
+ * 60 Hz tick timer and close every socket before the process exits.
+ *
+ * Run one match per process. After the match ends (`results`) or the host
+ * disconnects (`closed`), the session keeps its final state until the operator
+ * stops the server: no reconnect, rematch or host migration is implemented.
+ */
+
+const STATUS_PREFIX = 'match server: ';
+
+function errorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function startFailureMessage(reason: MatchStartFailureReason | undefined): string {
+  switch (reason) {
+    case 'roster-incomplete':
+      return 'not every configured player slot has joined yet';
+    case 'already-started':
+      return 'the match has already started';
+    case 'closed':
+      return 'the session is closed and cannot start';
+    case 'not-startable':
+      return 'the session cannot start in its current phase';
+    default:
+      return 'unknown reason';
+  }
+}
+
+export async function runServeMatch(argv: readonly string[]): Promise<void> {
+  const status = (line: string): void => {
+    process.stderr.write(`${STATUS_PREFIX}${line}\n`);
+  };
+
+  let options: ReturnType<typeof parseServeMatchArgs>;
+  try {
+    options = parseServeMatchArgs(argv);
+  } catch (error) {
+    process.stderr.write(`${STATUS_PREFIX}${errorText(error)}\n\n${serveMatchUsage()}\n`);
+    process.exitCode = 2;
+    return;
+  }
+  if (options.help) {
+    process.stdout.write(`${serveMatchUsage()}\n`);
+    return;
+  }
+
+  let handle: MatchServerHandle;
+  try {
+    handle = await startMatchServer({
+      host: options.host,
+      port: options.port,
+      playerIds: options.playerIds,
+      snapshotHz: options.snapshotHz,
+      startMode: options.startMode,
+      log: status,
+      onReady: info => {
+        // The only stdout output: exactly one line, no peer addresses or metrics.
+        process.stdout.write(`${formatMatchReadyLine(info)}\n`);
+        status(info.url === null
+          ? `bound ${info.host}:${info.port}; wildcard bind, connect with this machine's LAN address`
+          : `listening on ${info.url} for ${info.playerIds.join(', ')}`);
+      },
+    });
+  } catch (error) {
+    status(`could not bind ${options.host}:${options.port}: ${errorText(error)}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  let stdinAttached = false;
+  let closing = false;
+  const shutdown = (signal: string): void => {
+    if (closing) return;
+    closing = true;
+    status(`${signal} received; stopping timers and closing sockets`);
+    if (stdinAttached) {
+      process.stdin.removeAllListeners('data');
+      // Destroy, not pause: a resumed stdin handle otherwise keeps the process
+      // alive after the server has closed.
+      process.stdin.destroy();
+      stdinAttached = false;
+    }
+    void handle.close().then(
+      () => status('closed'),
+      error => {
+        status(`shutdown failed: ${errorText(error)}`);
+        process.exitCode = 1;
+      },
+    );
+  };
+
+  // stdin is the cross-platform control channel; SIGINT/SIGTERM do the same.
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (chunk: string) => {
+    for (const line of chunk.split(/\r?\n/)) {
+      const command = line.trim();
+      if (command === 'start') {
+        const result = handle.start();
+        status(result.started
+          ? 'explicit start accepted'
+          : `explicit start rejected: ${startFailureMessage(result.reason)}`);
+        continue;
+      }
+      if (command === 'quit' || command === 'stop') {
+        shutdown('stdin');
+        continue;
+      }
+      if (command.length > 0) status(`ignored stdin command: ${command}`);
+    }
+  });
+  process.stdin.resume();
+  stdinAttached = true;
+  status(options.startMode === 'manual'
+    ? 'manual start mode: type "start" and press Enter once the roster is full'
+    : 'type "quit" and press Enter to stop the server');
+
+  process.once('SIGINT', () => shutdown('SIGINT'));
+  process.once('SIGTERM', () => shutdown('SIGTERM'));
+}
+
+await runServeMatch(process.argv.slice(2));
