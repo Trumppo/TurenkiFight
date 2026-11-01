@@ -204,6 +204,7 @@ tasks:
     status: done
     priority: P1
     specification: docs/M1_5_VISUAL_UPGRADE.md
+    execution_brief: docs/visual/M1_5_TESTER_EXECUTION_BRIEF.md
     depends_on: [M1-5-VIS-03, M1-5-VIS-04]
     scope:
       - tests/browser/
@@ -484,7 +485,7 @@ tasks:
   - id: M2-BENCHMARK-INDEPENDENT-QA
     title: Independently validate deterministic benchmark fixture and manifest
     assigned_role: tester-session
-    status: blocked
+    status: ready
     priority: P1
     specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
     depends_on: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
@@ -532,7 +533,7 @@ tasks:
     title: Specify next benchmark scenario coverage and measurement gates
     assigned_role: planning-session
     session_id: designer-session-20261031-scenarios
-    status: review
+    status: done
     priority: P2
     specification: docs/M2_BENCHMARK_SCENARIO_GATES.md
     depends_on: [M2-BENCHMARK-HARNESS-DESIGN]
@@ -544,4 +545,21 @@ tasks:
     last_updated: "2026-10-31"
     branch: planning/agent-backlog-refresh-20261031
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/81
-    notes: "Scenario gates prepared in PR #81; pending CI and owner approval. No transport implementation or architecture selection."
+    notes: "PR #81 merged with scenario gates; no transport implementation or architecture selection. Follow-up work still requires separate approval."
+
+  - id: M2-AGENT-HANDOFF-GATES
+    title: Reconcile current M1.5 and M2 agent handoff gates
+    assigned_role: planning-session
+    session_id: planning-session-20261031-handoffs-current
+    status: review
+    priority: P0
+    depends_on: []
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/77
+    specification: docs/M2_AGENT_HANDOFF_2026-10-31.md
+    scope: [docs/M2_AGENT_HANDOFF_2026-10-31.md, docs/visual/M1_5_TESTER_EXECUTION_BRIEF.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Preserve current Tester VIS-05 status and owner approval gate
+      - Preserve Gameplay benchmark implementation status
+      - Keep M2 envelope implementation blocked pending owner approval
+    last_updated: "2026-10-31"
+    notes: "Current-main replacement for conflicted planning PR #72; no milestone accepted."
