@@ -360,7 +360,7 @@ tasks:
     title: Implement transport-neutral session envelope validation and adapter boundary
     assigned_role: gameplay-session
     session_id: gameplay-session-20261101-envelope
-    status: review
+    status: done
     priority: P0
     specification: docs/M2_SESSION_ENVELOPE_V1.md
     depends_on: [M2-SESSION-ENVELOPE-DESIGN, M2-SESSION-HARDENING]
@@ -372,7 +372,7 @@ tasks:
       - Independent Tester report and owner merge approval
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/94
     last_updated: "2026-11-02"
-    notes: "PR #94 implements the approved contract without sockets: strict canonical envelope codec, trusted binding gateway, multi-slot ownership, first-valid-wins, late/future tick denial, atomic submission, disconnect revocation. CI green; independent Tester gate and owner merge approval pending. Transport choice remains open."
+    notes: "PR #94 merged as ce8c5a1 after independent Tester PASS WITH LIMITATIONS: 46/46 adversarial checks and a 48,000-call fuzz with no implementation defects. Follow-ups: encode-side byte guard, less brittle error classification, header duplicate-key note. Transport choice remains open."
 
   - id: M2-SESSION-BOUNDARY-QA
     title: Verify session capacity, tick boundaries and canonical ordering
