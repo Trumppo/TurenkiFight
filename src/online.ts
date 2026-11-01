@@ -203,5 +203,9 @@ if (import.meta.env.DEV) {
       const card = document.querySelector<HTMLElement>('.hud-player');
       return card ? window.getComputedStyle(card).fontSize : '';
     },
+    audioDiagnostics(): { state: string; muted: boolean; volume: number } {
+      const scene = game.scene.getScene('OnlineScene') as OnlineScene | null;
+      return scene?.audioDiagnostics() ?? { state: 'not-ready', muted: false, volume: 0.55 };
+    },
   };
 }

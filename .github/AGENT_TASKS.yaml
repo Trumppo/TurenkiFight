@@ -761,7 +761,7 @@ tasks:
     title: Add a served browser client that joins a remote match and renders interpolated snapshots
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-online-client
-    status: review
+    status: done
     priority: P1
     specification: docs/M7_ONLINE_TEST_HARNESS.md
     depends_on: [M7-ONLINE-SERVER-MODE]
@@ -778,6 +778,7 @@ tasks:
       - A browser test proves the page joins, sends input and renders a snapshot against a local server, skipping with a reason when a socket cannot bind
       - npm test, npm run build, npm run test:browser and git diff --check pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/114
+    last_updated: "2026-11-02"
     last_updated: "2026-11-02"
     notes: "This is the page the owner uses on this machine. Prediction is out of scope; document the resulting input latency instead of hiding it."
 
@@ -823,7 +824,8 @@ tasks:
   - id: M7-AUDIO-CORE
     title: Add the audio engine, unlock path, buses and the cue bridge
     assigned_role: graphics-session
-    status: ready
+    session_id: graphics-session-20261102-audio
+    status: review
     priority: P1
     specification: docs/M7_AUDIO_PLAN.md
     depends_on: [M1-5-RESPONSIVE-VISUAL-FIX]
@@ -841,10 +843,12 @@ tasks:
       - Deterministic simulation fingerprints are unchanged with audio enabled or disabled
       - Unit tests use a fake AudioContext for scheduling, gain and mute persistence; the browser suite shows no audio errors
       - npm test, npm run build, npm run test:browser and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/117
+    last_updated: "2026-11-02"
     notes: "Owner requested background music and combat effects on 2026-11-02. Procedural synthesis is recommended so no licensed binary assets are needed; the cue interface stays asset-agnostic so recorded samples can replace voices later. Agents cannot judge whether it sounds good."
 
   - id: M7-AUDIO-MIX
-    title: Tune the mix and make every action audibly distinguishable
+    title: Replace placeholder cues with final samples and tune the mix
     assigned_role: graphics-session
     status: backlog
     priority: P2
@@ -859,7 +863,7 @@ tasks:
       - Default levels are conservative; the effects bus stays clearly below full scale to avoid fatigue
       - Repeated matches do not accumulate gain nodes or stray scheduled events
       - Unit tests cover cue selection and ducking transitions; no simulation change
-    notes: "Owner acceptance is a listening decision. This task exists so the first pass can be tuned rather than shipped as-is."
+    notes: "DEFERRED by owner clarification 2026-11-02: placeholders and the playback technology are enough for now; real samples and mixing come later. Do not start before the owner asks for it."
 
   - id: M7-AUDIO-ACCEPTANCE
     title: Verify audio wiring and produce an owner listening checklist
@@ -877,7 +881,7 @@ tasks:
       - Confirm simulation fingerprints are identical with audio on and off
       - "Provide an owner checklist: which actions to perform and what to listen for"
       - State explicitly that audibility and taste were not evaluated by the agent
-    notes: "Headless CI has no audio device. This gate proves wiring, not sound quality."
+    notes: "Headless CI has no audio device. This gate proves wiring, not sound quality. Deferred with M7-AUDIO-MIX: there is no point listening to placeholders unless the owner asks for an early check."
 
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW

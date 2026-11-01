@@ -7,6 +7,8 @@ import { createFighterTextures, fighterKey, type FighterPose } from './fighterSp
 import { createRetroP1Textures, RETRO_PREVIEW, RETRO_STATION_PATH } from './retroPrototype';
 import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
+import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
+import { CueBridge } from './audio/cueBridge';
 
 /**
  * Presentation-only scene for a remote authoritative match.
@@ -31,6 +33,8 @@ export class OnlineScene extends Phaser.Scene {
     status: HTMLElement;
     players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>;
   };
+  private audio?: AudioPresentation;
+  private audioBridge?: CueBridge;
 
   constructor(controller: OnlineMatchController, onFrame?: (now: number) => void) {
     super('OnlineScene');
@@ -59,15 +63,33 @@ export class OnlineScene extends Phaser.Scene {
     this.add.image(0, 0, VISUAL_ASSETS.station.backdrop.key).setOrigin(0, 0)
       .setDisplaySize(VIEWPORT.logicalWidth, VIEWPORT.logicalHeight).setDepth(-100);
     this.initDomHud();
+    this.audio = createAudioPresentation(audioControlsHost());
+    this.audioBridge = new CueBridge(cue => this.audio?.director.playCue(cue), true);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.audioBridge?.reset();
+      this.audio?.dispose();
+      this.audioBridge = undefined;
+      this.audio = undefined;
+    });
     this.renderHud(null);
   }
 
   update(_time: number, _delta: number): void {
     const now = this.controller.now();
     const state = this.controller.renderState(now);
+    if (state) {
+      this.audioBridge?.observe(state);
+      this.audio?.director.setMusicDucked(state.phase === 'results');
+    }
     this.drawFighters(state, now);
     this.renderHud(state);
     this.onFrame?.(now);
+  }
+
+  /** Read-only audio diagnostics used by browser QA; no simulation state is exposed. */
+  audioDiagnostics(): { state: string; muted: boolean; volume: number } {
+    const settings = this.audio?.director.settings;
+    return { state: this.audio?.director.contextState ?? 'not-created', muted: settings?.muted ?? false, volume: settings?.volume ?? 0.55 };
   }
 
   /** Test/debug hook; returns the interpolated positions actually drawn. */
