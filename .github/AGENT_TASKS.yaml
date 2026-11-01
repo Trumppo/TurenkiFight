@@ -732,7 +732,7 @@ tasks:
     title: Add a headless bot client that fills player slots over the network and records metrics
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-bot
-    status: review
+    status: done
     priority: P0
     specification: docs/M7_ONLINE_TEST_HARNESS.md
     depends_on: [M7-ONLINE-SERVER-MODE]
@@ -756,7 +756,7 @@ tasks:
   - id: M7-ONLINE-BROWSER-CLIENT
     title: Add a served browser client that joins a remote match and renders interpolated snapshots
     assigned_role: gameplay-session
-    status: backlog
+    status: ready
     priority: P1
     specification: docs/M7_ONLINE_TEST_HARNESS.md
     depends_on: [M7-ONLINE-SERVER-MODE]
