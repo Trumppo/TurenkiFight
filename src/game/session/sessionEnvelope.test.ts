@@ -1,15 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { PlayerInput } from '../simulation/types';
 import {
   CLIENT_SESSION_ENVELOPE_KINDS,
   MAX_SESSION_ENVELOPE_BYTES,
   SERVER_SESSION_ENVELOPE_KINDS,
   SessionEnvelopeError,
+  assertSessionEnvelopeSize,
   decodeClientEnvelope,
   encodeClientEnvelope,
   sessionEnvelopeByteLength,
   type InputEnvelope,
   type JoinRequestEnvelope,
+  type PingEnvelope,
 } from './sessionEnvelope';
 
 const controls = (playerId: string, moveX: -1 | 0 | 1 = 0): PlayerInput =>
@@ -134,6 +136,27 @@ describe('M2 session envelope codec', () => {
   it('rejects invalid UTF-8 bytes inside the size cap', () => {
     expect(errorCode(() => decodeClientEnvelope(new Uint8Array([0x7b, 0xff, 0x7d]))))
       .toBe('invalid-encoding');
+  });
+
+  it('fails closed when an encoded envelope exceeds the documented byte cap', () => {
+    const atCap = 'x'.repeat(MAX_SESSION_ENVELOPE_BYTES);
+    expect(assertSessionEnvelopeSize(atCap)).toBe(atCap);
+    expect(errorCode(() => assertSessionEnvelopeSize(atCap + 'x'))).toBe('oversized');
+    // Counted bytes, not UTF-16 code units: the cap is even, so one more
+    // two-byte character crosses it.
+    const multibyteAtCap = 'ä'.repeat(MAX_SESSION_ENVELOPE_BYTES / 2);
+    expect(assertSessionEnvelopeSize(multibyteAtCap)).toBe(multibyteAtCap);
+    expect(errorCode(() => assertSessionEnvelopeSize(multibyteAtCap + 'ä'))).toBe('oversized');
+
+    // The guard must live in the encode path, not only in the helper.
+    const envelope: PingEnvelope = { version: 1, kind: 'ping', sequence: 1 };
+    const spy = vi.spyOn(JSON, 'stringify').mockReturnValueOnce('y'.repeat(MAX_SESSION_ENVELOPE_BYTES + 1));
+    try {
+      expect(errorCode(() => encodeClientEnvelope(envelope))).toBe('oversized');
+    } finally {
+      spy.mockRestore();
+    }
+    expect(encodeClientEnvelope(envelope)).toBe('{"version":1,"kind":"ping","sequence":1}');
   });
 
   it('keeps the derived byte cap above the schema-maximal envelope', () => {

@@ -252,9 +252,22 @@ export function parseClientEnvelopeHeader(input: string | Uint8Array): ClientEnv
   return parseHeaderText(decodeText(input));
 }
 
+/**
+ * Fail-closed encode-side byte guard. The decoder already rejects oversized
+ * bytes before parsing; encoders apply the same cap so a future schema
+ * expansion (or a canonicalization rule that only adds bytes) cannot emit a
+ * message its own decoder would refuse. The cap value is unchanged.
+ */
+export function assertSessionEnvelopeSize(text: string): string {
+  if (sessionEnvelopeByteLength(text) > MAX_SESSION_ENVELOPE_BYTES) {
+    throw new SessionEnvelopeError('oversized', 'Session envelope size limit exceeded');
+  }
+  return text;
+}
+
 /** Canonical JSON with fixed field order and canonically sorted slot/frame lists. */
 export function encodeClientEnvelope(envelope: ClientSessionEnvelope): string {
-  return JSON.stringify(completeEnvelope(parseEnvelopeValue(envelope as unknown)));
+  return assertSessionEnvelopeSize(JSON.stringify(completeEnvelope(parseEnvelopeValue(envelope as unknown))));
 }
 
 /**
