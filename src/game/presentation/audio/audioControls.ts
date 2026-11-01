@@ -5,8 +5,8 @@ export type AudioPresentation = {
   dispose(): void;
 };
 
-/** Mount compact retro controls into the existing HUD toolbar. */
-export function mountAudioControls(toolbar: HTMLElement, director: AudioDirector): () => void {
+/** Mount compact retro controls in the page header, outside the playfield HUD. */
+export function mountAudioControls(host: HTMLElement, director: AudioDirector): () => void {
   const root = document.createElement('div');
   root.className = 'audio-controls';
   root.setAttribute('aria-label', 'Audio controls');
@@ -39,7 +39,7 @@ export function mountAudioControls(toolbar: HTMLElement, director: AudioDirector
   volume.addEventListener('input', onVolume);
   update();
   root.append(mute, volumeLabel, volume);
-  toolbar.append(root);
+  host.append(root);
 
   return () => {
     mute.removeEventListener('click', onMute);
@@ -48,9 +48,18 @@ export function mountAudioControls(toolbar: HTMLElement, director: AudioDirector
   };
 }
 
-export function createAudioPresentation(toolbar: HTMLElement | null): AudioPresentation {
+export function audioControlsHost(): HTMLElement | null {
+  // The full-screen integer 2x layout hides the page header; retain controls in
+  // its HUD toolbar while keeping the normal responsive layout independent.
+  if (document.body.classList.contains('integer-scale-2')) {
+    return document.querySelector('.hud-toolbar');
+  }
+  return document.querySelector('.page-header');
+}
+
+export function createAudioPresentation(host: HTMLElement | null): AudioPresentation {
   const director = new AudioDirector();
-  const unmount = toolbar ? mountAudioControls(toolbar, director) : () => undefined;
+  const unmount = host ? mountAudioControls(host, director) : () => undefined;
   return {
     director,
     dispose: () => { unmount(); director.dispose(); },

@@ -7,7 +7,7 @@ import { createFighterTextures, fighterKey, type FighterPose } from './fighterSp
 import { createRetroP1Textures, RETRO_PREVIEW, RETRO_STATION_PATH } from './retroPrototype';
 import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
-import { createAudioPresentation, type AudioPresentation } from './audio/audioControls';
+import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
 import { CueBridge } from './audio/cueBridge';
 
 /**
@@ -63,7 +63,7 @@ export class OnlineScene extends Phaser.Scene {
     this.add.image(0, 0, VISUAL_ASSETS.station.backdrop.key).setOrigin(0, 0)
       .setDisplaySize(VIEWPORT.logicalWidth, VIEWPORT.logicalHeight).setDepth(-100);
     this.initDomHud();
-    this.audio = createAudioPresentation(document.querySelector('.hud-toolbar'));
+    this.audio = createAudioPresentation(audioControlsHost());
     this.audioBridge = new CueBridge(cue => this.audio?.director.playCue(cue), true);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.audioBridge?.reset();

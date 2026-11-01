@@ -8,7 +8,7 @@ import { createRetroP1Textures, RETRO_PREVIEW, RETRO_STATION_PATH } from './retr
 import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
 import { keyboardPlayerInput } from '../input/keyboardMapping';
-import { createAudioPresentation, type AudioPresentation } from './audio/audioControls';
+import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
 import { CueBridge } from './audio/cueBridge';
 
 export class StationScene extends Phaser.Scene {
@@ -57,7 +57,7 @@ export class StationScene extends Phaser.Scene {
     // DOM HUD. It occupies the reserved scoreboard band on desktop and moves
     // above the playfield on narrow screens.
     this.initDomHud();
-    this.audio = createAudioPresentation(document.querySelector('.hud-toolbar'));
+    this.audio = createAudioPresentation(audioControlsHost());
     this.audioBridge = new CueBridge(cue => this.audio?.director.playCue(cue));
     this.audioBridge.observe(this.state);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
