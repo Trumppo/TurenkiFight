@@ -52,6 +52,7 @@ Tuota lähdekatsaukseen ja yhden koneen mittauksiin perustuva, jäljitettävä p
 - Skenaariogate on dokumentoitu ([M2_BENCHMARK_SCENARIO_GATES.md](M2_BENCHMARK_SCENARIO_GATES.md)) ja skenaariot ovat ajettavissa (PR #97); mittaussuunnitelma on [NETWORK_BENCHMARK_PLAN.md](NETWORK_BENCHMARK_PLAN.md).
 - Molemmat arkkitehtuuriprototyypit ovat `main`issa ja itsenäisesti testattuja: WS `server/ws/**` (PR #98), WebRTC `server/signaling/**` + `src/game/networking/**` (PR #100).
 - WS/WebRTC-valinta on **avoin** eikä sitä saa päätellä yhdestä mittarista.
+- Lähdeosa on valmisteltu: [M2_TRANSPORT_EVIDENCE_REVIEW.md](M2_TRANSPORT_EVIDENCE_REVIEW.md) listaa seitsemän primäärilähdettä, mitä ne osoittavat kummastakin arkkitehtuurista ja mitä ADR ei saa väittää.
 
 ### Työvaiheet
 
