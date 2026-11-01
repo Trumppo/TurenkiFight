@@ -8,9 +8,30 @@
   </head>
   <body>
     <main>
-      <h1>TurenkiFight</h1>
-      <p>Turengin rautatieasema · 2.5D arena prototype</p>
-      <div id="game" aria-label="TurenkiFight game canvas"></div>
+      <header class="page-header">
+        <h1>TurenkiFight</h1>
+        <p>Turengin rautatieasema · 2.5D arena prototype</p>
+      </header>
+      <div id="game" aria-label="TurenkiFight game canvas">
+        <section id="fight-hud" aria-label="Match HUD">
+          <div class="hud-toolbar">
+            <strong id="match-timer" aria-label="Match time">02:00</strong>
+            <span id="match-status" aria-live="polite">LOBBY P1:KEY · SHIFT/PAD SELECT: JOIN</span>
+            <label class="scale-control" for="display-scale">SCALE
+              <select id="display-scale" aria-label="Display scale">
+                <option value="fit">Fit</option>
+                <option value="2">2× integer</option>
+              </select>
+            </label>
+          </div>
+          <div id="player-hud" aria-label="Players and scores">
+            <div class="hud-player" data-player="P1"><strong class="hud-name">P1</strong><span class="hud-score" aria-label="Score">0</span><span class="hud-health">HP 100</span></div>
+            <div class="hud-player" data-player="P2"><strong class="hud-name">P2</strong><span class="hud-score" aria-label="Score">0</span><span class="hud-health">HP —</span></div>
+            <div class="hud-player" data-player="P3"><strong class="hud-name">P3</strong><span class="hud-score" aria-label="Score">0</span><span class="hud-health">HP —</span></div>
+            <div class="hud-player" data-player="P4"><strong class="hud-name">P4</strong><span class="hud-score" aria-label="Score">0</span><span class="hud-health">HP —</span></div>
+          </div>
+        </section>
+      </div>
       <details class="controls">
         <summary>Näppäinkartta – pelaajat 1 ja 2</summary>
         <table aria-label="Pelaajien näppäinkartta">

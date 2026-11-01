@@ -3,6 +3,19 @@ import { StationScene } from './game/presentation/StationScene';
 import './style.css';
 import { VIEWPORT } from './game/presentation/viewport';
 
+const displayScale = new URLSearchParams(window.location.search).get('scale') === '2' ? '2' : 'fit';
+if (displayScale === '2') document.body.classList.add('integer-scale-2');
+const scaleSelect = document.getElementById('display-scale') as HTMLSelectElement | null;
+if (scaleSelect) {
+  scaleSelect.value = displayScale;
+  scaleSelect.addEventListener('change', () => {
+    const next = new URL(window.location.href);
+    if (scaleSelect.value === '2') next.searchParams.set('scale', '2');
+    else next.searchParams.delete('scale');
+    window.location.assign(next);
+  });
+}
+
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',

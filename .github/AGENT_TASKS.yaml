@@ -832,7 +832,8 @@ tasks:
   - id: M1-5-RESPONSIVE-VISUAL-FIX
     title: Remediate confirmed desktop scaling or mobile HUD readability defects
     assigned_role: graphics-session
-    status: backlog
+    session_id: graphics-session-20261102-visfix
+    status: review
     priority: P1
     specification: docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md
     depends_on: [M1-5-RESPONSIVE-VISUAL-REVIEW]
@@ -841,6 +842,8 @@ tasks:
       - Address only Tester-confirmed reproducible findings and preserve 640x360 logical camera
       - Preserve fighter pose contracts, classic mode and deterministic gameplay
       - Add targeted browser visual regression and obtain Tester retest
+    last_updated: "2026-11-02"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/112
     last_updated: "2026-11-02"
     notes: "Deferred to Milestone 7 polish alongside M1-5-RESPONSIVE-VISUAL-REVIEW. Do not start before Tester publishes actionable findings."
 

@@ -37,22 +37,27 @@ test('station SVG loads and four-player HUD is visible after gamepad joins', asy
   await expect.poll(() => page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
     if (!game) return 0;
-    const scene = game.scene.getScene('StationScene') as { playerHud?: Map<string, unknown> };
-    return scene.playerHud?.size ?? 0;
+    const scene = game.scene.getScene('StationScene') as { state?: { fighters?: unknown[] } };
+    return scene.state?.fighters?.length ?? 0;
   })).toBe(4);
   const state = await page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame!;
     const scene = game.scene.getScene('StationScene') as {
       state: { fighters: { id: string }[] };
       textures: { exists: (key: string) => boolean };
-      playerHud: Map<string, { text: string }>;
     };
     return {
       players: scene.state.fighters.map(f => f.id),
       textures: ['P1', 'P2', 'P3', 'P4'].every(id =>
         ['idle', 'walk', 'punch', 'kick', 'jumpkick', 'hit', 'ko', 'respawn'].every(pose =>
           [0, 1, 2, 3].every(frame => scene.textures.exists(`fighter-${id}-${pose}-${frame}`)))),
-      hud: [...scene.playerHud.values()].map(label => label.text),
+      hud: scene.state.fighters.map(f => {
+        const card = document.querySelector<HTMLElement>(`.hud-player[data-player="${f.id}"]`)!;
+        return { id: card.querySelector('.hud-name')?.textContent,
+          score: card.querySelector('.hud-score')?.textContent,
+          health: card.querySelector('.hud-health')?.textContent,
+          label: card.getAttribute('aria-label') };
+      }),
       station: scene.textures.exists('station-backdrop'),
     };
   });
@@ -60,7 +65,9 @@ test('station SVG loads and four-player HUD is visible after gamepad joins', asy
   expect(state.textures).toBe(true);
   expect(state.station).toBe(true);
   expect(state.hud).toHaveLength(4);
-  expect(state.hud.every(text => text.includes('HP 100'))).toBe(true);
+  expect(state.hud).toEqual(['P1', 'P2', 'P3', 'P4'].map(id => ({
+    id, score: '0', health: 'HP 100', label: `${id}, score 0, health 100`,
+  })));
   expect(missing).toEqual([]);
   expect(errors).toEqual([]);
 });
@@ -126,20 +133,21 @@ test('HUD clock, score and hit/KO/respawn presentation follow authoritative stat
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame!;
     const scene = game.scene.getScene('StationScene') as {
       state: { fighters: Array<{ id: string; health: number; score: number; koTimer: number; protection: number; attackMove: string | null; z: number; x: number; y: number }>; remainingTicks: number; phase: string; tick: number };
-      playerHud: Map<string, { text: string }>;
-      hudTimer: { text: string };
       pose: (f: unknown, prev?: unknown) => string;
       drawFighters: () => void;
       fighterSprites: Map<string, { texture: { key: string } }>;
       hitFlash: Map<string, number>;
     };
     const f = scene.state.fighters[0];
+    scene.state.phase = 'fighting';
     f.health = 37;
     f.score = -2;
     scene.state.remainingTicks = 90 * 60;
     scene.drawFighters();
-    const hud = scene.playerHud.get(f.id)!.text;
-    const clock = scene.hudTimer.text;
+    const card = document.querySelector<HTMLElement>(`.hud-player[data-player="${f.id}"]`)!;
+    const hud = { score: card.querySelector('.hud-score')!.textContent,
+      health: card.querySelector('.hud-health')!.textContent, label: card.getAttribute('aria-label') };
+    const clock = document.getElementById('match-timer')!.textContent;
     // drawFighters() correctly starts a hit flash when health drops; isolate attack pose assertions.
     scene.hitFlash.delete(f.id);
     f.attackMove = 'punch';
@@ -150,23 +158,33 @@ test('HUD clock, score and hit/KO/respawn presentation follow authoritative stat
     const jumpkick = scene.pose(f);
     f.attackMove = null;
     f.koTimer = 10;
+    scene.drawFighters();
     const ko = scene.pose(f);
+    const koStatus = document.getElementById('match-status')!.textContent;
+    const koTexture = scene.fighterSprites.get(f.id)!.texture.key;
     f.koTimer = 0;
     f.protection = 10;
+    scene.drawFighters();
     const respawn = scene.pose(f);
+    const respawnStatus = document.getElementById('match-status')!.textContent;
+    const respawnTexture = scene.fighterSprites.get(f.id)!.texture.key;
     f.protection = 0;
     scene.hitFlash.set(f.id, scene.state.tick + 12);
     const hit = scene.pose(f, { x: f.x, y: f.y, health: 60 });
-    return { hud, clock, punch, kick, jumpkick, ko, respawn, hit };
+    return { hud, clock, punch, kick, jumpkick, ko, koStatus, koTexture,
+      respawn, respawnStatus, respawnTexture, hit };
   });
-  expect(result.hud).toContain('HP 37');
-  expect(result.hud).toContain('-2');
+  expect(result.hud).toEqual({ score: '-2', health: 'HP 37', label: 'P1, score -2, health 37' });
   expect(result.clock).toBe('01:30');
   expect(result.punch).toBe('punch');
   expect(result.kick).toBe('kick');
   expect(result.jumpkick).toBe('jumpkick');
   expect(result.ko).toBe('ko');
+  expect(result.koStatus).toContain('P1 KO');
+  expect(result.koTexture).toContain('fighter-P1-ko-');
   expect(result.respawn).toBe('respawn');
+  expect(result.respawnStatus).toBe('FIGHT');
+  expect(result.respawnTexture).toContain('fighter-P1-respawn-');
   // Explicitly assert the hit cue with an active flash, independent of earlier attack assertions.
   expect(result.hit).toBe('hit');
 });
