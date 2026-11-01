@@ -9,6 +9,26 @@ coordination:
   update_policy: "Update task state via PR or an explicitly authorized commit; avoid simultaneous edits to this file."
   merge_policy: "Never merge a PR without user approval."
   statuses: [backlog, ready, claimed, in_progress, review, blocked, done]
+  work_package_policy: "Prefer one PR per coherent work package (normally 2-5 related tasks), multiple commits on one branch; avoid PRs for individual fixes or interim task metadata. Never batch unrelated changes."
+  pr_body_policy: "Keep Task: <primary-task-id> for existing PR tracking; list additional tasks in the description until multi-task tracking is implemented."
+  ci_policy: "Run focused local checks during development; full required CI on PR. Never bypass mandatory checks or owner merge approval."
+# Optional work packages supplement existing task IDs; do not migrate historical tasks.
+# Legacy task validation and PR tracking still use tasks: and one primary Task: ID.
+work_packages:
+  - id: WP-M2-BENCHMARK-VALIDATION
+    title: Benchmark correctness and independent evidence
+    assigned_role: tester-session
+    status: blocked
+    task_ids: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
+    depends_on: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
+    branch: tester/wp-m2-benchmark-validation
+    pr_policy: one_pr_per_package
+    acceptance:
+      - Validate reproducible 7200-tick fixtures and fingerprints after implementation merge
+      - Report negative-test coverage and NOT_MEASURED limitations
+      - Publish independently reproducible evidence without network performance claims
+    notes: "Planning example; task allocation requires coordination with Tester. Do not treat this package as an automatic claim."
+
 tasks:
   - id: M1-GAMEPLAY
     title: Implement deterministic four-player Score Brawl
@@ -192,8 +212,8 @@ tasks:
       - Compare all fighters, station and HUD at 640x360, 2x, 3x and mobile
       - Verify production build, browser tests and Pages assets
       - Document manual visual checks and obtain explicit owner acceptance
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
-    notes: "Downloaded and inspected screenshot artifact 13047384075. Native 640x360 browser screenshot clips lower arena (VIS05-01); 3x scaling and mobile HUD readability require review. See docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md. CI green; Pages and owner acceptance pending."
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/83
+    notes: "PR #83 mobile viewport regression: all four head-SHA CI workflows green on 33ed340b0e23400a7489c5bdcfeb568a3a303441; owner merge approval pending. VIS05-01 fixed; VIS05-02 desktop scale and VIS05-03 mobile HUD readability need owner/device review. Pages verification and final M1.5 owner acceptance pending. See docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md."
     last_updated: "2026-10-31"
   - id: M2-VIS-ARENA-01
     title: Compare and propose next TurenkiFight arena visual concept
