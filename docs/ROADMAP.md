@@ -1,10 +1,10 @@
 # TurenkiFight – Prototype Roadmap v0.4
 
-**Updated:** 2026-10-31 (documentation sync). Milestones, not calendar commitments. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
+**Updated:** 2026-11-01. Milestones, not calendar commitments. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
-> **Current main checkpoint (2026-10-31):** M1 accepted with limitations. M1.5 four retro fighters, station and HUD polish have landed; independent visual QA identified viewport clipping and readability follow-ups, and owner acceptance is still pending. M2 canonical protocol, authorized ingress, hardening and independent protocol QA are merged (QA: PASS WITH LIMITATIONS). A deterministic in-memory benchmark harness is under PR review; no network transport, room server or architecture choice has shipped.
+> **Current main checkpoint (2026-11-01, `main` at `3ed2ca1`):** M1 accepted with limitations. **M1.5 accepted with documented limitations by the owner on 2026-11-01** — see [M1.5 acceptance report](M1_5_ACCEPTANCE_REPORT.md); VIS05-02 (3× scaling) and VIS05-03 (mobile readability) remain follow-ups. M2 v1 protocol and authorized session ingress are merged (#41, #43) and independently reviewed (PASS WITH LIMITATIONS). The session envelope is still a **proposal**; the deterministic in-memory benchmark harness merged as PR #79, and CI dependencies are pinned with a committed lockfile (PR #88). No online transport, room server or architecture selection exists; PR #25 was closed unmerged and its content was integrated through #41/#43.
 
 ## Milestone 0 – Project foundations
 
@@ -34,21 +34,24 @@
 
 ## Milestone 1.5 – Retro raster visual upgrade
 
-**Status: VISUAL IMPLEMENTATION MERGED; QA AND OWNER ACCEPTANCE PENDING.** Art direction approved 2026-10-30. Early-1990s raster aesthetic inspired by Janne50v card technique, not its Dune theme. The logical camera remains 640 × 360. See [independent visual QA evidence](visual/M1_5_VIS_05_TESTER_EVIDENCE.md).
+**Status: ACCEPTED WITH DOCUMENTED LIMITATIONS (2026-11-01).** Art direction approved 2026-10-30. Early-1990s raster aesthetic inspired by Janne50v card technique, not its Dune theme. 640 × 360 logical camera preserved; 320 × 180 art grid remains provisional. See [M1.5 acceptance report](M1_5_ACCEPTANCE_REPORT.md).
 
-- [x] Approve one fighter and Turenki station visual proof (PR #21; not full M1.5 acceptance)
-- [x] Implement four retro fighters, station, HUD and impact effects without changing gameplay (merged; visual acceptance separate)
-- [ ] Pass automated and manual visual QA at native, integer-scaled and mobile sizes (native viewport clipping VIS05-01 identified; retest/release checks and mobile readability review required)
+- [x] Approve one fighter and Turenki station visual proof (PR #21)
+- [x] Finish four fighters, station, HUD and impact effects without changing gameplay (PRs #30, #36, #39, #44, #47)
+- [x] Pass automated visual QA at native, integer-scaled and mobile sizes, including viewport regression fixes (PRs #52, #68, #76, #83)
+- [x] Publish retro mode in the production Pages build (PR #85) and confirm the published page requests the retro station asset
 
-**Exit:** user-approved visual upgrade with unchanged deterministic gameplay and green tests. See [M1.5 visual upgrade plan](M1_5_VISUAL_UPGRADE.md).
+**Accepted limitations / follow-ups:** VIS05-02 (1920×1080 uses substantial unused space; larger integer display scale may be desirable), VIS05-03 (in-canvas HUD text is small at 390×844; physical-device legibility unverified), physical gamepad hardware unverified, and the Playwright full suite shows load-sensitive flakiness in the 120 s harness. The 48×64 P1 canvas remains an opt-in experiment, not the default.
+
+**Exit:** user-approved visual upgrade with unchanged deterministic gameplay and green tests; owner accepted the milestone with the limitations above. See [M1.5 visual upgrade plan](M1_5_VISUAL_UPGRADE.md).
 
 ## Milestone 2 – Shared multiplayer foundations (transport-neutral)
 
-**Status: PARTIALLY IMPLEMENTED.** Canonical v1 protocol, authorized ingress, hardening and [independent Tester gate](M2_INDEPENDENT_TESTER_REPORT.md) are merged; Tester verdict is PASS WITH LIMITATIONS. An in-memory deterministic benchmark harness is in PR review, not a measured network comparison. This is not a live network session. Session envelope contract approval remains outstanding.
+**Status: PARTIALLY IMPLEMENTED.** Canonical v1 protocol and authorized ingress are merged in PR #41 with hardening in #43, and independently reviewed as PASS WITH LIMITATIONS ([report](M2_INDEPENDENT_TESTER_REPORT.md)). This is not a live network session. The session envelope remains a proposal ([M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md)); the deterministic in-memory benchmark harness merged in PR #79 and provides correctness fixtures only, not transport measurements.
 
-- [ ] Finalize versioned InputFrame, StateSnapshot, event and room protocol schemas (input/snapshot/event v1 implemented; room lifecycle not finalized)
-- [ ] Separate simulation, authority, rendering, mode rules and transport adapters (simulation/authority separation implemented; network adapters pending)
-- [ ] Implement scripted bots, replay checksums, benchmark telemetry and synthetic clients
+- [ ] Finalize versioned InputFrame, StateSnapshot, event and room protocol schemas (input/snapshot/event v1 implemented; room lifecycle and session envelope not implemented)
+- [ ] Separate simulation, authority, rendering, mode rules and transport adapters (simulation/ingress separation implemented; network adapters pending)
+- [ ] Implement scripted bots, replay checksums, benchmark telemetry and synthetic clients (in-memory fixture and manifest in review, PR #79)
 - [ ] Establish identical test workloads for both architectures
 - [ ] Add baseline latency, tick duration and bandwidth measurements
 

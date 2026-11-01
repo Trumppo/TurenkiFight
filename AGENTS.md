@@ -10,8 +10,12 @@ Keep simulation headless and deterministic, separate from Phaser rendering. Keep
 
 ## OpenCode multi-agent workflow
 
-`opencode.json` makes `designer` the default primary agent. Designer may invoke only `gameplay`, `graphics` and `tester`; `subagent_depth: 1` prevents worker-to-worker delegation. Workers must not push, merge or perform destructive Git operations. Their edit permissions are scoped by role in `.opencode/agents/*.md`.
+`opencode.json` makes `designer` the default primary agent. Designer may invoke only `gameplay`, `graphics` and `tester`; `subagent_depth: 1` prevents worker-to-worker delegation. In this workspace the project configuration allows agents to edit files, run commands, push branches and open pull requests. Merging remains owner-gated by project policy, and force-push plus `git reset --hard` are denied by configuration.
 
 Designer first reads the current repository and task specification, then creates a small task with ownership and acceptance criteria. Gameplay and Graphics implement independent slices, Tester verifies the resulting changes and returns reproducible findings to Designer. Defects go back to the owning worker and Tester re-checks them. Designer reviews the evidence and prepares a PR; the owner approves and merges it.
 
 Connect OpenCode Go in the OpenCode UI with `/connect`, then verify the exact models with `/models` (or `opencode models` where supported) before running a task. Model availability, account entitlements and regional routing are runtime facts; this repository does not contain credentials or override privacy settings. A failed local model lookup must be reported rather than silently replaced with a different provider.
+
+## Work packages and PR batching
+
+Read `.github/AGENT_TASKS.yaml` before claiming work. Prefer a coherent work package of approximately 2–5 related tasks, one feature branch, multiple commits and **one PR when the package is independently reviewable**. Keep existing task IDs and acceptance checks; never bundle unrelated work merely to meet a count. Run focused local tests during development and required CI at PR time. Fix review/CI findings on the same PR. Do not create standalone PRs for routine task-state updates when they can accompany the implementation. Preserve `Task: <primary-task-id>` in PR descriptions until multi-task tracking is supported. PR titles must start `DESIGNER:`, `LOGIC:`, `GRAPHICS:` or `TESTER:`. Owner approval is required before merge.

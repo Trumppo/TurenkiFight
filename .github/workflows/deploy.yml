@@ -22,9 +22,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
       - run: npm test
-      - run: npm run build
+      - name: Build published M1.5 retro visuals
+        run: npm run build
+        env:
+          VITE_VISUAL_STYLE: retro
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

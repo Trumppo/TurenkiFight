@@ -1,7 +1,7 @@
-# TurenkiFight – Technical Architecture v0.4
+# TurenkiFight – Technical Architecture v0.5
 
-**Updated:** 2026-10-31  
-**Status:** Local deterministic game and transport-neutral protocol/session foundations implemented; network adapters, room service and online authority deployment remain unimplemented. **Network topology and authority placement are undecided pending comparative tests.** See [NETWORK_BENCHMARK_PLAN.md](NETWORK_BENCHMARK_PLAN.md), [M2 protocol QA](M2_INDEPENDENT_TESTER_REPORT.md) and [session envelope proposal](M2_SESSION_ENVELOPE_V1.md) (not yet owner-approved).
+**Date:** 2026-11-01
+**Status:** Partially implemented. The client, deterministic simulation, transport-neutral protocol v1 and in-memory authorized session ingress exist; **network transport and authority placement are undecided pending comparative tests**. See [NETWORK_BENCHMARK_PLAN.md](NETWORK_BENCHMARK_PLAN.md), [M2_INPUT_PROTOCOL.md](M2_INPUT_PROTOCOL.md) and [M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md).
 
 ## High-level model
 
@@ -40,17 +40,20 @@ src/
   game/
     simulation/      # pure fixed-step rules, collision, combat
     modes/           # ScoreBrawlMode, future modes
-    protocol/        # versioned messages, serialization
-    session/         # transport-neutral authorized session assembly (implemented foundation)
-    networking/      # proposed future WebRTC / WebSocket adapters
+    protocol/        # versioned InputFrame, StateSnapshot, EventBatch, replay
+    session/         # trusted-identity ingress, roster, bounded input staging
+    networking/      # transport adapters (future: local, WebSocket, WebRTC)
     input/           # keyboard/gamepad → player input frame
     presentation/    # Phaser scenes, camera, animation, HUD
     assets/          # stage art, sprites, audio
+benchmarks/          # deterministic fixtures, in-memory transport adapter, manifests
 server/
-  signaling/         # rooms, lobby, WebRTC offer/answer/ICE
-  session/           # optional dedicated authoritative simulation
+  signaling/         # rooms, lobby, WebRTC offer/answer/ICE (future)
+  session/           # optional dedicated authoritative simulation (future)
 tests/
 ```
+
+`src/game/protocol/` and `src/game/session/` are transport-neutral: they must not import Phaser, DOM or any socket library. A transport adapter supplies trusted connection identity and bytes; it never lets a payload assert its own player slot.
 
 Simulation owns the truth of positions, health, scores and match state. Presentation never determines combat outcomes from sprite overlap. Use foot-Y depth sorting, with Z affecting the sprite's screen offset but not its ground position.
 
@@ -73,26 +76,14 @@ Simulation owns the truth of positions, health, scores and match state. Presenta
 
 ## Rendering and fixed camera
 
-- Current logical camera: **640 × 360** at 16:9, nearest-neighbor pixel-art scaling. Earlier 384 × 216 was superseded.
+- Target **640 × 360** logical pixels at 16:9, nearest-neighbor scaling; art is authored on a provisional 320 × 180 grid.
 - Fixed world-to-screen transform; no following individual players.
 - Ground X/Y and jump Z; sort fighters by Y (feet) each frame.
 - Render/update frequencies are decoupled from simulation ticks. Visual effects cannot mutate authoritative state.
 
-## Current implementation boundary
+## Implemented wire contracts
 
-The browser currently supports a four-player local Score Brawl with deterministic simulation, presentation and input handling. Versioned canonical input/snapshot/event protocol and transport-neutral authorized session foundations have tests; they do **not** provide live multiplayer, network sockets, signaling, remote rooms or measured transport performance. The M2 session envelope is a proposal pending explicit owner approval. The in-memory benchmark work tests reproducibility and manifest correctness, not real network latency or throughput.
-
-## Suggested wire messages
-
-```text
-JoinRoom / RoomState / Ready / StartMatch
-InputFrame(playerId, tick, buttons, movement)
-StateSnapshot(tick, fighters, score, matchClock)
-HitEvent / KnockoutEvent / MatchEnded
-Ping / Pong / Error
-```
-
-Use versioned schemas, message-size limits and explicit disconnect handling. Avoid sending large full snapshots at 60 Hz without measuring bandwidth; choose an appropriate snapshot rate after profiling.
+Gameplay payloads use the canonical v1 codecs in `src/game/protocol/` and are documented in [M2_INPUT_PROTOCOL.md](M2_INPUT_PROTOCOL.md): versioned `InputFrame`, `StateSnapshot` and `EventBatch`, with strict validation, byte caps, diagnostic FNV fingerprints and bounded replay verification. Transport-level concerns (session/envelope identity, sequence, target tick, room binding) are a **separate layer** and remain a proposal; do not add a competing gameplay codec. Versioned schemas, message-size limits and explicit disconnect handling remain mandatory, and large full snapshots at 60 Hz must be measured before being adopted.
 
 ## Deployment and security
 
