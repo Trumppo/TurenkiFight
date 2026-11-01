@@ -1,8 +1,10 @@
 # TurenkiFight – WebSocket vs WebRTC Network Architecture Benchmark
 
-**Version:** 0.2  
+**Version:** 0.3  
 **Created:** 2026-10-24  
 **Status:** Test plan; no transport selected.
+
+> **Owner decision 2026-11-02 (gate change):** LAN, internet and TURN measurement is **no longer required** for the transport decision. The decision basis is a documented literature review plus single-machine measurements (codec bytes, tick duration, snapshot cost, CPU/memory), weighted toward low latency and smooth motion. The sections below that describe physical-LAN and internet runs are retained as the method to use if network behaviour later becomes a product requirement; they are not part of the current acceptance gate. The ADR must state explicitly that no network environment was measured.
 
 > **Current protocol baseline (2026-10-31):** The canonical M2 v1 `InputFrame`, `StateSnapshot` and event codecs are merged on `main` via PR #41. The proposed separate transport/session envelope is described in [M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md). Benchmark both architectures using the **same serialized canonical codec bytes**, validation policy and session semantics; measure transport framing separately. No transport has been selected.
 

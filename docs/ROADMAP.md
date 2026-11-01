@@ -1,6 +1,6 @@
 # TurenkiFight – Prototype Roadmap v0.4
 
-**Updated:** 2026-11-02. Milestones, not calendar commitments. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
+**Updated:** 2026-11-02. Milestones, not calendar commitments. **Milestone 5 gate changed by the owner on 2026-11-02:** the transport decision is based on a literature review plus single-machine measurements; LAN/internet/TURN runs are no longer required and were never performed. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
@@ -70,7 +70,7 @@
 
 ## Milestone 4 – Architecture experiment B: WebRTC browser host
 
-**Status: CORRECTNESS PROTOTYPE MERGED (PR #100, `ac19645`), INDEPENDENT TESTER PASS.** Loopback ICE only; the benchmark emulates the DataChannel, so no NAT/TURN path is exercised. A served browser harness for two-machine runs is still missing (`M2-NETWORK-ADDRESSABLE-WEBRTC-HARNESS`), so architecture B cannot yet be measured over a LAN.
+**Status: CORRECTNESS PROTOTYPE MERGED (PR #100, `ac19645`), INDEPENDENT TESTER PASS.** Loopback ICE only; the benchmark emulates the DataChannel, so no NAT/TURN path is exercised. A served browser harness for two-machine runs remains in the backlog (`M2-NETWORK-ADDRESSABLE-WEBRTC-HARNESS`) because the owner removed the LAN measurement requirement on 2026-11-02.
 
 - [x] Implement WebSocket room signaling and browser-host authoritative session (`server/signaling/**`, `webrtcHostSession.ts`)
 - [x] Implement WebRTC DataChannel star topology and client connection lifecycle (one host, up to four clients)
@@ -80,18 +80,17 @@
 
 **Exit:** measured WebRTC baseline directly comparable to A.
 
-## Milestone 5 – Architecture decision (evidence gate)
+## Milestone 5 – Architecture decision (literature + single-machine evidence)
 
-**Status: BLOCKED.** Both prototypes are correctness-ready, but no measured run exists, so nothing may be decided. Requires the owner to provide LAN/internet machines and a TURN service.
+**Status: READY TO START.** The owner changed the gate on 2026-11-02: no LAN, internet or TURN runs are required. The decision rests on documented sources plus single-machine measurements, weighted toward low latency and smooth motion.
 
-- [ ] Collect >= 5 measured 120 s runs per key case
-- [ ] Evaluate responsiveness p50/p95/p99, reliability, correctness, CPU, RAM and bandwidth
-- [ ] Verify physical LAN, fully offline LAN and remote-internet use cases
-- [ ] Estimate operating costs including TURN where relevant
-- [ ] Publish results in `benchmarks/RESULTS.md`
-- [ ] Write `docs/adr/0001-network-topology.md` with decision, evidence and reconsideration criteria
+- [ ] Measure what does not need a network: bytes per input and snapshot per player, snapshot size at 10/20/30 Hz, tick duration p50/p95/p99 over 7200 ticks, snapshot encode cost, process CPU and memory
+- [ ] Review sources for transport behaviour (TCP head-of-line blocking, SCTP/UDP DataChannels), NAT/CGNAT and TURN cost, browser support and backgrounding
+- [ ] Write `docs/adr/0001-network-topology.md` with sources, measurements, weighting, open risks and reconsideration criteria
+- [ ] State explicitly in the ADR that no network environment was measured
+- [ ] Publish supporting numbers in `benchmarks/RESULTS.md`
 
-**Exit:** a documented choice based on results; no predetermined winner. See [benchmark plan](NETWORK_BENCHMARK_PLAN.md).
+**Exit:** a documented, traceable choice; no predetermined winner. Network behaviour that was not measured is recorded as a risk, not as evidence. See [benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
 ## Milestone 6 – Multiplayer productization
 
