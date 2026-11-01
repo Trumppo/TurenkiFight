@@ -21,6 +21,16 @@ export const LOCAL_SIMULATION_HZ = 60;
 export const LOCAL_SNAPSHOT_RATES = [10, 20, 30] as const;
 export type LocalSnapshotHz = (typeof LOCAL_SNAPSHOT_RATES)[number];
 
+/**
+ * The only paths a local measurement run may ignore when deciding whether the
+ * working tree is dirty. These are generated outputs; any source, test or
+ * harness change outside this directory still marks the run dirty. The manifest
+ * records the exact list and the validator requires it to be this literal, so a
+ * result cannot quietly exclude its own code.
+ */
+export const LOCAL_DIRTY_EXCLUSIONS = ['benchmarks/results/'] as const;
+export type LocalDirtyExclusion = (typeof LOCAL_DIRTY_EXCLUSIONS)[number];
+
 export type LocalScope = {
   measurement: 'single-machine';
   networkAccess: 'none';
@@ -38,6 +48,8 @@ export type LocalProvenance = {
   logicalCores: number;
   gitCommitSha: string;
   workingTreeDirty: boolean;
+  /** Generated paths ignored by the dirty check; exactly one literal entry. */
+  dirtyExclusions: ['benchmarks/results/'];
   fixtureSha256: string;
   seed: number;
   measuredTicks: number;
@@ -258,7 +270,7 @@ function validateProvenance(value: unknown): value is LocalProvenance {
   if (!isRecord(value) ||
       !exactKeys(value, [
         'command', 'cliArguments', 'nodeVersion', 'platform', 'osRelease', 'architecture', 'cpuModel',
-        'logicalCores', 'gitCommitSha', 'workingTreeDirty', 'fixtureSha256', 'seed', 'measuredTicks',
+        'logicalCores', 'gitCommitSha', 'workingTreeDirty', 'dirtyExclusions', 'fixtureSha256', 'seed', 'measuredTicks',
         'warmupTicks', 'warmupPolicy', 'snapshotRatesHz', 'codecVersions',
       ]) ||
       value.command !== 'npm run measure:local' ||
@@ -269,6 +281,9 @@ function validateProvenance(value: unknown): value is LocalProvenance {
       !nonEmptyString(value.architecture, 64) || !nonEmptyString(value.cpuModel, 200) ||
       !positiveInteger(value.logicalCores, 4096) ||
       !commit(value.gitCommitSha) || typeof value.workingTreeDirty !== 'boolean' ||
+      !Array.isArray(value.dirtyExclusions) ||
+      value.dirtyExclusions.length !== LOCAL_DIRTY_EXCLUSIONS.length ||
+      value.dirtyExclusions.some((path, index) => path !== LOCAL_DIRTY_EXCLUSIONS[index]) ||
       !hash(value.fixtureSha256) ||
       !positiveInteger(value.seed, 0xffffffff) ||
       !positiveInteger(value.measuredTicks, 7200) ||

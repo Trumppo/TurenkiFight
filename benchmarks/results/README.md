@@ -73,10 +73,17 @@ Each JSON records:
   flags;
 - Node version, OS platform/release/architecture, CPU model and logical core
   count;
-- git commit SHA and whether the working tree was dirty;
+- git commit SHA, whether the working tree was dirty, and the exact
+  `dirtyExclusions` list;
 - fixture SHA-256 and seed;
 - measured tick count, warm-up policy and every sample count;
 - the measurement methodology literals.
+
+`workingTreeDirty` ignores only generated output under `benchmarks/results/`;
+that single prefix is recorded in `dirtyExclusions` and the validator requires
+exactly that list. A modified simulation, protocol, harness or test file still
+marks the run dirty, so a clean result always means the recorded commit is the
+code that ran.
 
 No private IP address, hostname, user name or absolute path is written. The
 `--out` flag is intentionally excluded from the recorded argument list.

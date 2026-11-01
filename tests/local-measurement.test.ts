@@ -1,4 +1,6 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join as joinPath, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -10,6 +12,7 @@ import {
   type LocalProvenance,
 } from '../benchmarks/local/manifest';
 import { runLocalMeasurement } from '../benchmarks/local/measure';
+import { hasUnignoredWorkingTreeChanges, readWorkingTree } from '../benchmarks/local/provenance';
 import { summarizeBytes, summarizeSamples } from '../benchmarks/local/statistics';
 
 /**
@@ -42,6 +45,7 @@ function provenanceFor(run: LocalMeasurementSections): LocalProvenance {
     logicalCores: 4,
     gitCommitSha: 'a'.repeat(40),
     workingTreeDirty: true,
+    dirtyExclusions: ['benchmarks/results/'],
     fixtureSha256: run.fixture.fixtureSha256,
     seed: run.fixture.seed,
     measuredTicks: TEST_TICKS,
@@ -114,6 +118,70 @@ describe('local measurement statistics', () => {
     expect(snapshotSampleCount(7200, 20)).toBe(2400);
     expect(snapshotSampleCount(7200, 30)).toBe(3600);
     expect(snapshotSampleCount(600, 20)).toBe(200);
+  });
+});
+
+describe('working tree provenance', () => {
+  it('ignores only generated result paths and never a source change', () => {
+    expect(hasUnignoredWorkingTreeChanges('')).toBe(false);
+    expect(hasUnignoredWorkingTreeChanges('?? benchmarks/results/local-a.json\n')).toBe(false);
+    expect(hasUnignoredWorkingTreeChanges(' M benchmarks/results/local-a.json\n')).toBe(false);
+    expect(hasUnignoredWorkingTreeChanges('?? benchmarks/results/\n')).toBe(false);
+    expect(hasUnignoredWorkingTreeChanges(
+      'R  benchmarks/results/old.json -> benchmarks/results/new.json\n',
+    )).toBe(false);
+
+    // Any path outside the generated-output directory still marks the run dirty.
+    expect(hasUnignoredWorkingTreeChanges(' M src/game/protocol/inputFrame.ts\n')).toBe(true);
+    expect(hasUnignoredWorkingTreeChanges(' M src/game/simulation/step.ts\n')).toBe(true);
+    expect(hasUnignoredWorkingTreeChanges('?? benchmarks/results-other/local.json\n')).toBe(true);
+    // A rename must exclude both sides; moving source into results still counts.
+    expect(hasUnignoredWorkingTreeChanges(
+      'R  src/game/x.ts -> benchmarks/results/x.ts\n',
+    )).toBe(true);
+    expect(hasUnignoredWorkingTreeChanges(
+      '?? benchmarks/results/local-a.json\r\n M src/game/simulation/step.ts\r\n',
+    )).toBe(true);
+  });
+
+  it('reads a real repository: result outputs are clean, source edits are dirty', () => {
+    const directory = mkdtempSync(joinPath(tmpdir(), 'turenkifight-dirty-'));
+    const runGit = (...args: string[]): void => {
+      execFileSync('git', [
+        '-c', 'user.name=Local Measurement Test',
+        '-c', 'user.email=test@example.invalid',
+        '-c', 'commit.gpgsign=false',
+        ...args,
+      ], { cwd: directory, stdio: 'ignore' });
+    };
+    try {
+      runGit('init');
+      mkdirSync(joinPath(directory, 'benchmarks', 'results'), { recursive: true });
+      mkdirSync(joinPath(directory, 'src', 'game'), { recursive: true });
+      writeFileSync(joinPath(directory, 'src', 'game', 'step.ts'), 'export const value = 1;\n');
+      writeFileSync(joinPath(directory, 'benchmarks', 'results', 'README.md'), '# results\n');
+      runGit('add', '.');
+      runGit('commit', '-m', 'base');
+
+      expect(readWorkingTree(directory)).toMatchObject({
+        workingTreeDirty: false,
+        dirtyExclusions: ['benchmarks/results/'],
+      });
+
+      // An untracked generated result must not dirty the run.
+      writeFileSync(joinPath(directory, 'benchmarks', 'results', 'local-test.json'), '{}\n');
+      expect(readWorkingTree(directory).workingTreeDirty).toBe(false);
+
+      // A modified tracked result must not dirty the run either.
+      writeFileSync(joinPath(directory, 'benchmarks', 'results', 'README.md'), '# results\nedited\n');
+      expect(readWorkingTree(directory).workingTreeDirty).toBe(false);
+
+      // A modified simulation source file must dirty it.
+      writeFileSync(joinPath(directory, 'src', 'game', 'step.ts'), 'export const value = 2;\n');
+      expect(readWorkingTree(directory).workingTreeDirty).toBe(true);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
 
@@ -196,6 +264,10 @@ describe('local measurement manifest', () => {
       value => { value.provenance.measuredTicks = 7201; },
       value => { value.provenance.snapshotRatesHz = [10, 20]; },
       value => { value.provenance.workingTreeDirty = 'no'; },
+      value => { delete value.provenance.dirtyExclusions; },
+      value => { value.provenance.dirtyExclusions = []; },
+      value => { value.provenance.dirtyExclusions = ['src/']; },
+      value => { value.provenance.dirtyExclusions = ['benchmarks/results/', 'src/']; },
       value => { value.provenance.extra = true; },
       value => { value.methodology.percentiles = 'linear'; },
       value => { value.runId = 'not a run id'; },
@@ -285,7 +357,8 @@ describe('local measurement manifest', () => {
   it('validates every committed result file and keeps its network fields unclaimed', () => {
     const directory = resolve(process.cwd(), 'benchmarks/results');
     const files = readdirSync(directory).filter(file => /^local-.+\.json$/.test(file));
-    expect(files.length).toBeGreaterThan(0);
+    // A fresh checkout may contain no result files; every one that is present
+    // must validate, so a hand-edited or fabricated result cannot slip through.
     for (const file of files) {
       const parsed = JSON.parse(readFileSync(joinPath(directory, file), 'utf8')) as Loose;
       expect(() => validateLocalManifest(parsed)).not.toThrow();

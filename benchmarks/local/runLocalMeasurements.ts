@@ -6,7 +6,6 @@
  * network path. Provenance (command, environment, git SHA, fixture hash, seed,
  * sample counts and warm-up policy) is embedded in the JSON.
  */
-import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { cpus, platform as osPlatform, arch as osArch, release as osRelease } from 'node:os';
 import { basename, dirname, relative, resolve } from 'node:path';
@@ -23,6 +22,7 @@ import {
   DEFAULT_WARMUP_TICKS,
   runLocalMeasurement,
 } from './measure';
+import { readWorkingTree } from './provenance';
 
 function argument(name: string): string | undefined {
   const prefix = `--${name}=`;
@@ -44,10 +44,6 @@ function eventLoopArguments(): number {
   if (toggle === 'off') return 0;
   if (toggle !== undefined && toggle !== 'on') throw new Error(`Invalid event loop setting: ${toggle}`);
   return integerArgument(argument('event-loop-ticks'), DEFAULT_EVENT_LOOP_TICKS, DEFAULT_MEASURED_TICKS, 'event-loop ticks');
-}
-
-function git(args: string[]): string {
-  return execFileSync('git', args, { cwd: process.cwd(), encoding: 'utf8' }).trim();
 }
 
 function runStamp(): string {
@@ -72,9 +68,7 @@ function buildProvenance(
   const model = cpu[0]?.model?.trim();
   if (!model) throw new Error('Could not read the CPU model for provenance');
   if (cpu.length < 1) throw new Error('Could not read the logical core count for provenance');
-  const commitSha = git(['rev-parse', 'HEAD']);
-  if (!/^[0-9a-f]{40}$/.test(commitSha)) throw new Error('Could not read the git commit SHA for provenance');
-  const dirty = git(['status', '--porcelain']).length > 0;
+  const tree = readWorkingTree();
   return {
     command: 'npm run measure:local',
     cliArguments: recordedArguments(),
@@ -84,8 +78,9 @@ function buildProvenance(
     architecture: osArch(),
     cpuModel: model,
     logicalCores: cpu.length,
-    gitCommitSha: commitSha,
-    workingTreeDirty: dirty,
+    gitCommitSha: tree.gitCommitSha,
+    workingTreeDirty: tree.workingTreeDirty,
+    dirtyExclusions: tree.dirtyExclusions,
     fixtureSha256: sections.fixture.fixtureSha256,
     seed: sections.fixture.seed,
     measuredTicks,
@@ -119,6 +114,7 @@ function renderSummary(manifest: LocalMeasurementManifest): string {
   lines.push(`| OS | ${manifest.provenance.platform} ${manifest.provenance.osRelease} (${manifest.provenance.architecture}) |`);
   lines.push(`| CPU | ${manifest.provenance.cpuModel} (${manifest.provenance.logicalCores} logical cores) |`);
   lines.push(`| Git | \`${manifest.provenance.gitCommitSha}\` (working tree dirty: ${manifest.provenance.workingTreeDirty ? 'yes' : 'no'}) |`);
+  lines.push(`| Dirty exclusions | \`${manifest.provenance.dirtyExclusions.join('`, `')}\` (generated outputs only) |`);
   lines.push(`| Fixture | \`${manifest.provenance.fixtureSha256}\` seed ${manifest.provenance.seed} |`);
   lines.push(`| Ticks | ${manifest.provenance.measuredTicks} measured; ${manifest.provenance.warmupTicks} warm-up ticks discarded on a separate state |`);
   lines.push(`| Schema | local v${LOCAL_MANIFEST_VERSION}, kind \`${manifest.kind}\` |`, '');
