@@ -1,6 +1,6 @@
 # M1.5 — Retro raster visual upgrade
 
-**Status:** implementation integrated on main through PRs #21, #30, #36, #39, #44 and #47; independent visual QA is in review in PR #52. **M1.5 is not yet accepted by the owner.** Visual direction approved 2026-10-30; M1 remains accepted. This is a visual-only milestone before M2 networking.
+**Status:** **ACCEPTED WITH DOCUMENTED LIMITATIONS by the project owner on 2026-11-01.** Implementation is integrated on `main` through PRs #21, #30, #36, #39, #44, #47, #76, #83 and #85; independent visual QA and screenshot review are recorded in `docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md` and the acceptance decision in `docs/M1_5_ACCEPTANCE_REPORT.md`. Visual direction approved 2026-10-30; M1 remains accepted. This is a visual-only milestone before M2 networking.
 
 ## Art direction
 Use the early-1990s raster/pixel-art treatment explored in the Janne50v birthday card as a *style reference*, not its Dune setting or assets. TurenkiFight must remain recognizably Finnish, playful and arcade-readable. Keep the Turenki railway station and four distinguishable fighters. Original artwork only; do not copy sprites or backgrounds from commercial games.
@@ -30,4 +30,4 @@ No changes to deterministic simulation, combat balance, mode rules, multiplayer 
 - VIS-04: retro scoreboard frame merged in PR #39 and damage flash merged in PR #47.
 - VIS-05: four-viewport screenshot and canvas-fit checks added in PR #52. Workflow trigger updated to include all `retro*.spec.ts` changes.
 
-**Outstanding release gates:** confirm the final PR #52 CI and its screenshots, review fighter readability, station, HUD and hit feedback manually at native, 2×/3× and mobile sizes, check published Pages assets, then obtain explicit owner acceptance. CI green is necessary but does not by itself constitute visual approval.
+**Owner decision (2026-11-01):** M1.5 accepted with documented limitations. Accepted follow-ups, not release blockers: VIS05-02 (larger integer display scale at 1920×1080 may be desirable), VIS05-03 (mobile in-canvas HUD readability on physical devices), physical gamepad hardware, and Playwright load sensitivity. Pages now builds with `VITE_VISUAL_STYLE: retro`, and the published page was observed requesting the retro station asset without console errors. See [M1.5 acceptance report](M1_5_ACCEPTANCE_REPORT.md).

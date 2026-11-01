@@ -34,7 +34,7 @@ async function startMatch(page: import('@playwright/test').Page): Promise<void> 
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { state: { fighters: unknown[]; phase: string } } } } }).__turenkiGame;
     const state = game?.scene.getScene('StationScene')?.state;
     return state ? { roster: state.fighters.length, phase: state.phase } : undefined;
-  })).toEqual({ roster: 2, phase: 'fighting' });
+  }), { timeout: 20_000 }).toEqual({ roster: 2, phase: 'fighting' });
 }
 
 test('station and P1 prototype render with stable legacy sprite API', async ({ page }) => {

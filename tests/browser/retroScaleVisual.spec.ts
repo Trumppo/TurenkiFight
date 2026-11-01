@@ -36,6 +36,13 @@ for (const size of sizes) {
     expect(bounds!.height).toBeGreaterThan(0);
     expect(bounds!.width).toBeLessThanOrEqual(size.width + 1);
     expect(bounds!.height).toBeLessThanOrEqual(size.height + 1);
+    // Mobile fit must include the whole arena, not just a nonzero canvas size.
+    if (size.name === 'mobile') {
+      expect(bounds!.x, 'Mobile playfield must start inside the viewport').toBeGreaterThanOrEqual(0);
+      expect(bounds!.x + bounds!.width, 'Mobile playfield must fit horizontally').toBeLessThanOrEqual(size.width + 1);
+      expect(bounds!.y, 'Mobile playfield must start inside the viewport').toBeGreaterThanOrEqual(0);
+      expect(bounds!.y + bounds!.height, 'Mobile playfield must fit vertically').toBeLessThanOrEqual(size.height + 1);
+    }
     // A visible canvas may still be clipped below the viewport by page chrome.
     // At the native viewport the entire playfield must be visible without scrolling.
     if (size.name === 'native') {
@@ -44,6 +51,16 @@ for (const size of sizes) {
         bounds!.y + bounds!.height,
         'Native playfield bottom must fit in the browser viewport',
       ).toBeLessThanOrEqual(size.height + 1);
+    }
+    if (size.name === 'mobile') {
+      // Confirm the full logical playfield is actually inside the visible window.
+      // The CSS bounds assertions above catch overflow; this checks both axes
+      // against the viewport after layout has settled.
+      await expect.poll(async () => canvas.evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        return rect.left >= 0 && rect.top >= 0 &&
+          rect.right <= window.innerWidth + 1 && rect.bottom <= window.innerHeight + 1;
+      })).toBe(true);
     }
     mkdirSync('artifacts/visual', { recursive: true });
     await page.screenshot({

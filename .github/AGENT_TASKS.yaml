@@ -9,6 +9,26 @@ coordination:
   update_policy: "Update task state via PR or an explicitly authorized commit; avoid simultaneous edits to this file."
   merge_policy: "Never merge a PR without user approval."
   statuses: [backlog, ready, claimed, in_progress, review, blocked, done]
+  work_package_policy: "Prefer one PR per coherent work package (normally 2-5 related tasks), multiple commits on one branch; avoid PRs for individual fixes or interim task metadata. Never batch unrelated changes."
+  pr_body_policy: "Keep Task: <primary-task-id> for existing PR tracking; list additional tasks in the description until multi-task tracking is implemented."
+  ci_policy: "Run focused local checks during development; full required CI on PR. Never bypass mandatory checks or owner merge approval."
+# Optional work packages supplement existing task IDs; do not migrate historical tasks.
+# Legacy task validation and PR tracking still use tasks: and one primary Task: ID.
+work_packages:
+  - id: WP-M2-BENCHMARK-VALIDATION
+    title: Benchmark correctness and independent evidence
+    assigned_role: tester-session
+    status: blocked
+    task_ids: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
+    depends_on: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
+    branch: tester/wp-m2-benchmark-validation
+    pr_policy: one_pr_per_package
+    acceptance:
+      - Validate reproducible 7200-tick fixtures and fingerprints after implementation merge
+      - Report negative-test coverage and NOT_MEASURED limitations
+      - Publish independently reproducible evidence without network performance claims
+    notes: "Planning example; task allocation requires coordination with Tester. Do not treat this package as an automatic claim."
+
 tasks:
   - id: M1-GAMEPLAY
     title: Implement deterministic four-player Score Brawl
@@ -181,7 +201,7 @@ tasks:
     title: Independent visual QA and M1.5 owner acceptance
     assigned_role: tester-session
     session_id: tester-session-20261031-vis05
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/M1_5_VISUAL_UPGRADE.md
     execution_brief: docs/visual/M1_5_TESTER_EXECUTION_BRIEF.md
@@ -193,9 +213,9 @@ tasks:
       - Compare all fighters, station and HUD at 640x360, 2x, 3x and mobile
       - Verify production build, browser tests and Pages assets
       - Document manual visual checks and obtain explicit owner acceptance
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/52
-    notes: "Downloaded and inspected screenshot artifact 13047384075. Native 640x360 browser screenshot clips lower arena (VIS05-01); 3x scaling and mobile HUD readability require review. See docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md. CI green; Pages and owner acceptance pending."
-    last_updated: "2026-10-31"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/83
+    notes: "Owner accepted M1.5 with documented limitations on 2026-11-01; see docs/M1_5_ACCEPTANCE_REPORT.md. VIS05-01 fixed by PR #76 and retested. VIS05-02 (3x scaling) and VIS05-03 (mobile HUD readability) remain documented follow-ups, not release blockers. Pages build now uses retro mode (PR #85); deployed page was observed loading the retro station asset without console errors."
+    last_updated: "2026-11-01"
   - id: M2-VIS-ARENA-01
     title: Compare and propose next TurenkiFight arena visual concept
     assigned_role: graphics-session
@@ -234,17 +254,21 @@ tasks:
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
     assigned_role: planning-session
-    status: blocked
+    session_id: designer-session-20261101
+    status: in_progress
     priority: P1
-    specification: docs/ROADMAP.md
+    specification: docs/M1_5_ACCEPTANCE_REPORT.md
     depends_on: [M1-5-VIS-05]
     scope:
       - docs/ROADMAP.md
       - docs/M1_5_VISUAL_UPGRADE.md
+      - docs/M1_5_ACCEPTANCE_REPORT.md
     acceptance:
       - Reconcile stale milestone labels with merged PR evidence
-      - Ensure milestone is not marked accepted before owner approval
-    last_updated: "2026-10-31"
+      - Record owner acceptance and its documented limitations
+      - Ensure no later milestone is marked accepted before owner approval
+    last_updated: "2026-11-01"
+    notes: "M1.5 accepted with limitations on 2026-11-01; acceptance recorded in docs/M1_5_ACCEPTANCE_REPORT.md. Roadmap, architecture and goal documents reconciled on the same work package. VIS05-02/VIS05-03 remain follow-ups."
 
   - id: M2-PROTOCOL-INTEGRATION
     title: Integrate transport-neutral v1 codecs with authorized session ingress
@@ -406,7 +430,7 @@ tasks:
   - id: M2-BENCHMARK-HARNESS-IMPLEMENTATION
     title: Build deterministic fixture generator and in-memory benchmark adapter
     assigned_role: gameplay-session
-    status: review
+    status: done
     priority: P1
     specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
     depends_on: [M2-BENCHMARK-HARNESS-DESIGN]
@@ -415,11 +439,11 @@ tasks:
       - Reproducible 7200 tick fixture and final fingerprints
       - Validated machine-readable run manifest and NOT_MEASURED semantics
       - CI unit tests and independent Tester gate
-    last_updated: "2026-10-31"
+    last_updated: "2026-11-01"
     session_id: gameplay-session-20261031-benchmark
-    branch: feature/m2-benchmark-in-memory-fixture
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/73
-    notes: "PR #73 implementation complete and four CI checks green; independent Tester gate pending. No sockets, performance claims or transport decision."
+    branch: feature/m2-benchmark-harness-main-refresh
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/79
+    notes: "PR #79 merged as b3b0166 after independent Tester PASS (reproducible fixture hash, strict NOT_MEASURED manifest, adversarial coverage). No sockets, performance claims or transport decision. PR #73 superseded."
 
   - id: M2-SAFE-TICK-WINDOW
     title: Reject unsafe tick arithmetic and verify 7200-tick canonical assembly

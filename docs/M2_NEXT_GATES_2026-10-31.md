@@ -4,7 +4,7 @@ This is a **forward-looking design proposal**, not a release acceptance or permi
 
 ## Verified foundations
 - M1 local four-player 120-second Score Brawl accepted with limitations.
-- M1.5 P1–P4 retro fighters and initial HUD merged (#21, #30, #36, #39); full station/impact polish, independent visual QA and owner acceptance remain open.
+- M1.5 P1–P4 retro fighters, station refinement, initial HUD and hit feedback merged (#21, #30, #36, #39, #44, #47); viewport fixes #76/#83 and retro Pages build #85 merged. **Owner accepted M1.5 with documented limitations on 2026-11-01**; VIS05-02/VIS05-03 remain follow-ups.
 - M2 v1 canonical protocol integrated with authorized session ingress (#41), hardening (#43). Neither PR establishes a network transport, authenticated room service or completed security audit.
 - `docs/GOALS.md`, `docs/AGENT_HANDOFF_2026-10-31.md` and `docs/M2_INTEGRATION_GATE.md` include historical PR #25 statements; preserve them as evidence, but prefer current main and this document for next decisions.
 - PR #40 was green on its updated head but cannot merge cleanly into current main; supersede it rather than overwriting newer task state.
@@ -36,7 +36,7 @@ This is a **forward-looking design proposal**, not a release acceptance or permi
 Use the existing `docs/NETWORK_BENCHMARK_PLAN.md` matrix (2/4/8/12/16 players, 60 Hz sim, 30/60 Hz input, 10/20/30 Hz snapshots, >=5 runs of 120 s). Prioritize 4/8 players, synthetic load before browser comparisons. Record p50/p95/p99 latency, tick duration, bytes/s, CPU/RAM, join success, NAT/TURN fallback and operational cost. Separate authority topology differences from transport differences. Do not claim measured outcomes without runs.
 
 ## Remaining documentation debt
-- `docs/GOALS.md` retains historical draft PR #21/#25 wording. Update it in a separate focused PR after current owners agree which historical objectives to archive.
+- `docs/GOALS.md` no longer carries the historical draft PR #21/#25 wording; the 2026-10-31 goal is archived with its outcomes and a new active goal is recorded (reconciled 2026-11-01).
 - `docs/NETWORK_BENCHMARK_PLAN.md` retains an obsolete illustrative InputFrame shape; replace it with a link to canonical codec and the forthcoming envelope, not another wire contract.
 - `docs/AGENT_WORKFLOW.md` M1-specific role examples are historical; current queue in `.github/AGENT_TASKS.yaml` is authoritative.
-- Keep M1.5 acceptance open until independent screenshot review and explicit owner approval.
+- M1.5 owner acceptance is recorded (2026-11-01) with VIS05-02 and VIS05-03 retained as follow-ups; do not reopen the milestone for those items alone.

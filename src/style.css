@@ -19,3 +19,14 @@ p { color: #c2cbd2; }
   }
   .instructions { font-size: 10px; line-height: 12px; margin: 4px 0; }
 }
+
+/* Keyboard reference stays collapsed so the native 640x360 arena still fits. */
+.controls { margin: 8px auto; max-width: 640px; text-align: left; font-size: 13px; }
+.controls summary { cursor: pointer; padding: 5px 8px; color: #f5e9c7; }
+.controls table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+.controls th, .controls td { border-bottom: 1px solid #526071; padding: 6px 8px; text-align: left; }
+.controls thead th { color: #f1d38b; }
+@media (max-height: 540px) {
+  .controls { margin: 2px auto; font-size: 10px; }
+  .controls summary { padding: 2px 4px; }
+}
