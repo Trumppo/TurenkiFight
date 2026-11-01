@@ -4,7 +4,7 @@
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
-> **Current main checkpoint (2026-11-02, `main` at `ac19645`):** M1 and M1.5 accepted with documented limitations. M2 is implemented at the transport-neutral level: v1 protocol and authorized ingress (#41, #43), owner-approved session envelope with its implementation (#92, #94), executable benchmark scenarios (#97), and independent Tester gates on every slice. Both architecture prototypes exist and are correctness-tested: central WebSocket authority (#98, `server/ws/**`) and browser-host WebRTC with a signaling relay (#100, `server/signaling/**`, `src/game/networking/**`). **No transport is selected and no performance number exists** — every manifest field is `NOT_MEASURED`. Full 7200-tick WS runs currently abort on a 30 s guard (`M2-FULL-LENGTH-BENCHMARK`). PR #25 was closed unmerged and its content was integrated through #41/#43.
+> **Current main checkpoint (2026-11-02, `main` at `56fa1ab`):** M1 and M1.5 accepted with documented limitations. M2 is implemented at the transport-neutral level: v1 protocol and authorized ingress (#41, #43), owner-approved session envelope with its implementation (#92, #94), executable benchmark scenarios (#97), and independent Tester gates on every slice. Both architecture prototypes exist and are correctness-tested: central WebSocket authority (#98, `server/ws/**`) and browser-host WebRTC with a signaling relay (#100, `server/signaling/**`, `src/game/networking/**`). **No transport is selected and no performance number exists** — every manifest field is `NOT_MEASURED`. Both architectures now complete 7200-tick runs with identical final-state and ordered-event fingerprints (`de544fcd…` / `5bb44bd6…`, 47 events) under the same fixture and seed; that is correctness evidence, not a measurement. PR #25 was closed unmerged and its content was integrated through #41/#43.
 
 ## Milestone 0 – Project foundations
 
@@ -59,7 +59,7 @@
 
 ## Milestone 3 – Architecture experiment A: central WebSocket server
 
-**Status: CORRECTNESS PROTOTYPE MERGED (PR #98, `db3112b`), INDEPENDENT TESTER PASS WITH LIMITATIONS.** Loopback only; no authentication, TLS, rate limiting or host migration. Full 120 s runs are not executable yet (`M2-FULL-LENGTH-BENCHMARK`).
+**Status: CORRECTNESS PROTOTYPE MERGED (PR #98, `db3112b`), INDEPENDENT TESTER PASS WITH LIMITATIONS.** Loopback only; no authentication, TLS, rate limiting or host migration. Full 7200-tick runs are executable via `npm run bench:ws -- --ticks=7200 --tick-mode=manual` (PR #102); `interval` remains the real-time approximation.
 
 - [x] Implement central authoritative 60 Hz TypeScript game session (`server/ws/authoritativeWsSession.ts`)
 - [x] Implement WS room join, input processing, state snapshots and disconnections (prototype; no production security)
