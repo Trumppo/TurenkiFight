@@ -605,7 +605,7 @@ tasks:
     title: Split the WebSocket benchmark into server and client roles so runs can span machines
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-splitws
-    status: review
+    status: done
     priority: P0
     specification: docs/NETWORK_BENCHMARK_PLAN.md
     depends_on: [M2-FULL-LENGTH-BENCHMARK]
@@ -623,7 +623,32 @@ tasks:
       - npm test, npm run build, git diff --check and agent task validation pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/104
     last_updated: "2026-11-02"
-    notes: "Designer finding 2026-11-02: benchmarks/ws/runWsBenchmark.ts hardcodes host 127.0.0.1 and port 0 and starts the server plus all four synthetic clients in one process, so the LAN/internet measurement required by the active goal cannot be executed by any environment the owner provides. This task is a prerequisite for milestone 5, not a measurement and not a transport decision."
+    notes: "PR #104 merged as cc44f2c after two independent Tester passes. A genuine five-process 7200-tick run reproduces the pinned fingerprints (de544fcd / 5bb44bd6), every client submits 7200 ticks with 0 late and 0 denied, and manifests record topology network/4 clients/NOT_RECORDED with all measurements NOT_MEASURED. TESTER-104a (room-level denials invisible to the observer) was fixed in b89e4eb: deniedMessages now sums gateway and room denials with deniedBySource. Limits: ws:// only, no TLS/auth/TURN, and a network topology manifest is still not LAN or internet evidence."
+
+
+  - id: M2-NETWORK-ADDRESSABLE-WEBRTC-HARNESS
+    title: Provide a served browser harness so architecture B can be exercised across machines
+    assigned_role: gameplay-session
+    status: ready
+    priority: P0
+    specification: docs/NETWORK_BENCHMARK_PLAN.md
+    depends_on: [M2-WEBRTC-PROTOTYPE, M2-NETWORK-ADDRESSABLE-WS-BENCHMARK]
+    scope:
+      - src/game/networking/
+      - benchmarks/webrtc/
+      - benchmarks/pages/
+      - tests/
+      - docs/
+      - .github/AGENT_TASKS.yaml
+    acceptance:
+      - A served page lets one browser become the authoritative host and other browsers join as clients over real RTCPeerConnection sessions
+      - The signaling server binds a configurable host/port so two machines on a LAN can connect without code edits
+      - The page reports join success, accepted input and snapshot reception, and states explicitly that it measures nothing
+      - A documented procedure lets the owner run the host on one machine and clients on another, including the ICE/TURN configuration points that remain unprovisioned
+      - Automated tests cover the harness wiring without requiring two machines; any browser test stays honest about loopback-only ICE
+      - No latency, bandwidth, CPU or tick-pacing value is produced or implied; simulation, protocol and presentation rules are unchanged
+      - npm test, npm run build, git diff --check and agent task validation pass
+    notes: "Designer finding 2026-11-02: benchmarks/webrtc emulates the DataChannel in one process and the only real browser test uses loopback ICE, so architecture B cannot be measured over a LAN at all. This task builds the harness that makes the milestone-5 comparison possible. It is not a measurement and must not be presented as one."
 
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW

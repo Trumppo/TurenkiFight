@@ -4,7 +4,7 @@
 
 **Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been tested. See [Network benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
-> **Current main checkpoint (2026-11-02, `main` at `56fa1ab`):** M1 and M1.5 accepted with documented limitations. M2 is implemented at the transport-neutral level: v1 protocol and authorized ingress (#41, #43), owner-approved session envelope with its implementation (#92, #94), executable benchmark scenarios (#97), and independent Tester gates on every slice. Both architecture prototypes exist and are correctness-tested: central WebSocket authority (#98, `server/ws/**`) and browser-host WebRTC with a signaling relay (#100, `server/signaling/**`, `src/game/networking/**`). **No transport is selected and no performance number exists** — every manifest field is `NOT_MEASURED`. Both architectures now complete 7200-tick runs with identical final-state and ordered-event fingerprints (`de544fcd…` / `5bb44bd6…`, 47 events) under the same fixture and seed; that is correctness evidence, not a measurement. PR #25 was closed unmerged and its content was integrated through #41/#43.
+> **Current main checkpoint (2026-11-02, `main` at `cc44f2c`):** M1 and M1.5 accepted with documented limitations. M2 is implemented at the transport-neutral level: v1 protocol and authorized ingress (#41, #43), owner-approved session envelope with its implementation (#92, #94), executable benchmark scenarios (#97), and independent Tester gates on every slice. Both architecture prototypes exist and are correctness-tested: central WebSocket authority (#98, `server/ws/**`) and browser-host WebRTC with a signaling relay (#100, `server/signaling/**`, `src/game/networking/**`). **No transport is selected and no performance number exists** — every manifest field is `NOT_MEASURED`. Both architectures now complete 7200-tick runs with identical final-state and ordered-event fingerprints (`de544fcd…` / `5bb44bd6…`, 47 events) under the same fixture and seed; that is correctness evidence, not a measurement. PR #25 was closed unmerged and its content was integrated through #41/#43.
 
 ## Milestone 0 – Project foundations
 
@@ -59,7 +59,7 @@
 
 ## Milestone 3 – Architecture experiment A: central WebSocket server
 
-**Status: CORRECTNESS PROTOTYPE MERGED (PR #98, `db3112b`), INDEPENDENT TESTER PASS WITH LIMITATIONS.** Loopback only; no authentication, TLS, rate limiting or host migration. Full 7200-tick runs are executable via `npm run bench:ws -- --ticks=7200 --tick-mode=manual` (PR #102); `interval` remains the real-time approximation.
+**Status: CORRECTNESS PROTOTYPE MERGED (PR #98, `db3112b`), INDEPENDENT TESTER PASS WITH LIMITATIONS.** Loopback only; no authentication, TLS, rate limiting or host migration. Full 7200-tick runs are executable via `npm run bench:ws -- --ticks=7200 --tick-mode=manual` (PR #102), and the benchmark now has separate server and client roles for multi-machine runs (PR #104). `interval` remains the real-time approximation.
 
 - [x] Implement central authoritative 60 Hz TypeScript game session (`server/ws/authoritativeWsSession.ts`)
 - [x] Implement WS room join, input processing, state snapshots and disconnections (prototype; no production security)
@@ -70,7 +70,7 @@
 
 ## Milestone 4 – Architecture experiment B: WebRTC browser host
 
-**Status: CORRECTNESS PROTOTYPE MERGED (PR #100, `ac19645`), INDEPENDENT TESTER PASS.** Loopback ICE only; the benchmark emulates the DataChannel, so no NAT/TURN path is exercised.
+**Status: CORRECTNESS PROTOTYPE MERGED (PR #100, `ac19645`), INDEPENDENT TESTER PASS.** Loopback ICE only; the benchmark emulates the DataChannel, so no NAT/TURN path is exercised. A served browser harness for two-machine runs is still missing (`M2-NETWORK-ADDRESSABLE-WEBRTC-HARNESS`), so architecture B cannot yet be measured over a LAN.
 
 - [x] Implement WebSocket room signaling and browser-host authoritative session (`server/signaling/**`, `webrtcHostSession.ts`)
 - [x] Implement WebRTC DataChannel star topology and client connection lifecycle (one host, up to four clients)
