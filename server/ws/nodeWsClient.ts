@@ -12,6 +12,17 @@ export type NodeSessionOptions = {
   url: string;
   handlers?: SessionClientHandlers;
   openTimeoutMs?: number;
+  /**
+   * Read-only wire accounting at the socket boundary: one event per text frame
+   * with its UTF-8 byte length. It never rewrites, delays or reorders a payload,
+   * so wrapping this hook cannot change protocol behaviour.
+   */
+  onWireMessage?: (event: WireMessageSize) => void;
+};
+
+export type WireMessageSize = {
+  readonly direction: 'in' | 'out';
+  readonly bytes: number;
 };
 
 export type NodeSession = {
@@ -31,6 +42,20 @@ function toText(data: RawData): string {
 export async function openNodeSession(options: NodeSessionOptions): Promise<NodeSession> {
   if (typeof options?.url !== 'string' || options.url.length === 0) throw new Error('WebSocket URL is required');
   const timeoutMs = options.openTimeoutMs ?? 5000;
+  const onWireMessage = options.onWireMessage ?? null;
+  if (onWireMessage !== null && typeof onWireMessage !== 'function') {
+    throw new Error('Invalid wire observer');
+  }
+  /** A throwing observer must never break the socket or the client core. */
+  const noteWire = (direction: 'in' | 'out', bytes: number): void => {
+    if (onWireMessage === null) return;
+    try {
+      onWireMessage({ direction, bytes });
+    } catch {
+      // Observation is optional; a bad sink is ignored.
+    }
+  };
+  const byteLength = (text: string): number => Buffer.byteLength(text, 'utf8');
   const socket = new WebSocket(options.url);
   const client = new SessionClientCore(options.handlers);
 
@@ -39,7 +64,11 @@ export async function openNodeSession(options: NodeSessionOptions): Promise<Node
     resolveClosed = resolve;
   });
 
-  socket.on('message', (data: RawData) => client.receive(toText(data)));
+  socket.on('message', (data: RawData) => {
+    const text = toText(data);
+    noteWire('in', byteLength(text));
+    client.receive(text);
+  });
   socket.on('close', () => {
     client.markTransportClosed();
     resolveClosed();
@@ -67,6 +96,7 @@ export async function openNodeSession(options: NodeSessionOptions): Promise<Node
 
   client.attachTransport(text => {
     if (socket.readyState !== WebSocket.OPEN) throw new Error('WebSocket is not open');
+    noteWire('out', byteLength(text));
     socket.send(text);
   });
 
@@ -74,6 +104,7 @@ export async function openNodeSession(options: NodeSessionOptions): Promise<Node
     client,
     sendRaw: (data: string) => {
       if (socket.readyState !== WebSocket.OPEN) throw new Error('WebSocket is not open');
+      noteWire('out', byteLength(data));
       socket.send(data);
     },
     close: (code = 1000, reason = 'client closing') => {
