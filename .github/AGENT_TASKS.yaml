@@ -813,7 +813,8 @@ tasks:
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
-    status: ready
+    session_id: tester-session-20261102-vis05
+    status: review
     priority: P1
     specification: docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md
     depends_on: [M1-5-VIS-04]
@@ -824,6 +825,7 @@ tasks:
       - Verify native 640x360 clipping regression and published Pages assets when accessible
       - Record remaining owner acceptance requirements without marking M1.5 accepted
       - "Quantify each finding: unused viewport area, rendered HUD pixel size, integer scale factor and canvas bounds"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/110
     last_updated: "2026-11-02"
     notes: "Activated 2026-11-02: the owner selected Milestone 7 polish as the next long-term goal. Deferred by the owner on 2026-11-01 to Milestone 7 polish."
 
