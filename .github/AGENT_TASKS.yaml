@@ -18,7 +18,7 @@ work_packages:
   - id: WP-M2-BENCHMARK-VALIDATION
     title: Benchmark correctness and independent evidence
     assigned_role: tester-session
-    status: blocked
+    status: ready
     task_ids: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
     depends_on: [M2-BENCHMARK-HARNESS-IMPLEMENTATION]
     branch: tester/wp-m2-benchmark-validation
@@ -27,7 +27,7 @@ work_packages:
       - Validate reproducible 7200-tick fixtures and fingerprints after implementation merge
       - Report negative-test coverage and NOT_MEASURED limitations
       - Publish independently reproducible evidence without network performance claims
-    notes: "Planning example; task allocation requires coordination with Tester. Do not treat this package as an automatic claim."
+    notes: "Implementation merged as b3b0166 after independent Tester PASS. Package is ready for Tester to claim; do not treat it as an automatic claim."
 
 tasks:
   - id: M1-GAMEPLAY
@@ -139,9 +139,9 @@ tasks:
       - Gameplay and visual PRs reviewed
       - Test evidence and remaining limitations documented
       - User explicitly approves milestone acceptance
-    pull_request: https://github.com/Trumppo/TurenkiFight/pull/17
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/19
     last_updated: "2026-10-30"
-    notes: "User explicitly accepted M1 on 2026-10-30 with documented limitations. Follow-up QA: physical gamepads, visual readability, 960x540 replay and published Pages console/network."
+    notes: "User explicitly accepted M1 on 2026-10-30 with documented limitations. Acceptance is recorded in docs/M1_ACCEPTANCE_REPORT.md via PR #19; original review PR #17 was closed unmerged. Some follow-up QA items were later covered by M1.5 and Pages work; physical gamepads remain unverified."
 
   - id: M1-5-VIS-02
     title: Four distinct retro fighter sprites and pose contract
@@ -219,7 +219,7 @@ tasks:
   - id: M2-VIS-ARENA-01
     title: Compare and propose next TurenkiFight arena visual concept
     assigned_role: graphics-session
-    status: review
+    status: done
     session_id: graphics-session-20261031-arena
     priority: P2
     specification: docs/visual/NEXT_ARENA_CONCEPT.md
@@ -234,7 +234,7 @@ tasks:
       - Document modular graphics manifest and migration gates
       - Obtain owner approval before selecting or implementing an arena
     last_updated: "2026-10-31"
-    notes: "Concept-only; no new arena artwork or code. VIS-05 remains independent and in progress."
+    notes: "Concept-only PR #70 merged as cd5f7b3; no new arena artwork or code. Selecting or implementing an arena still requires explicit owner approval, tracked by M2-VIS-ARENA-ARCH."
   - id: M2-VIS-ARENA-ARCH
     title: Introduce typed presentation-only arena manifest after concept approval
     assigned_role: graphics-session
@@ -250,12 +250,12 @@ tasks:
       - Resolve arena assets without simulation or input changes
       - Unit tests and browser CI pass
     last_updated: "2026-10-31"
-    notes: "Blocked on owner concept approval and independent M1.5 visual QA."
+    notes: "Blocked only on explicit owner approval of an arena concept; M1.5 visual QA is accepted (2026-11-01)."
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
     assigned_role: planning-session
     session_id: designer-session-20261101
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/M1_5_ACCEPTANCE_REPORT.md
     depends_on: [M1-5-VIS-05]
@@ -267,8 +267,9 @@ tasks:
       - Reconcile stale milestone labels with merged PR evidence
       - Record owner acceptance and its documented limitations
       - Ensure no later milestone is marked accepted before owner approval
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/87
     last_updated: "2026-11-01"
-    notes: "M1.5 accepted with limitations on 2026-11-01; acceptance recorded in docs/M1_5_ACCEPTANCE_REPORT.md. Roadmap, architecture and goal documents reconciled on the same work package. VIS05-02/VIS05-03 remain follow-ups."
+    notes: "PR #87 merged as ed623d7. M1.5 accepted with limitations on 2026-11-01; acceptance recorded in docs/M1_5_ACCEPTANCE_REPORT.md. Roadmap, architecture and goal documents reconciled in the same package. VIS05-02/VIS05-03 remain follow-ups."
 
   - id: M2-PROTOCOL-INTEGRATION
     title: Integrate transport-neutral v1 codecs with authorized session ingress
@@ -341,7 +342,7 @@ tasks:
     title: Review transport-neutral session envelope v1 and lifecycle security gates
     assigned_role: planning-session
     session_id: planning-session-20261031-envelope
-    status: review
+    status: done
     priority: P0
     specification: docs/M2_SESSION_ENVELOPE_V1.md
     branch: planning/m2-session-envelope-v1-contract
@@ -354,7 +355,7 @@ tasks:
       - Owner approves contract before production implementation
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/49
     last_updated: "2026-10-31"
-    notes: "Design-only PR #49 merged as 77905d0 with green CI; contract remains proposal pending explicit design acceptance."
+    notes: "Design-only PR #49 merged as 77905d0 with green CI. The contract remains a proposal: explicit owner acceptance is still required before M2-ENVELOPE-IMPLEMENTATION can start."
   - id: M2-ENVELOPE-IMPLEMENTATION
     title: Implement transport-neutral session envelope validation and adapter boundary
     assigned_role: gameplay-session
@@ -496,7 +497,7 @@ tasks:
       - Publish PASS, PASS WITH LIMITATIONS or FAIL with commands, artifacts and limitations
       - Explicitly exclude transport latency, bandwidth and NAT performance claims
     last_updated: "2026-10-31"
-    notes: "Claim after benchmark implementation is merged; independent QA does not imply network benchmark acceptance."
+    notes: "PR #79 merged as b3b0166 with independent Tester PASS; ready to claim for a post-merge independent revalidation. Does not imply network benchmark acceptance."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
@@ -512,7 +513,7 @@ tasks:
       - Verify native 640x360 clipping regression and published Pages assets when accessible
       - Record remaining owner acceptance requirements without marking M1.5 accepted
     last_updated: "2026-10-31"
-    notes: "Follow-up evidence for VIS05-02 and VIS05-03; do not duplicate the VIS-05 owner gate."
+    notes: "Follow-up evidence for VIS05-02 and VIS05-03 after owner accepted M1.5 on 2026-11-01. This does not reopen milestone acceptance; it produces actionable findings for M1-5-RESPONSIVE-VISUAL-FIX."
 
   - id: M1-5-RESPONSIVE-VISUAL-FIX
     title: Remediate confirmed desktop scaling or mobile HUD readability defects
@@ -551,7 +552,7 @@ tasks:
     title: Reconcile current M1.5 and M2 agent handoff gates
     assigned_role: planning-session
     session_id: planning-session-20261031-handoffs-current
-    status: review
+    status: done
     priority: P0
     depends_on: []
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/77
@@ -562,4 +563,4 @@ tasks:
       - Preserve Gameplay benchmark implementation status
       - Keep M2 envelope implementation blocked pending owner approval
     last_updated: "2026-10-31"
-    notes: "Current-main replacement for conflicted planning PR #72; no milestone accepted."
+    notes: "Replacement for conflicted planning PR #72; merged as 785539e (merge commit). No milestone accepted by this PR."
