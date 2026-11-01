@@ -522,6 +522,34 @@ tasks:
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/97
     notes: "PR URL to be filled when the owner opens the PR. No sockets, measured results or transport decision. Impairment is metadata only. Eight-player final state uses a harness-local digest because the v1 snapshot codec caps four fighters; the cap is unchanged. Optional less-string-dependent gateway error classification was not changed."
 
+  - id: M2-WS-PROTOTYPE
+    title: Prototype authoritative WebSocket session and bounded benchmark driver
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261102-ws
+    status: review
+    priority: P1
+    specification: docs/M2_SESSION_ENVELOPE_V1.md
+    depends_on: [M2-BENCHMARK-SCENARIO-IMPLEMENTATION, M2-ENVELOPE-IMPLEMENTATION]
+    scope:
+      - server/ws/
+      - src/game/networking/
+      - benchmarks/ws/
+      - tests/
+      - package.json
+      - package-lock.json
+      - .github/AGENT_TASKS.yaml
+    acceptance:
+      - Server assigns a trusted connection id per socket, never from payload, and routes joins, inputs and disconnects through SessionEnvelopeGateway
+      - Deterministic 60 Hz step() emits StateSnapshot messages at configured 10/20/30 Hz and revokes host authority without migration
+      - Browser-safe adapter uses the global WebSocket API only; the Node ws dependency stays out of the browser bundle
+      - Bounded npm run bench:ws writes a NOT_MEASURED manifest without invented latency or bandwidth values
+      - Unit tests plus a local ephemeral-port integration test cover join, authorized input, spoofing, disconnect and no authority migration, skipping with an explicit reason when binding is unavailable
+      - Focused tests, npm test, build, bench:ws, git diff --check and agent task validation pass
+    last_updated: "2026-11-02"
+    branch: feature/m2-ws-prototype
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/98
+    notes: "Prototype only: architecture A, no client prediction/rollback, no deployment, no WebRTC and no production security claim. Loopback correctness only; latency, bandwidth, CPU and tick pacing remain NOT_MEASURED. Designer replaces pull_request with the real URL."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session

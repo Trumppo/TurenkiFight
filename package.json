@@ -8,16 +8,19 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "bench:ws": "vite-node benchmarks/ws/runWsBenchmark.ts",
     "test:browser": "playwright test"
   },
   "dependencies": {
     "phaser": "^3.90.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
     "@types/node": "^22.15.0",
+    "@types/ws": "^8.18.2",
     "typescript": "~5.8.3",
     "vite": "^6.3.5",
     "vitest": "^3.2.0",
-    "@playwright/test": "^1.56.0"
+    "ws": "^8.22.1"
   }
 }

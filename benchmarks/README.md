@@ -48,3 +48,11 @@ Every scenario is replayed twice and compared in `tests/m2-benchmark-scenarios.t
 `FAIL-4-RECONNECT`: `P2` is disconnected at tick 2400 and rejoins at tick 2460 with the new identity `conn-2-b`. Input from the new identity before its join and from the old identity after disconnect are both denied `not-joined`; the new identity must perform a fresh join with a fresh sequence domain. `P2` consumes neutral input for 60 ticks. No ownership is recovered implicitly.
 
 The adapter tests are correctness checks, not WS/WebRTC comparisons or evidence of network throughput, latency, NAT behavior or host recovery. Real transport measurement, independent Tester verification and owner acceptance are separate gates.
+
+## WebSocket architecture-A prototype (loopback)
+
+`npm run bench:ws` exercises a bounded BASE-4 loopback run through a prototype authoritative `ws`
+server and Node synthetic clients. It writes a `NOT_MEASURED` manifest under `benchmarks/out/` and
+compares bounded state/event fingerprints with the in-memory reference. See
+[`ws/README.md`](ws/README.md). This is not a transport selection and records no latency, bandwidth or
+tick-pacing measurements.
