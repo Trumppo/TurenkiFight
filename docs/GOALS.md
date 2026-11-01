@@ -65,6 +65,14 @@ Tuota lähdekatsaukseen ja yhden koneen mittauksiin perustuva, jäljitettävä p
 5. **Päätä lähdekatsauksella ja paikallismittauksilla.** ✅ Päätetty 2026-11-02: omistaja hyväksyi ADR 0001:n sellaisenaan. Ehdotus oli: [`docs/adr/0001-network-topology.md`](adr/0001-network-topology.md) suosittaa **arkkitehtuuria A** (keskitetty WebSocket-auktoriteetti) ensimmäiselle verkkopelimilestoneille ja jättää B:n arvioiduksi vaihtoehdoksi. Perustelu: B:n auktoriteettiriskit (hostin jäädytys/lähtö, huijattavuus) tuottavat kovempia katkoksia kuin TCP:n head-of-line-esto tällä kuormalla, ja B:n latenssietu vaatisi vielä toteuttamattoman epäluotettavan kanavan ja redundantin inputin. **Valinta odottaa omistajan hyväksyntää.**
 6. **Siivoa.** ⏳ Vanhentuneet paikalliset työpuut poistetaan, kun niiden sisältö on todistetusti `main`issa.
 
+### Lisäys 2026-11-02: verkkotestauksen harness (omistajan pyyntö)
+
+Omistaja pyysi, että verkkotestausta voidaan tehdä niin, että agentti (esim. Codex) pelaa headless-ympäristössä virtuaalikoneessa toisaalla ja omistaja pelaa selaimella tällä koneella — ja että samaa mekanismia käytetään moninpelitestaukseen usealla pelaajalla. Suunnitelma: [M7_ONLINE_TEST_HARNESS.md](M7_ONLINE_TEST_HARNESS.md).
+
+Mitä tarvitaan (ei ole vielä olemassa): (1) oikean matsin serveritila fixture-ajurin sijaan, (2) headless bot-client, joka täyttää slotteja verkon yli ja kerää metriikat, (3) selattava online-sisäänkäynti, joka renderöi snapshotit interpoloimalla ja näyttää RTT:n, (4) verkkomittarien manifesti ja (5) omistajan runbook. Suositeltu järjestys: serveritila → bot → selainclient → mittaukset → runbook.
+
+Tämä muuttaa ADR 0001:n riskin mitattavaksi: jos snapshot-välit ja RTT pysyvät pieninä oikealla yhteydellä, päätös vahvistuu; jos katkokset korreloivat häviön kanssa, ADR:n uudelleenarviointiehto laukeaa. Suojaukset säilyvät ennallaan: `ws://` ilman TLS:ää vain LANissa tai VPN:ssä, ei julkiseen internetiin.
+
 ### Tiedostorajaus ja omistus
 
 - Designer: `docs/GOALS.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/M2_*.md`, `docs/adr/**`, `.github/AGENT_TASKS.yaml`, `.opencode/agents/**`, `opencode.json`, `AGENTS.md`.
@@ -103,17 +111,53 @@ Työ tehdään omassa haarassa, yksi PR per yhtenäinen työpaketti (`DESIGNER:`
 
 **Omistajan jo tekemät päätökset tässä tavoitteessa:** envelope-sopimus 2026-11-01; PR:ien #94–#107 merget on hyväksytty ja yhdistetty; 2026-11-02 milestone 5 -portti muutettu lähdekatsaukseksi ja yhden koneen mittauksiksi, painotuksena latenssi ja liikkeen sujuvuus.
 
-## Seuraava tavoite: ehdotus (odottaa omistajan valintaa)
+## Aktiivinen tavoite 2026-11-02: M7 — paikallisen pelin polish
 
-M2-kuljetuspäätös on valmis. Seuraavaksi tarvitaan omistajan valinta suunnasta; tässä kolme realistista vaihtoehtoa.
+**Valittu omistajan päätöksellä 2026-11-02.** M2-kuljetuspäätös on suljettu (arkkitehtuuri A). Tämä tavoite keskittyy paikallisen pelin laatuun; verkkoon ei kosketa.
 
-**Vaihtoehto 1 — Verkkopelin ensimmäinen pelattava siivu (M6 alku).** Keskitetty WebSocket-palvelin, TLS ja autentikointi, rate limiting, reconnect, huoneen elinkaari ja interpolointi asiakaspäässä. Tavoite: kaksi selainta samassa verkossa pelaa yhden matsin ilman käsin tehtyjä askelia. Tämä on luontevin jatko hyväksytylle ADR:lle.
+### Tavoite
 
-**Vaihtoehto 2 — Latenssibudjetti ja playtest.** Määritä mitattava input-to-photon-budjetti ja pelaa 2–4 pelaajan matsi oikeassa verkossa. Tulos joko vahvistaa ADR:n tai laukaisee uudelleenarvioinnin (WebTransport / redundanssi). Pienin työ, suurin tiedollinen arvo seuraavalle päätökselle.
+Saata paikallinen neljän pelaajan peli visuaalisesti ja luettavuudeltaan hyväksyttävään kuntoon kaikilla tuetuilla näyttöko'oilla, ja avaa areenatyö omistajan valitsemalla konseptilla. Tavoite ei muuta simulaatiota, determinismiä eikä pelisääntöjä.
 
-**Vaihtoehto 3 — Paikallisen pelin viimeistely (M7).** VIS05-02/VIS05-03, areenatyö ja muu polish, jotka omistaja siirsi aiemmin. Ei edistä verkkopeliä.
+### Rajaus ja vaiheet
 
-Suositus: **Vaihtoehto 2 ensin** (halpa, poistaa suurimman avoimen riskin) ja sen jälkeen **Vaihtoehto 1**. Kumpikaan ei käynnisty ilman omistajan valintaa.
+1. **Responsiivisuuden todentaminen (Tester).** Tehtävä `M1-5-RESPONSIVE-VISUAL-REVIEW`. Tuota tuore näyttö nykyisestä `main`-buildista 1920×1080- ja 390×844-viewporteilla: mittaa käyttämätön pinta-ala, HUD-tekstin todellinen pikselikoko, canvasin sijoittuminen ja skaalauskerroin. Tuloksena yksilöidyt, toistettavat löydökset (VIS05-02, VIS05-03) ja konkreettiset korjausvaihtoehdot kannanottoineen. Ei mutu-arvioita: jokainen väite perustuu kuvaan tai mittaan.
+
+2. **Korjaukset vain vahvistettuihin löydöksiin (Graphics).** Tehtävä `M1-5-RESPONSIVE-VISUAL-FIX`. Säilytä 640×360-looginen kamera, pelaajamäärät, pose-sopimukset ja deterministinen simulaatio. Lisää kohdennettu selainregressiotesti jokaiselle korjatulle löydökselle. Ei uusia taidetyylejä tässä vaiheessa.
+
+3. **Uudelleentestaus ja omistajan visuaalinen hyväksyntä (Tester + omistaja).** Tester toistaa kuvat ja vertaa ennen/jälkeen. Omistaja katsoo tuloksen ja hyväksyy tai palauttaa. Vasta hyväksynnän jälkeen VIS05-02/VIS05-03 merkitään suljetuiksi.
+
+4. **Areena omistajan valinnalla.** Tehtävä `M2-VIS-ARENA-ARCH` on backlogissa ja vaatii eksplisiittisen areenavalinnan: [NEXT_ARENA_CONCEPT.md](visual/NEXT_ARENA_CONCEPT.md) vertaa yläastetta, K-kauppaa, Meskua ja kävelykadua (PR #70, konsepti vain). Omistaja valitsee konseptin; sen jälkeen toteutetaan tyypitetty, presentaatio-only areenamanifesti ilman simulaatiomuutoksia.
+
+5. **Valinnainen myöhemmin:** ääni, osumapalautteen hienosäätö ja tasapainotus. Ei kuulu tämän tavoitteen hyväksymisehtoihin, ellei omistaja erikseen pyydä.
+
+### Tiedostorajaus ja omistus
+
+- Designer: `docs/GOALS.md`, `docs/ROADMAP.md`, `docs/visual/**`, `docs/adr/**`, `.github/AGENT_TASKS.yaml`.
+- Graphics: `src/game/presentation/**`, `public/assets/**`, `src/style.css`, visuaaliset testit (`tests/browser/**`).
+- Tester: itsenäinen kuvien ja mittausten todentaminen; ei omista tuotantokoodia.
+- Gameplay: ei muutoksia tässä tavoitteessa ilman erillistä päätöstä. Simulaation sormenjälkien on pysyttävä ennallaan.
+
+### Hyväksyntätestit
+
+- `npm test`, `npm run build`, `npm run test:browser` vihreät jokaisella PR-headilla; kirjaa mitä itse ajoit.
+- `python scripts/validate_agent_tasks.py` → PASS ja `git diff --check` puhdas.
+- Simulaation determinismisormenjäljet (fixtuuri `7fddf007…`, lopputila `de544fcd…`, tapahtumat `5bb44bd6…`) pysyvät muuttumattomina.
+- Jokaisesta korjatusta visuaalisesta löydöksestä on kuvapari ennen/jälkeen ja koneellinen regressio.
+- 640×360-looginen kamera, neljän pelaajan asettelu ja nykyiset pose-sopimukset säilyvät.
+
+### Riskit ja rajat
+
+- Visuaalinen hyväksyntä on omistajan silmäpari; agentti ei voi sitä antaa.
+- Mobiiililuettavuus fyysisellä laitteella jää varmistamatta, ellei omistaja testaa puhelimella.
+- Playwright-kuvien ottaminen on ympäristöherkkää; kuvat tallennetaan artefakteina ja niiden olemassaolo ei yksin todista laatua.
+- Areenatyö voi vaikuttaa hahmojen erottuvuuteen; se on testattava neljän pelaajan tilanteessa ennen hyväksyntää.
+
+### Päätösportit
+
+- Omistaja valitsee areenakonseptin ennen kuin `M2-VIS-ARENA-ARCH` aloitetaan.
+- Omistaja hyväksyy visuaalisen lopputuloksen ennen kuin VIS05-02/VIS05-03 suljetaan.
+- Milestone 7:n hyväksyntä on erillinen omistajapäätös.
 
 ## Tavoitedokumentin päivityskäytäntö
 

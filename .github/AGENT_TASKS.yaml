@@ -704,10 +704,113 @@ tasks:
     notes: "PR #108 merged after the owner approved ADR 0001 on 2026-11-02: architecture A, central authoritative WebSocket server. An independent audit found stale figures taken from superseded result files; they were corrected against the committed manifests (tick p99 6.8-8.4 us, peak RSS 118.2-118.8 MiB, downstream 0.2 Mbit/s per client and 0.8 Mbit/s server) before approval. Architecture B stays as an evaluated alternative; WebTransport is the leading reconsideration candidate. Milestone 5 acceptance as a whole is still a separate owner action."
 
 
+  - id: M7-ONLINE-SERVER-MODE
+    title: Serve a real authoritative match over WebSocket instead of the benchmark fixture driver
+    assigned_role: gameplay-session
+    status: ready
+    priority: P0
+    specification: docs/M7_ONLINE_TEST_HARNESS.md
+    depends_on: [M2-WS-PROTOTYPE]
+    scope:
+      - server/ws/
+      - tests/
+      - package.json
+      - .github/AGENT_TASKS.yaml
+    acceptance:
+      - A documented npm script binds an explicit host and port and accepts up to four real clients
+      - The match starts on a full roster or on an explicit start request, runs the 60 Hz authoritative loop in real time, and closes cleanly
+      - The server reuses AuthoritativeWsSession and the envelope gateway and does not reuse the benchmark fixture driver
+      - A fifth connection is rejected before registration; a disconnect revokes its slots without changing authority rules
+      - Integration tests cover join, start, one accepted input per slot, extra-connection rejection and clean shutdown on an ephemeral port
+      - Simulation rules, protocol semantics and presentation are unchanged; npm test, npm run build and git diff --check pass
+    notes: "First slice of the owner-requested online test harness (2026-11-02). It exists so a human browser and a remote agent can play the same match. No TLS, authentication or rate limiting is implied."
+
+  - id: M7-BOT-CLIENT
+    title: Add a headless bot client that fills player slots over the network and records metrics
+    assigned_role: gameplay-session
+    status: backlog
+    priority: P0
+    specification: docs/M7_ONLINE_TEST_HARNESS.md
+    depends_on: [M7-ONLINE-SERVER-MODE]
+    scope:
+      - benchmarks/bot/
+      - server/ws/
+      - tests/
+      - package.json
+    acceptance:
+      - A documented npm script joins the requested player slots against a remote server and rejects unexpected grants
+      - Bots drive canonical inputs at 60 Hz from the deterministic fixture schedule, with an optional wander pattern
+      - Each bot records per-second sent/received counts, RTT percentiles and snapshot inter-arrival percentiles to JSON with provenance
+      - A bot exits cleanly on match end, disconnect or timeout and never writes a manifest it does not own
+      - Two-process loopback tests prove a bot fills the roster and reproduces the pinned session fingerprints
+      - "No invented network values: fields that were not measured are absent or NOT_MEASURED"
+      - npm test, npm run build and git diff --check pass
+    notes: "Recommended first way for a remote agent to play: no browser, no GPU, real network path. A Playwright bot can reuse the same server later."
+
+  - id: M7-ONLINE-BROWSER-CLIENT
+    title: Add a served browser client that joins a remote match and renders interpolated snapshots
+    assigned_role: gameplay-session
+    status: backlog
+    priority: P1
+    specification: docs/M7_ONLINE_TEST_HARNESS.md
+    depends_on: [M7-ONLINE-SERVER-MODE]
+    scope:
+      - src/game/networking/
+      - src/game/presentation/
+      - public/
+      - tests/browser/
+    acceptance:
+      - A served entry point accepts a server URL and joins a chosen player slot through the existing client core
+      - Local input is mapped to canonical InputFrames at 60 Hz; received snapshots are rendered with interpolation and no prediction
+      - The UI shows connection state, RTT and a snapshot counter so latency is visible, not mistaken for a bug
+      - Deterministic gameplay and the local four-player mode are unchanged; the online path is opt-in
+      - A browser test proves the page joins, sends input and renders a snapshot against a local server, skipping with a reason when a socket cannot bind
+      - npm test, npm run build, npm run test:browser and git diff --check pass
+    notes: "This is the page the owner uses on this machine. Prediction is out of scope; document the resulting input latency instead of hiding it."
+
+  - id: M7-NETWORK-MEASUREMENTS
+    title: Record real network metrics from LAN and VM matches
+    assigned_role: gameplay-session
+    status: backlog
+    priority: P0
+    specification: docs/M7_ONLINE_TEST_HARNESS.md
+    depends_on: [M7-BOT-CLIENT, M7-ONLINE-BROWSER-CLIENT]
+    scope:
+      - benchmarks/results/
+      - benchmarks/bot/
+      - tests/
+      - docs/
+    acceptance:
+      - RTT, snapshot inter-arrival, input-to-snapshot latency, bytes per second, late/denied counts and server tick duration are recorded per run
+      - Every manifest states the network path (lan, vm or internet), the roles, OS, Node or browser versions, commit SHA, seed and tick count
+      - A field is written only when measured; nothing is inferred, averaged into a claim or copied between runs
+      - At least three LAN or VM runs with one browser plus three bots are recorded, with raw JSON committed under benchmarks/results/
+      - Results state explicitly that a local VM run is not an internet measurement
+      - Simulated or fixture-derived latency is never presented as measured network latency
+    notes: "This is where the ADR's accepted TCP risk becomes measurable. If gaps correlate with visible stutter, that is the recorded reconsideration trigger."
+
+  - id: M7-ONLINE-RUNBOOK
+    title: Write the owner-facing runbook for LAN and VM matches
+    assigned_role: planning-session
+    status: backlog
+    priority: P2
+    specification: docs/M7_ONLINE_TEST_HARNESS.md
+    depends_on: [M7-ONLINE-SERVER-MODE]
+    scope:
+      - docs/M7_ONLINE_TEST_HARNESS.md
+      - docs/ROADMAP.md
+    acceptance:
+      - "Step-by-step procedure: start the server, open the local browser, run bots from the VM, confirm the match, save evidence"
+      - Exact commands, ports, firewall and VPN notes, and what to do when the roster does not fill
+      - Explicit warning that ws:// without TLS is for LAN or VPN only
+      - "Evidence checklist: metric files, screenshots, commit SHA, network path, repeat count"
+      - No claim of internet measurement unless it was actually run over the internet
+    notes: "Backlog until the server and bot commands exist, so the runbook documents real commands rather than guesses."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
-    status: backlog
+    status: ready
     priority: P1
     specification: docs/visual/M1_5_VIS_05_TESTER_EVIDENCE.md
     depends_on: [M1-5-VIS-04]
@@ -717,8 +820,9 @@ tasks:
       - Distinguish readability defects from aesthetic preferences and document objective reproduction steps
       - Verify native 640x360 clipping regression and published Pages assets when accessible
       - Record remaining owner acceptance requirements without marking M1.5 accepted
-    last_updated: "2026-10-31"
-    notes: "Deferred by the owner on 2026-11-01 to Milestone 7 polish. M1.5 remains accepted; this does not reopen it. When claimed, produce actionable evidence for M1-5-RESPONSIVE-VISUAL-FIX."
+      - "Quantify each finding: unused viewport area, rendered HUD pixel size, integer scale factor and canvas bounds"
+    last_updated: "2026-11-02"
+    notes: "Activated 2026-11-02: the owner selected Milestone 7 polish as the next long-term goal. Deferred by the owner on 2026-11-01 to Milestone 7 polish."
 
   - id: M1-5-RESPONSIVE-VISUAL-FIX
     title: Remediate confirmed desktop scaling or mobile HUD readability defects
@@ -732,7 +836,7 @@ tasks:
       - Address only Tester-confirmed reproducible findings and preserve 640x360 logical camera
       - Preserve fighter pose contracts, classic mode and deterministic gameplay
       - Add targeted browser visual regression and obtain Tester retest
-    last_updated: "2026-10-31"
+    last_updated: "2026-11-02"
     notes: "Deferred to Milestone 7 polish alongside M1-5-RESPONSIVE-VISUAL-REVIEW. Do not start before Tester publishes actionable findings."
 
   - id: M2-BENCHMARK-SCENARIO-PLAN
