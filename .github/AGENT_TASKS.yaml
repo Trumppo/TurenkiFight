@@ -824,7 +824,8 @@ tasks:
   - id: M7-AUDIO-CORE
     title: Add the audio engine, unlock path, buses and the cue bridge
     assigned_role: graphics-session
-    status: ready
+    session_id: graphics-session-20261102-audio
+    status: review
     priority: P1
     specification: docs/M7_AUDIO_PLAN.md
     depends_on: [M1-5-RESPONSIVE-VISUAL-FIX]
@@ -842,6 +843,8 @@ tasks:
       - Deterministic simulation fingerprints are unchanged with audio enabled or disabled
       - Unit tests use a fake AudioContext for scheduling, gain and mute persistence; the browser suite shows no audio errors
       - npm test, npm run build, npm run test:browser and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/117
+    last_updated: "2026-11-02"
     notes: "Owner requested background music and combat effects on 2026-11-02. Procedural synthesis is recommended so no licensed binary assets are needed; the cue interface stays asset-agnostic so recorded samples can replace voices later. Agents cannot judge whether it sounds good."
 
   - id: M7-AUDIO-MIX
