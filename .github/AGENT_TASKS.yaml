@@ -604,7 +604,8 @@ tasks:
   - id: M2-NETWORK-ADDRESSABLE-WS-BENCHMARK
     title: Split the WebSocket benchmark into server and client roles so runs can span machines
     assigned_role: gameplay-session
-    status: ready
+    session_id: gameplay-session-20261102-splitws
+    status: review
     priority: P0
     specification: docs/NETWORK_BENCHMARK_PLAN.md
     depends_on: [M2-FULL-LENGTH-BENCHMARK]
@@ -620,6 +621,8 @@ tasks:
       - A two-process loopback integration test proves the split path reproduces the pinned 7200-tick fingerprints
       - No latency, bandwidth, CPU or tick-pacing value is produced; every measurement field stays NOT_MEASURED
       - npm test, npm run build, git diff --check and agent task validation pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/104
+    last_updated: "2026-11-02"
     notes: "Designer finding 2026-11-02: benchmarks/ws/runWsBenchmark.ts hardcodes host 127.0.0.1 and port 0 and starts the server plus all four synthetic clients in one process, so the LAN/internet measurement required by the active goal cannot be executed by any environment the owner provides. This task is a prerequisite for milestone 5, not a measurement and not a transport decision."
 
 
