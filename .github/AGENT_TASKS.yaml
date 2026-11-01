@@ -429,7 +429,7 @@ tasks:
   - id: M2-BENCHMARK-HARNESS-IMPLEMENTATION
     title: Build deterministic fixture generator and in-memory benchmark adapter
     assigned_role: gameplay-session
-    status: review
+    status: done
     priority: P1
     specification: docs/M2_BENCHMARK_HARNESS_SPEC.md
     depends_on: [M2-BENCHMARK-HARNESS-DESIGN]
@@ -442,7 +442,7 @@ tasks:
     session_id: gameplay-session-20261031-benchmark
     branch: feature/m2-benchmark-harness-main-refresh
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/79
-    notes: "PR #79 is the current conflict-free implementation PR on main and its CI checks are green; independent Tester gate is in progress. PR #73 is superseded. No sockets, performance claims or transport decision."
+    notes: "PR #79 merged as b3b0166 after independent Tester PASS (reproducible fixture hash, strict NOT_MEASURED manifest, adversarial coverage). No sockets, performance claims or transport decision. PR #73 superseded."
 
   - id: M2-SAFE-TICK-WINDOW
     title: Reject unsafe tick arithmetic and verify 7200-tick canonical assembly
