@@ -69,6 +69,14 @@ Two pacing modes are recorded in the manifest:
 Neither mode is a transport measurement. The wall-clock guard is derived from the tick count (or set
 with `--timeout-ms`) because a legitimate 7200-tick real-time run needs 120 s.
 
+## Single-machine local measurements
+
+`npm run measure:local` records honest single-machine codec byte counts,
+authoritative tick-duration distributions, snapshot codec timings and process
+resources. Results are written under [`results/`](results/README.md) and every
+network field stays `NOT_MEASURED`; the command opens no network path and selects
+no transport.
+
 ## WebRTC architecture-B prototype (loopback correctness only)
 
 `npm run bench:webrtc` drives four client cores through an emulated ordered DataChannel pair into a

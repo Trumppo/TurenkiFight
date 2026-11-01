@@ -10,6 +10,7 @@
     "test": "vitest run",
     "bench:ws": "vite-node benchmarks/ws/runWsBenchmark.ts",
     "bench:webrtc": "vite-node benchmarks/webrtc/runWebrtcBenchmark.ts",
+    "measure:local": "vite-node benchmarks/local/runLocalMeasurements.ts",
     "signaling:dev": "vite-node server/signaling/devSignalingServer.ts",
     "test:browser": "playwright test"
   },
