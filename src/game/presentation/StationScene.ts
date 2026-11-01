@@ -7,6 +7,7 @@ import { createFighterTextures, fighterKey, type FighterPose } from './fighterSp
 import { createRetroP1Textures, RETRO_PREVIEW, RETRO_STATION_PATH } from './retroPrototype';
 import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
+import { keyboardPlayerInput } from '../input/keyboardMapping';
 
 export class StationScene extends Phaser.Scene {
   private state: GameState = createState(['P1'], 'lobby');
@@ -123,10 +124,9 @@ export class StationScene extends Phaser.Scene {
   }
 
   private readInputs(pads: Gamepad[]): PlayerInput[] {
-    const k = this.keys;
     const inputs: PlayerInput[] = [
-      { playerId: 'P1', moveX: axis(k.A.isDown, k.D.isDown), moveY: axis(k.W.isDown, k.S.isDown), jump: k.SPACE.isDown, punch: k.F.isDown, kick: k.G.isDown, jumpkick: k.H.isDown },
-      { playerId: 'P2', moveX: axis(this.cursors.left.isDown, this.cursors.right.isDown), moveY: axis(this.cursors.up.isDown, this.cursors.down.isDown), jump: k.K.isDown, punch: k.L.isDown, kick: k.J.isDown, jumpkick: k.U.isDown },
+      keyboardPlayerInput('P1', code => this.isKeyboardCodeDown(code)),
+      keyboardPlayerInput('P2', code => this.isKeyboardCodeDown(code)),
     ];
     for (const [index, id] of this.gamepadSlots) {
       const pad = pads.find(p => p.index === index);
@@ -139,6 +139,25 @@ export class StationScene extends Phaser.Scene {
       else inputs.push(input);
     }
     return inputs;
+  }
+
+  /**
+   * Adapter from the canonical DOM-key layout in `src/game/input` to Phaser's
+   * key objects. Arrow keys come from `createCursorKeys()`; letter and Space
+   * keys come from the named `addKeys` list created in `create()`.
+   */
+  private isKeyboardCodeDown(code: string): boolean {
+    switch (code) {
+      case 'ArrowLeft': return this.cursors.left.isDown;
+      case 'ArrowRight': return this.cursors.right.isDown;
+      case 'ArrowUp': return this.cursors.up.isDown;
+      case 'ArrowDown': return this.cursors.down.isDown;
+      case 'Space': return this.keys.SPACE.isDown;
+      default: {
+        const phaserKey = code.startsWith('Key') ? code.slice(3) : code;
+        return this.keys[phaserKey]?.isDown ?? false;
+      }
+    }
   }
 
   private drawFighters(): void {
@@ -226,7 +245,4 @@ export class StationScene extends Phaser.Scene {
     if (prev && Math.abs(prev.y - f.y) > 0.05) return 'depth';
     return 'idle';
   }
-}
-function axis(negative: boolean, positive: boolean): -1 | 0 | 1 {
-  return negative === positive ? 0 : negative ? -1 : 1;
 }

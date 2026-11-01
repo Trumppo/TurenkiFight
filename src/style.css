@@ -110,6 +110,53 @@ body.integer-scale-2 .hud-player { min-height: 28px; padding: 2px 8px; }
   body.integer-scale-2 #game canvas { width: 100% !important; height: auto !important; }
 }
 
+/* Online entry page. The local page above is unchanged; these selectors are
+   scoped by `.online-page` or by IDs unique to online.html. */
+.online-page .hud-toolbar { grid-template-columns: auto minmax(0, 1fr); }
+.online-panel {
+  margin: 10px auto;
+  max-width: 960px;
+  padding: 8px 10px;
+  border: 1px solid #526071;
+  background: #202a36;
+  color: #f5e9c7;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.online-form {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 6px 8px;
+  font-size: 14px;
+}
+.online-form input,
+.online-form select,
+.online-form button {
+  min-height: 30px;
+  padding: 3px 6px;
+  border: 1px solid #c7a76a;
+  border-radius: 0;
+  background: #172536;
+  color: #fff1b7;
+  font: inherit;
+}
+.online-form button { cursor: pointer; font-weight: 700; }
+.online-form button:hover { background: #2b3a4c; }
+.online-error { margin: 6px 0 0; color: #ffb4a2; font-size: 14px; }
+.online-link p { margin: 2px 0; }
+#online-status { font-size: 15px; font-weight: 700; color: #fff1b7; }
+#online-status[data-state="error"] { color: #ffb4a2; }
+#online-status[data-state="closed"],
+#online-status[data-state="ended"] { color: #c2cbd2; }
+#online-metrics { font-size: 14px; color: #c6f0e7; }
+.online-note { font-size: 14px; color: #c2cbd2; }
+@media (max-width: 700px) {
+  .online-form { grid-template-columns: auto minmax(0, 1fr); }
+  .online-form button { grid-column: 1 / -1; }
+}
+
 /* Keyboard reference stays collapsed so the native 640x360 arena still fits. */
 .controls { margin: 8px auto; max-width: 640px; text-align: left; font-size: 13px; }
 .controls summary { cursor: pointer; padding: 5px 8px; color: #f5e9c7; }
