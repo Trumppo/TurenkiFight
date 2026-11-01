@@ -574,7 +574,7 @@ tasks:
       - One real-browser Playwright test joins a slot and one accepted input, skipping with an explicit reason when WebRTC is unavailable
       - Bounded npm run bench:webrtc writes a NOT_MEASURED manifest without inventing latency or bandwidth values
       - Focused tests, npm test, build, bench:webrtc, git diff --check and agent task validation pass
-    pull_request: pending
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/100
     last_updated: "2026-11-02"
     notes: "Designer fills the PR URL. Architecture B prototype only: no production security claims, no NAT/TURN provisioning and no transport decision. Signaling relays control messages only; the WS prototype is unchanged."
 
