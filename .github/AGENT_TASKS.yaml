@@ -749,6 +749,8 @@ tasks:
       - Two-process loopback tests prove a bot fills the roster and reproduces the pinned session fingerprints
       - "No invented network values: fields that were not measured are absent or NOT_MEASURED"
       - npm test, npm run build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/113
+    last_updated: "2026-11-02"
     notes: "Recommended first way for a remote agent to play: no browser, no GPU, real network path. A Playwright bot can reuse the same server later."
 
   - id: M7-ONLINE-BROWSER-CLIENT
