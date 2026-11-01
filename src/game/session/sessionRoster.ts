@@ -16,15 +16,33 @@ export class SessionRoster {
   }
 
   join(connectionId: SessionConnectionId, playerId: SessionPlayerId): void {
+    this.joinMany(connectionId, [playerId]);
+  }
+
+  /**
+   * Claims several slots for one connection atomically. Every claim is checked
+   * before any ownership changes, so a partially authorized join cannot exist.
+   */
+  joinMany(connectionId: SessionConnectionId, playerIds: readonly SessionPlayerId[]): void {
     this.assertId(connectionId);
-    this.assertId(playerId);
-    const currentOwner = this.owners.get(playerId);
-    if (currentOwner !== undefined && currentOwner !== connectionId) throw new Error('Player slot already owned');
-    if (currentOwner === undefined && this.owners.size >= this.maxPlayers) throw new Error('Session full');
+    if (!Array.isArray(playerIds) || playerIds.length < 1) throw new Error('Invalid player slots');
+    const claimed = new Set<SessionPlayerId>();
+    let additions = 0;
+    for (const playerId of playerIds) {
+      this.assertId(playerId);
+      if (claimed.has(playerId)) throw new Error('Duplicate player slot');
+      claimed.add(playerId);
+      const currentOwner = this.owners.get(playerId);
+      if (currentOwner !== undefined && currentOwner !== connectionId) throw new Error('Player slot already owned');
+      if (currentOwner === undefined) additions++;
+    }
+    if (this.owners.size + additions > this.maxPlayers) throw new Error('Session full');
     const slots = this.connections.get(connectionId) ?? new Set<SessionPlayerId>();
-    slots.add(playerId);
+    for (const playerId of claimed) {
+      slots.add(playerId);
+      this.owners.set(playerId, connectionId);
+    }
     this.connections.set(connectionId, slots);
-    this.owners.set(playerId, connectionId);
     if (!this.hostAssigned) {
       this.host = connectionId;
       this.hostAssigned = true;
@@ -33,6 +51,15 @@ export class SessionRoster {
 
   owns(connectionId: SessionConnectionId, playerId: SessionPlayerId): boolean {
     return this.owners.get(playerId) === connectionId && this.connections.get(connectionId)?.has(playerId) === true;
+  }
+
+  hasConnection(connectionId: SessionConnectionId): boolean {
+    return this.connections.has(connectionId);
+  }
+
+  /** Authorized slots for one connection, in canonical order. */
+  playersOf(connectionId: SessionConnectionId): SessionPlayerId[] {
+    return [...(this.connections.get(connectionId) ?? [])].sort();
   }
 
   assertOwns(connectionId: SessionConnectionId, playerId: SessionPlayerId): void {

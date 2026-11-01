@@ -1,6 +1,6 @@
 import type { PlayerInput } from '../simulation/types';
 import { SessionRoster } from './sessionRoster';
-import { SessionInputBuffer } from './sessionInputBuffer';
+import { DEFAULT_MAX_INPUT_LEAD_TICKS, SessionInputBuffer } from './sessionInputBuffer';
 
 /**
  * The only intended network-facing entry point for simulation controls.
@@ -14,13 +14,26 @@ export class AuthorizedSessionIngress {
   private readonly roster: SessionRoster;
   private readonly buffer: SessionInputBuffer;
 
-  constructor(startTick = 0, maxLead = 8, maxPlayers = 4) {
+  constructor(startTick = 0, maxLead = DEFAULT_MAX_INPUT_LEAD_TICKS, maxPlayers = 4) {
     this.roster = new SessionRoster(maxPlayers);
     this.buffer = new SessionInputBuffer(startTick, maxLead, maxPlayers);
   }
 
   join(connectionId: string, playerId: string): void {
     this.roster.join(connectionId, playerId);
+  }
+
+  /** Claims every slot owned by one connection as a single authorization step. */
+  joinMany(connectionId: string, playerIds: readonly string[]): void {
+    this.roster.joinMany(connectionId, playerIds);
+  }
+
+  owns(connectionId: string, playerId: string): boolean {
+    return this.roster.owns(connectionId, playerId);
+  }
+
+  hasConnection(connectionId: string): boolean {
+    return this.roster.hasConnection(connectionId);
   }
 
   assertHost(connectionId: string): void {
@@ -32,6 +45,16 @@ export class AuthorizedSessionIngress {
     if (!input || typeof input.playerId !== 'string') throw new Error('Malformed player input');
     this.roster.assertOwns(connectionId, input.playerId);
     this.buffer.submit(connectionId, sequence, targetTick, input);
+  }
+
+  /** Atomically submits every claimed slot; denial cannot partially apply. */
+  submitFrame(connectionId: string, sequence: number, targetTick: number, inputs: readonly PlayerInput[]): void {
+    if (!Array.isArray(inputs) || inputs.length === 0) throw new Error('Malformed player input');
+    for (const input of inputs) {
+      if (!input || typeof input.playerId !== 'string') throw new Error('Malformed player input');
+      this.roster.assertOwns(connectionId, input.playerId);
+    }
+    this.buffer.submitFrame(connectionId, sequence, targetTick, inputs);
   }
 
   consume(): { version: 1; tick: number; inputs: PlayerInput[] } {
@@ -51,5 +74,17 @@ export class AuthorizedSessionIngress {
 
   get bufferedTicks(): number {
     return this.buffer.bufferedTicks;
+  }
+
+  get nextTick(): number {
+    return this.buffer.nextTickValue;
+  }
+
+  get maxLeadTicks(): number {
+    return this.buffer.maxLeadTicks;
+  }
+
+  get playerCapacity(): number {
+    return this.buffer.playerCapacity;
   }
 }
