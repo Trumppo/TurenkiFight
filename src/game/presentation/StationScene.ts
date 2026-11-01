@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { createState, step, standings, TICK_RATE } from '../simulation/step';
 import type { GameState, PlayerInput, Fighter } from '../simulation/types';
-import { VISUAL } from './visualTheme';
 import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
 import { VIEWPORT, cameraScale } from './viewport';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
@@ -16,11 +15,11 @@ export class StationScene extends Phaser.Scene {
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private fighterSprites = new Map<string, Phaser.GameObjects.Image>();
   private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
-  private labels = new Map<string, Phaser.GameObjects.Text>();
-  private scoreLabel!: Phaser.GameObjects.Text;
-  private playerHud = new Map<string, Phaser.GameObjects.Text>();
-  private hudTimer!: Phaser.GameObjects.Text;
-  private statusLabel!: Phaser.GameObjects.Text;
+  private domHud?: {
+    timer: HTMLElement;
+    status: HTMLElement;
+    players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>;
+  };
   private previous = new Map<string, { x: number; y: number; health: number }>();
   private hitFlash = new Map<string, number>();
   private gamepadSlots = new Map<number, string>();
@@ -49,27 +48,10 @@ export class StationScene extends Phaser.Scene {
     }
     this.add.image(0, 0, VISUAL_ASSETS.station.backdrop.key).setOrigin(0, 0)
       .setDisplaySize(VIEWPORT.logicalWidth, VIEWPORT.logicalHeight).setDepth(-100);
-    const hud = this.add.graphics().setDepth(1000);
-    hud.fillStyle(0x172536, 0.92).fillRect(0, 0, VIEWPORT.logicalWidth, Math.max(35, VISUAL.hudHeight));
-    hud.lineStyle(1, VISUAL.colors.cream).lineBetween(0, 35, VIEWPORT.logicalWidth, 35);
-    if (RETRO_PREVIEW) {
-      // Pixel-art scoreboard: crisp inset, corner pixels and four player slots.
-      hud.fillStyle(0x101a27, 1).fillRect(2, 2, VIEWPORT.logicalWidth - 4, 31);
-      hud.lineStyle(1, 0xc7a76a, 1).strokeRect(2, 2, VIEWPORT.logicalWidth - 4, 31);
-      hud.lineStyle(1, 0x526a70, 1);
-      for (let slot = 1; slot < 4; slot++) {
-        const x = Math.round(slot * VIEWPORT.logicalWidth / 4);
-        hud.lineBetween(x, 3, x, 32);
-      }
-      hud.fillStyle(0xf4d38d, 1);
-      for (const x of [3, VIEWPORT.logicalWidth - 5]) {
-        hud.fillRect(x, 3, 2, 2);
-        hud.fillRect(x, 30, 2, 2);
-      }
-    }
-    this.scoreLabel = this.add.text(7, 6, '', { fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7' }).setDepth(1001).setVisible(false);
-    this.hudTimer = this.add.text(192, 26, '02:00', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7' }).setOrigin(0.5, 0).setDepth(1001);
-    this.statusLabel = this.add.text(192, 42, '', { fontFamily: 'monospace', fontSize: '10px', color: '#fff1b7', backgroundColor: '#172536', align: 'center' }).setOrigin(0.5, 0).setDepth(1002);
+    // Scores, player labels and match status are rendered in the responsive
+    // DOM HUD. It occupies the reserved scoreboard band on desktop and moves
+    // above the playfield on narrow screens.
+    this.initDomHud();
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,SPACE,ENTER,SHIFT') as Record<string, Phaser.Input.Keyboard.Key>;
     this.drawFighters();
@@ -164,7 +146,6 @@ export class StationScene extends Phaser.Scene {
       if (!this.fighterSprites.has(f.id)) {
         this.shadows.set(f.id, this.add.ellipse(0, 0, 22, 7, 0x283640, 0.55));
         this.fighterSprites.set(f.id, this.add.image(0, 0, fighterKey(f.id, 'idle', 0)).setOrigin(0.5, 1));
-        this.labels.set(f.id, this.add.text(0, 0, f.id, { fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7', backgroundColor: '#202a36' }).setOrigin(0.5, 1));
       }
       const prev = this.previous.get(f.id);
       if (prev && f.health < prev.health) this.hitFlash.set(f.id, this.state.tick + 12);
@@ -181,28 +162,54 @@ export class StationScene extends Phaser.Scene {
       } else {
         sprite.clearTint();
       }
-      this.labels.get(f.id)!.setPosition(x, y - Math.round(f.z) - 47).setDepth(y + 0.1);
       this.previous.set(f.id, { x: f.x, y: f.y, health: f.health });
     }
-    const segment = VIEWPORT.logicalWidth / this.state.fighters.length;
-    for (const [index, f] of this.state.fighters.entries()) {
-      if (!this.playerHud.has(f.id)) {
-        this.playerHud.set(f.id, this.add.text(0, 3, '', {
-          fontFamily: 'monospace', fontSize: '9px', color: '#fff1b7',
-        }).setDepth(1001));
-      }
-      this.playerHud.get(f.id)!.setPosition(Math.round(index * segment + 4), 3)
-        .setText(`${f.id} HP ${Math.max(0, Math.min(100, f.health))}\n${f.score} ${f.koTimer ? 'KO' : ''}`);
+    this.renderDomHud();
+  }
+
+  private initDomHud(): void {
+    const timer = document.getElementById('match-timer');
+    const status = document.getElementById('match-status');
+    if (!timer || !status) return;
+    const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>();
+    for (const node of Array.from(document.querySelectorAll('.hud-player[data-player]'))) {
+      const root = node as HTMLElement;
+      const id = root.dataset.player;
+      const score = root.querySelector('.hud-score') as HTMLElement | null;
+      const health = root.querySelector('.hud-health') as HTMLElement | null;
+      if (id && score && health) players.set(id, { root, score, health });
     }
+    this.domHud = { timer, status, players };
+    this.renderDomHud();
+  }
+
+  private renderDomHud(): void {
+    const hud = this.domHud;
+    if (!hud) return;
     const seconds = Math.ceil(this.state.remainingTicks / TICK_RATE);
-    this.hudTimer.setText(`${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`);
-    if (this.state.phase === 'lobby') {
-      const joined = this.state.fighters.map(f => `${f.id}:${[...this.gamepadSlots.entries()].find(([, id]) => id === f.id)?.[0] !== undefined ? 'PAD' : 'KEY'}`).join(' ');
-      this.statusLabel.setText(`LOBBY ${joined}\nSHIFT/PAD SELECT: JOIN | P1 ENTER/PAD START`);
+    const timerText = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+    if (hud.timer.textContent !== timerText) hud.timer.textContent = timerText;
+    for (const [id, nodes] of hud.players) {
+      const fighter = this.state.fighters.find(f => f.id === id);
+      nodes.root.classList.toggle('is-empty', !fighter);
+      const scoreText = fighter ? String(fighter.score) : '—';
+      const healthValue = fighter ? Math.max(0, Math.min(100, fighter.health)) : undefined;
+      const healthText = healthValue === undefined ? 'HP —' : `HP ${healthValue}`;
+      const label = fighter
+        ? `${id}, score ${fighter.score}, health ${Math.max(0, Math.min(100, fighter.health))}`
+        : `${id}, not joined`;
+      if (nodes.score.textContent !== scoreText) nodes.score.textContent = scoreText;
+      if (nodes.health.textContent !== healthText) nodes.health.textContent = healthText;
+      if (nodes.root.getAttribute('aria-label') !== label) nodes.root.setAttribute('aria-label', label);
     }
-    else if (this.state.phase === 'countdown') this.statusLabel.setText(`START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`);
-    else if (this.state.phase === 'results') this.statusLabel.setText('RESULTS\n' + standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join('\n') + '\nENTER: REMATCH');
-    else this.statusLabel.setText(this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' '));
+    let statusText: string;
+    if (this.state.phase === 'lobby') {
+      statusText = 'LOBBY · SHIFT/PAD JOIN · ENTER/PAD START';
+    }
+    else if (this.state.phase === 'countdown') statusText = `START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`;
+    else if (this.state.phase === 'results') statusText = `RESULTS · ${standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join(' · ')} · ENTER: REMATCH`;
+    else statusText = this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' · ') || 'FIGHT';
+    if (hud.status.textContent !== statusText) hud.status.textContent = statusText;
   }
 
   private pose(f: Fighter, prev?: { x: number; y: number; health: number }): FighterPose {
