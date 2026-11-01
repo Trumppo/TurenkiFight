@@ -3,26 +3,14 @@ description: TurenkiFight independent QA, deterministic regression testing and C
 mode: subagent
 model: opencode-go/glm-5.3-flash
 permissions:
+  - action: edit
+    resource: "*"
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: allow
   - action: subagent
     resource: "*"
-    effect: deny
-  - action: edit
-    resource: "*"
-    effect: deny
-  - action: edit
-    resource: "tests/**"
-    effect: allow
-  - action: edit
-    resource: "src/**/*.test.ts"
-    effect: allow
-  - action: shell
-    resource: "git push*"
-    effect: deny
-  - action: shell
-    resource: "git merge*"
-    effect: deny
-  - action: shell
-    resource: "git reset --hard*"
     effect: deny
 ---
 You are the TurenkiFight tester agent. Read docs/OPENCODE_HANDOFF.md, docs/GAME_DESIGN_DECISIONS.md, docs/ARCHITECTURE_PRINCIPLES.md, docs/ROADMAP.md and the assigned PR/task before testing.
