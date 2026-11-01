@@ -8,6 +8,8 @@ import { createRetroP1Textures, RETRO_PREVIEW, RETRO_STATION_PATH } from './retr
 import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
 import { keyboardPlayerInput } from '../input/keyboardMapping';
+import { createAudioPresentation, type AudioPresentation } from './audio/audioControls';
+import { CueBridge } from './audio/cueBridge';
 
 export class StationScene extends Phaser.Scene {
   private state: GameState = createState(['P1'], 'lobby');
@@ -29,6 +31,8 @@ export class StationScene extends Phaser.Scene {
   private lastPadStart = new Map<number, boolean>();
   private lastKeyboardJoin = false;
   private lastJoinButtons = new Map<number, boolean>();
+  private audio?: AudioPresentation;
+  private audioBridge?: CueBridge;
 
   constructor() { super('StationScene'); }
 
@@ -53,6 +57,15 @@ export class StationScene extends Phaser.Scene {
     // DOM HUD. It occupies the reserved scoreboard band on desktop and moves
     // above the playfield on narrow screens.
     this.initDomHud();
+    this.audio = createAudioPresentation(document.querySelector('.hud-toolbar'));
+    this.audioBridge = new CueBridge(cue => this.audio?.director.playCue(cue));
+    this.audioBridge.observe(this.state);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.audioBridge?.reset();
+      this.audio?.dispose();
+      this.audioBridge = undefined;
+      this.audio = undefined;
+    });
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,SPACE,ENTER,SHIFT') as Record<string, Phaser.Input.Keyboard.Key>;
     this.drawFighters();
@@ -109,6 +122,7 @@ export class StationScene extends Phaser.Scene {
     const start = this.keys.ENTER.isDown;
     if (((start && !this.lastStart) || padHostStart) && (this.state.phase === 'results' || (this.state.phase === 'lobby' && this.state.fighters.length >= 2))) {
       this.state = createState(this.state.fighters.map(f => f.id));
+      this.audioBridge?.reset();
       this.previous.clear();
       this.hitFlash.clear();
     }
@@ -118,9 +132,22 @@ export class StationScene extends Phaser.Scene {
     const interval = 1000 / TICK_RATE;
     while (this.elapsedMs >= interval) {
       this.state = step(this.state, this.readInputs(pads));
+      this.observeAudio(this.state);
       this.elapsedMs -= interval;
     }
+    this.observeAudio(this.state);
     this.drawFighters();
+  }
+
+  /** Read-only audio diagnostics used by browser QA; no simulation state is exposed. */
+  audioDiagnostics(): { state: string; muted: boolean; volume: number } {
+    const settings = this.audio?.director.settings;
+    return { state: this.audio?.director.contextState ?? 'not-created', muted: settings?.muted ?? false, volume: settings?.volume ?? 0.55 };
+  }
+
+  private observeAudio(state: GameState): void {
+    this.audioBridge?.observe(state);
+    this.audio?.director.setMusicDucked(state.phase === 'results');
   }
 
   private readInputs(pads: Gamepad[]): PlayerInput[] {
