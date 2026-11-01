@@ -24,6 +24,13 @@ Overlay bounds remain within the existing HUD-only strip: y=48..87.09 against th
 
 Before the remediation, the review measured 1.5× fractional Fit at 1280×720 and 1920×1080; mobile in-canvas HUD lines were 9.3–10.3 CSS px; and the 1280×720 document was 740px high (20px scroll). In default Fit, the canvas scale and area remain unchanged; responsive DOM text now scales from 14px at the smallest tested layouts up to 24px at 1920×1080, with a 28px timer, while page scroll is removed. The 2× mode is opt-in; 1920×1080 still has unused space in both modes, reduced from 75.0% to 55.6% in the larger mode.
 
+## Tester follow-up fixes
+
+- **1280×680 with stale `?scale=2`:** before the follow-up, document height was about 709px (about 29px vertical scroll) even though the canvas fit. After the short-height CSS override, document height is exactly 680px; the fitted canvas is 952×535.5 CSS px at x=164, y=69 and ends at y=604.5. No clipping or scrolling.
+- **640×360 lobby status:** before the follow-up, the full 308px instruction was clipped by the 256px status cell under `white-space: nowrap`. At short height, visible copy is shortened to `SHIFT/PAD JOIN · START`; `scrollWidth=clientWidth=256`, 14px text. The complete `LOBBY · SHIFT/PAD JOIN · ENTER/PAD START` remains on the status element's accessible label and title. HUD ends at y=87.09, before the scoreboard strip boundary at y=96.86; P1 score `0` remains visible.
+
+Regression tests added: `VIS-05 2x preference has no scroll at 1280x680` and `VIS-05 native short-viewport lobby status is fully readable`. Captures: `artifacts/visual/vis-05-stale-2x-1280x680.png` and `artifacts/visual/vis-05-status-native.png` (git-ignored).
+
 ## Screenshot inspection
 
 Captured and visually inspected full-page Chromium screenshots for all requested viewports, plus both 2× sizes. Local artifacts (git-ignored):
@@ -43,6 +50,6 @@ Inspection: retro palette and station remain intact; the two-times option fills 
 
 - `npm test` — 37 files, 254 tests passed.
 - `npm run build` — passed. Vite emitted the existing large-chunk advisory (~1.50 MB minified JS); build succeeded.
-- `VITE_VISUAL_STYLE=retro npx playwright test tests/browser/retroScaleVisual.spec.ts` — 11 tests passed: four existing viewport regressions, 1280/1920 2× scaling and centering, minimum HUD typography at 1920/mobile, short-viewport 2× fallback, and four-fighter sprite/HUD distinction at desktop/mobile. The 1280 2× test selects the option through the actual page control.
+- `VITE_VISUAL_STYLE=retro npx playwright test tests/browser/retroScaleVisual.spec.ts` — 13 tests passed: four existing viewport regressions, 1280/1920 2× scaling and centering, minimum HUD typography at 1920/mobile, short-viewport 2× fallback, four-fighter sprite/HUD distinction at desktop/mobile, and both Tester follow-up regressions. The 1280 2× test selects the option through the actual page control.
 
 Physical-device DPR, font appearance, glare, viewing distance and touch behavior remain unverified. No PR or commit was created as instructed.

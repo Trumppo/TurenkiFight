@@ -139,6 +139,48 @@ test('VIS-05 2x preference falls back cleanly on a short viewport', async ({ pag
   expect(layout.scrollHeight).toBeLessThanOrEqual(layout.innerHeight + 1);
 });
 
+test('VIS-05 2x preference has no scroll at 1280x680', async ({ page }) => {
+  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
+  await page.setViewportSize({ width: 1280, height: 680 });
+  await page.goto('/?scale=2');
+  const canvas = page.locator('#game canvas');
+  await expect(canvas).toBeVisible();
+  const layout = await page.evaluate(() => {
+    const rect = document.querySelector('#game canvas')!.getBoundingClientRect();
+    return { documentHeight: document.documentElement.scrollHeight, viewportHeight: window.innerHeight,
+      canvasTop: rect.top, canvasBottom: rect.bottom, canvasWidth: rect.width };
+  });
+  expect(layout.documentHeight).toBeLessThanOrEqual(layout.viewportHeight);
+  expect(layout.canvasTop).toBeGreaterThanOrEqual(0);
+  expect(layout.canvasBottom).toBeLessThanOrEqual(layout.viewportHeight);
+  expect(layout.canvasWidth).toBeLessThanOrEqual(1280);
+  mkdirSync('artifacts/visual', { recursive: true });
+  await page.screenshot({ path: 'artifacts/visual/vis-05-stale-2x-1280x680.png', fullPage: true });
+});
+
+test('VIS-05 native short-viewport lobby status is fully readable', async ({ page }) => {
+  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
+  await page.setViewportSize({ width: 640, height: 360 });
+  await page.goto('/');
+  const status = page.locator('#match-status');
+  await expect.poll(() => status.textContent()).toBe('SHIFT/PAD JOIN · START');
+  const metrics = await page.evaluate(() => {
+    const text = document.querySelector('#match-status')!;
+    const canvas = document.querySelector('#game canvas')!.getBoundingClientRect();
+    const hud = document.querySelector('#fight-hud')!.getBoundingClientRect();
+    return { scrollWidth: text.scrollWidth, clientWidth: text.clientWidth, fullStatus: text.getAttribute('aria-label'),
+      hudBottom: hud.bottom, scoreboardBottom: canvas.top + canvas.height * 35 / 216,
+      fontSize: Number.parseFloat(getComputedStyle(text).fontSize) };
+  });
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
+  expect(metrics.fullStatus).toBe('LOBBY · SHIFT/PAD JOIN · ENTER/PAD START');
+  expect(metrics.fontSize).toBeGreaterThanOrEqual(14);
+  expect(metrics.hudBottom).toBeLessThanOrEqual(metrics.scoreboardBottom + 1);
+  await expect(page.locator('[data-player="P1"] .hud-score')).toHaveText('0');
+  mkdirSync('artifacts/visual', { recursive: true });
+  await page.screenshot({ path: 'artifacts/visual/vis-05-status-native.png', fullPage: true });
+});
+
 for (const size of [
   { name: 'desktop', width: 1920, height: 1080 },
   { name: 'mobile', width: 390, height: 844 },

@@ -203,13 +203,17 @@ export class StationScene extends Phaser.Scene {
       if (nodes.root.getAttribute('aria-label') !== label) nodes.root.setAttribute('aria-label', label);
     }
     let statusText: string;
+    let fullStatusText: string;
     if (this.state.phase === 'lobby') {
-      statusText = 'LOBBY · SHIFT/PAD JOIN · ENTER/PAD START';
+      fullStatusText = 'LOBBY · SHIFT/PAD JOIN · ENTER/PAD START';
+      statusText = window.innerHeight <= 540 ? 'SHIFT/PAD JOIN · START' : fullStatusText;
     }
-    else if (this.state.phase === 'countdown') statusText = `START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`;
-    else if (this.state.phase === 'results') statusText = `RESULTS · ${standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join(' · ')} · ENTER: REMATCH`;
-    else statusText = this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' · ') || 'FIGHT';
+    else if (this.state.phase === 'countdown') fullStatusText = statusText = `START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`;
+    else if (this.state.phase === 'results') fullStatusText = statusText = `RESULTS · ${standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join(' · ')} · ENTER: REMATCH`;
+    else fullStatusText = statusText = this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' · ') || 'FIGHT';
     if (hud.status.textContent !== statusText) hud.status.textContent = statusText;
+    if (hud.status.getAttribute('aria-label') !== fullStatusText) hud.status.setAttribute('aria-label', fullStatusText);
+    if (hud.status.title !== fullStatusText) hud.status.title = fullStatusText;
   }
 
   private pose(f: Fighter, prev?: { x: number; y: number; health: number }): FighterPose {
