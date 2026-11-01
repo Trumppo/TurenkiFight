@@ -31,9 +31,9 @@ Suljettu 2026-11-02, kun kaikki vaiheet olivat valmiit tai siirtyivät seuraavaa
 
 Omistajan päätökset 2026-11-01: **areenatyö lykätty** myöhemmäksi, **VIS05-02/VIS05-03 siirretty M7-polishiin**, M1.5 hyväksytty rajoituksin, envelope-sopimus hyväksytty.
 
-## Aktiivinen tavoite 2026-11-02: M2-kuljetuspäätös lähdekatsauksella ja yhden koneen mittauksilla
+### 2026-11-02 — M2-kuljetuspäätös lähdekatsauksella ja yhden koneen mittauksilla (suljettu)
 
-**Tila (päivitetty 2026-11-02, `main` `09834c7`):** Vaiheet 1–4 ovat valmiit ja yhdistetty: envelope (PR #94), skenaariot (PR #97), WS-arkkitehtuuri A (PR #98), WebRTC-arkkitehtuuri B (PR #100), täysimittainen 7200 tickin ajo (PR #102), WS-benchmarkin roolijako (PR #104), lähdekatsaus (PR #106) ja yhden koneen mittaukset (PR #107). Kaikki kahdeksan ovat läpäisseet itsenäisen Tester-gaten. Vaihe 5 on **ehdotus**: ADR 0001 suosittaa keskitettyä WebSocket-auktoriteettia ja odottaa omistajan hyväksyntää. Verkkokuljetusta **ei ole valittu** eikä verkkopeliä toteutettu; verkkokentät ovat edelleen `NOT_MEASURED`.
+**Lopputulos (suljettu 2026-11-02):** Omistaja hyväksyi ADR 0001:n: **arkkitehtuuri A, keskitetty WebSocket-auktoriteetti**. Vaiheet 1–5 valmiit. Tila päivitetty `main` `09834c7` -pohjalta: Vaiheet 1–4 ovat valmiit ja yhdistetty: envelope (PR #94), skenaariot (PR #97), WS-arkkitehtuuri A (PR #98), WebRTC-arkkitehtuuri B (PR #100), täysimittainen 7200 tickin ajo (PR #102), WS-benchmarkin roolijako (PR #104), lähdekatsaus (PR #106) ja yhden koneen mittaukset (PR #107). Kaikki kahdeksan ovat läpäisseet itsenäisen Tester-gaten. Vaihe 5 päätettiin: ADR 0001 hyväksyttiin 2026-11-02. Verkkopeliä ei ole toteutettu; verkkokentät ovat edelleen `NOT_MEASURED` eikä verkkoa mitattu.
 
 Täysimittainen korrektiusnäyttö on nyt olemassa: sekä WS että WebRTC ajavat 7200 tickiä samalla fixtuurilla `7fddf007…` ja seedillä `12345` ja tuottavat identtiset sormenjäljet — lopputila `de544fcd7fae…` ja 47 tapahtuman järjestys `5bb44bd6fc11…` (ei `sha256("[]")`). Toistettavuus varmistettu kahdella ajolla per arkkitehtuuri. Tämä on korrektiusnäyttö, ei suorituskykymittaus.
 
@@ -62,7 +62,7 @@ Tuota lähdekatsaukseen ja yhden koneen mittauksiin perustuva, jäljitettävä p
 2. **Skenaariot toteutuskelpoisiksi.** ✅ Tehty: PR #97 (`dcf7f8d`). Kahdeksan skenaario-ID:tä, 4/8 pelaajan rosterit, impairment vain konfiguraationa, `FAIL-4-HOST-EXIT` ja `FAIL-4-RECONNECT` session-gaten kautta, baseline-sormenjäljet pinnattu.
 3. **Sama työkuorma molemmille arkkitehtuureille.** ✅ Tehty: WS PR #98 (`db3112b`), WebRTC PR #100 (`ac19645`), täysimittainen ajo PR #102 (`56fa1ab`). Molemmat arkkitehtuurit tuottavat 7200 tickillä identtiset sormenjäljet samasta seedistä ja fixtuurista; Tester toisti ajon kahdesti kummallakin.
 4. **Mittaa yhdellä koneella.** ✅ Tehty: PR #107 (`09834c7`). Tavut, tick-duration, snapshot-koodekkien kestot, CPU ja muisti mitattu ja committoitu `benchmarks/results/`-hakemistoon provenienssin kanssa. Tester vahvisti toistettavuuden ja sen, ettei manifesti voi väittää verkkotulosta; validaattoria kiristettiin (TESTER-107a).
-5. **Päätä lähdekatsauksella ja paikallismittauksilla.** 🔶 Ehdotus valmis: [`docs/adr/0001-network-topology.md`](adr/0001-network-topology.md) suosittaa **arkkitehtuuria A** (keskitetty WebSocket-auktoriteetti) ensimmäiselle verkkopelimilestoneille ja jättää B:n arvioiduksi vaihtoehdoksi. Perustelu: B:n auktoriteettiriskit (hostin jäädytys/lähtö, huijattavuus) tuottavat kovempia katkoksia kuin TCP:n head-of-line-esto tällä kuormalla, ja B:n latenssietu vaatisi vielä toteuttamattoman epäluotettavan kanavan ja redundantin inputin. **Valinta odottaa omistajan hyväksyntää.**
+5. **Päätä lähdekatsauksella ja paikallismittauksilla.** ✅ Päätetty 2026-11-02: omistaja hyväksyi ADR 0001:n sellaisenaan. Ehdotus oli: [`docs/adr/0001-network-topology.md`](adr/0001-network-topology.md) suosittaa **arkkitehtuuria A** (keskitetty WebSocket-auktoriteetti) ensimmäiselle verkkopelimilestoneille ja jättää B:n arvioiduksi vaihtoehdoksi. Perustelu: B:n auktoriteettiriskit (hostin jäädytys/lähtö, huijattavuus) tuottavat kovempia katkoksia kuin TCP:n head-of-line-esto tällä kuormalla, ja B:n latenssietu vaatisi vielä toteuttamattoman epäluotettavan kanavan ja redundantin inputin. **Valinta odottaa omistajan hyväksyntää.**
 6. **Siivoa.** ⏳ Vanhentuneet paikalliset työpuut poistetaan, kun niiden sisältö on todistetusti `main`issa.
 
 ### Tiedostorajaus ja omistus
@@ -97,9 +97,23 @@ Tuota lähdekatsaukseen ja yhden koneen mittauksiin perustuva, jäljitettävä p
 
 Työ tehdään omassa haarassa, yksi PR per yhtenäinen työpaketti (`DESIGNER:`/`LOGIC:`/`GRAPHICS:`/`TESTER:`-etuliite, `Task: <id>` kuvauksessa). Aja CI ja korjaa havainnot samassa PR:ssä. Älä yhdistä ilman omistajan lupaa. Jokainen milestone-hyväksyntä ja kuljetusvalinta on erillinen omistajapäätös.
 
-**Omistajan päätökset, jotka ovat vielä auki:** (1) ADR 0001:n hyväksyntä tai muutos (ehdotus: arkkitehtuuri A), (2) lisenssit (M0). Verkkoympäristön järjestäminen ei ole enää edellytys.
+**Omistajan päätökset, jotka ovat vielä auki:** (1) milestone 5:n hyväksyntä kokonaisuutena, (2) seuraava pitkän aikavälin tavoite (ks. alla), (3) lisenssit (M0).
+
+**Päätetty 2026-11-02:** kuljetusvalinta — arkkitehtuuri A, keskitetty WebSocket-auktoriteetti ([ADR 0001](adr/0001-network-topology.md)). B jää vaihtoehdoksi; WebTransport on kirjattu seuraavaksi uudelleenarviointikandidaatiksi.
 
 **Omistajan jo tekemät päätökset tässä tavoitteessa:** envelope-sopimus 2026-11-01; PR:ien #94–#107 merget on hyväksytty ja yhdistetty; 2026-11-02 milestone 5 -portti muutettu lähdekatsaukseksi ja yhden koneen mittauksiksi, painotuksena latenssi ja liikkeen sujuvuus.
+
+## Seuraava tavoite: ehdotus (odottaa omistajan valintaa)
+
+M2-kuljetuspäätös on valmis. Seuraavaksi tarvitaan omistajan valinta suunnasta; tässä kolme realistista vaihtoehtoa.
+
+**Vaihtoehto 1 — Verkkopelin ensimmäinen pelattava siivu (M6 alku).** Keskitetty WebSocket-palvelin, TLS ja autentikointi, rate limiting, reconnect, huoneen elinkaari ja interpolointi asiakaspäässä. Tavoite: kaksi selainta samassa verkossa pelaa yhden matsin ilman käsin tehtyjä askelia. Tämä on luontevin jatko hyväksytylle ADR:lle.
+
+**Vaihtoehto 2 — Latenssibudjetti ja playtest.** Määritä mitattava input-to-photon-budjetti ja pelaa 2–4 pelaajan matsi oikeassa verkossa. Tulos joko vahvistaa ADR:n tai laukaisee uudelleenarvioinnin (WebTransport / redundanssi). Pienin työ, suurin tiedollinen arvo seuraavalle päätökselle.
+
+**Vaihtoehto 3 — Paikallisen pelin viimeistely (M7).** VIS05-02/VIS05-03, areenatyö ja muu polish, jotka omistaja siirsi aiemmin. Ei edistä verkkopeliä.
+
+Suositus: **Vaihtoehto 2 ensin** (halpa, poistaa suurimman avoimen riskin) ja sen jälkeen **Vaihtoehto 1**. Kumpikaan ei käynnisty ilman omistajan valintaa.
 
 ## Tavoitedokumentin päivityskäytäntö
 

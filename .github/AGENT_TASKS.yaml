@@ -681,7 +681,7 @@ tasks:
     title: Write the transport decision ADR from sources and single-machine measurements
     assigned_role: planning-session
     session_id: planning-session-20261102-adr
-    status: review
+    status: done
     priority: P0
     specification: docs/NETWORK_BENCHMARK_PLAN.md
     depends_on: [M2-SINGLE-MACHINE-MEASUREMENTS]
@@ -701,7 +701,7 @@ tasks:
       - The owner approves the selection before it is marked decided
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/108
     last_updated: "2026-11-02"
-    notes: "Owner decision 2026-11-02 changed the milestone 5 gate: no network runs required; decision basis is literature plus single-machine measurements. Promote to ready once M2-SINGLE-MACHINE-MEASUREMENTS is merged. This task must not claim measured network behaviour, and must not present a preference as evidence."
+    notes: "PR #108 merged after the owner approved ADR 0001 on 2026-11-02: architecture A, central authoritative WebSocket server. An independent audit found stale figures taken from superseded result files; they were corrected against the committed manifests (tick p99 6.8-8.4 us, peak RSS 118.2-118.8 MiB, downstream 0.2 Mbit/s per client and 0.8 Mbit/s server) before approval. Architecture B stays as an evaluated alternative; WebTransport is the leading reconsideration candidate. Milestone 5 acceptance as a whole is still a separate owner action."
 
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW

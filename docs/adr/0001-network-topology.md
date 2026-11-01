@@ -1,6 +1,6 @@
 # ADR 0001: Network topology for online play
 
-- **Status:** Proposed — awaiting owner approval
+- **Status:** Accepted — owner approved architecture A on 2026-11-02. Architecture B stays in the repository as an evaluated alternative.
 - **Date:** 2026-11-02
 - **Decision basis (owner-approved 2026-11-02):** documented sources plus single-machine measurements, weighted toward low latency and smooth motion. **No LAN, internet or TURN measurement was performed.**
 - **Supersedes:** nothing. **Related:** [M2 transport evidence review](../M2_TRANSPORT_EVIDENCE_REVIEW.md), [local measurement results](../../benchmarks/results/README.md), [session envelope](../M2_SESSION_ENVELOPE_V1.md).
@@ -132,5 +132,11 @@ Reopen this decision if any of the following occurs:
 
 ## Approval
 
-The selection above is a **proposal**. It becomes the recorded decision only when the project owner
-approves it. Until then the network architecture remains OPEN.
+Approved by the project owner on **2026-11-02**: architecture A (central authoritative WebSocket
+server) for the first online milestone, with architecture B retained as an evaluated alternative and
+the hybrid WebTransport path recorded as the leading reconsideration candidate.
+
+The owner's decision basis was the one recorded at the top of this ADR: documented sources plus
+single-machine measurements, weighted toward low latency and smooth motion, with no network
+measurement performed. Milestone 5 acceptance as a whole remains a separate owner action; this ADR
+records the transport decision only.

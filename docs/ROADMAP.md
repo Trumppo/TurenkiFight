@@ -2,7 +2,7 @@
 
 **Updated:** 2026-11-02. Milestones, not calendar commitments. **Milestone 5 gate changed by the owner on 2026-11-02:** the transport decision is based on a literature review plus single-machine measurements; LAN/internet/TURN runs are no longer required and were never performed. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
 
-**Network architecture decision: OPEN.** Do not commit to WebRTC browser hosting or central WebSocket authority until both have been evaluated. The owner replaced network testing with a documented source review plus single-machine measurements on 2026-11-02. See [ADR 0001](adr/0001-network-topology.md) and the [benchmark plan](NETWORK_BENCHMARK_PLAN.md).
+**Network architecture decision: DECIDED (2026-11-02) — central authoritative WebSocket server.** The owner approved [ADR 0001](adr/0001-network-topology.md) on the basis of a documented source review plus single-machine measurements; no network measurement was performed. Architecture B remains in the repository as an evaluated alternative and WebTransport is the leading reconsideration candidate. See the [benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
 > **Current main checkpoint (2026-11-02, `main` at `09834c7`):** M1 and M1.5 accepted with documented limitations. M2 is implemented at the transport-neutral level: v1 protocol and authorized ingress (#41, #43), owner-approved session envelope with its implementation (#92, #94), executable benchmark scenarios (#97), and independent Tester gates on every slice. Both architecture prototypes exist and are correctness-tested: central WebSocket authority (#98, `server/ws/**`) and browser-host WebRTC with a signaling relay (#100, `server/signaling/**`, `src/game/networking/**`). **No transport is selected and no performance number exists** — every manifest field is `NOT_MEASURED`. Both architectures now complete 7200-tick runs with identical final-state and ordered-event fingerprints (`de544fcd…` / `5bb44bd6…`, 47 events) under the same fixture and seed; that is correctness evidence, not a measurement. PR #25 was closed unmerged and its content was integrated through #41/#43.
 
@@ -82,13 +82,13 @@
 
 ## Milestone 5 – Architecture decision (literature + single-machine evidence)
 
-**Status: PROPOSAL AWAITING OWNER APPROVAL.** The owner changed the gate on 2026-11-02: no LAN, internet or TURN runs are required. The decision rests on documented sources plus single-machine measurements, weighted toward low latency and smooth motion.
+**Status: DECIDED — ARCHITECTURE A (owner approved 2026-11-02).** The owner changed the gate on 2026-11-02: no LAN, internet or TURN runs were required. The decision rests on documented sources plus single-machine measurements, weighted toward low latency and smooth motion. Milestone acceptance as a whole remains a separate owner action.
 
 - [x] Measure what does not need a network: bytes per input and snapshot per player, snapshot size at 10/20/30 Hz, tick duration p50/p95/p99 over 7200 ticks, snapshot encode cost, process CPU and memory (PR #107)
 - [x] Review sources for transport behaviour (TCP head-of-line blocking, SCTP/UDP DataChannels), NAT/CGNAT and TURN cost, browser support and backgrounding (PR #106)
-- [x] Write `docs/adr/0001-network-topology.md` with sources, measurements, weighting, open risks and reconsideration criteria — **proposal: architecture A, central WebSocket authority**
+- [x] Write `docs/adr/0001-network-topology.md` with sources, measurements, weighting, open risks and reconsideration criteria — **decided: architecture A, central WebSocket authority**
 - [x] State explicitly in the ADR that no network environment was measured
-- [ ] Owner approves or changes the proposed selection
+- [x] Owner approved the selection on 2026-11-02
 - [ ] Publish the summary alongside the committed local results
 
 **Exit:** a documented, traceable choice approved by the owner; no predetermined winner. Network behaviour that was not measured is recorded as a risk, not as evidence. See [benchmark plan](NETWORK_BENCHMARK_PLAN.md) and [ADR 0001](adr/0001-network-topology.md).
