@@ -817,6 +817,66 @@ tasks:
       - No claim of internet measurement unless it was actually run over the internet
     notes: "Backlog until the server and bot commands exist, so the runbook documents real commands rather than guesses."
 
+  - id: M7-AUDIO-CORE
+    title: Add the audio engine, unlock path, buses and the cue bridge
+    assigned_role: graphics-session
+    status: ready
+    priority: P1
+    specification: docs/M7_AUDIO_PLAN.md
+    depends_on: [M1-5-RESPONSIVE-VISUAL-FIX]
+    scope:
+      - src/game/presentation/audio/
+      - src/game/presentation/StationScene.ts
+      - src/game/presentation/OnlineScene.ts
+      - src/style.css
+      - tests/
+    acceptance:
+      - A lazily created AudioContext is unlocked by the first user gesture and never blocks gameplay
+      - Music and effects have separate gain buses with a master mute and volume that persist locally
+      - A read-only cue bridge maps hit, kick, jump, land, ko, respawn, join, match-start, time-warning and match-end to distinct cues
+      - A looped chiptune arrangement plays without gaps; stopping the scene releases nodes and timers
+      - Deterministic simulation fingerprints are unchanged with audio enabled or disabled
+      - Unit tests use a fake AudioContext for scheduling, gain and mute persistence; the browser suite shows no audio errors
+      - npm test, npm run build, npm run test:browser and git diff --check pass
+    notes: "Owner requested background music and combat effects on 2026-11-02. Procedural synthesis is recommended so no licensed binary assets are needed; the cue interface stays asset-agnostic so recorded samples can replace voices later. Agents cannot judge whether it sounds good."
+
+  - id: M7-AUDIO-MIX
+    title: Tune the mix and make every action audibly distinguishable
+    assigned_role: graphics-session
+    status: backlog
+    priority: P2
+    specification: docs/M7_AUDIO_PLAN.md
+    depends_on: [M7-AUDIO-CORE]
+    scope:
+      - src/game/presentation/audio/
+      - tests/
+    acceptance:
+      - Punch, kick, jump, landing and KO use different envelopes and noise content, not only different volume
+      - Music ducks or changes for lobby, fight and results without restarting abruptly
+      - Default levels are conservative; the effects bus stays clearly below full scale to avoid fatigue
+      - Repeated matches do not accumulate gain nodes or stray scheduled events
+      - Unit tests cover cue selection and ducking transitions; no simulation change
+    notes: "Owner acceptance is a listening decision. This task exists so the first pass can be tuned rather than shipped as-is."
+
+  - id: M7-AUDIO-ACCEPTANCE
+    title: Verify audio wiring and produce an owner listening checklist
+    assigned_role: tester-session
+    status: backlog
+    priority: P2
+    specification: docs/M7_AUDIO_PLAN.md
+    depends_on: [M7-AUDIO-MIX]
+    scope:
+      - docs/visual/
+      - tests/browser/
+    acceptance:
+      - Verify unlock behaviour, mute and volume persistence, node cleanup and absence of console errors
+      - Verify both the local and online scenes trigger cues from the same bridge
+      - Confirm simulation fingerprints are identical with audio on and off
+      - "Provide an owner checklist: which actions to perform and what to listen for"
+      - State explicitly that audibility and taste were not evaluated by the agent
+    notes: "Headless CI has no audio device. This gate proves wiring, not sound quality."
+
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session

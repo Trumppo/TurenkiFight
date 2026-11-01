@@ -109,7 +109,7 @@ Työ tehdään omassa haarassa, yksi PR per yhtenäinen työpaketti (`DESIGNER:`
 
 **Päätetty 2026-11-02:** kuljetusvalinta — arkkitehtuuri A, keskitetty WebSocket-auktoriteetti ([ADR 0001](adr/0001-network-topology.md)). B jää vaihtoehdoksi; WebTransport on kirjattu seuraavaksi uudelleenarviointikandidaatiksi.
 
-**Omistajan päätökset 2026-11-02 (M7):** VIS05-02/VIS05-03 hyväksytty sellaisenaan; areenaksi valittu **Ravintola Mesku**.
+**Omistajan päätökset 2026-11-02 (M7):** VIS05-02/VIS05-03 hyväksytty sellaisenaan; areenaksi valittu **Ravintola Mesku**; ääni (taustamusiikki + efektit) otettu tavoitteen piiriin.
 
 **Omistajan jo tekemät päätökset tässä tavoitteessa:** envelope-sopimus 2026-11-01; PR:ien #94–#107 merget on hyväksytty ja yhdistetty; 2026-11-02 milestone 5 -portti muutettu lähdekatsaukseksi ja yhden koneen mittauksiksi, painotuksena latenssi ja liikkeen sujuvuus.
 
@@ -131,7 +131,7 @@ Saata paikallinen neljän pelaajan peli visuaalisesti ja luettavuudeltaan hyväk
 
 4. **Areena omistajan valinnalla.** ✅ Valinta tehty 2026-11-02: **Ravintola Mesku** ([NEXT_ARENA_CONCEPT.md](visual/NEXT_ARENA_CONCEPT.md), PR #70 konsepti). Toteutus on aktivoitu tehtävässä `M2-VIS-ARENA-ARCH`: ensin tyypitetty, presentaatio-only areenamanifesti (asema ensimmäisenä manifestina, oletukset ja kuvat ennallaan), sitten Mesku toisena areenana 320×180-ruudukolla ja konseptin paletilla. Ei simulaatio- eikä pelisääntömuutoksia.
 
-5. **Valinnainen myöhemmin:** ääni, osumapalautteen hienosäätö ja tasapainotus. Ei kuulu tämän tavoitteen hyväksymisehtoihin, ellei omistaja erikseen pyydä.
+5. **Ääni ja osumapalaute.** ✅ Omistaja pyysi 2026-11-02 taustamusiikin ja kunnon efektit lyönneille, potkuille ja hypyille. Suunnitelma: [M7_AUDIO_PLAN.md](M7_AUDIO_PLAN.md). Suositus on proseduraalinen chiptune ja syntetisoidut efektit, jotta lisenssitekijöitä ei tule ja koodi on testattavaa; cue-rajapinta pidetään äänilähde-agnostisena, jotta tallennetut samplet voi vaihtaa myöhemmin. Tehtävät: `M7-AUDIO-CORE`, `M7-AUDIO-MIX`, `M7-AUDIO-ACCEPTANCE`. Ääni on vain presentaatio: simulaation sormenjäljet eivät saa muuttua, eikä agentti voi arvioida miltä se kuulostaa — se on omistajan kuuntelupäätös.
 
 ### Tiedostorajaus ja omistus
 

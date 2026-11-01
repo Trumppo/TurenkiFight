@@ -111,7 +111,7 @@
 - [x] VIS05-02 / VIS05-03: measured (`docs/visual/M1_5_VIS_05_REVIEW_2026-11-02.md`), fixed with an integer 2× option and a responsive external HUD (PR #112), Tester re-checked, **owner accepted visually on 2026-11-02**
 - [ ] Arena: **owner selected Ravintola Mesku on 2026-11-02**; implement the typed presentation-only arena manifest with the station as the first manifest, then Mesku as the second arena
 - [ ] Online test harness so a remote agent and this machine can play the same real match: server mode, headless bot, served browser client, network metrics ([plan](M7_ONLINE_TEST_HARNESS.md))
-- [ ] Sound, hit feedback and balancing (optional for this goal; needs a separate owner request)
+- [ ] Sound: looping chiptune music, distinct punch/kick/jump/land/KO cues, mute and volume persistence (owner-requested 2026-11-02, [plan](M7_AUDIO_PLAN.md))
 - [ ] Add Last Man Standing and Deathmatch as independent modes
 - [ ] Revisit dedicated hosting and rollback only if measurements justify them
 
