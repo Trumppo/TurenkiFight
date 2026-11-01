@@ -1,5 +1,10 @@
 import type { PlayerInput } from '../simulation/types';
 
+/** Default input look-ahead, shared by every session ingress boundary. */
+export const DEFAULT_MAX_INPUT_LEAD_TICKS = 8;
+export const MAX_INPUT_LEAD_TICKS = 120;
+const CONNECTION_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
 /** Strictly bounded, transport-neutral authoritative input assembly.
  * An adapter must authenticate connection identity and check slot ownership
  * before calling submit. This class does not establish authentication.
@@ -9,10 +14,10 @@ export class SessionInputBuffer {
   private readonly sequences = new Map<string, number>();
   private nextTick: number;
 
-  constructor(startTick = 0, private readonly maxLead = 8, private readonly maxPlayers = 4) {
+  constructor(startTick = 0, private readonly maxLead = DEFAULT_MAX_INPUT_LEAD_TICKS, private readonly maxPlayers = 4) {
     if (![startTick, maxLead, maxPlayers].every(Number.isSafeInteger) ||
       startTick < 0 || startTick > Number.MAX_SAFE_INTEGER - maxLead - 1 ||
-      maxLead < 0 || maxLead > 120 || maxPlayers < 1 || maxPlayers > 4) {
+      maxLead < 0 || maxLead > MAX_INPUT_LEAD_TICKS || maxPlayers < 1 || maxPlayers > 4) {
       throw new Error('Invalid input buffer configuration');
     }
     this.nextTick = startTick;
@@ -20,10 +25,44 @@ export class SessionInputBuffer {
 
   /** First valid input wins per player/tick. Sequence is monotonic per connection. */
   submit(connectionId: string, sequence: number, targetTick: number, input: PlayerInput): void {
-    if (typeof connectionId !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(connectionId) || !Number.isSafeInteger(sequence) || sequence < 0 ||
+    this.submitFrame(connectionId, sequence, targetTick, [input]);
+  }
+
+  /**
+   * Atomically submits every slot owned by one connection for one envelope.
+   * All validations run before any mutation, so a denied frame leaves the
+   * sequence domain and every pending tick exactly as they were.
+   */
+  submitFrame(connectionId: string, sequence: number, targetTick: number, inputs: readonly PlayerInput[]): void {
+    if (typeof connectionId !== 'string' || !CONNECTION_ID.test(connectionId) || !Number.isSafeInteger(sequence) || sequence < 0 ||
       !Number.isSafeInteger(targetTick) || targetTick < this.nextTick ||
       targetTick - this.nextTick > this.maxLead) throw new Error('Stale, future or malformed input');
-    if (!input || typeof input.playerId !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(input.playerId) ||
+    if (sequence >= Number.MAX_SAFE_INTEGER) throw new Error('Sequence counter exhausted; session reset required');
+    if (!Array.isArray(inputs) || inputs.length < 1 || inputs.length > this.maxPlayers) throw new Error('Malformed player controls');
+    const claimed = new Set<string>();
+    for (const input of inputs) {
+      this.assertControls(input);
+      if (claimed.has(input.playerId)) throw new Error('Duplicate player input');
+      claimed.add(input.playerId);
+    }
+    const previous = this.sequences.get(connectionId);
+    if (previous !== undefined && sequence <= previous) throw new Error('Replayed input sequence');
+    const existing = this.pending.get(targetTick);
+    let additions = 0;
+    for (const playerId of claimed) {
+      // A duplicate submission cannot override a previously accepted input.
+      if (existing?.has(playerId)) throw new Error('Duplicate player input');
+      additions++;
+    }
+    if ((existing?.size ?? 0) + additions > this.maxPlayers) throw new Error('Tick roster full');
+    const tickInputs = existing ?? new Map<string, PlayerInput>();
+    for (const input of inputs) tickInputs.set(input.playerId, { ...input });
+    this.pending.set(targetTick, tickInputs);
+    this.sequences.set(connectionId, sequence);
+  }
+
+  private assertControls(input: PlayerInput): void {
+    if (!input || typeof input.playerId !== 'string' || !CONNECTION_ID.test(input.playerId) ||
       ![-1, 0, 1].includes(input.moveX) || ![-1, 0, 1].includes(input.moveY) ||
       typeof input.jump !== 'boolean' ||
       !['punch', 'kick', 'jumpkick', 'attack'].every(k =>
@@ -31,15 +70,6 @@ export class SessionInputBuffer {
       Object.keys(input).some(k => !['playerId', 'moveX', 'moveY', 'jump', 'punch', 'kick', 'jumpkick', 'attack'].includes(k))) {
       throw new Error('Malformed player controls');
     }
-    const previous = this.sequences.get(connectionId);
-    if (previous !== undefined && sequence <= previous) throw new Error('Replayed input sequence');
-    const tickInputs = this.pending.get(targetTick) ?? new Map<string, PlayerInput>();
-    if (!tickInputs.has(input.playerId) && tickInputs.size >= this.maxPlayers) throw new Error('Tick roster full');
-    // A duplicate submission cannot override a previously accepted input.
-    if (tickInputs.has(input.playerId)) throw new Error('Duplicate player input');
-    tickInputs.set(input.playerId, { ...input });
-    this.pending.set(targetTick, tickInputs);
-    this.sequences.set(connectionId, sequence);
   }
 
   /** Returns a canonical frame; absent players are neutralized by simulation. */
@@ -67,5 +97,18 @@ export class SessionInputBuffer {
 
   get bufferedTicks(): number {
     return this.pending.size;
+  }
+
+  /** The next authoritative tick; late input is rejected against this value. */
+  get nextTickValue(): number {
+    return this.nextTick;
+  }
+
+  get maxLeadTicks(): number {
+    return this.maxLead;
+  }
+
+  get playerCapacity(): number {
+    return this.maxPlayers;
   }
 }
