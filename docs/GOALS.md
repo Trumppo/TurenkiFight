@@ -79,6 +79,8 @@ Omistaja pyysi, että matsin alussa ja pelaajien liittyessä voisi valita taiste
 
 Nykytila: simulaatio hyväksyy mielivaltaisen rosterin, mutta **neljän pelaajan katto on tarkoituksellinen** ja toteutettu useassa kerroksessa (input-koodekki, snapshot- ja event-koodekit, sessio, match-server, HUD). Siksi työ jaetaan kahtia: ensin botit nykyiseen neljän pelaajan peliin, sitten katon nosto kahdeksaan yhdessä reviewoidussa muutoksessa, jonka regressioportti on **neljän pelaajan tavuidenttisyys**.
 
+**Omistajan päätös 2026-11-02: tuettu enimmäispelaajamäärä on 8.** Neljä ei ollut koskaan tuotepäätös — design-dokumentti vaati konfiguroitavaa pelaajamäärää ilman pysyvää kovakoodattua kattoa, ja neljä oli M1-milestonin laajuus. Kahdeksan toteutetaan yhtenä vakiona, josta kaikki kerrokset johtavat; 9+ hylätään selkeästi. Slotit 1–4 säilyttävät näppäimistöasettelut, slotit 5–8 ovat gamepad- tai bottipaikkoja ja UI sanoo sen. Neljän pelaajan tavut ja sormenjäljet pysyvät identtisinä. Yli kahdeksan on myöhemmin uusi päätös + mittaus.
+
 Tehtävät: `M8-BOT-OPPONENT` (nyt), `M8-EIGHT-PLAYER-CAP`, `M8-EIGHT-PLAYER-UI`, `M8-BOT-QA`. Rehellinen riski kirjattu: kahdeksan hahmoa 640×360-areenalla voi olla lukukelvoton — se on löydös, ei virhe, joka pitää piilottaa.
 
 ### Tiedostorajaus ja omistus

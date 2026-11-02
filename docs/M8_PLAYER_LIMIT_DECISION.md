@@ -1,6 +1,6 @@
 # Player count: history, options and a proposed limit
 
-**Status:** Design decision brief, 2026-11-02. Awaiting the owner's choice of the number.
+**Status:** Decided by the owner on 2026-11-02: **the supported maximum is 8 players.**
 **Question:** was four players a real decision, and should the game support eight, sixteen or "unlimited"?
 
 ## 1. What the repository actually says
@@ -54,10 +54,14 @@ The simulation is already general. The cap is a set of independent constants tha
 - Four-player Score Brawl bytes and pinned fingerprints must stay identical: raising a cap may not change encoding for smaller rosters.
 - Server play with eight needs its own load/measurement follow-up; this decision only makes the cap legal.
 
-## 6. Decision requested
+## 6. Decision
 
-Pick one and it becomes the recorded product limit:
+**Owner decision 2026-11-02: eight players.** Sixteen and "unlimited" were rejected for now.
 
-1. **Eight (recommended).**
-2. Sixteen, accepting the readability and HUD cost.
-3. Keep four and document it as a deliberate product limit, overriding the earlier design note.
+Binding consequences:
+
+- `MAX_PLAYERS = 8` is the single source of truth; every layer derives from it and rejects 9+ clearly.
+- Slots 1–4 keep the existing keyboard layouts; slots 5–8 are gamepad or bot slots and the UI must say so.
+- Four-player Score Brawl bytes and pinned fingerprints must remain identical.
+- Readability at eight is a test outcome, not an assumption; report it with screenshots.
+- Moving beyond eight later is a new owner decision plus measurement, not a silent config change.
