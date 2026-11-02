@@ -239,7 +239,7 @@ tasks:
     title: Introduce typed presentation-only arena manifest after concept approval
     assigned_role: graphics-session
     session_id: graphics-session-20261102-mesku
-    status: review
+    status: done
     priority: P2
     specification: docs/visual/NEXT_ARENA_CONCEPT.md
     depends_on: [M2-VIS-ARENA-01, M1-5-VIS-05]
@@ -253,11 +253,9 @@ tasks:
       - Keep the station as the default arena and preserve its classic and retro screenshots unchanged
       - Verify four-fighter silhouette readability and HUD contrast at 640x360, 1280x720, 1920x1080 and 390x844
       - Unit tests and browser CI pass
-    last_updated: "2026-10-31"
-    last_updated: "2026-11-02"
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/118
     last_updated: "2026-11-02"
-    notes: "Owner deferred new arena selection and implementation on 2026-11-01; revisit after M2 networking gates. Concept PR #70 remains the reference."
+    notes: "PR #118 merged as 44f222a and the owner accepted the Mesku visuals on 2026-11-02. Import-free presentation-only manifests; station stays the default and Mesku is opt-in via ?arena=mesku. Tester confirmed station screenshots stayed byte-identical and mutation tests failed when Mesku was swapped for the station, the unknown-id fallback was removed, or a simulation import was added. Known follow-up: the dev-only online test hook hardcodes the Mesku texture and should be generalised when a third arena appears."
   - id: M1-5-INTEGRATION-REVIEW
     title: Coordinate M1.5 release and roadmap evidence
     assigned_role: planning-session

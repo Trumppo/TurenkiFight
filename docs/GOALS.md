@@ -115,6 +115,8 @@ Työ tehdään omassa haarassa, yksi PR per yhtenäinen työpaketti (`DESIGNER:`
 
 ## Aktiivinen tavoite 2026-11-02: M7 — paikallisen pelin polish
 
+**Tila 2026-11-02:** Tämän tavoitteen vaiheet 1–4 on tehty ja omistaja on hyväksynyt ne. Vaihe 5 (ääni) toteutettiin placeholder-tasolla omistajan tarkennuksen mukaan. Jäljellä on vain asioita, jotka vaativat omistajaa: verkkotestaus kahdella koneella (`M7-NETWORK-MEASUREMENTS`) ja äänen lopullinen kuuntelu/miksaus (`M7-AUDIO-MIX`, deferoitu). Roadmapin erilliset pelimuodot (Last Man Standing, Deathmatch) eivät kuulu tähän tavoitteeseen.
+
 **Valittu omistajan päätöksellä 2026-11-02.** M2-kuljetuspäätös on suljettu (arkkitehtuuri A). Tämä tavoite keskittyy paikallisen pelin laatuun; verkkoon ei kosketa.
 
 ### Tavoite
@@ -129,7 +131,7 @@ Saata paikallinen neljän pelaajan peli visuaalisesti ja luettavuudeltaan hyväk
 
 3. **Uudelleentestaus ja omistajan visuaalinen hyväksyntä (Tester + omistaja).** ✅ Tehty: PR #112 (`715cd8a`). Tester antoi PASS WITH LIMITATIONS ja sulki molemmat löydökset uusintatarkistuksessa; **omistaja hyväksyi tuloksen 2026-11-02**. VIS05-02 ja VIS05-03 ovat suljettuja.
 
-4. **Areena omistajan valinnalla.** ✅ Valinta tehty 2026-11-02: **Ravintola Mesku** ([NEXT_ARENA_CONCEPT.md](visual/NEXT_ARENA_CONCEPT.md), PR #70 konsepti). Toteutus on aktivoitu tehtävässä `M2-VIS-ARENA-ARCH`: ensin tyypitetty, presentaatio-only areenamanifesti (asema ensimmäisenä manifestina, oletukset ja kuvat ennallaan), sitten Mesku toisena areenana 320×180-ruudukolla ja konseptin paletilla. Ei simulaatio- eikä pelisääntömuutoksia.
+4. **Areena omistajan valinnalla.** ✅ Valinta 2026-11-02: **Ravintola Mesku**. Toteutus yhdistetty PR #118 (`44f222a`) ja **omistaja hyväksyi areenan visuaalisesti 2026-11-02**. Manifestikerros (`arenaVisuals.ts`, importiton) + Mesku 320×180-ruudukolla; asema pysyy oletuksena ja Mesku valitaan `?arena=mesku`. Tester vahvisti, että aseman kuvakaappaukset pysyivät tavuidenttisinä, ja mutaatiotestit osoittivat areenatestit ei-vakuiksi.
 
 5. **Ääni ja osumapalaute.** ✅ Omistaja pyysi 2026-11-02 taustamusiikin ja kunnon efektit lyönneille, potkuille ja hypyille. Suunnitelma: [M7_AUDIO_PLAN.md](M7_AUDIO_PLAN.md). Suositus on proseduraalinen chiptune ja syntetisoidut efektit, jotta lisenssitekijöitä ei tule ja koodi on testattavaa; cue-rajapinta pidetään äänilähde-agnostisena, jotta tallennetut samplet voi vaihtaa myöhemmin. Tehtävät: `M7-AUDIO-CORE` (nyt), `M7-AUDIO-MIX` ja `M7-AUDIO-ACCEPTANCE` (backlog). **Omistajan tarkennus 2026-11-02: tässä vaiheessa riittävät geneeriset placeholder-äänet ja teknologia niiden soittamiseen; oikeat samplet ja miksaus myöhemmin.** Ääni on vain presentaatio: simulaation sormenjäljet eivät saa muuttua, eikä agentti voi arvioida miltä se kuulostaa — se on omistajan kuuntelupäätös.
 
