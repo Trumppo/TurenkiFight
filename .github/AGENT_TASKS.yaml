@@ -888,7 +888,8 @@ tasks:
   - id: M7-MODE-RULES
     title: Implement Last Man Standing and Deathmatch as typed simulation modes
     assigned_role: gameplay-session
-    status: ready
+    session_id: gameplay-session-20261102-modes
+    status: review
     priority: P0
     specification: docs/M7_GAME_MODES.md
     depends_on: []
@@ -906,6 +907,8 @@ tasks:
       - "Typed end reasons (elimination, frag-limit, time) and winner are emitted in the event stream"
       - "An eliminated fighter cannot be hit, targeted or receive further input effects; covered by tests"
       - "npm test, npm run build and git diff --check pass"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/121
+    last_updated: "2026-11-02"
     notes: "Owner selected the game-modes goal on 2026-11-02. This slice is rules and events only; UI and online mode selection are separate tasks. Rule numbers (1 stock, 20 frags, 120 s) are designer proposals recorded in the spec and can be changed by the owner before UI work lands."
 
   - id: M7-MODE-UI
