@@ -50,6 +50,9 @@ p { color: #c2cbd2; }
 .hud-score { justify-self: center; white-space: nowrap; }
 .hud-health { color: #d7d7c3; white-space: nowrap; }
 .hud-player.is-empty { opacity: .56; }
+/* Placeholder M8 local-bot marker. Graphics will restyle this badge and the
+   lobby BOT control; keep it minimal and obvious until then. */
+.hud-player.is-bot .hud-name::after { content: ' · BOT'; color: #9fd0e0; font-size: .85em; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 .instructions { font-size: 13px; line-height: 1.7; }

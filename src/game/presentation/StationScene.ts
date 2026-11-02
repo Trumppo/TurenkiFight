@@ -8,6 +8,7 @@ import { createRetroP1Textures, RETRO_PREVIEW } from './retroPrototype';
 import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
 import { keyboardPlayerInput } from '../input/keyboardMapping';
+import { botInput } from '../input/botPolicy';
 import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
 import { CueBridge } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
@@ -53,6 +54,16 @@ export class StationScene extends Phaser.Scene {
   private hitFlash = new Map<string, number>();
   private gamepadSlots = new Map<number, string>();
   private reclaimableGamepadSlots = new Set<string>();
+  /**
+   * Placeholder local-bot roster. Slots in this set are driven by the pure
+   * seeded policy from `src/game/input/botPolicy.ts`; P1 is always human.
+   * Graphics owns the final lobby control, so this is deliberately a minimal
+   * keyboard toggle (B add / V remove) in the lobby only.
+   */
+  private botSlots = new Set<string>();
+  private static readonly BOT_SEED = 0x5eed;
+  private lastBotAdd = false;
+  private lastBotRemove = false;
   private lastStart = false;
   private lastPadStart = new Map<number, boolean>();
   private lastKeyboardJoin = false;
@@ -116,7 +127,7 @@ export class StationScene extends Phaser.Scene {
       this.audio = undefined;
     });
     this.cursors = this.input.keyboard!.createCursorKeys();
-    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,SPACE,ENTER,SHIFT') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,B,V,SPACE,ENTER,SHIFT') as Record<string, Phaser.Input.Keyboard.Key>;
     this.drawFighters();
   }
 
@@ -139,6 +150,14 @@ export class StationScene extends Phaser.Scene {
       this.state = createState([...this.state.fighters.map(f => f.id), 'P2'], 'lobby', { mode: this.selectedMode });
     }
     this.lastKeyboardJoin = keyboardJoin;
+    // Placeholder lobby control for local bots (M8 slice A): B fills the next
+    // free P2-P4 slot, V removes the last bot. Graphics owns the final control.
+    const addBot = this.keys.B.isDown;
+    if (addBot && !this.lastBotAdd) this.addBotSlot();
+    this.lastBotAdd = addBot;
+    const removeBot = this.keys.V.isDown;
+    if (removeBot && !this.lastBotRemove) this.removeBotSlot();
+    this.lastBotRemove = removeBot;
     // Only a deliberate Start press by the host begins the match.
     // Gamepad button 9 is Start; button 8 is the dedicated Join button.
     if (this.state.phase === 'lobby') {
@@ -189,6 +208,30 @@ export class StationScene extends Phaser.Scene {
     this.drawFighters();
   }
 
+  /**
+   * Placeholder lobby control: fill the next free slot with a bot. P1 is always
+   * the human host, so only P2-P4 are candidates. Returns the added slot.
+   */
+  private addBotSlot(): string | null {
+    if (this.state.phase !== 'lobby') return null;
+    const id = ['P2', 'P3', 'P4'].find(candidate => !this.state.fighters.some(fighter => fighter.id === candidate));
+    if (!id) return null;
+    this.botSlots.add(id);
+    this.state = createState([...this.state.fighters.map(fighter => fighter.id), id], 'lobby', { mode: this.selectedMode });
+    return id;
+  }
+
+  /** Removes the highest-numbered bot slot; never touches a human slot. */
+  private removeBotSlot(): string | null {
+    if (this.state.phase !== 'lobby') return null;
+    const id = ['P4', 'P3', 'P2'].find(candidate => this.botSlots.has(candidate));
+    if (!id) return null;
+    this.botSlots.delete(id);
+    const ids = this.state.fighters.map(fighter => fighter.id).filter(candidate => candidate !== id);
+    this.state = createState(ids, 'lobby', { mode: this.selectedMode });
+    return id;
+  }
+
   /** Read-only audio diagnostics used by browser QA; no simulation state is exposed. */
   audioDiagnostics(): { state: string; muted: boolean; volume: number } {
     const settings = this.audio?.director.settings;
@@ -201,11 +244,16 @@ export class StationScene extends Phaser.Scene {
   }
 
   private readInputs(pads: Gamepad[]): PlayerInput[] {
+    // P1 and human P2 use the keyboard. A bot occupying P2 must not receive
+    // stray keyboard input, so P2's layout is only sampled for a human slot.
     const inputs: PlayerInput[] = [
       keyboardPlayerInput('P1', code => this.isKeyboardCodeDown(code)),
-      keyboardPlayerInput('P2', code => this.isKeyboardCodeDown(code)),
     ];
+    if (this.state.fighters.some(fighter => fighter.id === 'P2') && !this.botSlots.has('P2')) {
+      inputs.push(keyboardPlayerInput('P2', code => this.isKeyboardCodeDown(code)));
+    }
     for (const [index, id] of this.gamepadSlots) {
+      if (this.botSlots.has(id)) continue;
       const pad = pads.find(p => p.index === index);
       if (!pad) continue;
       const x = pad.axes[0] ?? 0, y = pad.axes[1] ?? 0;
@@ -214,6 +262,10 @@ export class StationScene extends Phaser.Scene {
       const existing = inputs.findIndex(i => i.playerId === id);
       if (existing >= 0) inputs[existing] = input;
       else inputs.push(input);
+    }
+    for (const id of this.botSlots) {
+      if (!this.state.fighters.some(fighter => fighter.id === id)) continue;
+      inputs.push(botInput(this.state, id, StationScene.BOT_SEED));
     }
     return inputs;
   }
@@ -306,8 +358,14 @@ export class StationScene extends Phaser.Scene {
     hud.playerList.classList.toggle('mode-specific', this.state.mode === 'last-man-standing' || this.state.mode === 'deathmatch');
     for (const [id, nodes] of hud.players) {
       const fighter = this.state.fighters.find(f => f.id === id);
+      const isBot = this.botSlots.has(id) && !!fighter;
       nodes.root.classList.toggle('is-empty', !fighter);
       nodes.root.classList.toggle('is-eliminated', !!fighter?.eliminated);
+      // Placeholder M8 bot badge; Graphics owns the final lobby/HUD styling.
+      nodes.root.classList.toggle('is-bot', isBot);
+      if (isBot) nodes.root.dataset.bot = 'true';
+      else delete nodes.root.dataset.bot;
+      const botTag = isBot ? ', bot' : '';
       let scoreText: string;
       let healthText: string;
       let label: string;
@@ -319,17 +377,17 @@ export class StationScene extends Phaser.Scene {
         const status = fighter.eliminated ? 'ELIMINATED' : 'ALIVE';
         scoreText = `STOCK ${fighter.eliminated ? 0 : 1}`;
         healthText = status;
-        label = `${id}, stock ${fighter.eliminated ? 0 : 1}, ${status.toLowerCase()}`;
+        label = `${id}${botTag}, stock ${fighter.eliminated ? 0 : 1}, ${status.toLowerCase()}`;
       } else if (this.state.mode === 'deathmatch') {
         const frags = fighter.frags ?? 0;
         const deaths = fighter.deaths ?? 0;
         scoreText = `FRAGS ${frags}`;
         healthText = `DEATHS ${deaths}`;
-        label = `${id}, ${frags} frags, ${deaths} deaths, health ${Math.max(0, Math.min(100, fighter.health))}`;
+        label = `${id}${botTag}, ${frags} frags, ${deaths} deaths, health ${Math.max(0, Math.min(100, fighter.health))}`;
       } else {
         scoreText = String(fighter.score);
         healthText = `HP ${Math.max(0, Math.min(100, fighter.health))}`;
-        label = `${id}, score ${fighter.score}, health ${Math.max(0, Math.min(100, fighter.health))}`;
+        label = `${id}${botTag}, score ${fighter.score}, health ${Math.max(0, Math.min(100, fighter.health))}`;
       }
       if (nodes.score.textContent !== scoreText) nodes.score.textContent = scoreText;
       if (nodes.health.textContent !== healthText) nodes.health.textContent = healthText;
