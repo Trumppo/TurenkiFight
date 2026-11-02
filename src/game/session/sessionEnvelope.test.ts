@@ -58,6 +58,9 @@ describe('M2 session envelope codec', () => {
     expect(encodeClientEnvelope({ ...join, roomId: 'room-1' })).toBe(
       '{"version":1,"kind":"join-request","sequence":1,"roomId":"room-1","playerIds":["P1","P2"]}',
     );
+    const eight = Array.from({ length: 8 }, (_, index) => `P${index + 1}`);
+    const joinEight: JoinRequestEnvelope = { version: 1, kind: 'join-request', sequence: 2, playerIds: [...eight].reverse() };
+    expect(decodeClientEnvelope(encodeClientEnvelope(joinEight))).toEqual({ ...joinEight, playerIds: eight });
 
     expect(errorCode(() => decodeClientEnvelope(
       '{"version":1,"kind":"join-request","sequence":1,"playerIds":["P2","P1"]}',
@@ -109,7 +112,7 @@ describe('M2 session envelope codec', () => {
   });
 
   it('rejects invalid join claims atomically in the decoder', () => {
-    for (const playerIds of [[], ['P1', 'P1'], ['P1', 'bad id'], ['P1', 'P2', 'P3', 'P4', 'P5']]) {
+    for (const playerIds of [[], ['P1', 'P1'], ['P1', 'bad id'], Array.from({ length: 9 }, (_, index) => `P${index + 1}`)]) {
       expect(errorCode(() => decodeClientEnvelope(
         JSON.stringify({ version: 1, kind: 'join-request', sequence: 1, playerIds }),
       ))).toBe('invalid-envelope');

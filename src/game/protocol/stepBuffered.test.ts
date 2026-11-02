@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { MOVES, createState, step } from '../simulation/step';
 import { InputFrameBuffer } from './inputFrameBuffer';
 import { stepBuffered } from './stepBuffered';
-import { MAX_SNAPSHOT_TICK, parseStateSnapshot } from './stateSnapshot';
+import { MAX_SNAPSHOT_FIGHTERS, MAX_SNAPSHOT_TICK, parseStateSnapshot } from './stateSnapshot';
 
 const p1 = { playerId: 'P1', moveX: 1 as const, moveY: 0 as const, jump: false, punch: true };
 const neutral = (playerId: string) => ({ playerId, moveX: 0 as const, moveY: 0 as const, jump: false });
+/** Highest counter the codec accepts: it reserves one tick of headroom per opponent. */
+const COUNTER_CAP = Number.MAX_SAFE_INTEGER - (MAX_SNAPSHOT_FIGHTERS - 1);
 
 /** P1 is in the active punch window next to P2; P2 sits at the counter cap. */
 function activePunchAtCounterCap() {
@@ -15,7 +17,7 @@ function activePunchAtCounterCap() {
     ...base,
     fighters: [
       { ...base.fighters[0], x: 100, y: 148, facing: 1 as const, attackMove: 'punch' as const, attackFrames: punchFrames, attackCooldown: punchFrames },
-      { ...base.fighters[1], x: 120, y: 148, hitsReceived: Number.MAX_SAFE_INTEGER - 3 },
+      { ...base.fighters[1], x: 120, y: 148, hitsReceived: COUNTER_CAP },
     ],
   };
 }
@@ -108,13 +110,13 @@ describe('M2 buffered simulation integration', () => {
     const counterBuffer = new InputFrameBuffer(['P1', 'P2'], 0);
     counterBuffer.push({ version: 1, tick: 0, inputs: [] });
     expect(() => stepBuffered(counter, counterBuffer)).toThrow(/not encodable/);
-    expect(counter.fighters[1].hitsReceived).toBe(Number.MAX_SAFE_INTEGER - 3);
+    expect(counter.fighters[1].hitsReceived).toBe(COUNTER_CAP);
     expect(counterBuffer.tick).toBe(0);
     expect(counterBuffer.pending).toBe(1);
 
     // The same step does land the hit; only the resulting snapshot is rejected.
     const stepped = step(counter, counterBuffer.peek().inputs);
-    expect(stepped.fighters[1].hitsReceived).toBe(Number.MAX_SAFE_INTEGER - 2);
+    expect(stepped.fighters[1].hitsReceived).toBe(COUNTER_CAP + 1);
     expect(() => parseStateSnapshot({ version: 1, state: stepped })).toThrow();
   });
 

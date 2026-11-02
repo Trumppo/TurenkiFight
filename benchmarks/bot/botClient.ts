@@ -18,7 +18,7 @@ import {
   type BotNetworkPathSource,
 } from './botManifest';
 import { BotMetrics, monotonicClock, type BotClock } from './botMetrics';
-import { createBotSchedule, type BotInputPattern, type BotSchedule } from './botInput';
+import { createBotSchedule, WS_BENCHMARK_ROSTER, type BotInputPattern, type BotSchedule } from './botInput';
 
 /**
  * One headless bot process for the real-match server.
@@ -178,8 +178,11 @@ function assertOptions(options: BotClientOptions): void {
   if (hostOf(options.url) === null) {
     throw new BotClientError('invalid-options', `Invalid WebSocket URL: ${options.url}`);
   }
-  if (!Array.isArray(options.playerIds) || options.playerIds.length < 1 || options.playerIds.length > 4) {
-    throw new BotClientError('invalid-options', 'Bot requires 1..4 player slots');
+  // The bot replays the BASE-4 benchmark fixture roster, so its slot bound is
+  // that fixture's roster size, not the general MAX_PLAYERS match cap.
+  if (!Array.isArray(options.playerIds) || options.playerIds.length < 1 ||
+      options.playerIds.length > WS_BENCHMARK_ROSTER.length) {
+    throw new BotClientError('invalid-options', `Bot requires 1..${WS_BENCHMARK_ROSTER.length} player slots`);
   }
   if (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1) {
     throw new BotClientError('invalid-options', 'Invalid run timeout');

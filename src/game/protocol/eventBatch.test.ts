@@ -58,9 +58,10 @@ describe('M2 EventBatch v1', () => {
       version: 1, tick: 9, events: [...events, { tick: 9, type: 'MatchEnded' as const }],
     })).toThrow(/event count/);
   });
-  it('derives the event bound from the four-fighter roster limits', () => {
+  it('derives the event bound from the single roster limit', () => {
     expect(MAX_EVENT_FIGHTERS).toBe(MAX_SNAPSHOT_FIGHTERS);
     expect(MAX_EVENT_FIGHTERS).toBe(MAX_PLAYERS_PER_FRAME);
-    expect(MAX_EVENTS_PER_BATCH).toBe(21);
+    expect(MAX_EVENT_FIGHTERS).toBe(8);
+    expect(MAX_EVENTS_PER_BATCH).toBe(73);
   });
 });

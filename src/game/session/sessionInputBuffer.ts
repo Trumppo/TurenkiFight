@@ -1,4 +1,5 @@
 import type { PlayerInput } from '../simulation/types';
+import { MAX_PLAYERS } from '../protocol/players';
 
 /** Default input look-ahead, shared by every session ingress boundary. */
 export const DEFAULT_MAX_INPUT_LEAD_TICKS = 8;
@@ -14,10 +15,15 @@ export class SessionInputBuffer {
   private readonly sequences = new Map<string, number>();
   private nextTick: number;
 
-  constructor(startTick = 0, private readonly maxLead = DEFAULT_MAX_INPUT_LEAD_TICKS, private readonly maxPlayers = 4) {
+  constructor(
+    startTick = 0,
+    private readonly maxLead = DEFAULT_MAX_INPUT_LEAD_TICKS,
+    private readonly maxPlayers = MAX_PLAYERS,
+  ) {
     if (![startTick, maxLead, maxPlayers].every(Number.isSafeInteger) ||
       startTick < 0 || startTick > Number.MAX_SAFE_INTEGER - maxLead - 1 ||
-      maxLead < 0 || maxLead > MAX_INPUT_LEAD_TICKS || maxPlayers < 1 || maxPlayers > 4) {
+      maxLead < 0 || maxLead > MAX_INPUT_LEAD_TICKS ||
+      maxPlayers < 1 || maxPlayers > MAX_PLAYERS) {
       throw new Error('Invalid input buffer configuration');
     }
     this.nextTick = startTick;

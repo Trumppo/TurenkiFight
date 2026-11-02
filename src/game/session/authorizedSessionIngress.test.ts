@@ -14,6 +14,16 @@ describe('M2 authorized session ingress', () => {
     expect(gate.consume()).toEqual({ version: 1, tick: 0, inputs: [controls('P1'), controls('P2')] });
   });
 
+  it('authorizes eight slots and rejects a ninth', () => {
+    const gate = new AuthorizedSessionIngress();
+    for (let index = 1; index <= 8; index++) gate.join(`c${index}`, `P${index}`);
+    expect(gate.playerCount).toBe(8);
+    expect(() => gate.join('c9', 'P9')).toThrow(/Session full/);
+    for (let index = 1; index <= 8; index++) gate.submit(`c${index}`, 1, 0, controls(`P${index}`));
+    expect(gate.consume().inputs).toHaveLength(8);
+    expect(() => new AuthorizedSessionIngress(0, 8, 9)).toThrow(/capacity/);
+  });
+
   it('denied messages do not consume sequence numbers', () => {
     const gate = new AuthorizedSessionIngress();
     gate.join('a', 'P1');

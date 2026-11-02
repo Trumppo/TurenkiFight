@@ -56,9 +56,20 @@ describe('M2 session roster authorization', () => {
     expect(roster.owns('a', 'P1')).toBe(false);
   });
 
+  it('accepts eight players and rejects a ninth', () => {
+    const roster = new SessionRoster();
+    for (let index = 1; index <= 8; index++) roster.join(`conn${index}`, `P${index}`);
+    expect(roster.playerCount).toBe(8);
+    expect(() => roster.join('conn9', 'P9')).toThrow(/full/);
+    expect(roster.playerCount).toBe(8);
+    expect(() => roster.join('conn9', 'P1')).toThrow(/already owned/);
+  });
+
   it('rejects malformed IDs and invalid capacity', () => {
     expect(() => new SessionRoster(0)).toThrow(/capacity/);
     expect(() => new SessionRoster(1.5)).toThrow(/capacity/);
+    expect(() => new SessionRoster(9)).toThrow(/capacity/);
+    expect(() => new SessionRoster(1)).not.toThrow();
     const roster = new SessionRoster();
     for (const id of ['', 'bad space', 'x'.repeat(65), '../p1']) {
       expect(() => roster.join(id, 'P1')).toThrow(/identifier/);

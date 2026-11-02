@@ -70,7 +70,7 @@ export class SessionClientCore {
 
   join(playerIds: readonly string[]): number {
     if (!Array.isArray(playerIds) || playerIds.length < 1 || playerIds.length > MAX_PLAYERS_PER_FRAME) {
-      throw new Error('Join requires 1..4 player slots');
+      throw new Error(`Join requires 1..${MAX_PLAYERS_PER_FRAME} player slots`);
     }
     if (this.state === 'closed') throw new Error('Session is closed');
     return this.send({
@@ -93,7 +93,7 @@ export class SessionClientCore {
     if (this.state !== 'joined') throw new Error('Input requires an accepted join');
     if (!Number.isSafeInteger(tick) || tick < 0) throw new Error('Invalid target tick');
     if (!Array.isArray(inputs) || inputs.length < 1 || inputs.length > MAX_PLAYERS_PER_FRAME) {
-      throw new Error('Input requires 1..4 player slots');
+      throw new Error(`Input requires 1..${MAX_PLAYERS_PER_FRAME} player slots`);
     }
     for (const input of inputs) {
       if (!this.owned.includes(input.playerId)) throw new Error('Input claims an unowned player slot');

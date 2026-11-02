@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MOVES, createState, step } from '../simulation/step';
 import { stateSnapshotFingerprint } from './fingerprint';
-import { MAX_SNAPSHOT_TICK } from './stateSnapshot';
+import { MAX_SNAPSHOT_FIGHTERS, MAX_SNAPSHOT_TICK } from './stateSnapshot';
 import { MAX_REPLAY_CHECKPOINTS, MAX_REPLAY_FRAMES, verifyReplay } from './replay';
 
 describe('M2 replay verification', () => {
@@ -59,7 +59,7 @@ describe('M2 replay verification', () => {
       ...base,
       fighters: [
         { ...base.fighters[0], x: 100, y: 148, facing: 1 as const, attackMove: 'punch' as const, attackFrames: punchFrames, attackCooldown: punchFrames },
-        { ...base.fighters[1], x: 120, y: 148, hitsReceived: Number.MAX_SAFE_INTEGER - 3 },
+        { ...base.fighters[1], x: 120, y: 148, hitsReceived: Number.MAX_SAFE_INTEGER - (MAX_SNAPSHOT_FIGHTERS - 1) },
       ],
     };
     expect(() => verifyReplay({

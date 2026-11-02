@@ -61,7 +61,9 @@ function positiveInteger(raw: string, maximum: number, label: string, minimum = 
 
 function parsePlayers(raw: string): readonly string[] {
   const entries = raw.split(',').map(entry => entry.trim());
-  if (entries.length < 1 || entries.length > 4) throw new Error(`--players requires 1..4 slots: ${raw}`);
+  if (entries.length < 1 || entries.length > WS_BENCHMARK_ROSTER.length) {
+    throw new Error(`--players requires 1..${WS_BENCHMARK_ROSTER.length} slots: ${raw}`);
+  }
   if (entries.some(entry => entry.length === 0)) throw new Error(`--players contains an empty slot: ${raw}`);
   if (new Set(entries).size !== entries.length) throw new Error(`--players contains a duplicate slot: ${raw}`);
   for (const entry of entries) {

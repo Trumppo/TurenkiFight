@@ -1,5 +1,6 @@
 import type { PlayerInput } from '../simulation/types';
 import { parseInputFrame, type InputFrame } from './inputFrame';
+import { MAX_PLAYERS } from './players';
 
 /**
  * Transport-neutral input staging for a future lockstep host.
@@ -13,7 +14,7 @@ export class InputFrameBuffer {
   private readonly maxPending: number;
 
   constructor(players: string[], startTick = 0, maxPending = 120) {
-    if (!Array.isArray(players) || players.length < 1 || players.length > 4 ||
+    if (!Array.isArray(players) || players.length < 1 || players.length > MAX_PLAYERS ||
         new Set(players).size !== players.length ||
         // Runtime guard: TypeScript types do not protect JSON/host input.
         players.some(id => typeof id !== 'string' || id.length < 1 || id.length > 64) ||

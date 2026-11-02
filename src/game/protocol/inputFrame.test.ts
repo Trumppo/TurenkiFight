@@ -11,9 +11,15 @@ describe('M2 InputFrame v1', () => {
     expect(encodeInputFrame(a)).toBe(encodeInputFrame(b));
     expect(decodeInputFrame(encodeInputFrame(a))).toEqual(parseInputFrame(b));
   });
-  it('rejects more than four players before processing the roster', () => {
-    const oversized = { version: 1 as const, tick: 0, inputs: ['P1', 'P2', 'P3', 'P4', 'P5'].map(p) };
+  it('round trips a full eight-player frame and rejects nine players', () => {
+    const ids = Array.from({ length: 8 }, (_, index) => `P${index + 1}`);
+    const full = { version: 1 as const, tick: 0, inputs: [...ids].reverse().map(p) };
+    const decoded = decodeInputFrame(encodeInputFrame(full));
+    expect(decoded.inputs.map(input => input.playerId)).toEqual(ids);
+    expect(decoded.inputs).toHaveLength(8);
+    const oversized = { version: 1 as const, tick: 0, inputs: [...ids, 'P9'].map(p) };
     expect(() => parseInputFrame(oversized)).toThrow(/malformed/);
+    expect(() => encodeInputFrame(oversized)).toThrow(/malformed/);
   });
   it('rejects malformed and future-version frames', () => {
     const base = { version: 1 as const, tick: 1, inputs: [p('P1')] };

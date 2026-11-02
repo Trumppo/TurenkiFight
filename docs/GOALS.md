@@ -81,7 +81,9 @@ Nykytila: simulaatio hyväksyy mielivaltaisen rosterin, mutta **neljän pelaajan
 
 **Omistajan päätös 2026-11-02: tuettu enimmäispelaajamäärä on 8.** Neljä ei ollut koskaan tuotepäätös — design-dokumentti vaati konfiguroitavaa pelaajamäärää ilman pysyvää kovakoodattua kattoa, ja neljä oli M1-milestonin laajuus. Kahdeksan toteutetaan yhtenä vakiona, josta kaikki kerrokset johtavat; 9+ hylätään selkeästi. Slotit 1–4 säilyttävät näppäimistöasettelut, slotit 5–8 ovat gamepad- tai bottipaikkoja ja UI sanoo sen. Neljän pelaajan tavut ja sormenjäljet pysyvät identtisinä. Yli kahdeksan on myöhemmin uusi päätös + mittaus.
 
-Tehtävät: `M8-BOT-OPPONENT` (nyt), `M8-EIGHT-PLAYER-CAP`, `M8-EIGHT-PLAYER-UI`, `M8-BOT-QA`. Rehellinen riski kirjattu: kahdeksan hahmoa 640×360-areenalla voi olla lukukelvoton — se on löydös, ei virhe, joka pitää piilottaa.
+Tehtävät: `M8-BOT-OPPONENT` (tehty), `M8-EIGHT-PLAYER-CAP` (toteutettu, katselmoitavana), `M8-EIGHT-PLAYER-UI`, `M8-BOT-QA`.
+
+Katon nosto toteutettiin yhtenä vakiona: kahdeksan pelaajan snapshot on mitattu (2,083 B tick 3:ssa, 2,333 B keskimäärin 7200 tickin ajalta) ja neljän pelaajan tavut pysyivät identtisinä. Schema-maksimi pakotti nostamaan snapshotin tavurajan 131 072:een, koska snapshot voi kantaa täyden tapahtumabatchin. BASE-8-benchmark muuttui deterministisesti (yksi frame per tick kahden sijaan) ja se raportoitiin, ei piilotettu. Rehellinen riski kirjattu: kahdeksan hahmoa 640×360-areenalla voi olla lukukelvoton — se on löydös, ei virhe, joka pitää piilottaa.
 
 ### Tiedostorajaus ja omistus
 

@@ -1,5 +1,6 @@
 import { createState, step, TICK_RATE } from '../../src/game/simulation/step';
 import { MODE_IDS } from '../../src/game/simulation/modes';
+import { MAX_PLAYERS } from '../../src/game/protocol/players';
 import type { GameEvent, GameState, ModeId } from '../../src/game/simulation/types';
 import { DEFAULT_MAX_INPUT_LEAD_TICKS } from '../../src/game/session/sessionInputBuffer';
 import type { StateSnapshot } from '../../src/game/protocol/stateSnapshot';
@@ -43,7 +44,7 @@ export type WsSessionPhase = 'lobby' | 'starting' | 'running' | 'results' | 'clo
 
 export type WsSessionOptions = {
   roomId?: string;
-  /** Simulation roster; the BASE-4 prototype default is P1..P4. */
+  /** Simulation roster; the default is the historical P1..P4, up to MAX_PLAYERS. */
   playerIds?: readonly string[];
   /** Match rules chosen at creation. Defaults to Score Brawl. */
   mode?: ModeId;
@@ -116,7 +117,7 @@ export class AuthoritativeWsSession {
     const roomId = options.roomId ?? DEFAULT_WS_ROOM_ID;
     if (!isSessionIdentifier(roomId)) throw new Error('Invalid room binding');
     const playerIds = options.playerIds ?? DEFAULT_WS_PLAYER_IDS;
-    if (!Array.isArray(playerIds) || playerIds.length < 1 || playerIds.length > 4 ||
+    if (!Array.isArray(playerIds) || playerIds.length < 1 || playerIds.length > MAX_PLAYERS ||
         new Set(playerIds).size !== playerIds.length || !playerIds.every(isSessionIdentifier)) {
       throw new Error('Invalid session roster');
     }
@@ -209,7 +210,7 @@ export class AuthoritativeWsSession {
           header,
         );
       }
-      // A configured BASE-4 session never accepts an arbitrary slot name.
+      // A configured session never accepts an arbitrary slot name.
       if ((header.playerIds ?? []).some(playerId => !this.playerIdSet.has(playerId))) {
         return this.denyRoom(
           connectionId,

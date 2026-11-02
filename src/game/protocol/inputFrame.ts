@@ -1,9 +1,11 @@
 import type { PlayerInput } from '../simulation/types';
+import { MAX_PLAYERS } from './players';
 
 /** Versioned, transport-neutral input contract. No networking or bot runtime required. */
 export const INPUT_PROTOCOL_VERSION = 1 as const;
 export const MAX_INPUT_FRAME_BYTES = 4096;
-export const MAX_PLAYERS_PER_FRAME = 4;
+/** Derived from the single roster bound; a frame may carry a full match roster. */
+export const MAX_PLAYERS_PER_FRAME = MAX_PLAYERS;
 export type InputFrame = {
   version: typeof INPUT_PROTOCOL_VERSION;
   tick: number;

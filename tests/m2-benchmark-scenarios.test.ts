@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decodeInputFrame, encodeInputFrame, neutralPlayerInput } from '../src/game/protocol/inputFrame';
+import { decodeInputFrame, encodeInputFrame, neutralPlayerInput, MAX_PLAYERS_PER_FRAME } from '../src/game/protocol/inputFrame';
 import { MAX_SNAPSHOT_FIGHTERS } from '../src/game/protocol/stateSnapshot';
 import { InMemoryBenchmarkAdapter, replayScenario } from '../benchmarks/inMemory';
 import { replayLifecycleScenario } from '../benchmarks/lifecycle';
@@ -72,7 +72,7 @@ describe('M2 benchmark scenario coverage', () => {
   it('generates deterministic, bounded fixtures and never silently resizes the roster', () => {
     const expectedFrames: Record<string, number> = {
       'BASE-4-60-20': 7200,
-      'BASE-8-60-20': 14400,
+      'BASE-8-60-20': 7200,
       'RATE-4-30-10': 3600,
       'LAT-4-60-20-R60-L1': 7200,
       'JIT-4-60-20-R120-J30-L3': 7200,
@@ -84,10 +84,10 @@ describe('M2 benchmark scenario coverage', () => {
       expect(fixture.framesByTick).toHaveLength(7200);
       expect(fixture.framesByTick.flat()).toEqual(fixture.frames);
       expect(decodeInputFrame(fixture.frames[0]).tick).toBe(0);
-      // No fixture may exceed the four-player canonical frame cap.
+      // No fixture may exceed the canonical frame cap.
       for (const tick of [0, 1, 3599, 7199]) {
         for (const frame of fixture.framesByTick[tick]) {
-          expect(decodeInputFrame(frame).inputs.length).toBeLessThanOrEqual(4);
+          expect(decodeInputFrame(frame).inputs.length).toBeLessThanOrEqual(MAX_PLAYERS_PER_FRAME);
         }
       }
       const again = generateFixture(fixture.scenarioId);
@@ -124,6 +124,8 @@ describe('M2 benchmark scenario coverage', () => {
       expect(first.finalStateEncoding).toBe(
         fixture.players <= MAX_SNAPSHOT_FIGHTERS ? 'state-snapshot-v1' : 'harness-state-json-v1',
       );
+      // Every supported roster (4 and 8) now fits the snapshot codec.
+      expect(first.finalStateEncoding).toBe('state-snapshot-v1');
     }
   });
 
@@ -139,38 +141,39 @@ describe('M2 benchmark scenario coverage', () => {
     }
   });
 
-  it('assembles multi-slice eight-player ticks without changing the four-player frame cap', () => {
+  it('carries a full eight-player tick in one canonical frame', () => {
     const fixture = generateFixture('BASE-8-60-20');
     const adapter = new InMemoryBenchmarkAdapter();
     adapter.connect({ scenarioId: 'BASE-8-60-20' });
     adapter.join(createRoster(8));
     const [first] = fixture.framesByTick[0];
+    expect(decodeInputFrame(first).inputs).toHaveLength(8);
 
     adapter.sendInput(first);
-    expect(adapter.observeState().tick).toBe(0);
-    expect(() => adapter.advanceTick()).toThrow(/Incomplete/);
-    expect(() => adapter.sendInput(first)).toThrow(/Duplicate/);
+    expect(adapter.observeState().tick).toBe(1);
+    expect(() => adapter.sendInput(first)).toThrow(/Non-contiguous/);
     // A denied mixed frame must not stage its authorized player.
     expect(() => adapter.sendInput(encodeInputFrame({
-      version: 1, tick: 0,
-      inputs: [neutralPlayerInput('P5'), neutralPlayerInput('P9')],
+      version: 1, tick: 1,
+      inputs: [neutralPlayerInput('P1'), neutralPlayerInput('P9')],
     }))).toThrow(/Unauthorized/);
     expect(() => adapter.sendInput(encodeInputFrame({
-      version: 1, tick: 0, inputs: [neutralPlayerInput('P5')],
+      version: 1, tick: 1, inputs: [neutralPlayerInput('P1')],
     }))).not.toThrow();
     expect(() => adapter.advanceTick()).toThrow(/Incomplete/);
     adapter.sendInput(encodeInputFrame({
-      version: 1, tick: 0,
-      inputs: [neutralPlayerInput('P6'), neutralPlayerInput('P7'), neutralPlayerInput('P8')],
+      version: 1, tick: 1,
+      inputs: ['P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'].map(neutralPlayerInput),
     }));
-    expect(adapter.observeState().tick).toBe(1);
-    // The v1 snapshot codec intentionally caps four fighters; fail explicitly.
-    expect(() => adapter.observeSnapshot()).toThrow();
+    expect(adapter.observeState().tick).toBe(2);
+    // The cap now covers a full roster, so the canonical snapshot encodes.
+    expect(adapter.observeSnapshot().state.fighters).toHaveLength(8);
     adapter.close();
 
     const short = new InMemoryBenchmarkAdapter();
     short.connect({ scenarioId: 'BASE-8-60-20' });
     expect(() => short.join(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7'])).toThrow(/Invalid benchmark roster/);
+    expect(() => short.join(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9'])).toThrow(/Invalid benchmark roster/);
     short.close();
     const rejected = new InMemoryBenchmarkAdapter();
     expect(() => rejected.connect({ scenarioId: 'FAIL-4-HOST-EXIT' })).toThrow(/lifecycle/);
@@ -263,7 +266,7 @@ describe('M2 benchmark scenario manifests', () => {
     expect(() => validateManifest({ ...base, impairment: { rttMs: 1, jitterMs: 0, lossPercent: 0 } })).toThrow();
     expect(() => validateManifest({
       ...base,
-      replay: { ...base.replay, finalStateEncoding: 'state-snapshot-v1' },
+      replay: { ...base.replay, finalStateEncoding: 'harness-state-json-v1' },
     })).toThrow();
     expect(() => validateManifest({ ...base, result: 0 })).toThrow();
 
