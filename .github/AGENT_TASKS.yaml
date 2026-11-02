@@ -1011,12 +1011,13 @@ tasks:
       - server/ws/
       - tests/
     acceptance:
-      - "MAX_PLAYERS_PER_FRAME, MAX_SNAPSHOT_FIGHTERS, MAX_EVENT_FIGHTERS, session roster/buffer and match-server roster accept up to eight with strict bounds and unchanged rejection behaviour above eight"
+      - "A single MAX_PLAYERS = 8 constant is the source of truth; MAX_PLAYERS_PER_FRAME, MAX_SNAPSHOT_FIGHTERS, MAX_EVENT_FIGHTERS, session roster/buffer and match-server roster all derive from it"
+      - "Nine players or more are rejected clearly at every layer; the previous behaviour above the old cap is not loosened"
       - "Score Brawl four-player snapshot bytes and the pinned fingerprints de544fcd and 5bb44bd6 stay identical"
       - "Snapshot byte size at eight players is measured and recorded, not estimated"
       - "Rosters with duplicate ids, more than eight or fewer than one are rejected as before"
       - "npm test, npm run build and git diff --check pass"
-    notes: "This deliberately changes an accepted four-player contract. It is reviewed as one change, with the four-player byte identity as the regression gate."
+    notes: "Owner decided on 2026-11-02 that the supported maximum is 8 players (see docs/M8_PLAYER_LIMIT_DECISION.md). Slots 1-4 keep keyboard layouts; 5-8 are gamepad or bot slots and the UI must say so. This deliberately changes an accepted four-player contract, reviewed as one change with four-player byte identity as the regression gate."
 
   - id: M8-EIGHT-PLAYER-UI
     title: Present eight player slots legibly in the lobby and HUD
