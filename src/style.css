@@ -26,6 +26,17 @@ p { color: #c2cbd2; }
 .hud-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 8px; min-height: 18px; }
 #match-timer { font-size: clamp(16px, 2vw, 28px); line-height: 1.1; letter-spacing: .04em; white-space: nowrap; }
 #match-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#match-status.is-results { overflow: visible; text-overflow: clip; white-space: normal; font-size: 14px; line-height: 1.15; }
+.mode-control { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.mode-control select { pointer-events: auto; min-height: 24px; max-width: 190px; padding: 1px 4px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-size: clamp(14px, 1vw, 16px); }
+.mode-control select:disabled { opacity: 1; color: #fff1b7; }
+.hud-player.is-eliminated { border-left-color: #ed786c; background: #382932; color: #ffd2c7; }
+.hud-player.is-eliminated .hud-health { color: #ff9f90; font-weight: 700; }
+#player-hud.mode-specific .hud-player { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; row-gap: 0; font-size: clamp(14px, 1.25vw, 18px); }
+#player-hud.mode-specific .hud-name { grid-column: 1; grid-row: 1; }
+#player-hud.mode-specific .hud-score { grid-column: 2; grid-row: 1; justify-self: end; }
+#player-hud.mode-specific .hud-health { grid-column: 1 / -1; grid-row: 2; justify-self: center; }
+.online-mode { white-space: nowrap; }
 .scale-control { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .scale-control select { pointer-events: auto; min-height: 24px; padding: 1px 4px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; }
 .audio-controls { display: inline-flex; align-items: center; justify-self: end; gap: 4px; min-width: 0; color: #fff1b7; font-size: 14px; line-height: 1; white-space: nowrap; pointer-events: auto; }
@@ -107,9 +118,11 @@ body.integer-scale-2 .hud-player { min-height: 28px; padding: 2px 8px; }
   .online-page .page-header > .audio-controls { top: auto; bottom: 0; }
   #game { display: flex; flex-direction: column; gap: 8px; max-width: none; margin: 8px auto; border: 0; }
   #fight-hud { position: static; padding: 7px; border: 1px solid #c7a76a; font-size: 14px; }
-  .hud-toolbar { grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 6px; }
+  .hud-toolbar { grid-template-columns: auto minmax(0, 1fr); gap: 4px 6px; }
   #match-status { grid-column: 1 / -1; grid-row: 2; white-space: normal; line-height: 1.25; }
-  .scale-control { grid-column: 2; grid-row: 1; justify-self: end; }
+  .mode-control { grid-column: 2; grid-row: 1; justify-self: end; }
+  .mode-control select { max-width: 180px; }
+  .scale-control { grid-column: 1 / -1; grid-row: 3; justify-self: end; }
   #player-hud { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin-top: 6px; }
   .hud-player { min-height: 28px; padding: 3px 6px; column-gap: 8px; }
   #game canvas { width: 100% !important; height: auto !important; }
@@ -121,7 +134,9 @@ body.integer-scale-2 .hud-player { min-height: 28px; padding: 2px 8px; }
 
 /* Online entry page. The local page above is unchanged; these selectors are
    scoped by `.online-page` or by IDs unique to online.html. */
-.online-page .hud-toolbar { grid-template-columns: auto minmax(0, 1fr) auto; }
+.online-page .hud-toolbar { grid-template-columns: auto minmax(0, 1fr); }
+.online-page #match-status { grid-column: 2; grid-row: 1; }
+.online-page #match-mode { grid-column: 1 / -1; grid-row: 2; white-space: normal; line-height: 1.25; }
 .online-panel {
   margin: 10px auto;
   max-width: 960px;
@@ -176,6 +191,8 @@ body.integer-scale-2 .hud-player { min-height: 28px; padding: 2px 8px; }
   .controls { margin: 2px auto; font-size: 10px; }
   .controls summary { padding: 2px 4px; }
   #fight-hud { padding: 0 4px; }
+  .scale-control { display: none; }
+  .mode-control select { min-height: 18px; padding: 0 2px; }
   .scale-control select { min-height: 18px; padding: 0 2px; }
   body.integer-scale-2 #fight-hud { padding: 0 4px; }
   body.integer-scale-2 .controls,
