@@ -972,6 +972,88 @@ tasks:
     notes: "Rules QA plus visual evidence; owner decides whether the modes feel right."
 
 
+  - id: M8-BOT-OPPONENT
+    title: Let players fill empty slots with deterministic local bots
+    assigned_role: gameplay-session
+    status: ready
+    priority: P0
+    specification: docs/M8_BOTS_AND_EIGHT_PLAYERS.md
+    depends_on: []
+    scope:
+      - src/game/input/
+      - src/game/simulation/
+      - src/game/modes/
+      - src/game/presentation/
+      - tests/
+    acceptance:
+      - "Lobby offers BOT for empty slots and a bot can be removed again before the match starts"
+      - "Bot inputs come from a pure seeded policy reading only the current state and tick; no wall clock and no unseeded randomness"
+      - "A bot match is deterministic; the same seed, roster and human inputs produce identical final state and ordered events"
+      - "Bots approach and attack rather than idling, proven by a bounded-tick test that they land hits"
+      - "Bots follow each mode: respawn in Score Brawl and Deathmatch, permanent elimination in Last Man Standing"
+      - "The human keeps P1 control; a bot never takes over the human slot"
+      - "npm test, npm run build and git diff --check pass"
+    notes: "Owner request 2026-11-02: fight one or more bots locally so a full eight-player round can be tested alone. This slice stays inside the current four-player cap; raising the cap is a separate reviewed change."
+
+  - id: M8-EIGHT-PLAYER-CAP
+    title: Raise the roster cap to eight without changing four-player output
+    assigned_role: gameplay-session
+    status: backlog
+    priority: P0
+    specification: docs/M8_BOTS_AND_EIGHT_PLAYERS.md
+    depends_on: [M8-BOT-OPPONENT]
+    scope:
+      - src/game/protocol/
+      - src/game/session/
+      - server/ws/
+      - tests/
+    acceptance:
+      - "MAX_PLAYERS_PER_FRAME, MAX_SNAPSHOT_FIGHTERS, MAX_EVENT_FIGHTERS, session roster/buffer and match-server roster accept up to eight with strict bounds and unchanged rejection behaviour above eight"
+      - "Score Brawl four-player snapshot bytes and the pinned fingerprints de544fcd and 5bb44bd6 stay identical"
+      - "Snapshot byte size at eight players is measured and recorded, not estimated"
+      - "Rosters with duplicate ids, more than eight or fewer than one are rejected as before"
+      - "npm test, npm run build and git diff --check pass"
+    notes: "This deliberately changes an accepted four-player contract. It is reviewed as one change, with the four-player byte identity as the regression gate."
+
+  - id: M8-EIGHT-PLAYER-UI
+    title: Present eight player slots legibly in the lobby and HUD
+    assigned_role: graphics-session
+    status: backlog
+    priority: P1
+    specification: docs/M8_BOTS_AND_EIGHT_PLAYERS.md
+    depends_on: [M8-BOT-OPPONENT]
+    scope:
+      - src/game/presentation/
+      - src/style.css
+      - tests/browser/
+    acceptance:
+      - "Lobby and HUD handle eight slots in a legible 4x2 arrangement at 640x360, 1280x720, 1920x1080 and 390x844"
+      - "Text stays at least 14 CSS px and the VIS-05 readability checks remain green"
+      - "Bots are visibly marked in the HUD so the human can tell players from the computer"
+      - "Eight overlapping fighters remain distinguishable in the arena; if they do not, that is reported with screenshots rather than hidden"
+      - "Full browser suite passes"
+    notes: "The honest outcome may be that eight fighters are unreadable at 640x360. Report that with evidence; do not fake readability."
+
+  - id: M8-BOT-QA
+    title: Independent QA of bot matches and eight-player rounds
+    assigned_role: tester-session
+    status: backlog
+    priority: P1
+    specification: docs/M8_BOTS_AND_EIGHT_PLAYERS.md
+    depends_on: [M8-EIGHT-PLAYER-CAP, M8-EIGHT-PLAYER-UI]
+    scope:
+      - docs/visual/
+      - tests/browser/
+    acceptance:
+      - "Verify bot determinism by replaying the same seed and roster twice and comparing state and event hashes"
+      - "Verify bots actually fight, do not deadlock, and that matches terminate through the mode end conditions"
+      - "Verify eight-player matches run and that the HUD shows all eight slots"
+      - "Verify Score Brawl four-player bytes and fingerprints are unchanged"
+      - "Report screenshots at all four viewports and state plainly whether eight fighters are readable"
+      - "Provide an owner playtest checklist for judging bot difficulty and eight-player feel"
+    notes: "Rules, determinism and readability evidence. Bot difficulty and fun are owner judgements."
+
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
