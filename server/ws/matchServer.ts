@@ -36,7 +36,7 @@ export const MAX_MATCH_PLAYERS = MAX_PLAYERS;
  * Operator default roster size. This is a default, not a cap: `--players` may
  * request any value in 1..MAX_MATCH_PLAYERS.
  */
-export const DEFAULT_MATCH_PLAYERS = 4;
+export const DEFAULT_MATCH_PLAYERS = 4; // cap-scan-allow: operator default roster, not the supported cap
 export const DEFAULT_MATCH_SNAPSHOT_HZ: SnapshotHz = 20;
 
 export type MatchStartMode = 'auto' | 'manual';
