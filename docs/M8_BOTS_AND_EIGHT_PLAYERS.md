@@ -83,8 +83,12 @@ fingerprints remain `7fddf007…` / `de544fcd…` / `5bb44bd6…`.
 | Measurement | Canonical | Server message |
 | --- | ---: | ---: |
 | Authoritative session at tick 3 | 2,083 B | 2,126 B |
-| Full 7,200-tick BASE-8 replay, mean (2,400 samples) | 2,333.2 B | 2,376.2 B |
-| BASE-8 replay, min / max | 2,203 / 2,597 B | 2,246 / 2,640 B |
+| BASE-8 replay, mean over the 2,400 sampled snapshots (every third tick from tick 3) | 2,333.2 B | 2,376.2 B |
+| Same 2,400-sample set, min / max | 2,203 / 2,597 B | 2,246 / 2,640 B |
+| All 7,200 ticks, min / max | 2,197 / 2,615 B | 2,240 / 2,658 B |
+
+The mean and the first min/max row are over the sampled set, not every tick; the last row is the full
+tick population. Both are recorded so neither can be quoted as something it is not.
 
 That is about 46,664 B/s per client of codec bytes and 373,312 B/s for eight clients at 20 Hz — still a
 codec measurement, not a network measurement.
