@@ -115,6 +115,18 @@
 - [ ] Add Last Man Standing and Deathmatch as independent modes — **active goal 2026-11-02**, see [game modes spec](M7_GAME_MODES.md)
 - [ ] Revisit dedicated hosting and rollback only if measurements justify them
 
+## Milestone 8 - Bots and eight-player matches
+
+**Status: ACTIVE (owner request 2026-11-02).** A single player should be able to fill empty slots with bots and run a full eight-player round against the computer, first as a readability and load test.
+
+- [ ] Local bot opponents with a deterministic, seeded policy and lobby selection
+- [ ] Raise the roster cap to eight across codecs, session and server without changing four-player bytes
+- [ ] Eight-slot lobby and HUD, and an honest report on whether eight fighters are readable in the arena
+- [ ] Independent QA of determinism, termination and readability
+- [ ] Owner playtest: is eight-player versus bots playable?
+
+**Exit:** the owner can start an eight-player match alone against bots and decide whether it is worth keeping. See [bots and eight players](M8_BOTS_AND_EIGHT_PLAYERS.md).
+
 ## Definition of done
 
 Each milestone needs a reproducible build, test evidence, known limitations and links to measured results. A checked item indicates work committed, **not necessarily independently validated**.

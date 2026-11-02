@@ -73,6 +73,14 @@ Mitä tarvitaan (ei ole vielä olemassa): (1) oikean matsin serveritila fixture-
 
 Tämä muuttaa ADR 0001:n riskin mitattavaksi: jos snapshot-välit ja RTT pysyvät pieninä oikealla yhteydellä, päätös vahvistuu; jos katkokset korreloivat häviön kanssa, ADR:n uudelleenarviointiehto laukeaa. Suojaukset säilyvät ennallaan: `ws://` ilman TLS:ää vain LANissa tai VPN:ssä, ei julkiseen internetiin.
 
+### Lisäys 2026-11-02: botit ja kahdeksan pelaajan matsit (omistajan pyyntö)
+
+Omistaja pyysi, että matsin alussa ja pelaajien liittyessä voisi valita taistelun yhtä tai useampaa bottia vastaan, jotta koko kahdeksan pelaajan erän voisi testata yksin tietokonetta vastaan. Suunnitelma: [M8_BOTS_AND_EIGHT_PLAYERS.md](M8_BOTS_AND_EIGHT_PLAYERS.md).
+
+Nykytila: simulaatio hyväksyy mielivaltaisen rosterin, mutta **neljän pelaajan katto on tarkoituksellinen** ja toteutettu useassa kerroksessa (input-koodekki, snapshot- ja event-koodekit, sessio, match-server, HUD). Siksi työ jaetaan kahtia: ensin botit nykyiseen neljän pelaajan peliin, sitten katon nosto kahdeksaan yhdessä reviewoidussa muutoksessa, jonka regressioportti on **neljän pelaajan tavuidenttisyys**.
+
+Tehtävät: `M8-BOT-OPPONENT` (nyt), `M8-EIGHT-PLAYER-CAP`, `M8-EIGHT-PLAYER-UI`, `M8-BOT-QA`. Rehellinen riski kirjattu: kahdeksan hahmoa 640×360-areenalla voi olla lukukelvoton — se on löydös, ei virhe, joka pitää piilottaa.
+
 ### Tiedostorajaus ja omistus
 
 - Designer: `docs/GOALS.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/M2_*.md`, `docs/adr/**`, `.github/AGENT_TASKS.yaml`, `.opencode/agents/**`, `opencode.json`, `AGENTS.md`.
