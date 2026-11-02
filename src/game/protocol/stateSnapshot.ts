@@ -1,6 +1,6 @@
-import type { Fighter, GameState, Move, Phase } from '../simulation/types';
+import type { Fighter, GameEvent, GameState, ModeId, Move, Phase } from '../simulation/types';
 import { COUNTDOWN_TICKS, MATCH_TICKS, MOVES } from '../simulation/step';
-import { COMBAT_MOVES, parseGameEvent } from './gameEvent';
+import { COMBAT_MOVES, END_REASONS, parseGameEvent } from './gameEvent';
 
 /** Transport-independent, versioned representation of the full deterministic simulation state. */
 export const SNAPSHOT_VERSION = 1 as const;
@@ -35,10 +35,24 @@ export const MAX_HEALTH = 100;
 const MAX_FIGHTER_COUNTER = Number.MAX_SAFE_INTEGER - (MAX_SNAPSHOT_FIGHTERS - 1);
 
 const phases: Phase[] = ['lobby', 'countdown', 'fighting', 'results'];
-const fighterKeys = ['id', 'x', 'y', 'z', 'vz', 'facing', 'health', 'score', 'koCount', 'hitsReceived',
+/**
+ * Optional mode fields are allowed on the wire but must match the mode that
+ * created them. `damageDealt` is part of the mode state (LMS and Deathmatch
+ * tie-breaks read it) even though it has no Score Brawl value.
+ */
+const requiredFighterKeys = ['id', 'x', 'y', 'z', 'vz', 'facing', 'health', 'score', 'koCount', 'hitsReceived',
   'attackCooldown', 'attackFrames', 'attackMove', 'hitTargets', 'hitstun', 'koTimer', 'protection', 'previousButtons'];
-const stateKeys = ['tick', 'fighters', 'phase', 'countdownTicks', 'remainingTicks', 'events'];
+const modeFighterKeys = ['eliminated', 'frags', 'deaths', 'damageDealt'];
+const fighterKeys = [...requiredFighterKeys, ...modeFighterKeys];
+const requiredStateKeys = ['tick', 'fighters', 'phase', 'countdownTicks', 'remainingTicks', 'events'];
+const stateKeys = [...requiredStateKeys, 'mode'];
+/**
+ * Score Brawl is the historical default and omits `mode`, so an explicit
+ * `score-brawl` value is not canonical and is rejected by the decoder.
+ */
+const snapshotModes: readonly ModeId[] = ['last-man-standing', 'deathmatch'];
 const obj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
+const has = (x: Record<string, unknown>, key: string): boolean => Object.prototype.hasOwnProperty.call(x, key);
 const keys = (x: Record<string, unknown>, expected: string[]) => Object.keys(x).every(k => expected.includes(k));
 const nonnegative = (x: unknown): x is number => typeof x === 'number' && Number.isSafeInteger(x) && x >= 0;
 const counter = (x: unknown): x is number => nonnegative(x) && x <= MAX_FIGHTER_COUNTER;
@@ -87,17 +101,67 @@ function coherentAttack(move: unknown, frames: unknown): boolean {
     frames <= totalAttackTicks(move as Move);
 }
 
-function fighter(x: unknown): x is Fighter {
-  if (!obj(x) || !keys(x, fighterKeys) || Object.keys(x).length !== fighterKeys.length || !string(x.id)) return false;
-  if (!['x', 'y', 'z', 'vz', 'score'].every(k => finite(x[k]))) return false;
-  if ((x.z as number) < 0) return false; // step() clamps z to >= 0
-  if (typeof x.health !== 'number' || !Number.isSafeInteger(x.health) || x.health < 0 || x.health > MAX_HEALTH) return false;
-  if (x.facing !== -1 && x.facing !== 1) return false;
-  if (!counter(x.hitsReceived) || !counter(x.koCount)) return false;
-  if (!['attackFrames', 'hitstun', 'koTimer', 'protection'].every(k => nonnegative(x[k]))) return false;
-  if (!nonnegative(x.attackCooldown) || x.attackCooldown > MAX_ATTACK_TICKS) return false;
-  if (!coherentAttack(x.attackMove, x.attackFrames)) return false;
-  return strings(x.hitTargets) && x.hitTargets.length <= MAX_SNAPSHOT_FIGHTERS && buttons(x.previousButtons);
+function parseFighter(value: unknown, mode: ModeId | undefined): Fighter | null {
+  if (!obj(value) || !keys(value, fighterKeys)) return null;
+  const x = value;
+  const id = x.id;
+  if (!string(id)) return null;
+  if (!requiredFighterKeys.every(key => has(x, key))) return null;
+  if (!['x', 'y', 'z', 'vz', 'score'].every(k => finite(x[k]))) return null;
+  if ((x.z as number) < 0) return null; // step() clamps z to >= 0
+  if (typeof x.health !== 'number' || !Number.isSafeInteger(x.health) || x.health < 0 || x.health > MAX_HEALTH) return null;
+  if (x.facing !== -1 && x.facing !== 1) return null;
+  if (!counter(x.hitsReceived) || !counter(x.koCount)) return null;
+  if (!['attackFrames', 'hitstun', 'koTimer', 'protection'].every(k => nonnegative(x[k]))) return null;
+  if (!nonnegative(x.attackCooldown) || x.attackCooldown > MAX_ATTACK_TICKS) return null;
+  if (!coherentAttack(x.attackMove, x.attackFrames)) return null;
+  if (!strings(x.hitTargets) || x.hitTargets.length > MAX_SNAPSHOT_FIGHTERS || !buttons(x.previousButtons)) return null;
+
+  const carriesModeState = modeFighterKeys.some(key => has(x, key));
+  if (carriesModeState && mode === undefined) return null;
+  // `eliminated` is a true-only marker: an absent field means "alive", so the
+  // canonical form omits `false` and the decoder rejects it as non-canonical.
+  if (has(x, 'eliminated')) {
+    if (mode !== 'last-man-standing' || x.eliminated !== true) return null;
+  }
+  if (has(x, 'frags')) {
+    if (mode !== 'deathmatch' || !counter(x.frags)) return null;
+  }
+  if (has(x, 'deaths')) {
+    if (mode !== 'deathmatch' || !counter(x.deaths)) return null;
+  }
+  if (has(x, 'damageDealt') && !counter(x.damageDealt)) return null;
+  // Deathmatch always spawns and steps the frag table together.
+  if (mode === 'deathmatch' && (!has(x, 'frags') || !has(x, 'deaths'))) return null;
+  // Last Man Standing eliminates on the knockout that reaches zero health, so
+  // every zero-health fighter is eliminated and every eliminated fighter has
+  // zero health. Damage never leaves one of the two without the other.
+  if (mode === 'last-man-standing' && ((x.health === 0) !== (x.eliminated === true))) return null;
+
+  return {
+    id,
+    x: x.x as number,
+    y: x.y as number,
+    z: x.z as number,
+    vz: x.vz as number,
+    facing: x.facing as Fighter['facing'],
+    health: x.health,
+    score: x.score as number,
+    koCount: x.koCount as number,
+    hitsReceived: x.hitsReceived as number,
+    attackCooldown: x.attackCooldown as number,
+    attackFrames: x.attackFrames as number,
+    attackMove: x.attackMove as Move | null,
+    hitTargets: [...(x.hitTargets as string[])],
+    hitstun: x.hitstun as number,
+    koTimer: x.koTimer as number,
+    protection: x.protection as number,
+    previousButtons: [...(x.previousButtons as string[])],
+    ...(x.eliminated === true ? { eliminated: true } : {}),
+    ...(has(x, 'frags') ? { frags: x.frags as number } : {}),
+    ...(has(x, 'deaths') ? { deaths: x.deaths as number } : {}),
+    ...(has(x, 'damageDealt') ? { damageDealt: x.damageDealt as number } : {}),
+  };
 }
 
 /**
@@ -116,14 +180,25 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
   if (!obj(value) || !keys(value, ['version', 'state']) || Object.keys(value).length !== 2 ||
       value.version !== SNAPSHOT_VERSION || !obj(value.state)) throw new Error('Invalid snapshot envelope');
   const state = value.state;
-  if (!keys(state, stateKeys) || Object.keys(state).length !== stateKeys.length ||
+  if (!keys(state, stateKeys) || !requiredStateKeys.every(key => has(state, key)) ||
       !nonnegative(state.tick) || state.tick > MAX_SNAPSHOT_TICK ||
       !phases.includes(state.phase as Phase) || !timersValid(state) ||
       !Array.isArray(state.fighters) || state.fighters.length < 1 ||
-      state.fighters.length > MAX_SNAPSHOT_FIGHTERS || !state.fighters.every(fighter)) {
+      state.fighters.length > MAX_SNAPSHOT_FIGHTERS) {
     throw new Error('Malformed simulation state');
   }
-  const fighters = state.fighters as Fighter[];
+  // `mode` is present only for the rules-driven modes; Score Brawl omits it and
+  // an explicit `score-brawl` value is not canonical.
+  const mode = has(state, 'mode') ? state.mode : undefined;
+  if (mode !== undefined && !snapshotModes.includes(mode as ModeId)) {
+    throw new Error('Malformed simulation state');
+  }
+  const fighters: Fighter[] = [];
+  for (const raw of state.fighters) {
+    const parsed = parseFighter(raw, mode as ModeId | undefined);
+    if (parsed === null) throw new Error('Malformed simulation state');
+    fighters.push(parsed);
+  }
   const roster = new Set(fighters.map(f => f.id));
   // A hit target must be another fighter in the roster. `step()` skips
   // `a.id === t.id` before its hit-target loop and only pushes the opponent it
@@ -134,8 +209,32 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
       !Array.isArray(state.events) || state.events.length > MAX_SNAPSHOT_EVENTS) {
     throw new Error('Malformed simulation state');
   }
-  for (const event of state.events) parseGameEvent(event, state.tick, roster);
-  return { version: SNAPSHOT_VERSION, state: state as unknown as GameState };
+  const events: GameEvent[] = state.events.map(event => parseGameEvent(event, state.tick as number, roster));
+  for (const event of events) {
+    if (event.type !== 'MatchEnded') continue;
+    const carriesOutcome = event.reason !== undefined || event.winner !== undefined;
+    // Score Brawl keeps the historical `{ tick, type }` event exactly. The
+    // rules-driven modes always report both the end reason and the winner
+    // (possibly null for a draw).
+    if (mode === undefined ? carriesOutcome : event.reason === undefined || event.winner === undefined) {
+      throw new Error('Malformed simulation state');
+    }
+    if (event.reason !== undefined && !END_REASONS.includes(event.reason)) {
+      throw new Error('Malformed simulation state');
+    }
+  }
+  return {
+    version: SNAPSHOT_VERSION,
+    state: {
+      tick: state.tick as number,
+      fighters,
+      phase: state.phase as Phase,
+      countdownTicks: state.countdownTicks as number,
+      remainingTicks: state.remainingTicks as number,
+      events,
+      ...(mode === undefined ? {} : { mode: mode as ModeId }),
+    },
+  };
 }
 
 /** Sort object keys recursively so semantically identical snapshots have identical wire bytes. */
@@ -145,8 +244,30 @@ function canonical(value: unknown): unknown {
   return value;
 }
 
+/**
+ * `createState` writes `eliminated: false` on every living Last Man Standing
+ * fighter, but `false` carries no information and the canonical wire form omits
+ * it. Encoding therefore normalises the marker away before validation; the
+ * decoder still rejects an explicit `false` on the wire.
+ */
+function canonicalEncodeInput(value: unknown): unknown {
+  if (!obj(value) || !obj(value.state) || value.state.mode !== 'last-man-standing' ||
+      !Array.isArray(value.state.fighters)) {
+    return value;
+  }
+  return {
+    ...value,
+    state: {
+      ...value.state,
+      fighters: value.state.fighters.map(fighter => obj(fighter) && fighter.eliminated === false
+        ? Object.fromEntries(Object.entries(fighter).filter(([key]) => key !== 'eliminated'))
+        : fighter),
+    },
+  };
+}
+
 export function encodeStateSnapshot(snapshot: StateSnapshot): string {
-  const json = JSON.stringify(canonical(parseStateSnapshot(snapshot)));
+  const json = JSON.stringify(canonical(parseStateSnapshot(canonicalEncodeInput(snapshot))));
   if (new TextEncoder().encode(json).byteLength > MAX_SNAPSHOT_BYTES) throw new Error('State snapshot exceeds size limit');
   return json;
 }

@@ -319,6 +319,7 @@ describe('M7 serve:match command surface', () => {
       playerIds: PLAYERS,
       snapshotHz: 20,
       startMode: 'auto',
+      mode: 'score-brawl',
       help: false,
     });
     expect(parseServeMatchArgs([
@@ -327,12 +328,14 @@ describe('M7 serve:match command surface', () => {
       '--players=2',
       '--snapshot-hz=30',
       '--start=manual',
+      '--mode=last-man-standing',
     ])).toEqual({
       host: '0.0.0.0',
       port: 9001,
       playerIds: ['P1', 'P2'],
       snapshotHz: 30,
       startMode: 'manual',
+      mode: 'last-man-standing',
       help: false,
     });
     expect(parseServeMatchArgs(['--help']).help).toBe(true);
@@ -345,11 +348,13 @@ describe('M7 serve:match command surface', () => {
     expect(() => parseServeMatchArgs(['--snapshot-hz=15'])).toThrow(/Unsupported snapshot rate/);
     expect(() => parseServeMatchArgs(['--players=5'])).toThrow(/1\.\.4/);
     expect(() => parseServeMatchArgs(['--start=later'])).toThrow(/Invalid start mode/);
+    expect(() => parseServeMatchArgs(['--mode=duel'])).toThrow(/Invalid mode/);
     expect(() => parseServeMatchArgs(['--host=ws://127.0.0.1'])).toThrow(/not a URL/);
     expect(() => parseServeMatchArgs(['--bogus=1'])).toThrow(/Unknown option/);
     expect(() => parseServeMatchArgs(['positional'])).toThrow(/Unexpected argument/);
     expect(serveMatchUsage()).toContain('npm run serve:match');
     expect(serveMatchUsage()).toContain('--host');
+    expect(serveMatchUsage()).toContain('--mode');
   });
 
   it('emits one ready line with the URL and no manifest or peer data', () => {
@@ -361,13 +366,15 @@ describe('M7 serve:match command surface', () => {
       playerIds: PLAYERS,
       snapshotHz: 20,
       startMode: 'auto',
+      mode: 'deathmatch',
     });
     expect(line).not.toContain('\n');
     const parsed = JSON.parse(line) as Record<string, unknown>;
     expect(Object.keys(parsed).sort()).toEqual([
-      'host', 'kind', 'players', 'port', 'roomId', 'snapshotHz', 'startMode', 'tickRate', 'url',
+      'host', 'kind', 'mode', 'players', 'port', 'roomId', 'snapshotHz', 'startMode', 'tickRate', 'url',
     ]);
     expect(parsed.kind).toBe('match-server-ready');
+    expect(parsed.mode).toBe('deathmatch');
     expect(parsed.url).toBe('ws://192.168.1.20:8787');
     expect(parsed.tickRate).toBe(60);
     // No peer address, manifest path or invented measurement can appear.

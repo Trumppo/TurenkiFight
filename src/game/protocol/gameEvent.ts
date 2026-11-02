@@ -1,4 +1,4 @@
-import type { GameEvent, Move } from '../simulation/types';
+import type { EndReason, GameEvent, Move, PlayerId } from '../simulation/types';
 
 /**
  * Single strict validator for simulation events on the wire.
@@ -24,8 +24,10 @@ export const GAME_EVENT_TYPES: readonly GameEvent['type'][] = [
   'MatchEnded',
 ];
 export const COMBAT_MOVES: readonly Move[] = ['punch', 'kick', 'jumpkick'];
+/** End reasons the simulation can attach to `MatchEnded`. */
+export const END_REASONS: readonly EndReason[] = ['elimination', 'frag-limit', 'time'];
 
-const fields = ['tick', 'type', 'attacker', 'target', 'move'];
+const fields = ['tick', 'type', 'attacker', 'target', 'move', 'reason', 'winner'];
 const obj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 const id = (x: unknown): x is string => typeof x === 'string' && x.length > 0 && x.length <= 64;
 
@@ -36,6 +38,10 @@ export function parseGameEvent(value: unknown, tick: number, roster?: ReadonlySe
     throw new Error('Malformed game event');
   }
   const type = value.type as GameEvent['type'];
+  // Only `MatchEnded` carries an outcome; every other event must omit both.
+  if (type !== 'MatchEnded' && (value.reason !== undefined || value.winner !== undefined)) {
+    throw new Error('Invalid event outcome');
+  }
   const participant = (player: unknown): player is string => id(player) && (!roster || roster.has(player));
   if (type === 'HitLanded') {
     if (!participant(value.attacker) || !participant(value.target) || value.attacker === value.target ||
@@ -50,11 +56,24 @@ export function parseGameEvent(value: unknown, tick: number, roster?: ReadonlySe
   } else if (value.attacker !== undefined || value.target !== undefined || value.move !== undefined) {
     throw new Error('Invalid lifecycle event');
   }
+  if (type === 'MatchEnded') {
+    const hasReason = value.reason !== undefined;
+    const hasWinner = value.winner !== undefined;
+    // The simulation writes both outcome fields together for the rules-driven
+    // modes and neither for Score Brawl, so a half-filled outcome is malformed.
+    if (hasReason !== hasWinner) throw new Error('Invalid match-end event');
+    if (hasReason && (!END_REASONS.includes(value.reason as EndReason) ||
+        !(value.winner === null || participant(value.winner)))) {
+      throw new Error('Invalid match-end event');
+    }
+  }
   return {
     tick,
     type,
     ...(value.attacker !== undefined ? { attacker: value.attacker as string } : {}),
     ...(value.target !== undefined ? { target: value.target as string } : {}),
     ...(value.move !== undefined ? { move: value.move as Move } : {}),
+    ...(value.reason !== undefined ? { reason: value.reason as EndReason } : {}),
+    ...(value.winner !== undefined ? { winner: value.winner as PlayerId | null } : {}),
   };
 }

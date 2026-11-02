@@ -64,6 +64,7 @@ export async function runServeMatch(argv: readonly string[]): Promise<void> {
       host: options.host,
       port: options.port,
       playerIds: options.playerIds,
+      mode: options.mode,
       snapshotHz: options.snapshotHz,
       startMode: options.startMode,
       log: status,
@@ -73,6 +74,7 @@ export async function runServeMatch(argv: readonly string[]): Promise<void> {
         status(info.url === null
           ? `bound ${info.host}:${info.port}; wildcard bind, connect with this machine's LAN address`
           : `listening on ${info.url} for ${info.playerIds.join(', ')}`);
+        status(`mode: ${info.mode}`);
       },
     });
   } catch (error) {

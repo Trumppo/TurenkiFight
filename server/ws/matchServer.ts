@@ -1,4 +1,6 @@
 import { TICK_RATE } from '../../src/game/simulation/step';
+import { MODE_IDS } from '../../src/game/simulation/modes';
+import type { ModeId } from '../../src/game/simulation/types';
 import { SUPPORTED_SNAPSHOT_HZ, type SnapshotHz } from '../../src/game/networking/wsMessages';
 import { isSessionIdentifier } from '../../src/game/session/sessionEnvelope';
 import type { AuthoritativeWsSession } from './authoritativeWsSession';
@@ -41,6 +43,8 @@ export type MatchReadyInfo = {
   readonly playerIds: readonly string[];
   readonly snapshotHz: SnapshotHz;
   readonly startMode: MatchStartMode;
+  /** Match rules this server creates. Score Brawl is the default. */
+  readonly mode: ModeId;
 };
 
 export type MatchStartFailureReason = 'roster-incomplete' | 'already-started' | 'not-startable' | 'closed';
@@ -55,6 +59,8 @@ export type MatchServerOptions = {
   port?: number;
   /** Simulation roster; 1..4 unique identifiers. Defaults to P1..P4. */
   playerIds?: readonly string[];
+  /** Match rules chosen at creation; unknown ids are rejected, never defaulted. */
+  mode?: ModeId;
   snapshotHz?: SnapshotHz;
   startMode?: MatchStartMode;
   /** Delay after the roster fills before the match enters `running` (auto mode). */
@@ -85,6 +91,7 @@ export type ServeMatchCliOptions = {
   playerIds: readonly string[];
   snapshotHz: SnapshotHz;
   startMode: MatchStartMode;
+  mode: ModeId;
   help: boolean;
 };
 
@@ -136,6 +143,14 @@ function parseStartMode(raw: string): MatchStartMode {
   return raw;
 }
 
+/** Unknown modes fail here instead of silently falling back to Score Brawl. */
+function parseMode(raw: string): ModeId {
+  if (!(MODE_IDS as readonly string[]).includes(raw)) {
+    throw new Error(`Invalid mode: ${raw} (expected ${MODE_IDS.join(', ')})`);
+  }
+  return raw as ModeId;
+}
+
 export function matchPlayerIds(count: number): readonly string[] {
   return Array.from({ length: count }, (_, index) => `P${index + 1}`);
 }
@@ -150,6 +165,7 @@ export function parseServeMatchArgs(argv: readonly string[]): ServeMatchCliOptio
   let playerCount = MAX_MATCH_PLAYERS;
   let snapshotHz = DEFAULT_MATCH_SNAPSHOT_HZ;
   let startMode: MatchStartMode = 'auto';
+  let mode: ModeId = 'score-brawl';
   let help = false;
 
   for (const arg of argv) {
@@ -178,6 +194,9 @@ export function parseServeMatchArgs(argv: readonly string[]): ServeMatchCliOptio
       case 'start':
         startMode = parseStartMode(value);
         break;
+      case 'mode':
+        mode = parseMode(value);
+        break;
       default:
         throw new Error(`Unknown option: --${name}`);
     }
@@ -189,6 +208,7 @@ export function parseServeMatchArgs(argv: readonly string[]): ServeMatchCliOptio
     playerIds: help ? [] : matchPlayerIds(playerCount),
     snapshotHz,
     startMode,
+    mode,
     help,
   };
 }
@@ -204,6 +224,8 @@ export function serveMatchUsage(): string {
     '  --snapshot-hz=<hz>   Snapshot rate 10, 20 or 30 (default 20)',
     '  --start=<mode>       auto starts when the roster is full; manual waits for a',
     '                       "start" line on stdin (default auto)',
+    '  --mode=<mode>        score-brawl, last-man-standing or deathmatch',
+    '                       (default score-brawl; unknown modes are rejected)',
     '  --help               Show this text',
     '',
     'stdin controls:',
@@ -227,6 +249,7 @@ export function formatMatchReadyLine(info: MatchReadyInfo): string {
     snapshotHz: info.snapshotHz,
     tickRate: TICK_RATE,
     startMode: info.startMode,
+    mode: info.mode,
   });
 }
 
@@ -284,6 +307,10 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
   }
   const startMode = options.startMode ?? 'auto';
   if (startMode !== 'auto' && startMode !== 'manual') throw new Error(`Invalid start mode: ${String(startMode)}`);
+  const mode = options.mode ?? 'score-brawl';
+  if (!(MODE_IDS as readonly string[]).includes(mode)) {
+    throw new Error(`Invalid match mode: ${String(mode)} (expected ${MODE_IDS.join(', ')})`);
+  }
   const log = options.log ?? (() => undefined);
   if (typeof log !== 'function') throw new Error('Invalid status sink');
   const onReady = options.onReady ?? null;
@@ -338,6 +365,7 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
     port,
     roomId: DEFAULT_MATCH_ROOM_ID,
     playerIds,
+    mode,
     snapshotHz,
     startMode,
     startDelayMs: options.startDelayMs,
@@ -357,6 +385,7 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
     playerIds,
     snapshotHz,
     startMode,
+    mode,
   };
   onReady?.(ready);
 

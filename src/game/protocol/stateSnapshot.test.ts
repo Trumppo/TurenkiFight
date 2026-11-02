@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { COUNTDOWN_TICKS, MATCH_TICKS, MOVES, createState, step } from '../simulation/step';
 import { neutralPlayerInput } from './inputFrame';
 import { parseGameEvent } from './gameEvent';
+import { stateSnapshotFingerprint } from './fingerprint';
+import {
+  SCORE_BRAWL_FIGHTING_BYTES, SCORE_BRAWL_FIGHTING_FINGERPRINT, SCORE_BRAWL_KNOCKOUT_BYTES,
+  SCORE_BRAWL_KNOCKOUT_FINGERPRINT, SCORE_BRAWL_MATCH_ENDED_BYTES,
+} from '../../../tests/fixtures/scoreBrawlSnapshotBytes';
 import {
   BUTTON_LABELS, MAX_HEALTH, MAX_SNAPSHOT_TICK, assertEncodableState, decodeStateSnapshot, encodeStateSnapshot,
   parseStateSnapshot,
@@ -264,5 +269,153 @@ describe('M2 StateSnapshot v1', () => {
     }
     expect(restored).toEqual(original);
     expect(encodeStateSnapshot({ version: 1, state: restored })).toBe(encodeStateSnapshot({ version: 1, state: original }));
+  });
+});
+
+describe('M7 optional mode fields (ADR 0002)', () => {
+  const lms = () => createState({ ids: ['P1', 'P2'], phase: 'fighting', mode: 'last-man-standing' });
+  const deathmatch = () => createState({ ids: ['P1', 'P2'], phase: 'fighting', mode: 'deathmatch' });
+  const without = (fighter: Record<string, unknown>, key: string) =>
+    Object.fromEntries(Object.entries(fighter).filter(([name]) => name !== key));
+
+  it('keeps the captured Score Brawl fixture bytes byte-identical', () => {
+    const base = createState(['P1', 'P2'], 'fighting');
+    expect(encodeStateSnapshot({ version: 1, state: base })).toBe(SCORE_BRAWL_FIGHTING_BYTES);
+    expect(stateSnapshotFingerprint({ version: 1, state: base })).toBe(SCORE_BRAWL_FIGHTING_FINGERPRINT);
+
+    let ko = withFighter(base, { x: 100, y: 148 });
+    ko = withFighter(ko, { x: 120, y: 148, health: 10, facing: -1 }, 1);
+    for (let tick = 0; tick < 10; tick++) {
+      ko = step(ko, [{ playerId: 'P1', moveX: 0, moveY: 0, jump: false, punch: tick === 0 }]);
+    }
+    expect(encodeStateSnapshot({ version: 1, state: ko })).toBe(SCORE_BRAWL_KNOCKOUT_BYTES);
+    expect(stateSnapshotFingerprint({ version: 1, state: ko })).toBe(SCORE_BRAWL_KNOCKOUT_FINGERPRINT);
+
+    const ended = step({ ...base, remainingTicks: 1 }, []);
+    expect(encodeStateSnapshot({ version: 1, state: ended })).toBe(SCORE_BRAWL_MATCH_ENDED_BYTES);
+    // The Score Brawl event stream stays exactly `{ tick, type }`.
+    expect(JSON.parse(SCORE_BRAWL_MATCH_ENDED_BYTES).state.events).toEqual([{ tick: 1, type: 'MatchEnded' }]);
+  });
+
+  it('round-trips Deathmatch counters and the mode id', () => {
+    let state = deathmatch();
+    state = step(state, []);
+    const encoded = encodeStateSnapshot({ version: 1, state });
+    const decoded = decodeStateSnapshot(encoded);
+    expect(decoded.state.mode).toBe('deathmatch');
+    for (const fighter of decoded.state.fighters) {
+      expect(fighter.frags).toBe(0);
+      expect(fighter.deaths).toBe(0);
+      expect(fighter.damageDealt).toBe(0);
+      expect(fighter).not.toHaveProperty('eliminated');
+    }
+    expect(encodeStateSnapshot(decoded)).toBe(encoded);
+  });
+
+  it('round-trips Last Man Standing and omits the alive marker', () => {
+    const live = lms();
+    const encoded = encodeStateSnapshot({ version: 1, state: live });
+    const raw = JSON.parse(encoded) as { state: { mode: string; fighters: Array<Record<string, unknown>> } };
+    expect(raw.state.mode).toBe('last-man-standing');
+    // `createState` stores `eliminated: false`, but `false` carries no
+    // information and the canonical wire form omits it.
+    for (const fighter of raw.state.fighters) {
+      expect(Object.prototype.hasOwnProperty.call(fighter, 'eliminated')).toBe(false);
+      expect(fighter.damageDealt).toBe(0);
+    }
+    expect(decodeStateSnapshot(encoded).state.fighters.map(fighter => fighter.eliminated))
+      .toEqual([undefined, undefined]);
+    expect(encodeStateSnapshot(decodeStateSnapshot(encoded))).toBe(encoded);
+
+    const defeated = withFighter(live, { health: 0, eliminated: true }, 1);
+    const eliminatedBytes = encodeStateSnapshot({ version: 1, state: defeated });
+    const eliminatedRaw = JSON.parse(eliminatedBytes) as { state: { fighters: Array<Record<string, unknown>> } };
+    expect(eliminatedRaw.state.fighters[1].eliminated).toBe(true);
+    expect(decodeStateSnapshot(eliminatedBytes).state.fighters[1].eliminated).toBe(true);
+  });
+
+  it('rejects mode fields that do not match the state mode', () => {
+    const base = fighting();
+    for (const state of [
+      // No mode: every mode field is unknown for Score Brawl.
+      withFighter(base, { eliminated: true, health: 0 }),
+      withFighter(base, { frags: 0 }),
+      withFighter(base, { deaths: 0 }),
+      withFighter(base, { damageDealt: 0 }),
+      // An explicit Score Brawl id is not the canonical omission.
+      { ...base, mode: 'score-brawl' },
+      { ...base, mode: 'duel' },
+      // Last Man Standing does not track a frag table.
+      withFighter(lms(), { frags: 0 }),
+      withFighter(lms(), { deaths: 0 }),
+      // Deathmatch does not eliminate.
+      withFighter(deathmatch(), { eliminated: true, health: 0 }),
+      // Deathmatch always carries both counters.
+      { ...deathmatch(), fighters: deathmatch().fighters.map((f, i) => i === 0 ? without(f, 'frags') : f) },
+      { ...deathmatch(), fighters: deathmatch().fighters.map((f, i) => i === 0 ? without(f, 'deaths') : f) },
+    ]) rejectsState(state);
+  });
+
+  it('rejects an eliminated/living mismatch and non-canonical false', () => {
+    for (const state of [
+      // eliminated true on a living fighter
+      withFighter(lms(), { eliminated: true }),
+      // zero health without elimination
+      withFighter(lms(), { health: 0 }),
+      // false is omitted from the canonical form, so it is not accepted
+      withFighter(lms(), { eliminated: false }),
+    ]) rejectsState(state);
+    // The accepted form is the canonical wire form, built by encoding first.
+    const canonical = decodeStateSnapshot(encodeStateSnapshot({ version: 1, state: lms() })).state;
+    acceptsState(withFighter(canonical, { health: 0, eliminated: true }, 1));
+  });
+
+  it('rejects negative, fractional and unsafe mode counters', () => {
+    for (const patch of [
+      { frags: -1 },
+      { frags: 1.5 },
+      { deaths: -1 },
+      { deaths: 2.5 },
+      { damageDealt: -1 },
+      { damageDealt: Number.MAX_SAFE_INTEGER },
+    ]) {
+      const mode = 'frags' in patch || 'deaths' in patch ? 'deathmatch' : 'last-man-standing';
+      rejectsState(withFighter(mode === 'deathmatch' ? deathmatch() : lms(), patch));
+    }
+  });
+
+  it('still rejects unknown fighter and state fields', () => {
+    rejectsState({ ...deathmatch(), fighters: deathmatch().fighters.map((fighter, index) =>
+      index === 0 ? { ...fighter, kills: 1 } : fighter) });
+    rejectsState({ ...deathmatch(), winner: 'P1' });
+    rejectsState({ ...lms(), unexpected: true });
+  });
+
+  it('accepts only coherent MatchEnded outcomes', () => {
+    const dm = { ...deathmatch(), phase: 'results' as const };
+    acceptsState({ ...dm, events: [{ tick: 0, type: 'MatchEnded', reason: 'frag-limit', winner: 'P1' }] });
+    acceptsState({ ...dm, events: [{ tick: 0, type: 'MatchEnded', reason: 'time', winner: null }] });
+    for (const event of [
+      { tick: 0, type: 'MatchEnded', reason: 'time' },
+      { tick: 0, type: 'MatchEnded', winner: 'P1' },
+      { tick: 0, type: 'MatchEnded', reason: 'nope', winner: 'P1' },
+      { tick: 0, type: 'MatchEnded', reason: 'time', winner: 'P3' },
+      { tick: 0, type: 'MatchEnded', reason: 'time', winner: 'P1', extra: true },
+      { tick: 0, type: 'HitLanded', attacker: 'P1', target: 'P2', move: 'punch', reason: 'time', winner: 'P1' },
+    ]) rejectsState({ ...dm, events: [event] });
+
+    // Score Brawl keeps the historical event shape: no outcome fields.
+    const sb = fighting();
+    acceptsState({ ...sb, events: [{ tick: 0, type: 'MatchEnded' }] });
+    rejectsState({ ...sb, events: [{ tick: 0, type: 'MatchEnded', reason: 'time', winner: 'P1' }] });
+  });
+
+  it('round-trips mode events without changing the Score Brawl shape', () => {
+    const dm = { ...deathmatch(), phase: 'results' as const, events: [
+      { tick: 0, type: 'MatchEnded' as const, reason: 'time' as const, winner: null },
+    ] };
+    const encoded = encodeStateSnapshot({ version: 1, state: dm });
+    expect(decodeStateSnapshot(encoded).state.events).toEqual(dm.events);
+    expect(parseGameEvent({ tick: 0, type: 'MatchEnded' }, 0)).toEqual({ tick: 0, type: 'MatchEnded' });
   });
 });
