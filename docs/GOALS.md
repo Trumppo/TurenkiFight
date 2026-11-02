@@ -85,6 +85,16 @@ Tehtävät: `M8-BOT-OPPONENT` (tehty), `M8-EIGHT-PLAYER-CAP` (toteutettu, katsel
 
 Katon nosto toteutettiin yhtenä vakiona: kahdeksan pelaajan snapshot on mitattu (2,083 B tick 3:ssa, 2,333 B keskimäärin 7200 tickin ajalta) ja neljän pelaajan tavut pysyivät identtisinä. Schema-maksimi pakotti nostamaan snapshotin tavurajan 131 072:een, koska snapshot voi kantaa täyden tapahtumabatchin. BASE-8-benchmark muuttui deterministisesti (yksi frame per tick kahden sijaan) ja se raportoitiin, ei piilotettu. Rehellinen riski kirjattu: kahdeksan hahmoa 640×360-areenalla voi olla lukukelvoton — se on löydös, ei virhe, joka pitää piilottaa.
 
+### Tila 2026-11-02: M8-tavoite valmis agentin osalta
+
+Kahdeksan pelaajan katto, paikalliset botit ja kahdeksan slotin UI on yhdistetty ja QA tehty:
+
+- `M8-BOT-OPPONENT` (PR #127), `M8-EIGHT-PLAYER-CAP` (PR #128), `M8-EIGHT-PLAYER-UI` (PR #129), `M8-BOT-QA` (PR #130).
+- 12 (muoto × trace × seed) -yhdistelmää toistettiin identtisillä hasheilla; jokainen muoto päättyi omaan ehtoonsa ilman deadlockia. Neljän pelaajan tavut pysyivät identtisinä.
+- QA vahvisti luettavuusongelman: KO-hahmo on litteä blob ilman tunnistetta, ja kahdeksan hahmon ruuhkassa areena ei kerro kuka on kuollut ilman HUD:ia.
+
+**Jäljellä vain omistajan päätökset:** (1) pelaa kahdeksan pelaajan erä botteja vastaan ja päätä, onko se luettavissa ja hauskaa vai pitäisikö käytännön maksimin jäädä pienemmäksi; (2) päätä, viedäänkö kahdeksan myös verkkopeliin (mittaamatta). QA:n matalan prioriteetin löydökset on kirjattu tehtäviksi `M8-RESULTS-TICK` ja `M8-HUD-EDGE-CASES`.
+
 ### Tiedostorajaus ja omistus
 
 - Designer: `docs/GOALS.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/M2_*.md`, `docs/adr/**`, `.github/AGENT_TASKS.yaml`, `.opencode/agents/**`, `opencode.json`, `AGENTS.md`.

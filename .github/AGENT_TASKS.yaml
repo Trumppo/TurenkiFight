@@ -1004,7 +1004,7 @@ tasks:
   - id: M8-EIGHT-PLAYER-CAP
     title: Raise the roster cap to eight without changing four-player output
     assigned_role: gameplay-session
-    status: backlog
+    status: done
     priority: P0
     specification: docs/M8_BOTS_AND_EIGHT_PLAYERS.md
     depends_on: [M8-BOT-OPPONENT]
@@ -1025,7 +1025,7 @@ tasks:
   - id: M8-EIGHT-PLAYER-UI
     title: Present eight player slots legibly in the lobby and HUD
     assigned_role: graphics-session
-    status: backlog
+    status: done
     priority: P1
     specification: docs/M8_BOTS_AND_EIGHT_PLAYERS.md
     depends_on: [M8-BOT-OPPONENT]
@@ -1044,7 +1044,7 @@ tasks:
   - id: M8-BOT-QA
     title: Independent QA of bot matches and eight-player rounds
     assigned_role: tester-session
-    status: backlog
+    status: done
     priority: P1
     specification: docs/M8_BOTS_AND_EIGHT_PLAYERS.md
     depends_on: [M8-EIGHT-PLAYER-CAP, M8-EIGHT-PLAYER-UI]
@@ -1060,6 +1060,41 @@ tasks:
       - "Provide an owner playtest checklist for judging bot difficulty and eight-player feel"
     notes: "Rules, determinism and readability evidence. Bot difficulty and fun are owner judgements."
 
+
+  - id: M8-RESULTS-TICK
+    title: Stop advancing the match tick once the results phase begins
+    assigned_role: gameplay-session
+    status: backlog
+    priority: P2
+    specification: docs/visual/M8_QA_REPORT_2026-11-02.md
+    depends_on: [M8-BOT-QA]
+    scope:
+      - src/game/simulation/
+      - tests/
+    acceptance:
+      - "After a match reaches results, state.tick no longer advances on subsequent steps, or the advance is explicitly documented as intentional"
+      - "The paused-results behaviour is deterministic and covered by a test"
+      - "Score Brawl and the new modes both behave consistently; pinned full-match hashes that legitimately change are reported, not silently re-pinned"
+      - "npm test, npm run build and git diff --check pass"
+    notes: "QA finding F2: the results screen reported tick 7,383-7,386 while the match ended at 7,380. Decide whether the clock should freeze at the end or whether the display is wrong, then make it explicit."
+
+  - id: M8-HUD-EDGE-CASES
+    title: Resolve negative scores and long status text in the HUD
+    assigned_role: graphics-session
+    status: backlog
+    priority: P2
+    specification: docs/visual/M8_QA_REPORT_2026-11-02.md
+    depends_on: [M8-BOT-QA]
+    scope:
+      - src/game/presentation/
+      - src/style.css
+      - tests/browser/
+    acceptance:
+      - "A negative score is either impossible by rule or displayed in a way that is clearly intentional and labelled"
+      - "The status line no longer ellipsises at 1920x1080; the full text is available or the sentence is shortened"
+      - "Text stays at least 14 CSS px and VIS-05 checks stay green"
+      - "Full browser suite passes"
+    notes: "QA findings F3 (negative scores shown) and F5 (status ellipsis at 1920x1080). Investigate whether negative score is reachable in play or only in scripted states before changing anything."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
