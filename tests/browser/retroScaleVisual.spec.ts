@@ -197,7 +197,7 @@ test('VIS-05 native short-viewport lobby status is fully readable', async ({ pag
       fontSize: Number.parseFloat(getComputedStyle(text).fontSize) };
   });
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
-  expect(metrics.fullStatus).toBe('LOBBY · SHIFT/PAD JOIN · ENTER/PAD START');
+  expect(metrics.fullStatus).toContain('P5–P8 GAMEPAD OR BOT');
   expect(metrics.fontSize).toBeGreaterThanOrEqual(14);
   expect(metrics.hudBottom).toBeLessThanOrEqual(metrics.scoreboardBottom + 1);
   await expect(page.locator('[data-player="P1"] .hud-score')).toHaveText('0');
@@ -217,7 +217,7 @@ for (const size of [
     await expect(canvas).toBeVisible();
     const hud = page.locator('#fight-hud');
     await expect(hud).toBeVisible();
-    const fontSizes = await page.locator('#match-timer, #match-status, .hud-player, .hud-name, .hud-score, .hud-health, .scale-control select').evaluateAll(elements =>
+    const fontSizes = await page.locator('#match-timer, #match-status, .hud-player, .hud-name, .hud-score, .hud-health, .hud-slot-action, .scale-control select').evaluateAll(elements =>
       elements.map(element => Number.parseFloat(getComputedStyle(element).fontSize)));
     expect(fontSizes.length).toBeGreaterThan(0);
     expect(Math.min(...fontSizes), 'HUD text must not be scaled below 14 CSS px').toBeGreaterThanOrEqual(14);
@@ -234,7 +234,7 @@ for (const size of [
     } else {
       expect(layout.hud.bottom).toBeLessThanOrEqual(layout.canvas.top + (layout.canvas.bottom - layout.canvas.top) * 35 / 216 + 1);
     }
-    expect(await page.locator('.hud-player').count()).toBe(4);
+    expect(await page.locator('.hud-player').count()).toBe(8);
   });
 }
 
@@ -252,7 +252,8 @@ for (const size of [
       scene.state = state;
     }, fixture);
     await expect.poll(() => page.locator('.hud-player').evaluateAll(cards => cards.map(card => card.getAttribute('aria-label'))))
-      .toEqual(['P1, score 0, health 100', 'P2, score 0, health 100', 'P3, score 0, health 100', 'P4, score 0, health 100']);
+      .toEqual(['P1, score 0, health 100', 'P2, score 0, health 100', 'P3, score 0, health 100', 'P4, score 0, health 100',
+        'P5, not joined', 'P6, not joined', 'P7, not joined', 'P8, not joined']);
     const fighters = await page.evaluate(() => {
       const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
       return [...scene.fighterSprites.entries()].map(([id, sprite]: [string, { texture: { key: string } }]) => ({ id, texture: sprite.texture.key }));

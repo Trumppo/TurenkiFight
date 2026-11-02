@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('VIS-04 retro HUD preserves readable timer and four-slot layout', async ({ page }) => {
+test('VIS-04 retro HUD preserves readable timer and eight-slot layout', async ({ page }) => {
   test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro HUD only');
   await page.setViewportSize({ width: 640, height: 360 });
   await page.goto('/');
@@ -34,9 +34,10 @@ test('VIS-04 retro HUD preserves readable timer and four-slot layout', async ({ 
 
   expect(data.timerText).toMatch(/^\d{2}:\d{2}$/);
   expect(data.timerFontSize).toBeGreaterThanOrEqual(14);
-  expect(data.players).toHaveLength(4);
-  expect(data.players.map(player => player.id)).toEqual(['P1', 'P2', 'P3', 'P4']);
-  expect(data.players.every(player => player.visible && player.name === player.id && player.score !== null && player.health !== null)).toBe(true);
-  expect(data.players[0]).toMatchObject({ name: 'P1', score: '0', health: 'HP 100', ariaLabel: 'P1, score 0, health 100' });
+  expect(data.players).toHaveLength(8);
+  expect(data.players.map(player => player.id)).toEqual(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8']);
+  expect(data.players.every(player => player.visible && player.name && player.score !== null && player.health !== null)).toBe(true);
+  expect(data.players[0]).toMatchObject({ name: 'P1 HOST', score: '0', health: 'H100', ariaLabel: 'P1, score 0, health 100' });
+  expect(data.players.slice(4).every(player => player.name?.includes('PAD/BOT'))).toBe(true);
   expect(data.hudBottom).toBeLessThanOrEqual(data.scoreboardBottom + 1);
 });

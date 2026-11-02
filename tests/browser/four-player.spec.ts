@@ -61,7 +61,7 @@ test('four local fighters can join through simulated gamepads', async ({ page })
   expect(hud.panels).toHaveLength(4);
   for (const [i, panel] of hud.panels.entries()) {
     const id = `P${i + 1}`;
-    expect(panel).toEqual({ id, name: id, score: '0', health: 'HP 100', label: `${id}, score 0, health 100` });
+    expect(panel).toEqual({ id, name: i === 0 ? 'P1 HOST' : `${id} HUMAN`, score: '0', health: 'H100', label: `${id}, score 0, health 100` });
   }
   expect(hud.pads).toEqual(['P3', 'P4']);
   await page.keyboard.down('Enter');
