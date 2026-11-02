@@ -191,12 +191,10 @@ body.integer-scale-2 .hud-player { min-height: 28px; padding: 2px 8px; }
   .controls { margin: 2px auto; font-size: 10px; }
   .controls summary { padding: 2px 4px; }
   #fight-hud { padding: 0 4px; }
+  /* A 1280x720 2× canvas cannot fit vertically here; hide only this control to preserve the reserved HUD band. The URL scale preference still falls back responsively. */
   .scale-control { display: none; }
   .mode-control select { min-height: 18px; padding: 0 2px; }
-  .scale-control select { min-height: 18px; padding: 0 2px; }
-  body.integer-scale-2 #fight-hud { padding: 0 4px; }
-  body.integer-scale-2 .controls,
-  body.integer-scale-2 .scale-control { display: none; }
+  body.integer-scale-2 .controls { display: none; }
   body.integer-scale-2 main { padding: 4px 8px; }
   body.integer-scale-2 .hud-toolbar { min-height: 16px; }
   body.integer-scale-2 #player-hud { margin-top: 0; }

@@ -151,11 +151,14 @@ test('online HUD states the server default and honors a mode in a received snaps
     state.fighters[0].frags = 2;
     state.fighters[0].deaths = 1;
     api.renderHudSnapshotForTest(state);
-    return {
+    const reported = {
       mode: document.querySelector('#match-mode')?.textContent,
       frags: document.querySelector('[data-player="P1"] .hud-score')?.textContent,
       deaths: document.querySelector('[data-player="P1"] .hud-health')?.textContent,
     };
+    api.renderHudSnapshotForTest(null);
+    return { ...reported, afterNullSnapshot: document.querySelector('#match-mode')?.textContent };
   });
-  expect(onlineHud).toEqual({ mode: 'ONLINE MODE · DEATHMATCH', frags: 'FRAGS 2', deaths: 'DEATHS 1' });
+  expect(onlineHud).toEqual({ mode: 'ONLINE MODE · DEATHMATCH', frags: 'FRAGS 2', deaths: 'DEATHS 1',
+    afterNullSnapshot: 'ONLINE MODE · SCORE BRAWL (SERVER DEFAULT)' });
 });

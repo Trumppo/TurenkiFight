@@ -111,7 +111,9 @@ export class OnlineScene extends Phaser.Scene {
       this.audio?.director.setMusicDucked(state.phase === 'results');
     }
     this.drawFighters(state, now);
-    this.renderHud(state);
+    const connectionState = this.controller.connectionState;
+    const modeState = connectionState === 'closed' || connectionState === 'error' ? null : state;
+    this.renderHud(state, modeState);
     this.onFrame?.(now);
   }
 
@@ -122,7 +124,7 @@ export class OnlineScene extends Phaser.Scene {
   }
 
   /** Development harness hook for rendering a supplied authoritative snapshot without stepping it. */
-  debugRenderSnapshot(state: GameState): void {
+  debugRenderSnapshot(state: GameState | null): void {
     this.renderHud(state);
   }
 
@@ -230,20 +232,20 @@ export class OnlineScene extends Phaser.Scene {
     this.domHud = { timer, status, mode, playerList, players };
   }
 
-  private renderHud(state: GameState | null): void {
+  private renderHud(state: GameState | null, modeState: GameState | null = state): void {
     const hud = this.domHud;
     if (!hud) return;
+    const modeId = modeState?.mode;
+    const modeText = modeId
+      ? `ONLINE MODE · ${MODE_NAMES[modeId].toUpperCase()}`
+      : 'ONLINE MODE · SCORE BRAWL (SERVER DEFAULT)';
+    if (hud.mode.textContent !== modeText) hud.mode.textContent = modeText;
+    hud.playerList.classList.toggle('mode-specific', modeId === 'last-man-standing' || modeId === 'deathmatch');
     if (state) {
       const seconds = Math.ceil(state.remainingTicks / 60);
       const timerText = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:` +
         `${String(seconds % 60).padStart(2, '0')}`;
       if (hud.timer.textContent !== timerText) hud.timer.textContent = timerText;
-      const modeId = state.mode ?? 'score-brawl';
-      const modeText = state.mode
-        ? `ONLINE MODE · ${MODE_NAMES[modeId].toUpperCase()}`
-        : 'ONLINE MODE · SCORE BRAWL (SERVER DEFAULT)';
-      if (hud.mode.textContent !== modeText) hud.mode.textContent = modeText;
-      hud.playerList.classList.toggle('mode-specific', state.mode === 'last-man-standing' || state.mode === 'deathmatch');
     } else if (hud.timer.textContent !== '--:--') {
       hud.timer.textContent = '--:--';
     }

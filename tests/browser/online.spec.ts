@@ -170,10 +170,24 @@ test('host disconnect closes the session with a visible message for the remainin
       return api?.state ?? 'missing';
     }), { timeout: 10_000 }).toBe('running');
 
+    await guest.evaluate(async () => {
+      const moduleUrl = '/src/game/simulation/step.ts';
+      const simulation = await import(/* @vite-ignore */ moduleUrl);
+      const api = (window as any).__turenkiOnline;
+      const modeSnapshot = simulation.createState({ ids: ['P1', 'P2'], phase: 'fighting', mode: 'deathmatch' });
+      api.controller.renderState = () => modeSnapshot;
+      api.renderHudSnapshotForTest(modeSnapshot);
+    });
+    await expect(guest.locator('#match-mode')).toHaveText('ONLINE MODE · DEATHMATCH');
+
     await host.close();
     await expect(guest.locator('#online-status')).toContainText(/Session closed|host disconnected/i, {
       timeout: 10_000,
     });
+    await guest.evaluate(() => new Promise<void>(resolve => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+    await expect(guest.locator('#match-mode')).toHaveText('ONLINE MODE · SCORE BRAWL (SERVER DEFAULT)');
     await expect(guest.locator('#fight-hud')).toBeVisible();
   } finally {
     await host.close().catch(() => undefined);

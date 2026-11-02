@@ -208,7 +208,7 @@ if (import.meta.env.DEV) {
     },
     statusText(): string { return statusEl.textContent ?? ''; },
     metricsText(): string { return metricsEl.textContent ?? ''; },
-    renderHudSnapshotForTest(state: GameState): void {
+    renderHudSnapshotForTest(state: GameState | null): void {
       const scene = game.scene.getScene('OnlineScene') as OnlineScene | null;
       scene?.debugRenderSnapshot(state);
     },
