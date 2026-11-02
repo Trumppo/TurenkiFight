@@ -14,16 +14,16 @@ p { color: #c2cbd2; }
   position: absolute;
   z-index: 2;
   inset: 0 0 auto;
-  padding: 1px 4px 1px;
+  padding: 1px 4px;
   color: #fff1b7;
   background: rgba(16, 26, 39, .96);
   border-bottom: 1px solid #c7a76a;
   text-align: left;
   font-size: clamp(14px, 1.7vw, 24px);
-  line-height: 1.15;
+  line-height: 1.1;
   pointer-events: none;
 }
-.hud-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 8px; min-height: 18px; }
+.hud-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 6px; min-height: 17px; }
 #match-timer { font-size: clamp(16px, 2vw, 28px); line-height: 1.1; letter-spacing: .04em; white-space: nowrap; }
 #match-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #match-status.is-results { overflow: visible; text-overflow: clip; white-space: normal; font-size: 14px; line-height: 1.15; }
@@ -32,10 +32,8 @@ p { color: #c2cbd2; }
 .mode-control select:disabled { opacity: 1; color: #fff1b7; }
 .hud-player.is-eliminated { border-left-color: #ed786c; background: #382932; color: #ffd2c7; }
 .hud-player.is-eliminated .hud-health { color: #ff9f90; font-weight: 700; }
-#player-hud.mode-specific .hud-player { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; row-gap: 0; font-size: clamp(14px, 1.25vw, 18px); }
-#player-hud.mode-specific .hud-name { grid-column: 1; grid-row: 1; }
-#player-hud.mode-specific .hud-score { grid-column: 2; grid-row: 1; justify-self: end; }
-#player-hud.mode-specific .hud-health { grid-column: 1 / -1; grid-row: 2; justify-self: center; }
+.hud-player.is-bot { border-left-color: #77cfdf; background: #203644; }
+#player-hud.mode-specific .hud-player { font-size: 14px; }
 .online-mode { white-space: nowrap; }
 .scale-control { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .scale-control select { pointer-events: auto; min-height: 24px; padding: 1px 4px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; }
@@ -44,15 +42,20 @@ p { color: #c2cbd2; }
 .audio-controls button { min-height: 24px; padding: 2px 2px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; cursor: pointer; }
 .audio-controls button:hover { background: #2b3a4c; }
 .audio-controls input[type="range"] { width: 34px; height: 18px; margin: 0; accent-color: #e3b85e; cursor: pointer; }
-#player-hud { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-top: 1px; }
-.hud-player { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 6px; min-width: 0; min-height: 16px; padding: 0 4px; border-left: 2px solid #c7a76a; background: #202a36; }
-.hud-name { color: #f4d38d; }
-.hud-score { justify-self: center; white-space: nowrap; }
-.hud-health { color: #d7d7c3; white-space: nowrap; }
+#player-hud { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; margin-top: 1px; }
+.hud-player { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 3px; min-width: 0; min-height: 16px; padding: 0 2px; border-left: 2px solid #c7a76a; background: #202a36; font-size: 14px; line-height: 16px; }
+.hud-name { color: #f4d38d; white-space: nowrap; }
+.hud-score { justify-self: center; padding-left: 3px; border-left: 1px solid #526071; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hud-health { padding-left: 3px; border-left: 1px solid #526071; color: #d7d7c3; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hud-player.is-empty { opacity: .56; }
-/* Placeholder M8 local-bot marker. Graphics will restyle this badge and the
-   lobby BOT control; keep it minimal and obvious until then. */
-.hud-player.is-bot .hud-name::after { content: ' · BOT'; color: #9fd0e0; font-size: .85em; }
+.hud-player.is-bot .hud-name::after { content: 'BOT'; margin-left: 1px; padding-left: 1px; border-left: 1px solid #77cfdf; color: #9fd0e0; font-weight: 700; }
+.hud-slot-action { display: none; min-width: 25px; min-height: 16px; padding: 0; border: 1px solid #77cfdf; border-radius: 0; background: #172536; color: #c6f0e7; font: inherit; font-size: 14px; line-height: 14px; cursor: pointer; white-space: nowrap; pointer-events: auto; }
+.hud-slot-action:hover { background: #2b5260; }
+#player-hud .hud-player.is-lobby-slot { grid-template-columns: minmax(0, 1fr) auto; }
+#player-hud .hud-player.is-lobby-slot .hud-score,
+#player-hud .hud-player.is-lobby-slot .hud-health { display: none; }
+#player-hud .hud-player.is-lobby-slot .hud-slot-action:not([hidden]) { display: inline-block; }
+#player-hud .hud-player.is-lobby-slot .hud-name { overflow: hidden; text-overflow: clip; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 .instructions { font-size: 13px; line-height: 1.7; }
@@ -74,11 +77,12 @@ p { color: #c2cbd2; }
   main > .page-header p { font-size: 11px; line-height: 14px; margin: 2px 0; }
   #game { width: min(100%, calc((100dvh - 100px) * 16 / 9 + 8px)); margin: 4px auto; }
   .instructions { font-size: 10px; line-height: 12px; margin: 4px 0; }
-  #fight-hud { padding: 2px 4px; }
-  .hud-toolbar { min-height: 16px; gap: 5px; }
+  #fight-hud { padding: 0 4px; }
+  .hud-toolbar { min-height: 15px; gap: 5px; }
   #match-timer { font-size: 14px; line-height: 16px; }
-  #player-hud { gap: 2px; margin-top: 1px; }
-  .hud-player { min-height: 16px; padding: 0 2px; column-gap: 3px; }
+  #player-hud { gap: 1px; margin-top: 0; }
+  .hud-player { min-height: 13px; padding: 0; column-gap: 4px; line-height: 13px; }
+  .hud-slot-action { min-height: 14px; line-height: 12px; }
 }
 
 /* Explicit ?scale=2 mode: canvas CSS dimensions are exactly 2x its 640x360
@@ -89,9 +93,9 @@ body.integer-scale-2 .page-header,
 body.integer-scale-2 .controls { display: none; }
 body.integer-scale-2 #game { width: 1280px; height: 720px; max-width: none; margin: 0; border: 0; outline: 1px solid #cfba86; }
 body.integer-scale-2 #game canvas { width: 1280px !important; height: 720px !important; max-width: none; }
-body.integer-scale-2 #fight-hud { padding: 4px 10px 6px; }
-body.integer-scale-2 #player-hud { margin-top: 5px; }
-body.integer-scale-2 .hud-player { min-height: 28px; padding: 2px 8px; }
+body.integer-scale-2 #fight-hud { padding: 2px 10px 2px; }
+body.integer-scale-2 #player-hud { margin-top: 2px; }
+body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
 
 /* If 2x does not fit both axes, fall back to the ordinary responsive layout.
    In particular, never make a short or mobile viewport scroll just to honor
@@ -127,8 +131,9 @@ body.integer-scale-2 .hud-player { min-height: 28px; padding: 2px 8px; }
   .mode-control select { max-width: 180px; }
   .scale-control { grid-column: 1 / -1; grid-row: 3; justify-self: end; }
   #player-hud { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin-top: 6px; }
-  .hud-player { min-height: 28px; padding: 3px 6px; column-gap: 8px; }
-  #game canvas { width: 100% !important; height: auto !important; }
+  .hud-player { min-height: 28px; padding: 3px 5px; column-gap: 5px; line-height: 18px; }
+  .hud-slot-action { min-height: 28px; padding: 3px 5px; line-height: 18px; }
+  #game canvas { width: 100% !important; height: auto !important; margin: 0 auto !important; }
   body.integer-scale-2 main { padding: 16px; }
   body.integer-scale-2 #game { width: 100%; height: auto; margin: 8px auto; border: 0; outline: 0; }
   body.integer-scale-2 #fight-hud { position: static; padding: 7px; }
@@ -185,23 +190,48 @@ body.integer-scale-2 .hud-player { min-height: 28px; padding: 2px 8px; }
 }
 
 /* Keyboard reference stays collapsed so the native 640x360 arena still fits. */
-.controls { margin: 8px auto; max-width: 640px; text-align: left; font-size: 13px; }
+.controls { margin: 8px auto; max-width: 640px; text-align: left; font-size: 14px; }
 .controls summary { cursor: pointer; padding: 5px 8px; color: #f5e9c7; }
 .controls table { width: 100%; border-collapse: collapse; margin-top: 5px; }
 .controls th, .controls td { border-bottom: 1px solid #526071; padding: 6px 8px; text-align: left; }
 .controls thead th { color: #f1d38b; }
 @media (max-height: 540px) {
-  .controls { margin: 2px auto; font-size: 10px; }
+  .controls { margin: 2px auto; font-size: 14px; }
   .controls summary { padding: 2px 4px; }
   #fight-hud { padding: 0 4px; }
   /* A 1280x720 2× canvas cannot fit vertically here; hide only this control to preserve the reserved HUD band. The URL scale preference still falls back responsively. */
   .scale-control { display: none; }
-  .mode-control select { min-height: 18px; padding: 0 2px; }
+  .mode-control select { height: 16px; min-height: 16px; padding: 0 2px; line-height: 14px; }
   body.integer-scale-2 .controls { display: none; }
   body.integer-scale-2 main { padding: 4px 8px; }
   body.integer-scale-2 .hud-toolbar { min-height: 16px; }
+  body.integer-scale-2 .audio-controls { height: 16px; gap: 2px; }
+  body.integer-scale-2 .audio-controls button { min-height: 16px; padding: 0; }
+  body.integer-scale-2 .audio-controls input[type="range"] { width: 24px; height: 14px; }
   body.integer-scale-2 #player-hud { margin-top: 0; }
-  body.integer-scale-2 .hud-player { min-height: 15px; line-height: 15px; }
+  body.integer-scale-2 #fight-hud { padding: 0 4px; }
+  body.integer-scale-2 .hud-player { min-height: 15px; padding: 0 2px; line-height: 15px; }
   body.integer-scale-2 #game { width: min(100%, calc((100dvh - 100px) * 16 / 9 + 8px)); }
+  body.integer-scale-2 #game canvas { width: 100% !important; height: auto !important; }
+}
+
+/* A short 16:9 viewport can show the full native camera at 1× when page chrome
+   is removed. This keeps the eight-slot grid broad enough to read at 640×360. */
+@media (max-height: 400px) and (min-width: 601px) {
+  main { width: 100%; max-width: none; padding: 0; }
+  .page-header h1, .page-header > p, .controls { display: none; }
+  .page-header { position: relative; height: 24px; }
+  .page-header > .audio-controls { top: 0; right: 4px; }
+  #game { width: min(100%, 597px) !important; height: auto !important; max-width: none !important; margin: 0 auto !important; border: 0 !important; }
+  #game canvas { width: 100% !important; height: auto !important; }
+  #fight-hud { padding: 2px 4px; }
+  body.integer-scale-2 main { width: 100%; max-width: none; padding: 0; }
+  body.integer-scale-2 .page-header,
+  body.integer-scale-2 .controls { display: block; }
+  body.integer-scale-2 .page-header h1,
+  body.integer-scale-2 .page-header > p,
+  body.integer-scale-2 .controls { display: none; }
+  body.integer-scale-2 .page-header { height: 0; }
+  body.integer-scale-2 #game { width: min(100%, calc(100dvh * 16 / 9)); max-width: none; margin: 0 auto; border: 0; }
   body.integer-scale-2 #game canvas { width: 100% !important; height: auto !important; }
 }

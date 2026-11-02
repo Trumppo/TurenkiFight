@@ -31,7 +31,7 @@ test('mode selection is part of local match creation and preserves the join flow
     return { phase: state.phase, mode: state.mode, players: state.fighters.length };
   })).toEqual({ phase: 'countdown', mode: 'deathmatch', players: 2 });
   await expect(mode).toBeDisabled();
-  expect(await page.locator('.hud-player').count()).toBe(4);
+  expect(await page.locator('.hud-player').count()).toBe(8);
 });
 
 test('Last Man Standing HUD shows stocks and a visibly eliminated fighter', async ({ page }) => {
@@ -48,10 +48,13 @@ test('Last Man Standing HUD shows stocks and a visibly eliminated fighter', asyn
     scene.state = state;
     scene.drawFighters();
   });
-  await expect(page.locator('[data-player="P1"] .hud-score')).toHaveText('STOCK 1');
+  await expect(page.locator('[data-player="P1"] .hud-score')).toHaveText('S1');
+  await expect(page.locator('[data-player="P1"] .hud-score')).toHaveAttribute('title', 'STOCK 1');
   await expect(page.locator('[data-player="P1"] .hud-health')).toHaveText('ALIVE');
-  await expect(page.locator('[data-player="P2"] .hud-score')).toHaveText('STOCK 0');
-  await expect(page.locator('[data-player="P2"] .hud-health')).toHaveText('ELIMINATED');
+  await expect(page.locator('[data-player="P2"] .hud-score')).toHaveText('S0');
+  await expect(page.locator('[data-player="P2"] .hud-score')).toHaveAttribute('title', 'STOCK 0');
+  await expect(page.locator('[data-player="P2"] .hud-health')).toHaveText('OUT');
+  await expect(page.locator('[data-player="P2"] .hud-health')).toHaveAttribute('title', 'ELIMINATED');
   await expect(page.locator('[data-player="P2"]')).toHaveClass(/is-eliminated/);
   const outVisual = await page.evaluate(() => {
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
@@ -88,8 +91,10 @@ test('Deathmatch HUD shows frags and deaths instead of score', async ({ page }) 
     scene.state = state;
     scene.drawFighters();
   });
-  await expect(page.locator('[data-player="P1"] .hud-score')).toHaveText('FRAGS 3');
-  await expect(page.locator('[data-player="P1"] .hud-health')).toHaveText('DEATHS 1');
+  await expect(page.locator('[data-player="P1"] .hud-score')).toHaveText('F3');
+  await expect(page.locator('[data-player="P1"] .hud-health')).toHaveText('D1');
+  await expect(page.locator('[data-player="P1"] .hud-score')).toHaveAttribute('title', 'FRAGS 3');
+  await expect(page.locator('[data-player="P1"] .hud-health')).toHaveAttribute('title', 'DEATHS 1');
   await expect(page.locator('[data-player="P1"]')).toHaveAttribute('aria-label', /3 frags, 1 deaths/);
 });
 
@@ -120,19 +125,19 @@ test('results name winners and reasons for every mode and show draws', async ({ 
   const score = await setResult('score-brawl', 'time', 'P1');
   expect(score).toContain('WINNER: P1');
   expect(score).toContain('REASON: time');
-  expect(score).toContain('#1 P1: 500');
+  await expect(page.locator('#match-status')).toHaveAttribute('aria-label', /#1 P1: 500/);
   mkdirSync('artifacts/visual', { recursive: true });
   await page.screenshot({ path: 'artifacts/visual/m7-score-brawl-results.png', fullPage: true });
   const lastMan = await setResult('last-man-standing', 'elimination', 'P1');
   expect(lastMan).toContain('WINNER: P1');
   expect(lastMan).toContain('REASON: elimination');
-  expect(lastMan).toContain('P2 OUT');
+  expect(await page.locator('#match-status').getAttribute('aria-label')).toContain('P2 OUT');
   await expect(page.locator('#match-status')).toHaveAttribute('aria-label', /REASON: elimination/);
   await page.screenshot({ path: 'artifacts/visual/m7-last-man-standing-results.png', fullPage: true });
   const deathmatch = await setResult('deathmatch', 'frag-limit', 'P1');
   expect(deathmatch).toContain('WINNER: P1');
   expect(deathmatch).toContain('REASON: frag-limit');
-  expect(deathmatch).toContain('P1 20F/1D');
+  expect(await page.locator('#match-status').getAttribute('aria-label')).toContain('P1 20F/1D');
   await page.screenshot({ path: 'artifacts/visual/m7-deathmatch-results.png', fullPage: true });
   const draw = await setResult('deathmatch', 'time', null);
   expect(draw).toContain('DRAW');

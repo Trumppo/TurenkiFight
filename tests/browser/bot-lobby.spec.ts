@@ -43,7 +43,7 @@ test('a lobby bot joins, is marked in the HUD and moves during the match', async
   expect(botHud.className).toContain('is-bot');
   expect(botHud.label).toBe('P2, bot, score 0, health 100');
   expect(botHud.name).toBe('P2');
-  expect(botHud.health).toBe('HP 100');
+  expect(botHud.health).toBe('H100');
   // A human P2 keyboard slot must not have been created alongside the bot.
   await page.keyboard.down('Shift');
   await page.waitForTimeout(120);

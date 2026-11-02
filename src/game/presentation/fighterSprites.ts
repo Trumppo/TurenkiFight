@@ -16,9 +16,9 @@ export function createFighterTextures(scene: Phaser.Scene): void {
   for (let player = 1; player <= 8; player++) {
     const id = `P${player}`;
     const uniform = hex(playerColor(id));
-    // Four independent silhouettes: headgear, stripe, belt and trouser trim.
-    const variant = (player - 1) % 4;
-    const accent = ['#f7d3a4', '#c6f0e7', '#3b3540', '#eee0ff'][variant];
+    // Eight distinct color/pattern identities so added slots do not alias P1-P4.
+    const variant = player - 1;
+    const accent = ['#f7d3a4', '#c6f0e7', '#3b3540', '#eee0ff', '#ffe2a7', '#f4f4c1', '#d4e8ff', '#ffe0bd'][variant];
     for (const pose of POSES) for (let frame = 0; frame < FRAMES_PER_POSE; frame++) {
       const key = fighterKey(id, pose, frame);
       if (scene.textures.exists(key)) continue;
@@ -58,6 +58,10 @@ export function createFighterTextures(scene: Phaser.Scene): void {
         if (variant === 1) rect(18 + lean, 20 + y, 3, 11, accent);
         if (variant === 2) rect(11 + lean, 27 + y, 11, 3, accent);
         if (variant === 3) { rect(11 + lean, 20 + y, 11, 2, accent); rect(11 + lean, 25 + y, 11, 2, accent); }
+        if (variant === 4) { rect(10 + lean, 20 + y, 3, 11, accent); rect(20 + lean, 20 + y, 3, 11, accent); }
+        if (variant === 5) { rect(15 + lean, 20 + y, 3, 12, accent); rect(11 + lean, 30 + y, 11, 2, accent); }
+        if (variant === 6) { rect(11 + lean, 22 + y, 11, 2, accent); rect(15 + lean, 26 + y, 3, 6, accent); }
+        if (variant === 7) { rect(11 + lean, 20 + y, 11, 4, accent); rect(12 + lean, 28 + y, 9, 3, accent); }
         rect(9 + lean, 6 + y, 15, 13, O);
         rect(12 + lean, 9 + y, 9, 8, SKIN);
         rect(10 + lean, 5 + y, 13, 4, SHADOW);
@@ -66,6 +70,10 @@ export function createFighterTextures(scene: Phaser.Scene): void {
         if (variant === 1) rect(11 + lean, 2 + y, 11, 6, accent); // high hair
         if (variant === 2) { rect(8 + lean, 6 + y, 3, 10, accent); rect(22 + lean, 6 + y, 3, 10, accent); } // ear guards
         if (variant === 3) rect(10 + lean, 4 + y, 14, 2, accent); // headband
+        if (variant === 4) { rect(9 + lean, 4 + y, 16, 4, accent); rect(11 + lean, 8 + y, 12, 2, SHADOW); } // helmet and visor
+        if (variant === 5) { rect(11 + lean, 3 + y, 12, 4, accent); rect(22 + lean, 7 + y, 5, 11, accent); } // high side tail
+        if (variant === 6) { rect(14 + lean, 1 + y, 7, 7, accent); rect(10 + lean, 7 + y, 4, 7, accent); } // crest
+        if (variant === 7) { rect(10 + lean, 3 + y, 14, 4, accent); rect(10 + lean, 10 + y, 15, 3, accent); } // band and face guard
         // Distinct punch extension across active frames.
         const reach = strike ? [3, 7, 9, 5][frame] : 3;
         rect(21 + lean, 21 + y, Math.min(reach, 9), 5, SKIN);

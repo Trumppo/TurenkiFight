@@ -12,6 +12,9 @@ import { botInput } from '../input/botPolicy';
 import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
 import { CueBridge } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
+import { MAX_PLAYERS } from '../protocol/players';
+
+const PLAYER_IDS = Array.from({ length: MAX_PLAYERS }, (_, index) => `P${index + 1}`);
 
 const MODE_NAMES: Record<ModeId, string> = {
   'score-brawl': 'Score Brawl',
@@ -48,7 +51,7 @@ export class StationScene extends Phaser.Scene {
     status: HTMLElement;
     modeSelect: HTMLSelectElement;
     playerList: HTMLElement;
-    players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>;
+    players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; action: HTMLButtonElement }>;
   };
   private previous = new Map<string, { x: number; y: number; health: number }>();
   private hitFlash = new Map<string, number>();
@@ -58,7 +61,7 @@ export class StationScene extends Phaser.Scene {
    * Placeholder local-bot roster. Slots in this set are driven by the pure
    * seeded policy from `src/game/input/botPolicy.ts`; P1 is always human.
    * Graphics owns the final lobby control, so this is deliberately a minimal
-   * keyboard toggle (B add / V remove) in the lobby only.
+   * keyboard toggle (B add / V remove) alongside per-slot lobby controls.
    */
   private botSlots = new Set<string>();
   private static readonly BOT_SEED = 0x5eed;
@@ -150,8 +153,7 @@ export class StationScene extends Phaser.Scene {
       this.state = createState([...this.state.fighters.map(f => f.id), 'P2'], 'lobby', { mode: this.selectedMode });
     }
     this.lastKeyboardJoin = keyboardJoin;
-    // Placeholder lobby control for local bots (M8 slice A): B fills the next
-    // free P2-P4 slot, V removes the last bot. Graphics owns the final control.
+    // B/V remain keyboard shortcuts for filling/removing bot slots.
     const addBot = this.keys.B.isDown;
     if (addBot && !this.lastBotAdd) this.addBotSlot();
     this.lastBotAdd = addBot;
@@ -165,8 +167,9 @@ export class StationScene extends Phaser.Scene {
         const join = !!pad.buttons[8]?.pressed;
         if (join && !this.lastJoinButtons.get(pad.index) && !this.gamepadSlots.has(pad.index)) {
           const assigned = new Set(this.gamepadSlots.values());
-          const id = ['P2', 'P3', 'P4'].find(candidate => this.reclaimableGamepadSlots.has(candidate) && this.state.fighters.some(f => f.id === candidate) && !assigned.has(candidate))
-            ?? (this.state.fighters.length < 4 ? ['P2', 'P3', 'P4'].find(candidate => !this.state.fighters.some(f => f.id === candidate)) : undefined);
+          const joinableSlots = PLAYER_IDS.slice(1);
+          const id = joinableSlots.find(candidate => this.reclaimableGamepadSlots.has(candidate) && this.state.fighters.some(f => f.id === candidate) && !assigned.has(candidate))
+            ?? joinableSlots.find(candidate => !this.state.fighters.some(f => f.id === candidate));
           if (!id) continue;
           this.gamepadSlots.set(pad.index, id);
           this.reclaimableGamepadSlots.delete(id);
@@ -176,7 +179,7 @@ export class StationScene extends Phaser.Scene {
     }
     for (const pad of pads) this.lastJoinButtons.set(pad.index, !!pad.buttons[8]?.pressed);
     // P1 is initially keyboard-hosted. An unassigned controller may explicitly
-    // claim P1 with Start; controllers already assigned to P2-P4 cannot start.
+    // claim P1 with Start; controllers assigned to another slot cannot start.
     // Never auto-claim merely because a controller is connected.
     const padHostStart = pads.some(p => {
       const pressed = !!p.buttons[9]?.pressed;
@@ -209,22 +212,25 @@ export class StationScene extends Phaser.Scene {
   }
 
   /**
-   * Placeholder lobby control: fill the next free slot with a bot. P1 is always
-   * the human host, so only P2-P4 are candidates. Returns the added slot.
+   * Fill the requested (or next free) non-host slot with a bot.
    */
-  private addBotSlot(): string | null {
+  private addBotSlot(requestedId?: string): string | null {
     if (this.state.phase !== 'lobby') return null;
-    const id = ['P2', 'P3', 'P4'].find(candidate => !this.state.fighters.some(fighter => fighter.id === candidate));
+    const id = requestedId
+      ? PLAYER_IDS.slice(1).includes(requestedId) && !this.state.fighters.some(fighter => fighter.id === requestedId) ? requestedId : undefined
+      : PLAYER_IDS.slice(1).find(candidate => !this.state.fighters.some(fighter => fighter.id === candidate));
     if (!id) return null;
     this.botSlots.add(id);
     this.state = createState([...this.state.fighters.map(fighter => fighter.id), id], 'lobby', { mode: this.selectedMode });
     return id;
   }
 
-  /** Removes the highest-numbered bot slot; never touches a human slot. */
-  private removeBotSlot(): string | null {
+  /** Removes the requested bot, or highest-numbered bot; never touches humans. */
+  private removeBotSlot(requestedId?: string): string | null {
     if (this.state.phase !== 'lobby') return null;
-    const id = ['P4', 'P3', 'P2'].find(candidate => this.botSlots.has(candidate));
+    const id = requestedId
+      ? this.botSlots.has(requestedId) ? requestedId : undefined
+      : [...PLAYER_IDS].reverse().find(candidate => this.botSlots.has(candidate));
     if (!id) return null;
     this.botSlots.delete(id);
     const ids = this.state.fighters.map(fighter => fighter.id).filter(candidate => candidate !== id);
@@ -290,6 +296,16 @@ export class StationScene extends Phaser.Scene {
   }
 
   private drawFighters(): void {
+    const liveIds = new Set(this.state.fighters.map(fighter => fighter.id));
+    for (const [id, sprite] of this.fighterSprites) {
+      if (liveIds.has(id)) continue;
+      sprite.destroy();
+      this.fighterSprites.delete(id);
+      this.shadows.get(id)?.destroy();
+      this.shadows.delete(id);
+      this.previous.delete(id);
+      this.hitFlash.delete(id);
+    }
     for (const f of this.state.fighters) {
       if (!this.fighterSprites.has(f.id)) {
         this.shadows.set(f.id, this.add.ellipse(0, 0, 22, 7, 0x283640, 0.55));
@@ -324,13 +340,22 @@ export class StationScene extends Phaser.Scene {
     const modeSelect = document.getElementById('game-mode') as HTMLSelectElement | null;
     const playerList = document.getElementById('player-hud');
     if (!timer || !status || !modeSelect || !playerList) return;
-    const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>();
+    const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; action: HTMLButtonElement }>();
     for (const node of Array.from(document.querySelectorAll('.hud-player[data-player]'))) {
       const root = node as HTMLElement;
       const id = root.dataset.player;
       const score = root.querySelector('.hud-score') as HTMLElement | null;
       const health = root.querySelector('.hud-health') as HTMLElement | null;
-      if (id && score && health) players.set(id, { root, score, health });
+      const name = root.querySelector('.hud-name') as HTMLElement | null;
+      const action = root.querySelector('.hud-slot-action') as HTMLButtonElement | null;
+      if (id && score && health && name && action) {
+        action.addEventListener('click', () => {
+          if (this.botSlots.has(id)) this.removeBotSlot(id);
+          else this.addBotSlot(id);
+          this.drawFighters();
+        });
+        players.set(id, { root, score, health, name, action });
+      }
     }
     modeSelect.value = this.selectedMode;
     modeSelect.addEventListener('change', () => {
@@ -361,42 +386,62 @@ export class StationScene extends Phaser.Scene {
       const isBot = this.botSlots.has(id) && !!fighter;
       nodes.root.classList.toggle('is-empty', !fighter);
       nodes.root.classList.toggle('is-eliminated', !!fighter?.eliminated);
-      // Placeholder M8 bot badge; Graphics owns the final lobby/HUD styling.
       nodes.root.classList.toggle('is-bot', isBot);
+      nodes.root.classList.toggle('is-lobby-slot', this.state.phase === 'lobby');
+      const slotNumber = Number(id.slice(1));
+      nodes.name.textContent = this.state.phase === 'lobby'
+        ? id === 'P1' ? 'P1 HOST' : isBot ? id : fighter ? `${id} HUMAN` : slotNumber === 2 ? `${id} KEY/PAD` : slotNumber <= 4 ? `${id} PAD` : `${id} PAD/BOT`
+        : id;
+      const canEditBot = this.state.phase === 'lobby' && id !== 'P1' && (!fighter || isBot);
+      nodes.action.hidden = !canEditBot;
+      nodes.action.textContent = isBot ? '−BOT' : 'BOT';
+      nodes.action.setAttribute('aria-label', `${isBot ? 'Remove bot from' : 'Add bot to'} ${id}`);
       if (isBot) nodes.root.dataset.bot = 'true';
       else delete nodes.root.dataset.bot;
       const botTag = isBot ? ', bot' : '';
       let scoreText: string;
       let healthText: string;
+      let scoreTitle: string;
+      let healthTitle: string;
       let label: string;
       if (!fighter) {
         scoreText = '—';
         healthText = 'HP —';
+        scoreTitle = 'No score';
+        healthTitle = 'No fighter joined';
         label = `${id}, not joined`;
       } else if (this.state.mode === 'last-man-standing') {
         const status = fighter.eliminated ? 'ELIMINATED' : 'ALIVE';
-        scoreText = `STOCK ${fighter.eliminated ? 0 : 1}`;
-        healthText = status;
+        scoreText = `S${fighter.eliminated ? 0 : 1}`;
+        healthText = fighter.eliminated ? 'OUT' : 'ALIVE';
+        scoreTitle = `STOCK ${fighter.eliminated ? 0 : 1}`;
+        healthTitle = status;
         label = `${id}${botTag}, stock ${fighter.eliminated ? 0 : 1}, ${status.toLowerCase()}`;
       } else if (this.state.mode === 'deathmatch') {
         const frags = fighter.frags ?? 0;
         const deaths = fighter.deaths ?? 0;
-        scoreText = `FRAGS ${frags}`;
-        healthText = `DEATHS ${deaths}`;
+        scoreText = `F${frags}`;
+        healthText = `D${deaths}`;
+        scoreTitle = `FRAGS ${frags}`;
+        healthTitle = `DEATHS ${deaths}`;
         label = `${id}${botTag}, ${frags} frags, ${deaths} deaths, health ${Math.max(0, Math.min(100, fighter.health))}`;
       } else {
         scoreText = String(fighter.score);
-        healthText = `HP ${Math.max(0, Math.min(100, fighter.health))}`;
+        healthText = `H${Math.max(0, Math.min(100, fighter.health))}`;
+        scoreTitle = `SCORE ${fighter.score}`;
+        healthTitle = `HP ${Math.max(0, Math.min(100, fighter.health))}`;
         label = `${id}${botTag}, score ${fighter.score}, health ${Math.max(0, Math.min(100, fighter.health))}`;
       }
       if (nodes.score.textContent !== scoreText) nodes.score.textContent = scoreText;
       if (nodes.health.textContent !== healthText) nodes.health.textContent = healthText;
+      nodes.score.title = scoreTitle;
+      nodes.health.title = healthTitle;
       if (nodes.root.getAttribute('aria-label') !== label) nodes.root.setAttribute('aria-label', label);
     }
     let statusText: string;
     let fullStatusText: string;
     if (this.state.phase === 'lobby') {
-      fullStatusText = 'LOBBY · SHIFT/PAD JOIN · ENTER/PAD START';
+      fullStatusText = 'LOBBY · P1 HOST · P2 KEYBOARD/GAMEPAD · P3–P4 GAMEPAD · P5–P8 GAMEPAD OR BOT · B/V BOT SHORTCUTS · ENTER/PAD START';
       statusText = window.innerHeight <= 540 ? 'SHIFT/PAD JOIN · START' : 'SHIFT/PAD JOIN · ENTER';
     }
     else if (this.state.phase === 'results') {
@@ -404,13 +449,16 @@ export class StationScene extends Phaser.Scene {
       const reason = this.lastResult?.mode === (this.state.mode ?? 'score-brawl') ? this.lastResult.reason : resultReason(this.state);
       if (this.state.mode === 'last-man-standing') {
         const roster = this.state.fighters.map(f => `${f.id} ${f.eliminated ? 'OUT' : 'STOCK 1'}`).join(' · ');
-        fullStatusText = statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ${roster} · ENTER: REMATCH`;
+        fullStatusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ${roster} · ENTER: REMATCH`;
+        statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ENTER: REMATCH`;
       } else if (this.state.mode === 'deathmatch') {
         const roster = this.state.fighters.map(f => `${f.id} ${f.frags ?? 0}F/${f.deaths ?? 0}D`).join(' · ');
-        fullStatusText = statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ${roster} · ENTER: REMATCH`;
+        fullStatusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ${roster} · ENTER: REMATCH`;
+        statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ENTER: REMATCH`;
       } else {
         const scoreTable = standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join(' · ');
-        fullStatusText = statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ${scoreTable} · ENTER: REMATCH`;
+        fullStatusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ${scoreTable} · ENTER: REMATCH`;
+        statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ENTER: REMATCH`;
       }
     }
     else if (this.state.phase === 'countdown') {

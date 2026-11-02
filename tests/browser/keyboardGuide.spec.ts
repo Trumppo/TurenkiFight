@@ -1,16 +1,22 @@
 import { test, expect } from '@playwright/test';
 
-test('keyboard reference documents both players without obscuring the arena', async ({ page }) => {
+test('keyboard guide labels keyboard, gamepad and bot slots without obscuring the arena', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
   await page.goto('/');
   const canvas = page.locator('#game canvas');
   await expect(canvas).toBeVisible();
   const guide = page.locator('details.controls');
   await expect(guide).not.toHaveAttribute('open', '');
-  await expect(guide.locator('summary')).toContainText('Näppäinkartta');
+  // The native short viewport gives the full 16:9 camera to the match; the
+  // keyboard table remains available on roomier layouts instead of covering play.
   const bounds = await canvas.boundingBox();
   expect(bounds).not.toBeNull();
   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(361);
+  await expect(guide).toBeHidden();
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await expect(guide).toBeVisible();
+  await expect(guide.locator('summary')).toHaveText('Näppäimistö P1–P2 · gamepad P2–P8 · P5–P8: gamepad tai botti');
   await guide.locator('summary').click();
   await expect(guide).toHaveAttribute('open', '');
   const rows = guide.locator('tbody tr');
@@ -21,4 +27,13 @@ test('keyboard reference documents both players without obscuring the arena', as
   await expect(rows.nth(4)).toContainText('U');
   await expect(rows.nth(5)).toContainText('Shift');
   await expect(rows.nth(6)).toContainText('Enter');
+  const guideLayout = await page.evaluate(() => {
+    const canvas = document.querySelector('#game canvas')!.getBoundingClientRect();
+    const guide = document.querySelector('details.controls')!.getBoundingClientRect();
+    const fonts = Array.from(document.querySelectorAll<HTMLElement>('details.controls summary, details.controls th, details.controls td'))
+      .map(element => Number.parseFloat(getComputedStyle(element).fontSize));
+    return { canvasBottom: canvas.bottom, guideTop: guide.top, minFontSize: Math.min(...fonts) };
+  });
+  expect(guideLayout.guideTop).toBeGreaterThanOrEqual(guideLayout.canvasBottom);
+  expect(guideLayout.minFontSize).toBeGreaterThanOrEqual(14);
 });

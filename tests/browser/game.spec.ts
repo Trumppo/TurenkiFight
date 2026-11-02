@@ -65,8 +65,8 @@ test('station SVG loads and four-player HUD is visible after gamepad joins', asy
   expect(state.textures).toBe(true);
   expect(state.station).toBe(true);
   expect(state.hud).toHaveLength(4);
-  expect(state.hud).toEqual(['P1', 'P2', 'P3', 'P4'].map(id => ({
-    id, score: '0', health: 'HP 100', label: `${id}, score 0, health 100`,
+  expect(state.hud).toEqual(['P1 HOST', 'P2 HUMAN', 'P3 HUMAN', 'P4 HUMAN'].map(id => ({
+    id, score: '0', health: 'H100', label: `${id.startsWith('P1') ? 'P1' : id.slice(0, 2)}, score 0, health 100`,
   })));
   expect(missing).toEqual([]);
   expect(errors).toEqual([]);
@@ -174,7 +174,7 @@ test('HUD clock, score and hit/KO/respawn presentation follow authoritative stat
     return { hud, clock, punch, kick, jumpkick, ko, koStatus, koTexture,
       respawn, respawnStatus, respawnTexture, hit };
   });
-  expect(result.hud).toEqual({ score: '-2', health: 'HP 37', label: 'P1, score -2, health 37' });
+  expect(result.hud).toEqual({ score: '-2', health: 'H37', label: 'P1, score -2, health 37' });
   expect(result.clock).toBe('01:30');
   expect(result.punch).toBe('punch');
   expect(result.kick).toBe('kick');
