@@ -889,7 +889,7 @@ tasks:
     title: Implement Last Man Standing and Deathmatch as typed simulation modes
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-modes
-    status: review
+    status: done
     priority: P0
     specification: docs/M7_GAME_MODES.md
     depends_on: []
@@ -914,7 +914,8 @@ tasks:
   - id: M7-MODE-UI
     title: Add mode selection, mode-specific HUD and results screens
     assigned_role: graphics-session
-    status: backlog
+    session_id: graphics-session-20261102-modeui
+    status: review
     priority: P1
     specification: docs/M7_GAME_MODES.md
     depends_on: [M7-MODE-RULES]
@@ -929,6 +930,8 @@ tasks:
       - "Text stays at least 14 CSS px; VIS-05 readability checks stay green"
       - "Eliminated fighters are rendered clearly as out rather than as active players"
       - "Full browser suite and token-free assertions pass"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/122
+    last_updated: "2026-11-02"
     notes: "Readability and layout rules from the completed VIS-05 work apply unchanged."
 
   - id: M7-MODE-ONLINE
