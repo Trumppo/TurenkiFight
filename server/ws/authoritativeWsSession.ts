@@ -1,5 +1,6 @@
 import { createState, step, TICK_RATE } from '../../src/game/simulation/step';
-import type { GameEvent, GameState } from '../../src/game/simulation/types';
+import { MODE_IDS } from '../../src/game/simulation/modes';
+import type { GameEvent, GameState, ModeId } from '../../src/game/simulation/types';
 import { DEFAULT_MAX_INPUT_LEAD_TICKS } from '../../src/game/session/sessionInputBuffer';
 import type { StateSnapshot } from '../../src/game/protocol/stateSnapshot';
 import {
@@ -44,6 +45,8 @@ export type WsSessionOptions = {
   roomId?: string;
   /** Simulation roster; the BASE-4 prototype default is P1..P4. */
   playerIds?: readonly string[];
+  /** Match rules chosen at creation. Defaults to Score Brawl. */
+  mode?: ModeId;
   snapshotHz?: SnapshotHz;
   maxLead?: number;
   /** Benchmark-only bound. Stops after this many authoritative ticks. */
@@ -72,11 +75,27 @@ export const DEFAULT_WS_PLAYER_IDS = ['P1', 'P2', 'P3', 'P4'] as const;
 
 const cloneState = (state: GameState): GameState => JSON.parse(JSON.stringify(state)) as GameState;
 
+/**
+ * The session's `snapshot()` is the wire value. Last Man Standing stores
+ * `eliminated: false` internally, but the canonical protocol form omits the
+ * alive marker, so the snapshot is normalised before it is encoded.
+ */
+const wireState = (state: GameState): GameState => {
+  const clone = cloneState(state);
+  if (clone.mode === 'last-man-standing') {
+    for (const fighter of clone.fighters) {
+      if (fighter.eliminated === false) delete fighter.eliminated;
+    }
+  }
+  return clone;
+};
+
 export class AuthoritativeWsSession {
   private readonly gateway: SessionEnvelopeGateway;
   private readonly roomId: string;
   private readonly playerIds: readonly string[];
   private readonly playerIdSet: ReadonlySet<string>;
+  private readonly mode: ModeId;
   private readonly snapshotInterval: number;
   private readonly snapshotHz: SnapshotHz;
   private readonly maxLead: number;
@@ -103,6 +122,8 @@ export class AuthoritativeWsSession {
     }
     const snapshotHz = options.snapshotHz ?? 20;
     if (!SUPPORTED_SNAPSHOT_HZ.includes(snapshotHz)) throw new Error('Unsupported snapshot rate');
+    const mode = options.mode ?? 'score-brawl';
+    if (!MODE_IDS.includes(mode)) throw new Error(`Unsupported match mode: ${String(options.mode)}`);
     if (!Number.isSafeInteger(TICK_RATE) || TICK_RATE % snapshotHz !== 0) {
       throw new Error('Snapshot rate must divide the simulation tick rate');
     }
@@ -114,6 +135,7 @@ export class AuthoritativeWsSession {
     this.roomId = roomId;
     this.playerIds = [...playerIds];
     this.playerIdSet = new Set(playerIds);
+    this.mode = mode;
     this.snapshotHz = snapshotHz;
     this.snapshotInterval = TICK_RATE / snapshotHz;
     this.maxLead = options.maxLead ?? DEFAULT_MAX_INPUT_LEAD_TICKS;
@@ -127,11 +149,13 @@ export class AuthoritativeWsSession {
       maxPlayers: this.playerIds.length,
     });
     // The prototype begins in `fighting` like the deterministic benchmark
-    // adapter; no gameplay rule or timing constant is changed.
-    this.state = createState([...this.playerIds], 'fighting');
+    // adapter; no gameplay rule or timing constant is changed. Score Brawl
+    // still omits `mode` from the state, so its wire bytes stay identical.
+    this.state = createState({ ids: [...this.playerIds], phase: 'fighting', mode });
   }
 
   get roomIdValue(): string { return this.roomId; }
+  get modeValue(): ModeId { return this.mode; }
   get phase(): WsSessionPhase { return this.phaseValue; }
   get tick(): number { return this.state.tick; }
   get snapshotRate(): SnapshotHz { return this.snapshotHz; }
@@ -332,7 +356,7 @@ export class AuthoritativeWsSession {
   }
 
   snapshot(): StateSnapshot {
-    return { version: 1, state: cloneState(this.state) };
+    return { version: 1, state: wireState(this.state) };
   }
 
   orderedEvents(): GameEvent[] {

@@ -1,6 +1,7 @@
 import type { AddressInfo } from 'node:net';
 import { WebSocket, WebSocketServer, type RawData } from 'ws';
 import { TICK_RATE } from '../../src/game/simulation/step';
+import type { ModeId } from '../../src/game/simulation/types';
 import { encodeWsServerMessage, type SnapshotHz } from '../../src/game/networking/wsMessages';
 import { MAX_SESSION_ENVELOPE_BYTES } from '../../src/game/session/sessionEnvelope';
 import type { SessionEnvelopeResult } from '../../src/game/session/sessionEnvelopeGateway';
@@ -56,6 +57,8 @@ export type WsServerConfig = {
   host?: string;
   roomId?: string;
   playerIds?: readonly string[];
+  /** Match rules chosen at session creation. Defaults to Score Brawl. */
+  mode?: ModeId;
   snapshotHz?: SnapshotHz;
   maxLead?: number;
   maxTicks?: number;
@@ -252,6 +255,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
   const room = new AuthoritativeWsSession({
     ...(config.roomId === undefined ? {} : { roomId: config.roomId }),
     ...(config.playerIds === undefined ? {} : { playerIds: config.playerIds }),
+    ...(config.mode === undefined ? {} : { mode: config.mode }),
     ...(config.snapshotHz === undefined ? {} : { snapshotHz: config.snapshotHz }),
     ...(config.maxLead === undefined ? {} : { maxLead: config.maxLead }),
     ...(config.maxTicks === undefined ? {} : { maxTicks: config.maxTicks }),

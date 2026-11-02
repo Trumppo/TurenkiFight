@@ -915,7 +915,7 @@ tasks:
     title: Add mode selection, mode-specific HUD and results screens
     assigned_role: graphics-session
     session_id: graphics-session-20261102-modeui
-    status: review
+    status: done
     priority: P1
     specification: docs/M7_GAME_MODES.md
     depends_on: [M7-MODE-RULES]
@@ -937,7 +937,8 @@ tasks:
   - id: M7-MODE-ONLINE
     title: Carry the selected mode through the match server and online client
     assigned_role: gameplay-session
-    status: backlog
+    session_id: gameplay-session-20261102-modeproto
+    status: review
     priority: P2
     specification: docs/M7_GAME_MODES.md
     depends_on: [M7-MODE-RULES]
@@ -950,6 +951,8 @@ tasks:
       - "The online client shows the mode and its HUD state from snapshots without inventing values"
       - "Unknown or unsupported modes fail clearly instead of silently falling back"
       - "Existing server, bot and client tests stay green"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/124
+    last_updated: "2026-11-02"
     notes: "Follow-up so network play supports the new modes; the local game works without it."
 
   - id: M7-MODE-QA

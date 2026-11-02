@@ -4,6 +4,13 @@ import type { Fighter, ModeId, ModeRules, PlayerId, TieBreakCriterion } from './
 export const MATCH_TICKS = 7200;
 
 /**
+ * Every selectable mode, in a stable order. This is a runtime view of the
+ * `ModeId` union for argument parsing and protocol validation; `MODE_RULES`
+ * remains the single source of mode behaviour.
+ */
+export const MODE_IDS = ['score-brawl', 'last-man-standing', 'deathmatch'] as const satisfies readonly ModeId[];
+
+/**
  * Single source of truth for mode behaviour. The simulation reads these fields
  * instead of branching on a mode id on every tick.
  */
