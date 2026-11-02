@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { createState, step, standings, TICK_RATE } from '../simulation/step';
-import type { GameState, PlayerInput, Fighter } from '../simulation/types';
+import type { EndReason, GameState, ModeId, PlayerInput, Fighter } from '../simulation/types';
 import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
 import { VIEWPORT, cameraScale } from './viewport';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
@@ -12,9 +12,31 @@ import { audioControlsHost, createAudioPresentation, type AudioPresentation } fr
 import { CueBridge } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
 
+const MODE_NAMES: Record<ModeId, string> = {
+  'score-brawl': 'Score Brawl',
+  'last-man-standing': 'Last Man Standing',
+  deathmatch: 'Deathmatch',
+};
+
+function resultReason(state: GameState): EndReason | 'draw' {
+  const event = [...state.events].reverse().find(item => item.type === 'MatchEnded');
+  if (event?.reason) return event.reason;
+  if (state.mode === 'last-man-standing' || state.mode === 'deathmatch') return 'time';
+  return 'time';
+}
+
+function resultWinner(state: GameState): string | null {
+  const event = [...state.events].reverse().find(item => item.type === 'MatchEnded');
+  if (event && event.winner !== undefined) return event.winner;
+  if (!state.fighters.length) return null;
+  const top = standings(state).filter(item => item.rank === 1);
+  return top.length === 1 ? top[0].id : null;
+}
+
 export class StationScene extends Phaser.Scene {
   private readonly arenaSelection: ArenaSelection;
   private state: GameState = createState(['P1'], 'lobby');
+  private selectedMode: ModeId = 'score-brawl';
   private elapsedMs = 0;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -23,6 +45,8 @@ export class StationScene extends Phaser.Scene {
   private domHud?: {
     timer: HTMLElement;
     status: HTMLElement;
+    modeSelect: HTMLSelectElement;
+    playerList: HTMLElement;
     players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>;
   };
   private previous = new Map<string, { x: number; y: number; health: number }>();
@@ -33,12 +57,15 @@ export class StationScene extends Phaser.Scene {
   private lastPadStart = new Map<number, boolean>();
   private lastKeyboardJoin = false;
   private lastJoinButtons = new Map<number, boolean>();
+  private lastResult?: { mode: ModeId; reason: EndReason; winner: string | null };
   private audio?: AudioPresentation;
   private audioBridge?: CueBridge;
 
-  constructor(arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic')) {
+  constructor(arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic'), mode: ModeId = 'score-brawl') {
     super('StationScene');
     this.arenaSelection = arenaSelection;
+    this.selectedMode = mode;
+    this.state = createState({ ids: ['P1'], phase: 'lobby', mode });
   }
 
   preload(): void {
@@ -109,7 +136,7 @@ export class StationScene extends Phaser.Scene {
     // The host occupies P1; every additional player must explicitly join.
     const keyboardJoin = this.keys.SHIFT.isDown;
     if (this.state.phase === 'lobby' && keyboardJoin && !this.lastKeyboardJoin && !this.state.fighters.some(f => f.id === 'P2') && ![...this.gamepadSlots.values()].includes('P2')) {
-      this.state = createState([...this.state.fighters.map(f => f.id), 'P2'], 'lobby');
+      this.state = createState([...this.state.fighters.map(f => f.id), 'P2'], 'lobby', { mode: this.selectedMode });
     }
     this.lastKeyboardJoin = keyboardJoin;
     // Only a deliberate Start press by the host begins the match.
@@ -124,7 +151,7 @@ export class StationScene extends Phaser.Scene {
           if (!id) continue;
           this.gamepadSlots.set(pad.index, id);
           this.reclaimableGamepadSlots.delete(id);
-          if (!this.state.fighters.some(f => f.id === id)) this.state = createState([...this.state.fighters.map(f => f.id), id], 'lobby');
+          if (!this.state.fighters.some(f => f.id === id)) this.state = createState([...this.state.fighters.map(f => f.id), id], 'lobby', { mode: this.selectedMode });
         }
       }
     }
@@ -143,7 +170,8 @@ export class StationScene extends Phaser.Scene {
     for (const pad of pads) this.lastPadStart.set(pad.index, !!pad.buttons[9]?.pressed);
     const start = this.keys.ENTER.isDown;
     if (((start && !this.lastStart) || padHostStart) && (this.state.phase === 'results' || (this.state.phase === 'lobby' && this.state.fighters.length >= 2))) {
-      this.state = createState(this.state.fighters.map(f => f.id));
+      this.state = createState(this.state.fighters.map(f => f.id), 'countdown', { mode: this.selectedMode });
+      this.lastResult = undefined;
       this.audioBridge?.reset();
       this.previous.clear();
       this.hitFlash.clear();
@@ -227,8 +255,11 @@ export class StationScene extends Phaser.Scene {
       // so reused sprites never retain a flash after KO, respawn or a new match.
       if (RETRO_PREVIEW && (this.hitFlash.get(f.id) ?? 0) > this.state.tick && this.state.tick % 6 < 3) {
         sprite.setTintFill(0xffe3a0);
+      } else if (f.eliminated) {
+        sprite.setTintFill(0x4a5561).setAlpha(0.72);
       } else {
         sprite.clearTint();
+        sprite.setAlpha(1);
       }
       this.previous.set(f.id, { x: f.x, y: f.y, health: f.health });
     }
@@ -238,7 +269,9 @@ export class StationScene extends Phaser.Scene {
   private initDomHud(): void {
     const timer = document.getElementById('match-timer');
     const status = document.getElementById('match-status');
-    if (!timer || !status) return;
+    const modeSelect = document.getElementById('game-mode') as HTMLSelectElement | null;
+    const playerList = document.getElementById('player-hud');
+    if (!timer || !status || !modeSelect || !playerList) return;
     const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>();
     for (const node of Array.from(document.querySelectorAll('.hud-player[data-player]'))) {
       const root = node as HTMLElement;
@@ -247,25 +280,57 @@ export class StationScene extends Phaser.Scene {
       const health = root.querySelector('.hud-health') as HTMLElement | null;
       if (id && score && health) players.set(id, { root, score, health });
     }
-    this.domHud = { timer, status, players };
+    modeSelect.value = this.selectedMode;
+    modeSelect.addEventListener('change', () => {
+      if (this.state.phase !== 'lobby') return;
+      this.selectedMode = modeSelect.value as ModeId;
+      this.state = createState(this.state.fighters.map(f => f.id), 'lobby', { mode: this.selectedMode });
+      this.drawFighters();
+    });
+    this.domHud = { timer, status, modeSelect, playerList, players };
     this.renderDomHud();
   }
 
   private renderDomHud(): void {
     const hud = this.domHud;
     if (!hud) return;
+    if (this.state.phase === 'results') {
+      const end = [...this.state.events].reverse().find(event => event.type === 'MatchEnded');
+      if (end?.reason) this.lastResult = { mode: this.state.mode ?? 'score-brawl', reason: end.reason, winner: end.winner ?? null };
+    }
     const seconds = Math.ceil(this.state.remainingTicks / TICK_RATE);
     const timerText = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
     if (hud.timer.textContent !== timerText) hud.timer.textContent = timerText;
+    hud.modeSelect.value = this.selectedMode;
+    hud.modeSelect.disabled = this.state.phase !== 'lobby';
+    hud.playerList.classList.toggle('mode-specific', this.state.mode === 'last-man-standing' || this.state.mode === 'deathmatch');
     for (const [id, nodes] of hud.players) {
       const fighter = this.state.fighters.find(f => f.id === id);
       nodes.root.classList.toggle('is-empty', !fighter);
-      const scoreText = fighter ? String(fighter.score) : '—';
-      const healthValue = fighter ? Math.max(0, Math.min(100, fighter.health)) : undefined;
-      const healthText = healthValue === undefined ? 'HP —' : `HP ${healthValue}`;
-      const label = fighter
-        ? `${id}, score ${fighter.score}, health ${Math.max(0, Math.min(100, fighter.health))}`
-        : `${id}, not joined`;
+      nodes.root.classList.toggle('is-eliminated', !!fighter?.eliminated);
+      let scoreText: string;
+      let healthText: string;
+      let label: string;
+      if (!fighter) {
+        scoreText = '—';
+        healthText = 'HP —';
+        label = `${id}, not joined`;
+      } else if (this.state.mode === 'last-man-standing') {
+        const status = fighter.eliminated ? 'ELIMINATED' : 'ALIVE';
+        scoreText = `STOCK ${fighter.eliminated ? 0 : 1}`;
+        healthText = status;
+        label = `${id}, stock ${fighter.eliminated ? 0 : 1}, ${status.toLowerCase()}`;
+      } else if (this.state.mode === 'deathmatch') {
+        const frags = fighter.frags ?? 0;
+        const deaths = fighter.deaths ?? 0;
+        scoreText = `FRAGS ${frags}`;
+        healthText = `DEATHS ${deaths}`;
+        label = `${id}, ${frags} frags, ${deaths} deaths, health ${Math.max(0, Math.min(100, fighter.health))}`;
+      } else {
+        scoreText = String(fighter.score);
+        healthText = `HP ${Math.max(0, Math.min(100, fighter.health))}`;
+        label = `${id}, score ${fighter.score}, health ${Math.max(0, Math.min(100, fighter.health))}`;
+      }
       if (nodes.score.textContent !== scoreText) nodes.score.textContent = scoreText;
       if (nodes.health.textContent !== healthText) nodes.health.textContent = healthText;
       if (nodes.root.getAttribute('aria-label') !== label) nodes.root.setAttribute('aria-label', label);
@@ -274,17 +339,38 @@ export class StationScene extends Phaser.Scene {
     let fullStatusText: string;
     if (this.state.phase === 'lobby') {
       fullStatusText = 'LOBBY · SHIFT/PAD JOIN · ENTER/PAD START';
-      statusText = window.innerHeight <= 540 ? 'SHIFT/PAD JOIN · START' : fullStatusText;
+      statusText = window.innerHeight <= 540 ? 'SHIFT/PAD JOIN · START' : 'SHIFT/PAD JOIN · ENTER';
     }
-    else if (this.state.phase === 'countdown') fullStatusText = statusText = `START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`;
-    else if (this.state.phase === 'results') fullStatusText = statusText = `RESULTS · ${standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join(' · ')} · ENTER: REMATCH`;
-    else fullStatusText = statusText = this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' · ') || 'FIGHT';
+    else if (this.state.phase === 'results') {
+      const winner = this.lastResult?.mode === (this.state.mode ?? 'score-brawl') ? this.lastResult.winner : resultWinner(this.state);
+      const reason = this.lastResult?.mode === (this.state.mode ?? 'score-brawl') ? this.lastResult.reason : resultReason(this.state);
+      if (this.state.mode === 'last-man-standing') {
+        const roster = this.state.fighters.map(f => `${f.id} ${f.eliminated ? 'OUT' : 'STOCK 1'}`).join(' · ');
+        fullStatusText = statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ${roster} · ENTER: REMATCH`;
+      } else if (this.state.mode === 'deathmatch') {
+        const roster = this.state.fighters.map(f => `${f.id} ${f.frags ?? 0}F/${f.deaths ?? 0}D`).join(' · ');
+        fullStatusText = statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ${roster} · ENTER: REMATCH`;
+      } else {
+        const scoreTable = standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join(' · ');
+        fullStatusText = statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reason} · ${scoreTable} · ENTER: REMATCH`;
+      }
+    }
+    else if (this.state.phase === 'countdown') {
+      const countdown = `START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`;
+      fullStatusText = statusText = this.state.mode ? `${countdown} · ${MODE_NAMES[this.state.mode].toUpperCase()}` : countdown;
+    }
+    else {
+      const fightStatus = this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' · ') || 'FIGHT';
+      fullStatusText = statusText = this.state.mode ? `${fightStatus} · ${MODE_NAMES[this.state.mode].toUpperCase()}` : fightStatus;
+    }
     if (hud.status.textContent !== statusText) hud.status.textContent = statusText;
+    hud.status.classList.toggle('is-results', this.state.phase === 'results');
     if (hud.status.getAttribute('aria-label') !== fullStatusText) hud.status.setAttribute('aria-label', fullStatusText);
     if (hud.status.title !== fullStatusText) hud.status.title = fullStatusText;
   }
 
   private pose(f: Fighter, prev?: { x: number; y: number; health: number }): FighterPose {
+    if (f.eliminated) return 'ko';
     if (f.koTimer) return 'ko';
     if (f.protection > 0) return 'respawn';
     if ((this.hitFlash.get(f.id) ?? 0) > this.state.tick) return 'hit';

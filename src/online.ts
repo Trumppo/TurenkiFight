@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import './style.css';
 import { OnlineMatchController, type OnlineConnectionState } from './game/networking/onlineMatchController';
 import { OnlineScene } from './game/presentation/OnlineScene';
+import type { GameState } from './game/simulation/types';
 import { KEYBOARD_LAYOUTS, keyboardPlayerInput } from './game/input/keyboardMapping';
 import { VIEWPORT } from './game/presentation/viewport';
 import { resolveArenaSelection } from './game/presentation/arenaVisuals';
@@ -207,6 +208,10 @@ if (import.meta.env.DEV) {
     },
     statusText(): string { return statusEl.textContent ?? ''; },
     metricsText(): string { return metricsEl.textContent ?? ''; },
+    renderHudSnapshotForTest(state: GameState | null): void {
+      const scene = game.scene.getScene('OnlineScene') as OnlineScene | null;
+      scene?.debugRenderSnapshot(state);
+    },
     hudFontSize(): string {
       const card = document.querySelector<HTMLElement>('.hud-player');
       return card ? window.getComputedStyle(card).fontSize : '';

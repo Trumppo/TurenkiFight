@@ -158,6 +158,30 @@ test('VIS-05 2x preference has no scroll at 1280x680', async ({ page }) => {
   await page.screenshot({ path: 'artifacts/visual/vis-05-stale-2x-1280x680.png', fullPage: true });
 });
 
+test('scale control is hidden only below the short-height cutoff and remains reachable elsewhere', async ({ page }) => {
+  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
+  const scaleControl = page.locator('.scale-control');
+
+  await page.setViewportSize({ width: 640, height: 540 });
+  await page.goto('/');
+  await expect(scaleControl).toBeHidden();
+
+  await page.setViewportSize({ width: 640, height: 541 });
+  await expect(scaleControl).toBeVisible();
+
+  await page.setViewportSize({ width: 1280, height: 680 });
+  await expect(scaleControl).toBeVisible();
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await expect(scaleControl).toBeVisible();
+  await page.locator('#display-scale').selectOption('2');
+  await expect(page).toHaveURL(/scale=2/);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(scaleControl).toBeVisible();
+  await expect(page.locator('#display-scale')).toHaveValue('2');
+});
+
 test('VIS-05 native short-viewport lobby status is fully readable', async ({ page }) => {
   test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
   await page.setViewportSize({ width: 640, height: 360 });

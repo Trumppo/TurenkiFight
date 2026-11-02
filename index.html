@@ -17,6 +17,13 @@
           <div class="hud-toolbar">
             <strong id="match-timer" aria-label="Match time">02:00</strong>
             <span id="match-status" aria-live="polite">LOBBY P1:KEY · SHIFT/PAD SELECT: JOIN</span>
+            <label class="mode-control" for="game-mode">MODE
+              <select id="game-mode" aria-label="Game mode">
+                <option value="score-brawl">Score Brawl</option>
+                <option value="last-man-standing">Last Man Standing</option>
+                <option value="deathmatch">Deathmatch</option>
+              </select>
+            </label>
             <label class="scale-control" for="display-scale">SCALE
               <select id="display-scale" aria-label="Display scale">
                 <option value="fit">Fit</option>

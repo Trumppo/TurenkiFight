@@ -107,6 +107,16 @@ describe('audio cue bridge', () => {
     expect(events.map(cueForGameEvent)).toEqual(['hit', 'kick', 'kick', 'ko', 'respawn', 'match-start', 'match-end']);
   });
 
+  it('emits the shared match-end cue for Score Brawl, Last Man Standing and Deathmatch', () => {
+    for (const mode of ['score-brawl', 'last-man-standing', 'deathmatch'] as const) {
+      const state = createState({ ids: ['P1', 'P2'], phase: 'results', mode });
+      state.events = [{ tick: 7200, type: 'MatchEnded' }];
+      const cues: AudioCue[] = [];
+      new CueBridge(cue => cues.push(cue)).observe(state);
+      expect(cues).toEqual(['match-end']);
+    }
+  });
+
   it('emits join, jump, land and time-warning only on observed transitions', () => {
     const cues: AudioCue[] = [];
     const bridge = new CueBridge(cue => cues.push(cue));

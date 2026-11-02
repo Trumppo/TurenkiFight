@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { GameState, Fighter } from '../simulation/types';
+import type { GameState, Fighter, ModeId } from '../simulation/types';
 import type { OnlineMatchController } from '../networking/onlineMatchController';
 import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
 import { VIEWPORT, cameraScale } from './viewport';
@@ -10,6 +10,12 @@ import { createRetroExtraTextures } from './retroExtras';
 import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
 import { CueBridge } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
+
+const MODE_NAMES: Record<ModeId, string> = {
+  'score-brawl': 'Score Brawl',
+  'last-man-standing': 'Last Man Standing',
+  deathmatch: 'Deathmatch',
+};
 
 /**
  * Presentation-only scene for a remote authoritative match.
@@ -32,6 +38,8 @@ export class OnlineScene extends Phaser.Scene {
   private domHud?: {
     timer: HTMLElement;
     status: HTMLElement;
+    mode: HTMLElement;
+    playerList: HTMLElement;
     players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>;
   };
   private audio?: AudioPresentation;
@@ -103,7 +111,9 @@ export class OnlineScene extends Phaser.Scene {
       this.audio?.director.setMusicDucked(state.phase === 'results');
     }
     this.drawFighters(state, now);
-    this.renderHud(state);
+    const connectionState = this.controller.connectionState;
+    const modeState = connectionState === 'closed' || connectionState === 'error' ? null : state;
+    this.renderHud(state, modeState);
     this.onFrame?.(now);
   }
 
@@ -111,6 +121,11 @@ export class OnlineScene extends Phaser.Scene {
   audioDiagnostics(): { state: string; muted: boolean; volume: number } {
     const settings = this.audio?.director.settings;
     return { state: this.audio?.director.contextState ?? 'not-created', muted: settings?.muted ?? false, volume: settings?.volume ?? 0.55 };
+  }
+
+  /** Development harness hook for rendering a supplied authoritative snapshot without stepping it. */
+  debugRenderSnapshot(state: GameState | null): void {
+    this.renderHud(state);
   }
 
   /** Test/debug hook; returns the interpolated positions actually drawn. */
@@ -161,10 +176,14 @@ export class OnlineScene extends Phaser.Scene {
           .setPosition(x, y - Math.round(fighter.z))
           .setFlipX(fighter.facing < 0)
           .setDepth(y);
-        if (RETRO_PREVIEW && (this.hitUntil.get(fighter.id) ?? 0) > state.tick && state.tick % 6 < 3) {
+        if (fighter.eliminated) {
+          sprite.setTintFill(0x4a5561).setAlpha(0.72);
+        } else if (RETRO_PREVIEW && (this.hitUntil.get(fighter.id) ?? 0) > state.tick && state.tick % 6 < 3) {
           sprite.setTintFill(0xffe3a0);
+          sprite.setAlpha(1);
         } else {
           sprite.clearTint();
+          sprite.setAlpha(1);
         }
         this.previous.set(fighter.id, { x: fighter.x, y: fighter.y, z: fighter.z });
       }
@@ -185,6 +204,7 @@ export class OnlineScene extends Phaser.Scene {
   }
 
   private pose(fighter: Fighter, previous?: { x: number; y: number; z: number }, tick = 0): FighterPose {
+    if (fighter.eliminated) return 'ko';
     if (fighter.koTimer) return 'ko';
     if (fighter.protection > 0) return 'respawn';
     if ((this.hitUntil.get(fighter.id) ?? 0) > tick) return 'hit';
@@ -198,7 +218,9 @@ export class OnlineScene extends Phaser.Scene {
   private initDomHud(): void {
     const timer = document.getElementById('match-timer');
     const status = document.getElementById('match-status');
-    if (!timer || !status) return;
+    const mode = document.getElementById('match-mode');
+    const playerList = document.getElementById('player-hud');
+    if (!timer || !status || !mode || !playerList) return;
     const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>();
     for (const node of Array.from(document.querySelectorAll('.hud-player[data-player]'))) {
       const root = node as HTMLElement;
@@ -207,12 +229,18 @@ export class OnlineScene extends Phaser.Scene {
       const health = root.querySelector('.hud-health') as HTMLElement | null;
       if (id && score && health) players.set(id, { root, score, health });
     }
-    this.domHud = { timer, status, players };
+    this.domHud = { timer, status, mode, playerList, players };
   }
 
-  private renderHud(state: GameState | null): void {
+  private renderHud(state: GameState | null, modeState: GameState | null = state): void {
     const hud = this.domHud;
     if (!hud) return;
+    const modeId = modeState?.mode;
+    const modeText = modeId
+      ? `ONLINE MODE · ${MODE_NAMES[modeId].toUpperCase()}`
+      : 'ONLINE MODE · SCORE BRAWL (SERVER DEFAULT)';
+    if (hud.mode.textContent !== modeText) hud.mode.textContent = modeText;
+    hud.playerList.classList.toggle('mode-specific', modeId === 'last-man-standing' || modeId === 'deathmatch');
     if (state) {
       const seconds = Math.ceil(state.remainingTicks / 60);
       const timerText = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:` +
@@ -224,11 +252,31 @@ export class OnlineScene extends Phaser.Scene {
     for (const [id, nodes] of hud.players) {
       const fighter = state?.fighters.find(f => f.id === id);
       nodes.root.classList.toggle('is-empty', !fighter);
-      const scoreText = fighter ? String(fighter.score) : '—';
-      const healthText = fighter ? `HP ${Math.max(0, Math.min(100, fighter.health))}` : 'HP —';
-      const label = fighter
-        ? `${id}, score ${fighter.score}, health ${Math.max(0, Math.min(100, fighter.health))}`
-        : `${id}, not joined`;
+      nodes.root.classList.toggle('is-eliminated', !!fighter?.eliminated);
+      let scoreText: string;
+      let healthText: string;
+      let label: string;
+      if (!fighter) {
+        scoreText = '—';
+        healthText = 'HP —';
+        label = `${id}, not joined`;
+      } else if (state?.mode === 'last-man-standing') {
+        const stocks = fighter.eliminated ? 0 : 1;
+        const status = fighter.eliminated ? 'ELIMINATED' : 'ALIVE';
+        scoreText = `STOCK ${stocks}`;
+        healthText = status;
+        label = `${id}, stock ${stocks}, ${status.toLowerCase()}`;
+      } else if (state?.mode === 'deathmatch') {
+        const frags = fighter.frags ?? 0;
+        const deaths = fighter.deaths ?? 0;
+        scoreText = `FRAGS ${frags}`;
+        healthText = `DEATHS ${deaths}`;
+        label = `${id}, ${frags} frags, ${deaths} deaths, health ${Math.max(0, Math.min(100, fighter.health))}`;
+      } else {
+        scoreText = String(fighter.score);
+        healthText = `HP ${Math.max(0, Math.min(100, fighter.health))}`;
+        label = `${id}, score ${fighter.score}, health ${Math.max(0, Math.min(100, fighter.health))}`;
+      }
       if (nodes.score.textContent !== scoreText) nodes.score.textContent = scoreText;
       if (nodes.health.textContent !== healthText) nodes.health.textContent = healthText;
       if (nodes.root.getAttribute('aria-label') !== label) nodes.root.setAttribute('aria-label', label);
