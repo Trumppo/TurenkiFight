@@ -1,21 +1,22 @@
 import type { GameEvent } from '../simulation/types';
 import { parseGameEvent } from './gameEvent';
+import { MAX_PLAYERS } from './players';
 
 export const EVENT_PROTOCOL_VERSION = 1 as const;
 export const MAX_EVENT_BATCH_BYTES = 8192;
 /**
- * Roster size used by the event bound below. It matches `MAX_SNAPSHOT_FIGHTERS`
- * in `stateSnapshot.ts` and `MAX_PLAYERS_PER_FRAME` in `inputFrame.ts`; a test
- * keeps the three constants equal.
+ * Roster size used by the event bound below. It is derived from `MAX_PLAYERS`
+ * and therefore matches `MAX_SNAPSHOT_FIGHTERS` in `stateSnapshot.ts` and
+ * `MAX_PLAYERS_PER_FRAME` in `inputFrame.ts`; a test keeps the three equal.
  */
-export const MAX_EVENT_FIGHTERS = 4;
+export const MAX_EVENT_FIGHTERS = MAX_PLAYERS;
 /**
- * Per-tick upper bound for the current simulation with a four-fighter roster:
- * - `HitLanded`: at most one hit per attacker/target pair -> N * (N - 1) = 12
- * - `Knockout`: each target can be knocked out once per tick -> N = 4
- * - `Respawned`: each fighter can respawn once per tick -> N = 4
+ * Per-tick upper bound for the current simulation with an eight-fighter roster:
+ * - `HitLanded`: at most one hit per attacker/target pair -> N * (N - 1) = 56
+ * - `Knockout`: each target can be knocked out once per tick -> N = 8
+ * - `Respawned`: each fighter can respawn once per tick -> N = 8
  * - lifecycle (`MatchStarted`/`MatchEnded`): at most one, and never both -> 1
- * Total 21. This is an upper bound, not a guarantee that every combination can
+ * Total 73. This is an upper bound, not a guarantee that every combination can
  * occur in the same tick.
  */
 export const MAX_EVENTS_PER_BATCH =

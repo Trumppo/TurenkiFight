@@ -1,11 +1,21 @@
 import type { Fighter, GameEvent, GameState, ModeId, Move, Phase } from '../simulation/types';
 import { COUNTDOWN_TICKS, MATCH_TICKS, MOVES } from '../simulation/step';
 import { COMBAT_MOVES, END_REASONS, parseGameEvent } from './gameEvent';
+import { MAX_PLAYERS } from './players';
 
 /** Transport-independent, versioned representation of the full deterministic simulation state. */
 export const SNAPSHOT_VERSION = 1 as const;
-export const MAX_SNAPSHOT_BYTES = 65536;
-export const MAX_SNAPSHOT_FIGHTERS = 4;
+/**
+ * Pre-parse UTF-8 cap. The schema-maximal eight-fighter snapshot measures
+ * 83,373 bytes (eight escaped IDs, full hit-target lists and 64 events), so the
+ * old 65,536-byte cap would reject a state the parser accepts. Doubling it keeps
+ * the cap defensive: every schema-valid snapshot is encodable, while real
+ * eight-player snapshots are far smaller (see `stateSnapshot.test.ts`).
+ * Raising this cap does not change the bytes emitted for any roster.
+ */
+export const MAX_SNAPSHOT_BYTES = 131072;
+/** Derived from the single roster bound; a snapshot carries a full match roster. */
+export const MAX_SNAPSHOT_FIGHTERS = MAX_PLAYERS;
 export const MAX_SNAPSHOT_EVENTS = 64;
 export type StateSnapshot = { version: typeof SNAPSHOT_VERSION; state: GameState };
 /**

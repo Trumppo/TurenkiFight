@@ -68,6 +68,48 @@ simulation rewrite.
 7. Snapshot size at eight players is measured and recorded.
 8. The owner can start an eight-player match alone and judge whether it is playable.
 
+## 4b. Measured results after the cap change (2026-11-02)
+
+One constant, `MAX_PLAYERS = 8` in `src/game/protocol/players.ts`, now drives the input codec, snapshot
+and event codecs, session roster and buffer, match server and the WS client. Nine players or more is
+rejected at every layer with a clear error.
+
+**Four-player bytes unchanged.** Score Brawl tick-0 snapshot captured from `main@a6a26eb` is 1,086 bytes
+(sha256 `1d23bad2…`), 1,088 bytes after 300 ticks, and is pinned as an exact string. BASE-4 replay
+fingerprints remain `7fddf007…` / `de544fcd…` / `5bb44bd6…`.
+
+**Eight-player snapshot size, measured not estimated:**
+
+| Measurement | Canonical | Server message |
+| --- | ---: | ---: |
+| Authoritative session at tick 3 | 2,083 B | 2,126 B |
+| BASE-8 replay, mean over the 2,400 sampled snapshots (every third tick from tick 3) | 2,333.2 B | 2,376.2 B |
+| Same 2,400-sample set, min / max | 2,203 / 2,597 B | 2,246 / 2,640 B |
+| All 7,200 ticks, min / max | 2,197 / 2,615 B | 2,240 / 2,658 B |
+
+The mean and the first min/max row are over the sampled set, not every tick; the last row is the full
+tick population. Both are recorded so neither can be quoted as something it is not.
+
+That is about 46,664 B/s per client of codec bytes and 373,312 B/s for eight clients at 20 Hz — still a
+codec measurement, not a network measurement.
+
+**Schema maxima forced two bounds to move.** A schema-valid eight-fighter snapshot is 83,373 bytes
+because the snapshot can carry a full event batch, so `MAX_SNAPSHOT_BYTES` rose from 65,536 to 131,072
+and the WS server message bound to 132,096. Without that, a valid state would parse but fail to encode.
+The eight-player input frame is 3,950 bytes, still inside the unchanged 4,096 cap; the session envelope
+cap is untouched because it is client-to-server.
+
+**Benchmark path change, reported explicitly.** With eight slots fitting one frame, `BASE-8-60-20` now
+uses one frame per tick instead of two: 7,200 frames instead of 14,400, fixture hash
+`6f6eaf7a…` (was `9a07ff61…`), and its final state is now recorded with `state-snapshot-v1` instead of
+the harness-local digest (`f4da9054…`). Its ordered-event hash is unchanged (`3d87b8ad…`). BASE-4 values
+did not move. The old multi-slice adapter test was replaced by a single-frame eight-player atomicity
+test.
+
+**Still four-scoped on purpose:** the match-server default roster is 4 (eight is opt-in with
+`--players=8`), the bot CLI drives the BASE-4 fixture, and networked eight-player measurement remains a
+separate follow-up.
+
 ## 5. Risks
 
 - Eight fighters in a 640×360 arena may be visually unreadable regardless of correctness; that is a

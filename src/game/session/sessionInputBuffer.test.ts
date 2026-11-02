@@ -25,6 +25,22 @@ describe('M2 bounded input buffer', () => {
     expect(() => b.submit('a', 3, 10, input('P1'))).toThrow(/Stale/);
   });
 
+  it('accepts a full eight-player tick and rejects nine slots', () => {
+    const b = new SessionInputBuffer();
+    for (let index = 1; index <= 8; index++) b.submit(`c${index}`, 1, 0, input(`P${index}`));
+    expect(b.consume().inputs).toHaveLength(8);
+
+    const c = new SessionInputBuffer();
+    const nine = Array.from({ length: 9 }, (_, index) => input(`P${index + 1}`));
+    expect(() => c.submitFrame('a', 1, 0, nine)).toThrow(/Malformed player controls/);
+    // The denial is atomic: the sequence domain is untouched.
+    c.submitFrame('a', 1, 0, nine.slice(0, 8));
+    expect(c.consume().inputs).toHaveLength(8);
+
+    expect(() => new SessionInputBuffer(0, 8, 9)).toThrow(/configuration/);
+    expect(() => new SessionInputBuffer(0, 8, 0)).toThrow(/configuration/);
+  });
+
   it('bounds player capacity and tick storage', () => {
     const b = new SessionInputBuffer(0, 2, 2);
     b.submit('a', 1, 0, input('P1'));

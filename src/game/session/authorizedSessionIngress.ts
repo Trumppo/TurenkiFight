@@ -1,4 +1,5 @@
 import type { PlayerInput } from '../simulation/types';
+import { MAX_PLAYERS } from '../protocol/players';
 import { SessionRoster } from './sessionRoster';
 import { DEFAULT_MAX_INPUT_LEAD_TICKS, SessionInputBuffer } from './sessionInputBuffer';
 
@@ -14,7 +15,7 @@ export class AuthorizedSessionIngress {
   private readonly roster: SessionRoster;
   private readonly buffer: SessionInputBuffer;
 
-  constructor(startTick = 0, maxLead = DEFAULT_MAX_INPUT_LEAD_TICKS, maxPlayers = 4) {
+  constructor(startTick = 0, maxLead = DEFAULT_MAX_INPUT_LEAD_TICKS, maxPlayers = MAX_PLAYERS) {
     this.roster = new SessionRoster(maxPlayers);
     this.buffer = new SessionInputBuffer(startTick, maxLead, maxPlayers);
   }

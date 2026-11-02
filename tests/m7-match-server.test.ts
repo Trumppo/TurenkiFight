@@ -340,13 +340,17 @@ describe('M7 serve:match command surface', () => {
     });
     expect(parseServeMatchArgs(['--help']).help).toBe(true);
     expect(parseServeMatchArgs(['--snapshot-hz=10', '--players=1']).playerIds).toEqual(['P1']);
+    expect(parseServeMatchArgs(['--players=8']).playerIds)
+      .toEqual(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8']);
   });
 
   it('rejects invalid flags with an explicit message', () => {
     expect(() => parseServeMatchArgs(['--port=70000'])).toThrow(/Invalid port/);
     expect(() => parseServeMatchArgs(['--port'])).toThrow(/--name=value/);
     expect(() => parseServeMatchArgs(['--snapshot-hz=15'])).toThrow(/Unsupported snapshot rate/);
-    expect(() => parseServeMatchArgs(['--players=5'])).toThrow(/1\.\.4/);
+    expect(() => parseServeMatchArgs(['--players=9'])).toThrow(/1\.\.8/);
+    expect(() => parseServeMatchArgs(['--players=99'])).toThrow(/1\.\.8/);
+    expect(() => parseServeMatchArgs(['--players=0'])).toThrow(/1\.\.8/);
     expect(() => parseServeMatchArgs(['--start=later'])).toThrow(/Invalid start mode/);
     expect(() => parseServeMatchArgs(['--mode=duel'])).toThrow(/Invalid mode/);
     expect(() => parseServeMatchArgs(['--host=ws://127.0.0.1'])).toThrow(/not a URL/);

@@ -41,8 +41,9 @@ export interface BenchmarkAdapter {
   /** Advances one authoritative tick with neutral input (rate-limited fixtures). */
   advanceTick(): void;
   /**
-   * Canonical v1 snapshot. The protocol codec caps a snapshot at four
-   * fighters, so eight-player scenarios must inspect `observeState` instead.
+   * Canonical v1 snapshot. The codec accepts every supported roster size; a
+   * roster beyond MAX_SNAPSHOT_FIGHTERS is rejected by the codec, not silently
+   * truncated.
    */
   observeSnapshot(): StateSnapshot;
   /** Deterministic raw state for hashing; not a protocol message. */
@@ -222,9 +223,10 @@ export function replayResult(
 ): BenchmarkReplay {
   const state = adapter.observeState();
   if (state.tick !== fixture.ticks || state.phase !== 'results') throw new Error('Incomplete match');
-  // The canonical v1 snapshot codec intentionally caps a snapshot at four
-  // fighters. Eight-player exploration therefore hashes the deterministic raw
-  // state and reports the encoding instead of silently exceeding the protocol.
+  // The canonical v1 snapshot codec accepts every supported roster, so the
+  // eight-player scenario now hashes protocol bytes rather than raw harness
+  // JSON. The BASE-4 values are unchanged; the BASE-8 fingerprint changed when
+  // the cap rose and is documented in the task report instead of re-pinned.
   const finalStateEncoding: BenchmarkStateEncoding =
     fixture.players <= MAX_SNAPSHOT_FIGHTERS ? 'state-snapshot-v1' : 'harness-state-json-v1';
   const finalStateSha256 = finalStateEncoding === 'state-snapshot-v1'

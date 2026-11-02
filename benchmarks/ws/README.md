@@ -233,8 +233,9 @@ inspected to confirm `ws` is absent from the browser bundle.
   is **not** a real-time pacing run. No numbers are reported by any role.
 - The benchmark helpers (`maxTicks`, `maxConnections`, envelope observation) and
   the server message schema are prototype-only.
-- Only the four-player BASE-4 input stream is executable here. An eight-player
-  roster is rejected by the four-slot session ingress and the canonical
-  four-fighter snapshot cap, so `BASE-8-60-20` is not wired into this prototype.
-  `RATE-4-30-10` would additionally need neutral ticks for the 30 Hz frame
+- Only the four-player BASE-4 input stream is wired into this prototype. The
+  protocol, session and server now accept an eight-player roster, but
+  `BASE-8-60-20` remains unwired because the WebSocket benchmark setup and
+  client roles are built around the four-slot BASE-4 fixture. `RATE-4-30-10`
+  would additionally need neutral ticks for the 30 Hz frame
   schedule. Snapshot rate is configurable with `--snapshot-hz` (10/20/30).

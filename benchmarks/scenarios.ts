@@ -251,9 +251,11 @@ function inputStride(scenario: BenchmarkScenario): number {
 /**
  * Deterministic canonical v1 fixture for one declared scenario.
  *
- * Simulation scenarios use one frame per four-player slice (the codec's
- * MAX_PLAYERS_PER_FRAME). Lifecycle scenarios use one frame per connection so
- * the session envelope can wrap the canonical payload unchanged.
+ * Simulation scenarios use one frame per `MAX_PLAYERS_PER_FRAME` slice. Since
+ * the supported roster (eight) now fits one canonical frame, an eight-player
+ * tick is a single message; four-player frames are unchanged. Lifecycle
+ * scenarios use one frame per connection so the session envelope can wrap the
+ * canonical payload unchanged.
  */
 export function generateFixture(scenarioId: BenchmarkScenarioId, seed = FIXTURE_SEED): BenchmarkFixture {
   const scenario = requireScenario(scenarioId);

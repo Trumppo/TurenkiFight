@@ -282,7 +282,11 @@ describe('M2 WebSocket prototype authoritative session', () => {
   it('rejects invalid configuration explicitly', () => {
     expect(() => captureRoom({ roomId: 'bad room' })).toThrow(/room/);
     expect(() => captureRoom({ playerIds: ['P1', 'P1'] })).toThrow(/roster/);
-    expect(() => captureRoom({ playerIds: ['P1', 'P2', 'P3', 'P4', 'P5'] })).toThrow(/roster/);
+    expect(() => captureRoom({
+      playerIds: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9'],
+    })).toThrow(/roster/);
+    expect(() => captureRoom({ playerIds: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'] }))
+      .not.toThrow();
     expect(() => captureRoom({ maxTicks: 0 })).toThrow(/tick/);
     expect(() => captureRoom({ maxTicks: 7201 })).toThrow(/tick/);
   });

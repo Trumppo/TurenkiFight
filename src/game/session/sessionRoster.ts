@@ -1,3 +1,5 @@
+import { MAX_PLAYERS } from '../protocol/players';
+
 /** Transport-independent room membership and player ownership.
  * No network, identity provider or simulation dependency. Connection IDs are
  * supplied by a trusted transport adapter, never read from untrusted payloads.
@@ -11,8 +13,10 @@ export class SessionRoster {
   private host: SessionConnectionId | null = null;
   private hostAssigned = false;
 
-  constructor(private readonly maxPlayers = 4) {
-    if (!Number.isSafeInteger(maxPlayers) || maxPlayers < 1) throw new Error('Invalid player capacity');
+  constructor(private readonly maxPlayers = MAX_PLAYERS) {
+    if (!Number.isSafeInteger(maxPlayers) || maxPlayers < 1 || maxPlayers > MAX_PLAYERS) {
+      throw new Error('Invalid player capacity');
+    }
   }
 
   join(connectionId: SessionConnectionId, playerId: SessionPlayerId): void {

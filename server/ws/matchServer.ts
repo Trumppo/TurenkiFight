@@ -1,5 +1,6 @@
 import { TICK_RATE } from '../../src/game/simulation/step';
 import { MODE_IDS } from '../../src/game/simulation/modes';
+import { MAX_PLAYERS } from '../../src/game/protocol/players';
 import type { ModeId } from '../../src/game/simulation/types';
 import { SUPPORTED_SNAPSHOT_HZ, type SnapshotHz } from '../../src/game/networking/wsMessages';
 import { isSessionIdentifier } from '../../src/game/session/sessionEnvelope';
@@ -29,7 +30,13 @@ import { startWsServer, type WsServerEnvelopeEvent, type WsServerEvent } from '.
 export const DEFAULT_MATCH_HOST = '127.0.0.1';
 export const DEFAULT_MATCH_PORT = 8787;
 export const DEFAULT_MATCH_ROOM_ID = 'match';
-export const MAX_MATCH_PLAYERS = 4;
+/** Roster bound derived from the single `MAX_PLAYERS` source of truth. */
+export const MAX_MATCH_PLAYERS = MAX_PLAYERS;
+/**
+ * Operator default roster size. This is a default, not a cap: `--players` may
+ * request any value in 1..MAX_MATCH_PLAYERS.
+ */
+export const DEFAULT_MATCH_PLAYERS = 4; // cap-scan-allow: operator default roster, not the supported cap
 export const DEFAULT_MATCH_SNAPSHOT_HZ: SnapshotHz = 20;
 
 export type MatchStartMode = 'auto' | 'manual';
@@ -57,7 +64,7 @@ export type MatchStartResult = {
 export type MatchServerOptions = {
   host?: string;
   port?: number;
-  /** Simulation roster; 1..4 unique identifiers. Defaults to P1..P4. */
+  /** Simulation roster; 1..MAX_MATCH_PLAYERS unique identifiers. Defaults to P1..P4. */
   playerIds?: readonly string[];
   /** Match rules chosen at creation; unknown ids are rejected, never defaulted. */
   mode?: ModeId;
@@ -120,9 +127,9 @@ function parsePort(raw: string): number {
 }
 
 function parsePlayers(raw: string): number {
-  if (!/^\d$/.test(raw)) throw new Error(`Invalid player count: ${raw}`);
+  if (!/^\d+$/.test(raw)) throw new Error(`Invalid player count: ${raw}`);
   const value = Number(raw);
-  if (value < 1 || value > MAX_MATCH_PLAYERS) {
+  if (!Number.isSafeInteger(value) || value < 1 || value > MAX_MATCH_PLAYERS) {
     throw new Error(`Player count must be 1..${MAX_MATCH_PLAYERS}: ${raw}`);
   }
   return value;
@@ -162,7 +169,7 @@ export function matchPlayerIds(count: number): readonly string[] {
 export function parseServeMatchArgs(argv: readonly string[]): ServeMatchCliOptions {
   let host = DEFAULT_MATCH_HOST;
   let port = DEFAULT_MATCH_PORT;
-  let playerCount = MAX_MATCH_PLAYERS;
+  let playerCount = DEFAULT_MATCH_PLAYERS;
   let snapshotHz = DEFAULT_MATCH_SNAPSHOT_HZ;
   let startMode: MatchStartMode = 'auto';
   let mode: ModeId = 'score-brawl';
@@ -220,7 +227,7 @@ export function serveMatchUsage(): string {
     'Options:',
     '  --host=<address>     Bind address (default 127.0.0.1; 0.0.0.0 for a LAN)',
     '  --port=<number>      Bind port 0..65535 (default 8787; 0 = ephemeral)',
-    '  --players=<1-4>      Claimable slots P1..PN (default 4)',
+    `  --players=<1-${MAX_MATCH_PLAYERS}>      Claimable slots P1..PN (default ${DEFAULT_MATCH_PLAYERS})`,
     '  --snapshot-hz=<hz>   Snapshot rate 10, 20 or 30 (default 20)',
     '  --start=<mode>       auto starts when the roster is full; manual waits for a',
     '                       "start" line on stdin (default auto)',
@@ -300,7 +307,7 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
   const host = validateHost(options.host ?? DEFAULT_MATCH_HOST);
   const port = options.port ?? DEFAULT_MATCH_PORT;
   if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new Error(`Invalid port: ${String(port)}`);
-  const playerIds = validateRoster(options.playerIds ?? matchPlayerIds(MAX_MATCH_PLAYERS));
+  const playerIds = validateRoster(options.playerIds ?? matchPlayerIds(DEFAULT_MATCH_PLAYERS));
   const snapshotHz = options.snapshotHz ?? DEFAULT_MATCH_SNAPSHOT_HZ;
   if (!SUPPORTED_SNAPSHOT_HZ.includes(snapshotHz)) {
     throw new Error(`Unsupported snapshot rate: ${String(snapshotHz)}`);

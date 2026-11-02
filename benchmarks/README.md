@@ -27,9 +27,9 @@ Every scenario is declared in `benchmarks/scenarios.ts` with a fixed ID, version
 
 ### Roster and frame framing
 
-The canonical v1 `InputFrame` codec caps a frame at four players. Four-player simulations use one frame per tick. Eight-player simulations use two frames per tick (P1-P4, then P5-P8) and advance only after all eight players supplied input for that tick; the frame cap is unchanged. Lifecycle scenarios use one frame per connection so the session envelope wraps the canonical payload unchanged.
+The canonical v1 `InputFrame` codec caps a frame at `MAX_PLAYERS_PER_FRAME`, derived from the supported eight-player maximum. Four- and eight-player simulations both use one frame per tick; the adapter still advances only after every roster player has supplied input, so a future split-frame adapter remains valid. Lifecycle scenarios use one frame per connection so the session envelope wraps the canonical payload unchanged.
 
-The canonical v1 `StateSnapshot` codec also caps a snapshot at four fighters. Four-player final state fingerprints are SHA-256 of the canonical snapshot bytes (`finalStateEncoding: "state-snapshot-v1"`). Eight-player exploration hashes a deterministic JSON serialization of the raw `GameState` (`finalStateEncoding: "harness-state-json-v1"`) instead of silently raising the protocol cap; it is a harness-local digest, not a protocol message.
+The canonical v1 `StateSnapshot` codec accepts every supported roster. Both four- and eight-player final state fingerprints are SHA-256 of the canonical snapshot bytes (`finalStateEncoding: "state-snapshot-v1"`). The eight-player values changed when the cap rose; the four-player values are unchanged.
 
 `RATE-4-30-10` schedules input every second tick; ticks without a scheduled message are advanced with neutral input.
 

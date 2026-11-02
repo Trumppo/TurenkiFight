@@ -38,7 +38,8 @@ describe('M2 input tick buffer', () => {
     for (const players of [[1], [null], [new String('P1')], [''], ['P'.repeat(65)]]) {
       expect(() => new InputFrameBuffer(players as unknown as string[])).toThrow(/configuration/);
     }
-    expect(() => new InputFrameBuffer(['P1', 'P2', 'P3', 'P4', 'P5'])).toThrow(/configuration/);
+    expect(() => new InputFrameBuffer(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9']))
+      .toThrow(/configuration/);
     expect(new InputFrameBuffer(['P1']).players).toEqual(['P1']);
   });
 });

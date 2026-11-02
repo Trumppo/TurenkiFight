@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { isSessionIdentifier } from '../../src/game/session/sessionEnvelope';
 import { SUPPORTED_SNAPSHOT_HZ, type SnapshotHz } from '../../src/game/networking/wsMessages';
-import { MAX_TICKS } from '../ws/benchmarkSetup';
+import { MAX_TICKS, WS_BENCHMARK_ROSTER } from '../ws/benchmarkSetup';
 import type { BotInputPattern } from './botInput';
 import {
   MEASURED,
@@ -293,7 +293,7 @@ function validateProvenance(value: unknown): value is BotProvenance {
     return false;
   }
   const playerIds = value.playerIds;
-  if (!Array.isArray(playerIds) || playerIds.length < 1 || playerIds.length > 4 ||
+  if (!Array.isArray(playerIds) || playerIds.length < 1 || playerIds.length > WS_BENCHMARK_ROSTER.length ||
       new Set(playerIds).size !== playerIds.length || !playerIds.every(isSessionIdentifier)) {
     return false;
   }

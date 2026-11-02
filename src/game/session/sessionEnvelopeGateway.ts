@@ -98,7 +98,7 @@ export class SessionEnvelopeGateway {
     if (!isSessionIdentifier(options?.roomId)) throw new Error('Invalid room binding');
     this.roomId = options.roomId;
     // Undefined optional values keep the existing session defaults (tick 0,
-    // bounded look-ahead, four slots) instead of inventing new timings.
+    // bounded look-ahead, MAX_PLAYERS slots) instead of inventing new timings.
     this.ingress = new AuthorizedSessionIngress(options.startTick, options.maxLead, options.maxPlayers);
   }
 

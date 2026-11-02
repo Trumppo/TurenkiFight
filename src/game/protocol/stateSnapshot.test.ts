@@ -8,7 +8,11 @@ import {
   SCORE_BRAWL_KNOCKOUT_FINGERPRINT, SCORE_BRAWL_MATCH_ENDED_BYTES,
 } from '../../../tests/fixtures/scoreBrawlSnapshotBytes';
 import {
-  BUTTON_LABELS, MAX_HEALTH, MAX_SNAPSHOT_TICK, assertEncodableState, decodeStateSnapshot, encodeStateSnapshot,
+  FOUR_PLAYER_SCORE_BRAWL_FIGHTING_BYTES, FOUR_PLAYER_SCORE_BRAWL_FIGHTING_BYTE_LENGTH,
+  FOUR_PLAYER_SCORE_BRAWL_STEPPED_BYTES, FOUR_PLAYER_SCORE_BRAWL_STEPPED_BYTE_LENGTH,
+} from '../../../tests/fixtures/fourPlayerScoreBrawlBytes';
+import {
+  BUTTON_LABELS, MAX_HEALTH, MAX_SNAPSHOT_FIGHTERS, MAX_SNAPSHOT_TICK, assertEncodableState, decodeStateSnapshot, encodeStateSnapshot,
   parseStateSnapshot,
 } from './stateSnapshot';
 
@@ -44,14 +48,39 @@ describe('M2 StateSnapshot v1', () => {
       { version: 1, state: { ...state, unexpected: true } },
     ]) expect(() => parseStateSnapshot(bad)).toThrow();
   });
+  it('round-trips a full eight-fighter roster and rejects nine', () => {
+    const ids = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'];
+    const state = createState(ids, 'fighting');
+    const encoded = encodeStateSnapshot({ version: 1, state });
+    expect(decodeStateSnapshot(encoded).state.fighters.map(fighter => fighter.id)).toEqual(ids);
+    const ninth = { ...state.fighters[0], id: 'P9' };
+    expect(() => parseStateSnapshot({ version: 1, state: { ...state, fighters: [...state.fighters, ninth] } }))
+      .toThrow(/Malformed/);
+  });
   it('rejects oversized roster and event history', () => {
-    const state = createState(['P1', 'P2', 'P3', 'P4'], 'fighting');
-    const fifth = { ...state.fighters[0], id: 'P5' };
+    const state = createState(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'], 'fighting');
+    const ninth = { ...state.fighters[0], id: 'P9' };
     const event = { tick: state.tick, type: 'MatchStarted' as const };
     for (const bad of [
-      { ...state, fighters: [...state.fighters, fifth] },
+      { ...state, fighters: [...state.fighters, ninth] },
       { ...state, events: Array(65).fill(event) },
     ]) expect(() => parseStateSnapshot({ version: 1, state: bad })).toThrow();
+  });
+
+  it('keeps four-player Score Brawl snapshot bytes identical after the cap change', () => {
+    const ids = ['P1', 'P2', 'P3', 'P4'];
+    const encoded = encodeStateSnapshot({ version: 1, state: createState(ids, 'fighting') });
+    expect(encoded).toBe(FOUR_PLAYER_SCORE_BRAWL_FIGHTING_BYTES);
+    expect(new TextEncoder().encode(encoded).byteLength).toBe(FOUR_PLAYER_SCORE_BRAWL_FIGHTING_BYTE_LENGTH);
+    expect(stateSnapshotFingerprint({ version: 1, state: createState(ids, 'fighting') }))
+      .toBe('4461ff9a');
+
+    let stepped = createState(ids, 'fighting');
+    for (let tick = 0; tick < 300; tick++) stepped = step(stepped, []);
+    expect(encodeStateSnapshot({ version: 1, state: stepped })).toBe(FOUR_PLAYER_SCORE_BRAWL_STEPPED_BYTES);
+    expect(new TextEncoder().encode(
+      encodeStateSnapshot({ version: 1, state: stepped }),
+    ).byteLength).toBe(FOUR_PLAYER_SCORE_BRAWL_STEPPED_BYTE_LENGTH);
   });
 
   it('rejects states that a single step would turn into unencodable state', () => {
@@ -179,7 +208,7 @@ describe('M2 StateSnapshot v1', () => {
       withFighter(fighting(), { z: 10, vz: 2.5 }),
       withFighter(fighting(), { attackMove: 'punch', attackFrames: 1, attackCooldown: 1 }),
       withFighter(fighting(), { attackMove: 'jumpkick', attackFrames: attackDuration('jumpkick'), attackCooldown: attackDuration('jumpkick'), z: 5 }),
-      withFighter(fighting(), { hitsReceived: Number.MAX_SAFE_INTEGER - 3 }),
+      withFighter(fighting(), { hitsReceived: Number.MAX_SAFE_INTEGER - (MAX_SNAPSHOT_FIGHTERS - 1) }),
       {
         ...fighting(),
         events: [{ tick: 0, type: 'HitLanded' as const, attacker: 'P1', target: 'P2', move: 'kick' as const }],
