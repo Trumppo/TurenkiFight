@@ -113,9 +113,9 @@ Työ tehdään omassa haarassa, yksi PR per yhtenäinen työpaketti (`DESIGNER:`
 
 **Omistajan jo tekemät päätökset tässä tavoitteessa:** envelope-sopimus 2026-11-01; PR:ien #94–#107 merget on hyväksytty ja yhdistetty; 2026-11-02 milestone 5 -portti muutettu lähdekatsaukseksi ja yhden koneen mittauksiksi, painotuksena latenssi ja liikkeen sujuvuus.
 
-## Aktiivinen tavoite 2026-11-02: M7 — paikallisen pelin polish
+### 2026-11-02 — M7 paikallisen pelin polish (suljettu)
 
-**Tila 2026-11-02:** Tämän tavoitteen vaiheet 1–4 on tehty ja omistaja on hyväksynyt ne. Vaihe 5 (ääni) toteutettiin placeholder-tasolla omistajan tarkennuksen mukaan. Jäljellä on vain asioita, jotka vaativat omistajaa: verkkotestaus kahdella koneella (`M7-NETWORK-MEASUREMENTS`) ja äänen lopullinen kuuntelu/miksaus (`M7-AUDIO-MIX`, deferoitu). Roadmapin erilliset pelimuodot (Last Man Standing, Deathmatch) eivät kuulu tähän tavoitteeseen.
+**Lopputulos:** Tavoite suljettu 2026-11-02; omistaja valitsi seuraavaksi tavoitteeksi pelimuodot. Vaiheet 1–4 on tehty ja omistaja on hyväksynyt ne. Vaihe 5 (ääni) toteutettiin placeholder-tasolla omistajan tarkennuksen mukaan. Jäljellä on vain asioita, jotka vaativat omistajaa: verkkotestaus kahdella koneella (`M7-NETWORK-MEASUREMENTS`) ja äänen lopullinen kuuntelu/miksaus (`M7-AUDIO-MIX`, deferoitu). Roadmapin erilliset pelimuodot (Last Man Standing, Deathmatch) eivät kuulu tähän tavoitteeseen.
 
 **Valittu omistajan päätöksellä 2026-11-02.** M2-kuljetuspäätös on suljettu (arkkitehtuuri A). Tämä tavoite keskittyy paikallisen pelin laatuun; verkkoon ei kosketa.
 
@@ -161,6 +161,49 @@ Saata paikallinen neljän pelaajan peli visuaalisesti ja luettavuudeltaan hyväk
 
 - Omistaja valitsee areenakonseptin ennen kuin `M2-VIS-ARENA-ARCH` aloitetaan.
 - Omistaja hyväksyy visuaalisen lopputuloksen ennen kuin VIS05-02/VIS05-03 suljetaan.
+- Milestone 7:n hyväksyntä on erillinen omistajapäätös.
+
+## Aktiivinen tavoite 2026-11-02: pelimuodot — Last Man Standing ja Deathmatch
+
+**Valittu omistajan päätöksellä 2026-11-02.** Edellinen M7-polish-tavoite on suljettu. Tämä tavoite lisää kaksi itsenäistä pelimuotoa nykyisen Score Brawlin rinnalle.
+
+### Tavoite
+
+Toteuta **Last Man Standing** ja **Deathmatch** deterministisinä, testattuina pelimuotoina niin, että Score Brawl pysyy täysin muuttumattomana. Säännöt, HUD ja tulossivu ovat kutakin muotoa varten, ja muoto valitaan ennen matsia.
+
+### Rajaus ja vaiheet
+
+1. **Säännöt ja tapahtumat (Gameplay).** Tehtävä `M7-MODE-RULES`. Muoto on tyypitetty sääntöobjekti matsin luonnissa, ei hajallaan olevia ehtoja. Last Man Standing: yksi elämä, KO eliminoi ilman respawnia, matsi päättyy kun yksi on jäljellä. Deathmatch: KO kirjaa hyökkääjälle fragin, 20 fragia tai 120 s päättää matsin. Ajastimen tasatilanteet ratkaistaan spesifikaation mukaan. Tapahtumiin tulee tyypitetty loppusyy ja voittaja.
+2. **Käyttöliittymä (Graphics).** Tehtävä `M7-MODE-UI`. Muotovalinta ennen matsia, muotokohtainen HUD (stockit / fragit / pisteet) ja tulossivu, joka nimeää voittajan ja loppusyyn. Luettavuusvaatimukset (≥14 px, VIS-05-tarkistukset) säilyvät.
+3. **Verkkopeli (Gameplay).** Tehtävä `M7-MODE-ONLINE`. Serveri ottaa muodon vastaan ja ajaa auktoriteettisession niillä säännöillä; online-client näyttää muodon tilan snapshoteista keksimättä arvoja. Tuntematon muoto epäonnistuu selkeästi.
+4. **Itsenäinen QA (Tester).** Tehtävä `M7-MODE-QA`. Eliminointi ei saa olla lyötävissä eikä ohjattavissa, frag-attribuutio ja frag-raja testataan, tasatilanteet ja ratkaisemattomat matsit testataan, ja Score Brawl todistetaan tavuidenttiseksi hyväksyttyyn baselineen.
+5. **Omistajan hyväksyntä.** Omistaja pelaa kunkin muodon ja päättää tuntuuko se oikealta; rule-numerot (1 elämä, 20 fragia, 120 s) ovat designer-ehdotuksia ja muutettavissa.
+
+### Tiedostorajaus ja omistus
+
+- Gameplay: `src/game/modes/**`, `src/game/simulation/**`, `src/game/protocol/**`, `server/ws/**`, `src/game/networking/**`, relevant tests.
+- Graphics: `src/game/presentation/**`, `src/style.css`, browser tests.
+- Tester: itsenäinen todentaminen; ei omista tuotantokoodia.
+- Designer: `docs/M7_GAME_MODES.md`, `docs/GOALS.md`, `docs/ROADMAP.md`, `.github/AGENT_TASKS.yaml`.
+
+### Hyväksyntätestit
+
+- Score Brawlin kiinnitetyt sormenjäljet pysyvät tavuidenttisina; olemassa olevia odotuksia ei muokata.
+- Jokaisella muodolla on deterministinen replay-testi, jossa on kiinnitetty lopputila ja tapahtumajärjestys.
+- Eliminoitu hahmo ei ota osumia, ei vastaanota inputia eikä näy aktiivisena.
+- `npm test`, `npm run build`, koko selainsuite ja `git diff --check` vihreät jokaisella PR-headilla.
+
+### Riskit ja rajat
+
+- Ajastimen tasatilanteet ovat helposti väärin; ne kuuluvat puhtaisiin apufunktioihin yksikkötesteineen.
+- HUD-muutokset voivat rikkoa juuri tehdyn luettavuustyön; VIS-05-tarkistukset ajetaan joka PR:ssä.
+- Matsin päättymisajankohdan muutos voi vaikuttaa olemassa olevaan selainharnessiin, joka odottaa `fighting`-tilaa; ajetaan koko suite.
+- Verkkopelimuodon valinta on erillinen siivu; paikallinen peli toimii ilman sitä.
+
+### Päätösportit
+
+- Omistaja vahvistaa rule-numerot, jos haluaa muuttaa ehdotettuja arvoja.
+- Omistaja hyväksyy kunkin muodon tunnun pelaamalla.
 - Milestone 7:n hyväksyntä on erillinen omistajapäätös.
 
 ## Tavoitedokumentin päivityskäytäntö

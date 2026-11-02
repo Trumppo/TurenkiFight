@@ -885,6 +885,87 @@ tasks:
     notes: "Headless CI has no audio device. This gate proves wiring, not sound quality. Deferred with M7-AUDIO-MIX: there is no point listening to placeholders unless the owner asks for an early check."
 
 
+  - id: M7-MODE-RULES
+    title: Implement Last Man Standing and Deathmatch as typed simulation modes
+    assigned_role: gameplay-session
+    status: ready
+    priority: P0
+    specification: docs/M7_GAME_MODES.md
+    depends_on: []
+    scope:
+      - src/game/modes/
+      - src/game/simulation/
+      - src/game/protocol/
+      - tests/
+    acceptance:
+      - "Modes are a typed rules object passed at match creation; no per-tick branching scattered through the simulation"
+      - "Score Brawl behaviour is unchanged and its pinned fingerprints still match without editing existing expectations"
+      - "Last Man Standing: one stock, KO eliminates without respawn, match ends when one remains, timer tie-breaks as specified"
+      - "Deathmatch: KOs credit the attacker, the frag limit ends the match, timer tie-breaks as specified"
+      - "Each mode has a deterministic replay test with pinned final-state and ordered-event hashes"
+      - "Typed end reasons (elimination, frag-limit, time) and winner are emitted in the event stream"
+      - "An eliminated fighter cannot be hit, targeted or receive further input effects; covered by tests"
+      - "npm test, npm run build and git diff --check pass"
+    notes: "Owner selected the game-modes goal on 2026-11-02. This slice is rules and events only; UI and online mode selection are separate tasks. Rule numbers (1 stock, 20 frags, 120 s) are designer proposals recorded in the spec and can be changed by the owner before UI work lands."
+
+  - id: M7-MODE-UI
+    title: Add mode selection, mode-specific HUD and results screens
+    assigned_role: graphics-session
+    status: backlog
+    priority: P1
+    specification: docs/M7_GAME_MODES.md
+    depends_on: [M7-MODE-RULES]
+    scope:
+      - src/game/presentation/
+      - src/style.css
+      - tests/browser/
+    acceptance:
+      - "Mode selection is available before a match and is visible on the results screen"
+      - "HUD shows stocks for Last Man Standing, frags and deaths for Deathmatch, and the existing score for Score Brawl"
+      - "Results screen names the winner and the end reason for each mode"
+      - "Text stays at least 14 CSS px; VIS-05 readability checks stay green"
+      - "Eliminated fighters are rendered clearly as out rather than as active players"
+      - "Full browser suite and token-free assertions pass"
+    notes: "Readability and layout rules from the completed VIS-05 work apply unchanged."
+
+  - id: M7-MODE-ONLINE
+    title: Carry the selected mode through the match server and online client
+    assigned_role: gameplay-session
+    status: backlog
+    priority: P2
+    specification: docs/M7_GAME_MODES.md
+    depends_on: [M7-MODE-RULES]
+    scope:
+      - server/ws/
+      - src/game/networking/
+      - tests/
+    acceptance:
+      - "The match server accepts a mode flag and runs the authoritative session with those rules"
+      - "The online client shows the mode and its HUD state from snapshots without inventing values"
+      - "Unknown or unsupported modes fail clearly instead of silently falling back"
+      - "Existing server, bot and client tests stay green"
+    notes: "Follow-up so network play supports the new modes; the local game works without it."
+
+  - id: M7-MODE-QA
+    title: Independent QA of the new modes end to end
+    assigned_role: tester-session
+    status: backlog
+    priority: P1
+    specification: docs/M7_GAME_MODES.md
+    depends_on: [M7-MODE-UI, M7-MODE-ONLINE]
+    scope:
+      - docs/visual/
+      - tests/browser/
+    acceptance:
+      - "Verify elimination cannot be hit or controlled, and that respawn never happens in Last Man Standing"
+      - "Verify frag attribution and the frag limit in Deathmatch, including simultaneous KOs"
+      - "Verify timer tie-breaks and draws behave as specified"
+      - "Verify Score Brawl is byte-identical to the accepted baseline"
+      - "Report screenshots of mode selection, in-match HUD and results for each mode"
+      - "State explicitly what needs owner judgement about how the modes feel"
+    notes: "Rules QA plus visual evidence; owner decides whether the modes feel right."
+
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session

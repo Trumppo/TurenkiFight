@@ -112,7 +112,7 @@
 - [x] Arena: **Ravintola Mesku accepted visually by the owner on 2026-11-02** (PR #118); typed presentation-only manifests with the station as default and Mesku via `?arena=mesku`, station screenshots byte-identical
 - [ ] Online test harness so a remote agent and this machine can play the same real match: server mode, headless bot, served browser client, network metrics ([plan](M7_ONLINE_TEST_HARNESS.md))
 - [x] Sound technology and placeholder cues: looping chiptune, all 11 cues, mute and volume persistence, gesture unlock (PR #117). Real samples and mixing remain deferred at the owner's request (`M7-AUDIO-MIX`)
-- [ ] Add Last Man Standing and Deathmatch as independent modes
+- [ ] Add Last Man Standing and Deathmatch as independent modes — **active goal 2026-11-02**, see [game modes spec](M7_GAME_MODES.md)
 - [ ] Revisit dedicated hosting and rollback only if measurements justify them
 
 ## Definition of done
