@@ -1064,7 +1064,8 @@ tasks:
   - id: M8-RESULTS-TICK
     title: Stop advancing the match tick once the results phase begins
     assigned_role: gameplay-session
-    status: backlog
+    session_id: gameplay-session-20261103-tick
+    status: review
     priority: P2
     specification: docs/visual/M8_QA_REPORT_2026-11-02.md
     depends_on: [M8-BOT-QA]
@@ -1076,12 +1077,15 @@ tasks:
       - "The paused-results behaviour is deterministic and covered by a test"
       - "Score Brawl and the new modes both behave consistently; pinned full-match hashes that legitimately change are reported, not silently re-pinned"
       - "npm test, npm run build and git diff --check pass"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/133
+    last_updated: "2026-11-03"
     notes: "QA finding F2: the results screen reported tick 7,383-7,386 while the match ended at 7,380. Decide whether the clock should freeze at the end or whether the display is wrong, then make it explicit."
 
   - id: M8-HUD-EDGE-CASES
     title: Resolve negative scores and long status text in the HUD
     assigned_role: graphics-session
-    status: backlog
+    session_id: graphics-session-20261103-ellipsis
+    status: review
     priority: P2
     specification: docs/visual/M8_QA_REPORT_2026-11-02.md
     depends_on: [M8-BOT-QA]
@@ -1094,6 +1098,8 @@ tasks:
       - "The status line no longer ellipsises at 1920x1080; the full text is available or the sentence is shortened"
       - "Text stays at least 14 CSS px and VIS-05 checks stay green"
       - "Full browser suite passes"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/132
+    last_updated: "2026-11-03"
     notes: "QA findings F3 (negative scores shown) and F5 (status ellipsis at 1920x1080). Investigate whether negative score is reachable in play or only in scripted states before changing anything."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW

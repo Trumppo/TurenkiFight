@@ -41,6 +41,10 @@ The approved M1 internal render target is **640×360, 16:9**, superseding the ea
 - **Streets of Rage:** responsive and readable close-range combat, multiple opponents, strong hit feedback, lively stage atmosphere and satisfying arcade pacing.
 - **TurenkiFight:** local recognizable settings, humorous personality, accessible multiplayer and configurable stage/character content.
 
+**Scoring can go negative (clarified 2026-11-02):** a KO awards +500 to the attacker and subtracts
+200 from the fighter who was knocked out. A fighter knocked out repeatedly can therefore show a negative
+score; this is a deliberate rule, not a display defect. Changing the penalty is a balance decision.
+
 **Scope boundary:** M1 remains the existing fixed-camera four-player Score Brawl at Turenki railway station. This creative direction informs later iterations; it does **not** authorize a new scrolling campaign, enemy AI, progression, new attacks or a change of M1 acceptance criteria. Consider beat-'em-up modes and stage progression as optional post-M1 design explorations.
 
 Keep stage visuals, gameplay geometry and combat rules decoupled as specified in `ARCHITECTURE_PRINCIPLES.md`.
