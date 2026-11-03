@@ -58,6 +58,23 @@ p { color: #c2cbd2; }
 #player-hud .hud-player.is-lobby-slot .hud-name { overflow: hidden; text-overflow: clip; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
+/* At full-width desktop sizes, give match status its own compact HUD row. Its
+   14px text can use the whole reserved band instead of being ellipsized beside
+   the timer and controls; the native short-viewport HUD stays unchanged. */
+@media (min-width: 1024px) {
+  body:not(.integer-scale-2) #fight-hud { padding-top: 0; padding-bottom: 0; }
+  body:not(.integer-scale-2) .hud-toolbar { grid-template-columns: auto minmax(0, 1fr) auto; }
+  body:not(.integer-scale-2) #match-status {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    font-size: 14px;
+    line-height: 1.2;
+  }
+}
+
 .instructions { font-size: 13px; line-height: 1.7; }
 
 /* Remove the old page's ~20px overflow at the measured 1280x720 viewport. */
