@@ -120,6 +120,31 @@ test('draw names all tied players without announcing a winner', async ({ page })
   await expect(page.locator('#victory-reveal')).not.toContainText('WINNER:');
 });
 
+test('victory cue is emitted once for a match end and is not replayed by skip, reset or rematch start', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  await installResults(page, 'score-brawl', ['P1', 'P2', 'P3']);
+  const cueCounts = () => page.evaluate(() => {
+    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+    return scene.audioDiagnostics().cueCounts as Record<string, number>;
+  });
+  await expect.poll(async () => (await cueCounts()).victory).toBe(1);
+  expect(await cueCounts()).toMatchObject({ victory: 1, 'match-end': 1 });
+
+  await page.keyboard.press('a');
+  await expect(page.locator('#victory-reveal')).not.toHaveClass(/is-revealing/);
+  await page.evaluate(() => {
+    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+    scene.update(0, 0); // repeated presentation update of the same match end
+  });
+  expect(await cueCounts()).toMatchObject({ victory: 1, 'match-end': 1 });
+
+  await page.locator('#reset-match').click();
+  await expect(page.locator('#victory-reveal')).toBeHidden();
+  await page.keyboard.press('Enter'); // start a rematch; its new end has not happened
+  expect(await cueCounts()).toMatchObject({ victory: 1, 'match-end': 1 });
+});
+
 test('Last Man Standing carries knockout events across match ticks into the podium ranking', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#game canvas')).toBeVisible();
@@ -217,23 +242,43 @@ test('results screenshots fit all requested viewports with readable, non-clipped
     await page.screenshot({ path: path.join(outputDirectory, `${viewport.label}.png`) });
     const layout = await page.evaluate(() => {
       const panel = document.getElementById('victory-reveal')!;
+      const canvas = document.querySelector<HTMLCanvasElement>('#game canvas')!;
       const text = Array.from(panel.querySelectorAll<HTMLElement>('.victory-kicker, .victory-title, .victory-ties, .victory-place, .victory-rest, .victory-skip'));
       const rect = panel.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      const coveredHeight = Math.max(0, Math.min(rect.bottom, canvasRect.bottom) - Math.max(rect.top, canvasRect.top));
       return {
         panel: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
         sizes: text.map(element => Number.parseFloat(getComputedStyle(element).fontSize)),
         overflow: Array.from(panel.querySelectorAll<HTMLElement>('*'))
           .filter(element => !element.classList.contains('victory-burst') && element.scrollWidth > element.clientWidth + 1)
           .map(element => ({ className: element.className, scrollWidth: element.scrollWidth, clientWidth: element.clientWidth })),
+        verticalOverflow: panel.scrollHeight > panel.clientHeight + 1,
         viewportHeight: window.innerHeight,
+        visibleArenaRatio: (canvasRect.height - coveredHeight) / canvasRect.height,
         title: document.getElementById('victory-title')?.textContent,
         rest: document.getElementById('victory-rest')?.textContent,
+        requiredText: Array.from(panel.querySelectorAll<HTMLElement>('.victory-kicker, .victory-title, .victory-podium, .victory-rest, .victory-skip'))
+          .filter(element => getComputedStyle(element).display !== 'none' && element.getClientRects().length > 0)
+          .map(element => element.textContent?.trim() ?? ''),
       };
     });
     expect(layout.sizes.every(size => size >= 14)).toBe(true);
     expect(layout.overflow).toEqual([]);
+    expect(layout.verticalOverflow).toBe(false);
+    if (viewport.height <= 420) expect(layout.visibleArenaRatio).toBeGreaterThanOrEqual(1 / 3);
     expect(layout.panel.bottom).toBeLessThanOrEqual(layout.viewportHeight);
     expect(layout.title).toBe('P1');
     expect(layout.rest).toContain('8TH P8');
+    expect(layout.requiredText[0]).toBe('FINAL PLACES');
+    expect(layout.requiredText).toContain('P1');
+    expect(layout.requiredText.some(text => text.includes('P2') && text.includes('P3'))).toBe(true);
+    expect(layout.requiredText.some(text => text.includes('PLACES:') && text.includes('8TH P8'))).toBe(true);
+    expect(layout.requiredText.some(text => text.includes('PRESS ANY KEY'))).toBe(true);
+    if (viewport.height <= 420) console.log(`M9_RESULT_VISIBLE_ARENA_RATIO ${viewport.width}x${viewport.height}: ${layout.visibleArenaRatio}`);
   }
+  await page.setViewportSize({ width: 640, height: 360 });
+  await installResults(page, 'score-brawl');
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: path.join(outputDirectory, '640x360-native-capture.png') });
 });

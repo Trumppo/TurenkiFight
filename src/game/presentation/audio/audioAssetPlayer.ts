@@ -10,7 +10,13 @@ export function playAudioAsset(
   when = context.currentTime,
 ): void {
   if (asset.kind === 'synth') {
-    createSynthVoice(context, destination, asset.shape, track, when);
+    if (asset.notes?.length) {
+      for (const note of asset.notes) {
+        createSynthVoice(context, destination, { ...asset.shape, frequency: note.frequency }, track, when + note.offset);
+      }
+    } else {
+      createSynthVoice(context, destination, asset.shape, track, when);
+    }
     return;
   }
 

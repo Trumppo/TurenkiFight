@@ -10,7 +10,8 @@ import type { GameEvent, GameState } from '../src/game/simulation/types';
 
 class FakeParam {
   value = 1;
-  setValueAtTime(value: number): void { this.value = value; }
+  values: number[] = [];
+  setValueAtTime(value: number): void { this.value = value; this.values.push(value); }
   linearRampToValueAtTime(value: number): void { this.value = value; }
   exponentialRampToValueAtTime(value: number): void { this.value = value; }
   setTargetAtTime(value: number): void { this.value = value; }
@@ -60,7 +61,8 @@ class FakeAudioContext {
   destination = new FakeNode();
   nodes: FakeNode[] = [];
   closed = false;
-  async resume(): Promise<void> { this.state = 'running'; }
+  resumeCalls = 0;
+  async resume(): Promise<void> { this.resumeCalls++; this.state = 'running'; }
   async close(): Promise<void> { this.closed = true; this.state = 'closed'; }
   createGain(): GainNode { const node = new FakeGain(); this.nodes.push(node); return node as unknown as GainNode; }
   createOscillator(): OscillatorNode { const node = new FakeOscillator(); this.nodes.push(node); return node as unknown as OscillatorNode; }
@@ -83,7 +85,7 @@ function makeState(): GameState { return createState(['P1'], 'fighting'); }
 describe('audio cue bridge', () => {
   it('defines every cue as a non-silent generic placeholder', () => {
     expect(Object.keys(PLACEHOLDER_CUE_ASSETS).sort()).toEqual([
-      'confirm', 'hit', 'jump', 'kick', 'ko', 'land', 'join', 'match-end', 'match-start', 'respawn', 'time-warning',
+      'confirm', 'hit', 'jump', 'kick', 'ko', 'land', 'join', 'match-end', 'match-start', 'respawn', 'time-warning', 'victory',
     ].sort());
     for (const asset of Object.values(PLACEHOLDER_CUE_ASSETS)) {
       expect(asset.kind).toBe('synth');
@@ -141,6 +143,37 @@ describe('audio cue bridge', () => {
 });
 
 describe('audio director', () => {
+  it('plays a rising four-note victory phrase, distinct from the falling match-end cue', async () => {
+    const context = new FakeAudioContext();
+    const director = new AudioDirector({
+      contextFactory: () => context as unknown as AudioContext,
+      storage: null,
+      gestureTarget: null,
+      setIntervalFn: () => 1 as unknown as ReturnType<typeof setInterval>,
+      clearIntervalFn: () => undefined,
+    });
+    await director.unlock();
+    const before = context.sources().length;
+    director.playCue('victory');
+    const victorySources = context.sources().slice(before).filter(source => source instanceof FakeOscillator) as FakeOscillator[];
+    expect(victorySources).toHaveLength(4);
+    expect(victorySources.map(source => source.frequency.values[0])).toEqual([523.25, 659.25, 783.99, 1046.5]);
+    expect(victorySources.map(source => source.startAt)).toEqual([0.004, 0.109, 0.214, 0.319]);
+    expect(PLACEHOLDER_CUE_ASSETS.victory.kind).toBe('synth');
+    expect(PLACEHOLDER_CUE_ASSETS.victory).not.toEqual(PLACEHOLDER_CUE_ASSETS['match-end']);
+
+    const afterVictory = context.sources().length;
+    director.setMuted(true);
+    director.playCue('victory');
+    expect(context.sources()).toHaveLength(afterVictory);
+    director.setMuted(false);
+    context.state = 'suspended';
+    director.playCue('victory');
+    expect(context.sources()).toHaveLength(afterVictory);
+    expect(context.resumeCalls).toBe(1); // only the explicit unlock resumed it
+    director.dispose();
+  });
+
   it('plays a future sample-buffer asset through the same replaceable voice interface', () => {
     const context = new FakeAudioContext();
     const tracked: AudioScheduledSourceNode[] = [];
