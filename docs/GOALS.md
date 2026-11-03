@@ -132,6 +132,16 @@ Omistaja pyysi, että matsin lopussa olisi animaatio voiton kunniaksi: voittajan
 
 Työ jaetaan kahtia: `M9-RESULT-RANKING` (gameplay) tuottaa puhtaan sijoitusjärjestyksen joka muodolle — Score Brawl pisteet, Deathmatch fragit/kuolemat, Last Man Standing pudotusjärjestys Knockout-tapahtumista ilman simulaatiomuutosta — ja `M9-RESULT-CELEBRATION` (graphics) renderöi ison voittajanimen, pronssikolmikon, 4.–8. sijan tiiviinä listana, ohitettavan animaation ja reduced-motion-tuen. Tasapeli näytetään tasapelinä, ei keksittynä voittajana.
 
+### Tila 2026-11-03: voitonjuhla ja hahmot valmiit agentin osalta
+
+- `M9-RESULT-RANKING` (#140, `72f3214`), `M9-CHARACTERS` (#141, `5836bc5`), `M9-RESET-CONTROL` (#142, `b743392`) ja `M9-RESULT-CELEBRATION` (#143, `c359e82`) ovat yhdistetty. Omistaja hyväksyi #143:n yhdistämisen 2026-11-03.
+- Voitonjuhla näyttää voittajan nimen isolla pelaajan värillä, 2. ja 3. sijan mittareineen sekä 4.–8. sijan tiiviinä rivinä. Tasapeli näytetään `DRAW`-tekstinä sidottujen pelaajien kanssa. Paljastus on ohitettavissa ja kunnioittaa `prefers-reduced-motion`-asetusta; RESET ja Esc toimivat myös paljastuksen aikana.
+- Järjestys tulee simulaatiosta (`rankMatch`), ja Last Man Standing käyttää koko ottelun Knockout-virtaa. Simulaatioon, protokollaan, palvelimeen tai botteihin ei koskettu; kiinnitetyt sormenjäljet pysyivät ennallaan.
+- Riippumaton Tester antoi PASS WITH LIMITATIONS: täysi selainsarja 100/100, kohdetestit 11/11, ja mutaatiotesti osoitti LMS-kannan olevan ei-tyhjä. Avoin kosmeettinen löydös: kiinteä `PLACES 4–8` -otsikko, kirjattu tehtäväksi `M9-RESULT-LABEL`.
+- Omistaja pyysi 2026-11-03 pientä polishia. Työpaketti: `M9-KO-READABILITY` (KO-hahmo ei enää litisty väritäytöksi, osumavälähdys säilyttää siluetin) ja `M9-RESULT-LABEL`. Spec: [M9_READABILITY_POLISH.md](M9_READABILITY_POLISH.md).
+
+**Jäljellä vain omistajan päätökset:** (1) kolmen muodon playtest; (2) kahdeksan pelaajan playtest botteja vastaan; (3) viedäänkö kahdeksan pelaajaa verkkopeliin (vaatii kahden koneen mittauksen); (4) milestone-hyväksynnät.
+
 ### Tiedostorajaus ja omistus
 
 - Designer: `docs/GOALS.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/M2_*.md`, `docs/adr/**`, `.github/AGENT_TASKS.yaml`, `.opencode/agents/**`, `opencode.json`, `AGENTS.md`.

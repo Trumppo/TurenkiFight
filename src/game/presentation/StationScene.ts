@@ -56,6 +56,7 @@ export class StationScene extends Phaser.Scene {
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private fighterSprites = new Map<string, Phaser.GameObjects.Image>();
   private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
+  private koMarkers = new Map<string, Phaser.GameObjects.Text>();
   private domHud?: {
     timer: HTMLElement;
     status: HTMLElement;
@@ -428,6 +429,8 @@ export class StationScene extends Phaser.Scene {
       this.fighterSprites.delete(id);
       this.shadows.get(id)?.destroy();
       this.shadows.delete(id);
+      this.koMarkers.get(id)?.destroy();
+      this.koMarkers.delete(id);
       this.previous.delete(id);
       this.hitFlash.delete(id);
     }
@@ -435,6 +438,11 @@ export class StationScene extends Phaser.Scene {
       if (!this.fighterSprites.has(f.id)) {
         this.shadows.set(f.id, this.add.ellipse(0, 0, 22, 7, 0x283640, 0.55));
         this.fighterSprites.set(f.id, this.add.image(0, 0, fighterKey(f.id, 'idle', 0)).setOrigin(0.5, 1));
+        this.koMarkers.set(f.id, this.add.text(0, 0, f.id, {
+          fontFamily: 'monospace', fontSize: '8px', color: '#fff1b7',
+          backgroundColor: '#202a36', padding: { x: 2, y: 1 },
+          stroke: '#101820', strokeThickness: 1, align: 'center',
+        }).setOrigin(0.5, 1).setDepth(1_000_000));
       }
       const prev = this.previous.get(f.id);
       if (prev && f.health < prev.health) this.hitFlash.set(f.id, this.state.tick + 12);
@@ -444,15 +452,32 @@ export class StationScene extends Phaser.Scene {
       this.shadows.get(f.id)!.setPosition(x, y).setDepth(y - 0.2).setVisible(f.koTimer === 0);
       const sprite = this.fighterSprites.get(f.id)!;
       sprite.setTexture(fighterKey(f.id, pose, frame)).setPosition(x, y - Math.round(f.z)).setFlipX(f.facing < 0).setDepth(y);
-      // Retro-only high-contrast hit confirmation. Clear tint on the first non-hit frame
-      // so reused sprites never retain a flash after KO, respawn or a new match.
-      if (RETRO_PREVIEW && (this.hitFlash.get(f.id) ?? 0) > this.state.tick && this.state.tick % 6 < 3) {
-        sprite.setTintFill(0xffe3a0);
-      } else if (f.eliminated) {
-        sprite.setTintFill(0x4a5561).setAlpha(0.72);
+      // Keep one strong retro hit-pop frame in each six-tick cycle, then show the
+      // character's pixels on the remaining flash frames so the silhouette persists.
+      if (f.eliminated) {
+        // Multiply tint darkens a KO without hiding its outline, gear or uniform.
+        sprite.setTint(0x8995a0).setAlpha(0.92);
+      } else if (RETRO_PREVIEW && (this.hitFlash.get(f.id) ?? 0) > this.state.tick) {
+        if (this.state.tick % 6 === 0) sprite.setTintFill(0xffe3a0).setAlpha(1);
+        else sprite.setTint(0xffe3a0).setAlpha(1);
       } else {
         sprite.clearTint();
         sprite.setAlpha(1);
+      }
+      // A tiny monochrome player-ID badge sits just above the KO head for both
+      // temporary knockdown and elimination. The horizontal pose remains the
+      // primary down signal; the badge identifies the target in a crowded greyscale view.
+      const down = f.eliminated || f.koTimer > 0;
+      const marker = this.koMarkers.get(f.id)!;
+      marker.setVisible(down);
+      if (down) {
+        const playerNumber = Number(f.id.slice(1));
+        // KO drawings lie on the floor, with the head at a different vertical
+        // offset from the standing pose. Keep the badge tucked just above that head.
+        const koHeadOffset = [15, 15, 15, 15, 21, 22, 18, 19][playerNumber - 1] ?? 19;
+        // Float the marker over overlapping bodies so it stays attached/readable
+        // even when another fighter is standing in front of the downed player.
+        marker.setText(f.id).setPosition(x + 10 * (f.facing < 0 ? -1 : 1), y - Math.round(f.z) - koHeadOffset - 2);
       }
       this.previous.set(f.id, { x: f.x, y: f.y, health: f.health });
     }
@@ -661,7 +686,7 @@ export class StationScene extends Phaser.Scene {
     rest.textContent = '';
     const laterPlaces = entries.slice(3);
     if (this.state.fighters.length > 3 && laterPlaces.length) {
-      rest.textContent = `PLACES 4–8: ${laterPlaces.map(entry => `${this.ordinal(entry.rank)} ${entry.id}`).join('  ·  ')}`;
+      rest.textContent = `PLACES: ${laterPlaces.map(entry => `${this.ordinal(entry.rank)} ${entry.id}`).join('  ·  ')}`;
     }
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!reducedMotion) {
