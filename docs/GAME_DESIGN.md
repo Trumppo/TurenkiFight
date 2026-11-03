@@ -105,7 +105,7 @@ Lobby → countdown (3 s) → fight → time up → results → rematch or lobby
 
 ## Mode architecture
 
-Game mode rules are separate from fighter simulation. A `GameMode` implementation receives match-start, hit, knockout and tick events and decides scoring, respawns, end conditions and results. The initial implementation is `ScoreBrawlMode`; later implementations should not require changes to movement and combat simulation.
+Game mode rules are a typed rules object passed at match creation (`src/game/simulation/modes.ts`): `score-brawl`, `last-man-standing` and `deathmatch` are implemented. Rules decide scoring, respawns, end conditions and results; movement and combat simulation are shared. A full tie (HP, KOs, damage) ends as a draw, confirmed by the owner on 2026-11-03. Mode-specific snapshot fields are optional and omitted for Score Brawl ([ADR 0002](adr/0002-mode-fields.md)).
 
 ## Prototype acceptance criteria
 
@@ -130,4 +130,4 @@ Balance and usability requirements: short and obvious interaction range, clear h
 
 ## Open design questions
 
-Character roster and art pipeline; keyboard/controller mapping; friendly-fire/team variants; combat timing and frame data; accessibility; map collision boundaries; score tuning; actual maximum supported player count.
+Character roster and art pipeline; friendly-fire/team variants; combat timing and frame data; accessibility; map collision boundaries; score tuning. The supported maximum is decided: eight players (owner, 2026-11-03), implemented as one constant; whether eight is readable in play is still an open usability question.

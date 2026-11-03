@@ -1,4 +1,6 @@
 # Next engineering gates — current main, 2026-10-31
+> **Superseded 2026-11-03.** This forward-looking gate list predates the M2 transport decision and the M7/M8 work. Current state lives in [GOALS.md](GOALS.md), [ROADMAP.md](ROADMAP.md) and [ADR 0001](adr/0001-network-topology.md); keep this file only as history.
+
 
 This is a **forward-looking design proposal**, not a release acceptance or permission to merge. Baseline main at creation: `bb6058a` (PR #43). Avoid restoring the stale PR #40 task queue; main already has a newer, validated queue.
 

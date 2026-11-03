@@ -2,7 +2,7 @@
 
 TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting game with an 8-bit-inspired pixel-art aesthetic. Inspired by the energy of classic arcade fighters (including IK+), but with its own mechanics, art and identity.
 
-**Status (2026-11-01):** Playable M1 local four-player Score Brawl, accepted with limitations. M1.5 retro visuals are accepted with documented limitations, and transport-neutral M2 protocol/session foundations are implemented; online multiplayer is not yet available. See [roadmap](docs/ROADMAP.md).
+**Status (2026-11-03):** M1 and M1.5 are accepted with documented limitations. Three modes are playable locally and online (Score Brawl, Last Man Standing, Deathmatch), local bots can fill empty slots, the roster supports up to **eight** players, the Ravintola Mesku arena is available with `?arena=mesku`, and placeholder audio exists. An authoritative WebSocket prototype serves real matches over LAN or VPN; it has no TLS, authentication or rate limiting, and eight-player network load is not measured. See [roadmap](docs/ROADMAP.md) and [ADR 0001](docs/adr/0001-network-topology.md).
 
 ## Core vision
 
@@ -10,14 +10,14 @@ TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting 
 - Fixed arena camera: everyone sees the same battlefield.
 - 2.5D movement: X/Y ground-plane movement and Z jump height, rendered with depth-sorted 2D sprites.
 - First arena: **Turengin rautatieasema** (Turenki railway station), a stylized interpretation rather than a scale model.
-- First game mode: **Score Brawl** (pistepohjainen joukkotappelu).
-- Future game modes: Last Man Standing, Deathmatch, and others.
-- Configurable player count: **no hardcoded three-player or other permanent cap**. Start with four local players, then test 8+ across network; actual supported count depends on usability and measured performance.
+- Game modes: **Score Brawl**, **Last Man Standing** and **Deathmatch** are implemented; a full tie ends as a draw by owner decision.
+- Player count: **eight** is the supported maximum (owner decision 2026-11-03, one `MAX_PLAYERS` constant). Slots 1-4 have keyboard layouts; slots 5-8 are gamepad or bot slots. Eight fighters are supported but not reliably readable in the 640x360 arena during combat, which is a known limitation.
+- Arenas: Turengin rautatieasema (default) and Ravintola Mesku (`?arena=mesku`).
 - Browser-only client with keyboard and gamepad support.
 
 ## Planned distribution
 
-The static client is built and published through **GitHub Pages**. Online transport and room hosting are not implemented; WebSocket and WebRTC approaches remain candidates for measured experiments. Fully offline LAN will require locally serving the client and whichever backend/signaling components the selected design needs.
+The static client is built and published through **GitHub Pages**. The transport is decided: a central authoritative WebSocket server ([ADR 0001](docs/adr/0001-network-topology.md)). A prototype match server, an online browser client and headless bots exist; there is no TLS, authentication, rate limiting or TURN, and no real network measurement has been performed, so treat online play as LAN/VPN-only.
 
 ## Run locally
 
@@ -30,7 +30,7 @@ Open the local URL printed by Vite. To check changes, run `npm test`, `npm run b
 
 ## Serve a real authoritative match (LAN or VPN only)
 
-`npm run serve:match` hosts one real match over WebSocket for up to four players. It reuses the authoritative session and envelope gateway; it is not the benchmark fixture runner and writes no manifest.
+`npm run serve:match` hosts one real match over WebSocket for up to eight players. It reuses the authoritative session and envelope gateway; it is not the benchmark fixture runner and writes no manifest. Add `--mode=score-brawl|last-man-standing|deathmatch` to choose the mode.
 
 ```bash
 npm run serve:match -- --host=127.0.0.1 --port=8787 --players=4 --snapshot-hz=20

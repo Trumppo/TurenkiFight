@@ -1,10 +1,10 @@
 # TurenkiFight – Prototype Roadmap v0.4
 
-**Updated:** 2026-11-02. Milestones, not calendar commitments. **Milestone 5 gate changed by the owner on 2026-11-02:** the transport decision is based on a literature review plus single-machine measurements; LAN/internet/TURN runs are no longer required and were never performed. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
+**Updated:** 2026-11-03. Milestones, not calendar commitments. **Milestone 5 gate changed by the owner on 2026-11-02:** the transport decision is based on a literature review plus single-machine measurements; LAN/internet/TURN runs are no longer required and were never performed. See [next engineering gates](M2_NEXT_GATES_2026-10-31.md).
 
 **Network architecture decision: DECIDED (2026-11-02) — central authoritative WebSocket server.** The owner approved [ADR 0001](adr/0001-network-topology.md) on the basis of a documented source review plus single-machine measurements; no network measurement was performed. Architecture B remains in the repository as an evaluated alternative and WebTransport is the leading reconsideration candidate. See the [benchmark plan](NETWORK_BENCHMARK_PLAN.md).
 
-> **Current main checkpoint (2026-11-02, `main` at `09834c7`):** M1 and M1.5 accepted with documented limitations. M2 is implemented at the transport-neutral level: v1 protocol and authorized ingress (#41, #43), owner-approved session envelope with its implementation (#92, #94), executable benchmark scenarios (#97), and independent Tester gates on every slice. Both architecture prototypes exist and are correctness-tested: central WebSocket authority (#98, `server/ws/**`) and browser-host WebRTC with a signaling relay (#100, `server/signaling/**`, `src/game/networking/**`). **No transport is selected and no performance number exists** — every manifest field is `NOT_MEASURED`. Both architectures now complete 7200-tick runs with identical final-state and ordered-event fingerprints (`de544fcd…` / `5bb44bd6…`, 47 events) under the same fixture and seed; that is correctness evidence, not a measurement. PR #25 was closed unmerged and its content was integrated through #41/#43.
+> **Current main checkpoint (2026-11-03, `main` at `6181e78`):** M1 and M1.5 accepted with documented limitations. M2 foundations, the session envelope and the benchmark harness are implemented and independently tested. The transport is **decided: central authoritative WebSocket** ([ADR 0001](adr/0001-network-topology.md)) on literature plus single-machine measurements; **no network was measured** and every network field stays `NOT_MEASURED`. Three modes (Score Brawl, Last Man Standing, Deathmatch) are playable locally and online; local bots can fill slots; the supported maximum is eight players as one constant; Ravintola Mesku is an opt-in arena; placeholder audio exists. A match server, an online browser client and headless bots merged, but there is no TLS, authentication or rate limiting, and eight-player network load is unmeasured. PR #25 was closed unmerged and integrated through #41/#43.
 
 ## Milestone 0 – Project foundations
 
@@ -89,11 +89,12 @@
 - [x] Write `docs/adr/0001-network-topology.md` with sources, measurements, weighting, open risks and reconsideration criteria — **decided: architecture A, central WebSocket authority**
 - [x] State explicitly in the ADR that no network environment was measured
 - [x] Owner approved the selection on 2026-11-02
-- [ ] Publish the summary alongside the committed local results
+- [x] Publish the committed local results under `benchmarks/results/` (PR #107)
 
 **Exit:** a documented, traceable choice approved by the owner; no predetermined winner. Network behaviour that was not measured is recorded as a risk, not as evidence. See [benchmark plan](NETWORK_BENCHMARK_PLAN.md) and [ADR 0001](adr/0001-network-topology.md).
 
 ## Milestone 6 – Multiplayer productization
+**Status: PARTIALLY IMPLEMENTED (prototype).** Interpolation and an online browser client exist; prediction, security controls, LAN hosting documentation and eight-player network measurement remain open.
 
 - [ ] Harden selected architecture and room/join workflow
 - [ ] Add client prediction, interpolation and reconciliation as needed
@@ -106,23 +107,23 @@
 
 ## Milestone 7 – Polish and future modes
 
-**Status: ACTIVE (owner selection 2026-11-02).** Scope for this goal is the deferred M1.5 readability work plus the arena decision; simulation, determinism and gameplay rules stay unchanged.
+**Status: COMPLETE on the agent side (2026-11-03), awaiting owner playtest of the modes.** VIS-05 work, the arena, placeholder audio and the three game modes are delivered; the online test harness exists except for measured network runs, which need two machines.
 
 - [x] VIS05-02 / VIS05-03: measured (`docs/visual/M1_5_VIS_05_REVIEW_2026-11-02.md`), fixed with an integer 2× option and a responsive external HUD (PR #112), Tester re-checked, **owner accepted visually on 2026-11-02**
 - [x] Arena: **Ravintola Mesku accepted visually by the owner on 2026-11-02** (PR #118); typed presentation-only manifests with the station as default and Mesku via `?arena=mesku`, station screenshots byte-identical
-- [ ] Online test harness so a remote agent and this machine can play the same real match: server mode, headless bot, served browser client, network metrics ([plan](M7_ONLINE_TEST_HARNESS.md))
+- [x] Online test harness pieces: real-match server (#111), headless bots (#113), served browser client (#114), online mode fields (#135); **network metrics still need two machines** ([plan](M7_ONLINE_TEST_HARNESS.md))
 - [x] Sound technology and placeholder cues: looping chiptune, all 11 cues, mute and volume persistence, gesture unlock (PR #117). Real samples and mixing remain deferred at the owner's request (`M7-AUDIO-MIX`)
 - [x] Add Last Man Standing and Deathmatch as independent modes — rules (#121), UI (#122), online mode fields (#124, #135), independent QA (#136); see [game modes spec](M7_GAME_MODES.md)
 - [ ] Revisit dedicated hosting and rollback only if measurements justify them
 
 ## Milestone 8 - Bots and eight-player matches
 
-**Status: ACTIVE (owner request 2026-11-02).** A single player should be able to fill empty slots with bots and run a full eight-player round against the computer, first as a readability and load test.
+**Status: COMPLETE on the agent side (2026-11-03), awaiting the owner's playtest verdict.** Bots, the eight-player cap and the eight-slot UI are merged and independently QA'd; eight fighters are supported but **not reliably readable during combat**, which is recorded rather than hidden.
 
-- [ ] Local bot opponents with a deterministic, seeded policy and lobby selection
-- [ ] Raise the roster cap to eight across codecs, session and server without changing four-player bytes
-- [ ] Eight-slot lobby and HUD, and an honest report on whether eight fighters are readable in the arena
-- [ ] Independent QA of determinism, termination and readability
+- [x] Local bot opponents with a deterministic, seeded policy and lobby selection (#127)
+- [x] Raise the roster cap to eight across codecs, session and server without changing four-player bytes (#128)
+- [x] Eight-slot lobby and HUD, with an honest readability report: **not reliably readable during combat** (#129)
+- [x] Independent QA of determinism, termination and readability (#130); QA follow-ups fixed (#132, #133)
 - [ ] Owner playtest: is eight-player versus bots playable?
 
 **Exit:** the owner can start an eight-player match alone against bots and decide whether it is worth keeping. See [bots and eight players](M8_BOTS_AND_EIGHT_PLAYERS.md).

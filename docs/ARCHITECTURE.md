@@ -1,5 +1,7 @@
 # TurenkiFight – Technical Architecture v0.5
 
+**Updated:** 2026-11-03 (player limit, modes, bots, audio, online prototype).
+
 **Date:** 2026-11-01
 **Status:** Partially implemented. The client, deterministic simulation, transport-neutral protocol v1 and in-memory authorized session ingress exist; **network transport and authority placement are undecided pending comparative tests**. See [NETWORK_BENCHMARK_PLAN.md](NETWORK_BENCHMARK_PLAN.md), [M2_INPUT_PROTOCOL.md](M2_INPUT_PROTOCOL.md) and [M2_SESSION_ENVELOPE_V1.md](M2_SESSION_ENVELOPE_V1.md).
 
@@ -83,7 +85,7 @@ Simulation owns the truth of positions, health, scores and match state. Presenta
 
 ## Implemented wire contracts
 
-Gameplay payloads use the canonical v1 codecs in `src/game/protocol/` and are documented in [M2_INPUT_PROTOCOL.md](M2_INPUT_PROTOCOL.md): versioned `InputFrame`, `StateSnapshot` and `EventBatch`, with strict validation, byte caps, diagnostic FNV fingerprints and bounded replay verification. Transport-level concerns (session/envelope identity, sequence, target tick, room binding) are a **separate layer** and remain a proposal; do not add a competing gameplay codec. Versioned schemas, message-size limits and explicit disconnect handling remain mandatory, and large full snapshots at 60 Hz must be measured before being adopted.
+Gameplay payloads use the canonical v1 codecs in `src/game/protocol/` and are documented in [M2_INPUT_PROTOCOL.md](M2_INPUT_PROTOCOL.md): versioned `InputFrame`, `StateSnapshot` and `EventBatch`, with strict validation, byte caps, diagnostic FNV fingerprints and bounded replay verification. Transport-level concerns (session/envelope identity, sequence, target tick, room binding) live in `src/game/session/**`; the contract is owner-approved and implemented, including a trusted gateway that binds connection identity outside the payload. Snapshot mode fields are optional and canonically omitted for Score Brawl ([ADR 0002](adr/0002-mode-fields.md)); do not add a competing gameplay codec. Versioned schemas, message-size limits and explicit disconnect handling remain mandatory, and large full snapshots at 60 Hz must be measured before being adopted.
 
 ## Deployment and security
 
@@ -97,3 +99,27 @@ Gameplay payloads use the canonical v1 codecs in `src/game/protocol/` and are do
 ## Non-goals for initial slice
 
 Accounts, rankings, matchmaking, persistent profiles, microservices, database, anti-cheat beyond basic host validation, production-scale hosting, automatic host migration and generalized rollback for many peers.
+
+## Game modes, bots and player count
+
+- Modes are a typed rules object passed at match creation (`src/game/simulation/modes.ts`): `score-brawl`,
+  `last-man-standing`, `deathmatch`. The simulation loop reads the rules; there is no per-tick mode branching
+  scattered through the code. Score Brawl omits mode fields entirely so its snapshots stay byte-identical.
+- A full tie (HP, KOs and damage equal) ends as a draw by owner decision (2026-11-03).
+- The supported maximum is **eight players**, defined once as `MAX_PLAYERS` in
+  `src/game/protocol/players.ts`; codecs, session, server and WS client derive from it and reject nine or more.
+  A schema-valid eight-fighter snapshot is 83,373 bytes, so the snapshot byte cap is 131,072; measured
+  eight-player snapshots are about 2.3 kB in normal play.
+- Local bots are a pure, seeded input policy (`src/game/input/botPolicy.ts`) that reads only state, player id and
+  seed. Bots are ordinary input producers, so scoring, KOs, respawns and elimination go through unchanged rules.
+- Audio is presentation-only: procedural placeholder cues and a looping chiptune driven by an event cue bridge
+  (`src/game/presentation/audio/`), with a gesture unlock and persisted mute/volume. No audio path may call
+  `step()`.
+
+## Online prototype
+
+`server/ws/**` serves authoritative matches; `online.html` / `src/online.ts` render interpolated snapshots with no
+prediction and show connection state, RTT and a snapshot counter. The WebRTC browser-host prototype
+(`src/game/networking/webrtcHostSession.ts`, `server/signaling/**`) remains in the repository as an evaluated
+alternative. None of this is production-hardened: no TLS, authentication, rate limiting, reconnect token or host
+migration, and real network behaviour is unmeasured.
