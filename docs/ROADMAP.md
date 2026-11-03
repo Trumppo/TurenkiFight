@@ -128,6 +128,19 @@
 
 **Exit:** the owner can start an eight-player match alone against bots and decide whether it is worth keeping. See [bots and eight players](M8_BOTS_AND_EIGHT_PLAYERS.md).
 
+## Milestone 9 - Results celebration and presentation polish
+
+**Status: IMPLEMENTED, AWAITING INDEPENDENT GATE AND OWNER REVIEW (2026-11-03).** The owner asked for a victory celebration when a match ends: the winner's name large, then the next two places when more than three players took part.
+
+- [x] Pure per-mode ranking for the results screen, including draw detection and Last Man Standing elimination order derived from `Knockout` events without touching simulation state (#140)
+- [x] Ranked podium reveal on the local results screen: winner name large in the player colour, 2nd/3rd with their metric, 4th-8th compactly, skippable, reduced-motion aware, RESET still works (#143)
+- [x] Original P5-P8 fighter silhouettes so eight-player rosters are not recolours (#141)
+- [x] RESET button and `Esc` without a page reload, plus online LEAVE (#142)
+- [ ] Independent Tester gate on #143
+- [ ] Owner review and merge decision
+
+**Known limits:** eight fighters remain hard to tell apart in a tight crowd; the celebration is local-only, because online snapshots carry no elimination order; the celebration panel covers the middle of the frozen arena. See [results celebration](M9_RESULTS_CELEBRATION.md).
+
 ## Definition of done
 
 Each milestone needs a reproducible build, test evidence, known limitations and links to measured results. A checked item indicates work committed, **not necessarily independently validated**.
