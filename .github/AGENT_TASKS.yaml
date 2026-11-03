@@ -1109,7 +1109,8 @@ tasks:
   - id: M9-RESULT-RANKING
     title: Provide a pure per-mode match ranking helper for results presentation
     assigned_role: gameplay-session
-    status: ready
+    session_id: 140-session
+    status: done
     priority: P1
     specification: docs/M9_RESULTS_CELEBRATION.md
     depends_on: [M7-MODE-RULES]
@@ -1122,12 +1123,48 @@ tasks:
       - "A full tie is reported as a draw, never as an invented winner"
       - "Ranking is deterministic for identical states and events, and covered by unit tests for all three modes plus draw cases"
       - npm test, npm run build and git diff --check pass
+    notes: "PR #140 merged as 72f3214 after independent Tester PASS: per-mode ranking, reverse elimination order from Knockout events, draw detection; 375/375 tests and unchanged fingerprints."
+    last_updated: "2026-11-03"
     notes: "Owner requested a victory celebration on 2026-11-03. This slice only supplies ranking data; rendering is M9-RESULT-CELEBRATION."
+
+  - id: M9-CHARACTERS
+    title: Replace recoloured slot 5-8 fighters with original silhouettes
+    assigned_role: graphics-session
+    status: done
+    priority: P1
+    specification: docs/M9_RESULTS_CELEBRATION.md
+    depends_on: []
+    scope: [src/game/presentation/, tests/browser/]
+    acceptance:
+      - "P1-P4 textures byte-identical to main in classic and retro"
+      - "P5-P8 have distinct silhouettes and all ten poses x four frames"
+      - Browser roster test and CI pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/141
+    last_updated: "2026-11-03"
+    notes: "PR #141 merged as 5836bc5 after independent Tester PASS: P1-P4 hashes unchanged, P5-P8 distinct masks, 89 browser tests passed. Crowded eight-player readability remains a known limitation."
+
+  - id: M9-RESET-CONTROL
+    title: Add a reset control and online leave without page reload
+    assigned_role: gameplay-session
+    status: done
+    priority: P1
+    specification: docs/M9_RESULTS_CELEBRATION.md
+    depends_on: []
+    scope: [src/game/presentation/, src/online.ts, src/game/networking/, index.html, online.html, src/style.css, tests/browser/]
+    acceptance:
+      - "RESET returns to lobby keeping roster and mode, with zeroed scores, HP and timer"
+      - "RESET in lobby clears bots and non-P1 slots; Esc is equivalent"
+      - "Online LEAVE closes the socket and returns to the join form without navigation"
+      - Browser tests and CI pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/142
+    last_updated: "2026-11-03"
+    notes: "PR #142 merged as b743392 after independent Tester PASS: 4/4 reset spec, 92 browser tests passed, no timers left behind, online leave leaves the server at zero connections."
 
   - id: M9-RESULT-CELEBRATION
     title: Animate the winner reveal and top-three podium on the results screen
     assigned_role: graphics-session
-    status: backlog
+    session_id: 143-session
+    status: in_progress
     priority: P1
     specification: docs/M9_RESULTS_CELEBRATION.md
     depends_on: [M9-RESULT-RANKING]
@@ -1143,6 +1180,8 @@ tasks:
       - "Existing results information (reason, score/frag table, rematch hint) stays available"
       - "Text is at least 14 CSS px, no ellipsis, and layout works at 640x360, 1280x720, 1920x1080 and 390x844"
       - Full browser suite and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/143
+    last_updated: "2026-11-03"
     notes: "Presentation only. No simulation, protocol, server or bot changes; pinned fingerprints must stay identical."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
