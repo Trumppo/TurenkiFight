@@ -164,6 +164,15 @@ export class OnlineMatchController {
   get ownedPlayerIds(): readonly string[] { return this.session?.client.ownedPlayerIds ?? []; }
   get isRunning(): boolean { return this.running; }
 
+  /**
+   * Latest authoritative state exactly as received; null before the first
+   * snapshot. This is a read-only diagnostics view: `renderState()` remains the
+   * presentation path, and no caller may step or mutate this state.
+   */
+  latestState(): GameState | null {
+    return this.snapshots[this.snapshots.length - 1]?.snapshot.state ?? null;
+  }
+
   now(): number {
     return this.clock();
   }

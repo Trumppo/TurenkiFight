@@ -128,8 +128,8 @@ export class OnlineScene extends Phaser.Scene {
     this.renderHud(state);
   }
 
-  /** Test/debug hook; returns the interpolated positions actually drawn. */
-  debugFighters(): Array<{ id: string; x: number; y: number; z: number; facing: number; pose: string }> {
+  /** Test/debug hook; returns the interpolated positions and pose actually drawn. */
+  debugFighters(): Array<{ id: string; x: number; y: number; z: number; facing: number; pose: string; alpha: number }> {
     return Array.from(this.poses.entries()).map(([id, pose]) => {
       const sprite = this.fighterSprites.get(id);
       return {
@@ -139,6 +139,7 @@ export class OnlineScene extends Phaser.Scene {
         z: 0,
         facing: sprite?.flipX ? -1 : 1,
         pose,
+        alpha: sprite?.alpha ?? 1,
       };
     });
   }
@@ -267,11 +268,16 @@ export class OnlineScene extends Phaser.Scene {
         healthText = status;
         label = `${id}, stock ${stocks}, ${status.toLowerCase()}`;
       } else if (state?.mode === 'deathmatch') {
-        const frags = fighter.frags ?? 0;
-        const deaths = fighter.deaths ?? 0;
-        scoreText = `FRAGS ${frags}`;
-        healthText = `DEATHS ${deaths}`;
-        label = `${id}, ${frags} frags, ${deaths} deaths, health ${Math.max(0, Math.min(100, fighter.health))}`;
+        // Deathmatch always carries frags/deaths on the wire. If a snapshot is
+        // missing one (a non-conforming producer), say so instead of inventing
+        // a zero the server never measured.
+        const frags = fighter.frags;
+        const deaths = fighter.deaths;
+        scoreText = frags === undefined ? 'FRAGS —' : `FRAGS ${frags}`;
+        healthText = deaths === undefined ? 'DEATHS —' : `DEATHS ${deaths}`;
+        const fragsLabel = frags === undefined ? 'frags not measured' : `${frags} frags`;
+        const deathsLabel = deaths === undefined ? 'deaths not measured' : `${deaths} deaths`;
+        label = `${id}, ${fragsLabel}, ${deathsLabel}, health ${Math.max(0, Math.min(100, fighter.health))}`;
       } else {
         scoreText = String(fighter.score);
         healthText = `HP ${Math.max(0, Math.min(100, fighter.health))}`;

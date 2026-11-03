@@ -198,12 +198,44 @@ if (import.meta.env.DEV) {
     get snapshotCount(): number { return controller.snapshotCount; },
     get rttMs(): number | null { return controller.rttMs; },
     get tick(): number { return controller.latestTick; },
-    renderedFighters(): Array<{ id: string; x: number; y: number }> {
+    latestSnapshot(): {
+      mode?: GameState['mode'];
+      tick: number;
+      phase: GameState['phase'];
+      remainingTicks: number;
+      fighters: Array<{
+        id: string; x: number; y: number; facing: number; health: number; score: number;
+        frags?: number; deaths?: number; eliminated?: boolean;
+      }>;
+    } | null {
+      const state = controller.latestState();
+      if (!state) return null;
+      return {
+        ...(state.mode === undefined ? {} : { mode: state.mode }),
+        tick: state.tick,
+        phase: state.phase,
+        remainingTicks: state.remainingTicks,
+        fighters: state.fighters.map(fighter => ({
+          id: fighter.id,
+          x: fighter.x,
+          y: fighter.y,
+          facing: fighter.facing,
+          health: fighter.health,
+          score: fighter.score,
+          ...(fighter.frags === undefined ? {} : { frags: fighter.frags }),
+          ...(fighter.deaths === undefined ? {} : { deaths: fighter.deaths }),
+          ...(fighter.eliminated === true ? { eliminated: true } : {}),
+        })),
+      };
+    },
+    renderedFighters(): Array<{ id: string; x: number; y: number; pose: string; alpha: number }> {
       const scene = game.scene.getScene('OnlineScene') as OnlineScene | null;
       return (scene?.debugFighters() ?? []).map(fighter => ({
         id: fighter.id,
         x: fighter.x,
         y: fighter.y,
+        pose: fighter.pose,
+        alpha: fighter.alpha,
       }));
     },
     statusText(): string { return statusEl.textContent ?? ''; },
