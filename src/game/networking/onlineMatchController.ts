@@ -378,6 +378,11 @@ export class OnlineMatchController {
   disconnect(): void {
     const hadSession = this.session !== null;
     this.disconnecting = true;
+    // Supersede every pending handler before closing: a late join result,
+    // snapshot or pong from the closing socket must not revive a client the
+    // user has explicitly left.
+    this.attemptToken += 1;
+    this.terminal = true;
     this.stopTimers();
     this.running = false;
     this.joined = false;
@@ -390,11 +395,21 @@ export class OnlineMatchController {
         // The socket may already be closed.
       }
       try {
-        session.close(1000, 'page unload');
+        session.close(1000, 'client leave');
       } catch {
         // The socket may already be closed.
       }
     }
+    // Leaving also drops the received view: nothing may keep presenting the
+    // departed match's mode, timer, scores or RTT as if the link were live.
+    this.snapshots = [];
+    this.snapshotCountValue = 0;
+    this.lastSnapshotAt = null;
+    this.rttSamples = [];
+    this.pingSends.clear();
+    this.matchStartValue = null;
+    this.matchStartedAt = null;
+    this.nextTick = 0;
     if (hadSession && this.statusValue.state !== 'error' && this.statusValue.state !== 'ended') {
       this.setStatus('closed', 'Disconnected from the match server.');
     }

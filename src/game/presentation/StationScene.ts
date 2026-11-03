@@ -22,6 +22,13 @@ const MODE_NAMES: Record<ModeId, string> = {
   deathmatch: 'Deathmatch',
 };
 
+/**
+ * The reset control has two deliberately different outcomes, so the accessible
+ * label states both instead of only naming the button.
+ */
+const RESET_LABEL = 'Reset (Esc). In a match, countdown or results: return to the lobby and keep the '
+  + 'players and mode. In the lobby: remove bots and joined players, leaving only P1. The mode is kept.';
+
 function resultReason(state: GameState): EndReason | 'draw' {
   const event = [...state.events].reverse().find(item => item.type === 'MatchEnded');
   if (event?.reason) return event.reason;
@@ -50,6 +57,7 @@ export class StationScene extends Phaser.Scene {
     timer: HTMLElement;
     status: HTMLElement;
     modeSelect: HTMLSelectElement;
+    resetButton?: HTMLButtonElement;
     playerList: HTMLElement;
     players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; action: HTMLButtonElement }>;
   };
@@ -67,6 +75,7 @@ export class StationScene extends Phaser.Scene {
   private static readonly BOT_SEED = 0x5eed;
   private lastBotAdd = false;
   private lastBotRemove = false;
+  private lastResetKey = false;
   private lastStart = false;
   private lastPadStart = new Map<number, boolean>();
   private lastKeyboardJoin = false;
@@ -130,7 +139,7 @@ export class StationScene extends Phaser.Scene {
       this.audio = undefined;
     });
     this.cursors = this.input.keyboard!.createCursorKeys();
-    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,B,V,SPACE,ENTER,SHIFT') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,B,V,SPACE,ENTER,SHIFT,ESC') as Record<string, Phaser.Input.Keyboard.Key>;
     this.drawFighters();
   }
 
@@ -147,6 +156,12 @@ export class StationScene extends Phaser.Scene {
     }
     for (const index of this.lastPadStart.keys()) if (!connected.has(index)) this.lastPadStart.delete(index);
     for (const index of this.lastJoinButtons.keys()) if (!connected.has(index)) this.lastJoinButtons.delete(index);
+    // Explicit reset (Esc / HUD button). It runs before the other edge-triggered
+    // actions and re-arms their "already handled" flags, so a held Start, Join
+    // or bot key cannot immediately re-apply the action the reset just undid.
+    const resetKey = this.keys.ESC.isDown;
+    if (resetKey && !this.lastResetKey) this.resetLocal();
+    this.lastResetKey = resetKey;
     // The host occupies P1; every additional player must explicitly join.
     const keyboardJoin = this.keys.SHIFT.isDown;
     if (this.state.phase === 'lobby' && keyboardJoin && !this.lastKeyboardJoin && !this.state.fighters.some(f => f.id === 'P2') && ![...this.gamepadSlots.values()].includes('P2')) {
@@ -225,6 +240,56 @@ export class StationScene extends Phaser.Scene {
       }
     }
     this.observeAudio(this.state);
+    this.drawFighters();
+  }
+
+  /**
+   * True when reset would change something: every non-lobby phase, and a lobby
+   * that has more than the host in it. The HUD button is disabled otherwise.
+   */
+  private canResetLocal(): boolean {
+    return this.state.phase !== 'lobby' || this.state.fighters.length > 1;
+  }
+
+  /**
+   * Return to the lobby without reloading the page.
+   *
+   * - From countdown/fighting/results the roster (humans and bots) and the
+   *   selected mode are kept, while the match state itself is recreated: tick,
+   *   timer, scores, health, events and the results summary all start fresh.
+   * - In the lobby, bots and joined non-host slots are cleared, leaving a
+   *   P1-only lobby; the selected mode stays.
+   *
+   * Presentation state is reset with the simulation state so a finished match
+   * cannot animate, flash or report scores into the new lobby.
+   */
+  private resetLocal(): void {
+    if (!this.canResetLocal()) return;
+    const clearingLobby = this.state.phase === 'lobby';
+    const ids = clearingLobby ? ['P1'] : this.state.fighters.map(fighter => fighter.id);
+    if (clearingLobby) {
+      this.botSlots.clear();
+      this.gamepadSlots.clear();
+      this.reclaimableGamepadSlots.clear();
+      this.lastPadStart.clear();
+      this.lastJoinButtons.clear();
+    }
+    this.state = createState(ids, 'lobby', { mode: this.selectedMode });
+    this.lastResult = undefined;
+    this.elapsedMs = 0;
+    this.previous.clear();
+    this.hitFlash.clear();
+    // Clear the cue bridge's seen events and previous frame: the results cue
+    // and the results music duck must not carry over into the fresh lobby.
+    this.audioBridge?.reset();
+    this.audio?.director.setMusicDucked(false);
+    // Consume whatever is physically held right now, so the reset does not
+    // hand a held key to the lobby action it was just used for.
+    const down = (key: string): boolean => this.keys?.[key]?.isDown ?? false;
+    this.lastStart = down('ENTER');
+    this.lastKeyboardJoin = down('SHIFT');
+    this.lastBotAdd = down('B');
+    this.lastBotRemove = down('V');
     this.drawFighters();
   }
 
@@ -355,6 +420,7 @@ export class StationScene extends Phaser.Scene {
     const timer = document.getElementById('match-timer');
     const status = document.getElementById('match-status');
     const modeSelect = document.getElementById('game-mode') as HTMLSelectElement | null;
+    const resetButton = document.getElementById('reset-match') as HTMLButtonElement | null;
     const playerList = document.getElementById('player-hud');
     if (!timer || !status || !modeSelect || !playerList) return;
     const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; action: HTMLButtonElement }>();
@@ -381,7 +447,18 @@ export class StationScene extends Phaser.Scene {
       this.state = createState(this.state.fighters.map(f => f.id), 'lobby', { mode: this.selectedMode });
       this.drawFighters();
     });
-    this.domHud = { timer, status, modeSelect, playerList, players };
+    if (resetButton) {
+      // The label spells out both behaviours so the lobby case is not a surprise.
+      resetButton.setAttribute('aria-label', RESET_LABEL);
+      resetButton.title = RESET_LABEL;
+      resetButton.addEventListener('click', () => {
+        this.resetLocal();
+        // Hand focus back to the page: otherwise Enter/Space would keep
+        // activating this button instead of the lobby's next action.
+        resetButton.blur();
+      });
+    }
+    this.domHud = { timer, status, modeSelect, resetButton: resetButton ?? undefined, playerList, players };
     this.renderDomHud();
   }
 
@@ -397,6 +474,10 @@ export class StationScene extends Phaser.Scene {
     if (hud.timer.textContent !== timerText) hud.timer.textContent = timerText;
     hud.modeSelect.value = this.selectedMode;
     hud.modeSelect.disabled = this.state.phase !== 'lobby';
+    if (hud.resetButton) {
+      const resetEnabled = this.canResetLocal();
+      if (hud.resetButton.disabled !== !resetEnabled) hud.resetButton.disabled = !resetEnabled;
+    }
     hud.playerList.classList.toggle('mode-specific', this.state.mode === 'last-man-standing' || this.state.mode === 'deathmatch');
     for (const [id, nodes] of hud.players) {
       const fighter = this.state.fighters.find(f => f.id === id);
