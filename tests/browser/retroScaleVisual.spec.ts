@@ -239,6 +239,60 @@ for (const size of [
 }
 
 for (const size of [
+  { name: '1920x1080', width: 1920, height: 1080 },
+  { name: 'mobile', width: 390, height: 844 },
+]) {
+  test(`VIS-05 full eight-player status is visible at ${size.name}`, async ({ page }) => {
+    test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
+    await page.setViewportSize({ width: size.width, height: size.height });
+    await page.goto('/');
+    await page.locator('#game canvas').waitFor({ state: 'visible' });
+    const ids = Array.from({ length: 8 }, (_, index) => `P${index + 1}`);
+    const state = createState({ ids, phase: 'fighting', mode: 'score-brawl' });
+    state.fighters.forEach(fighter => { fighter.koTimer = 30; });
+    await page.evaluate(state => {
+      const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+      scene.selectedMode = 'score-brawl';
+      scene.botSlots = new Set(state.fighters.slice(1).map((fighter: { id: string }) => fighter.id));
+      scene.state = state;
+      scene.drawFighters();
+      if (scene.sys.isActive()) scene.sys.pause();
+    }, state);
+    const status = page.locator('#match-status');
+    await expect(status).toContainText('P8 KO');
+    const metrics = await page.evaluate(() => {
+      const status = document.querySelector<HTMLElement>('#match-status')!;
+      const canvas = document.querySelector('#game canvas')!.getBoundingClientRect();
+      const hud = document.querySelector('#fight-hud')!.getBoundingClientRect();
+      return {
+        text: status.textContent,
+        fullText: status.getAttribute('aria-label'),
+        clientWidth: status.clientWidth,
+        scrollWidth: status.scrollWidth,
+        clientHeight: status.clientHeight,
+        scrollHeight: status.scrollHeight,
+        fontSize: Number.parseFloat(getComputedStyle(status).fontSize),
+        hudBottom: hud.bottom,
+        canvasTop: canvas.top,
+        scoreboardBottom: canvas.top + canvas.height * 35 / 216,
+      };
+    });
+    console.log(`VIS-05 status ${size.name}: ${JSON.stringify(metrics)}`);
+    expect(metrics.text).toBe(metrics.fullText);
+    expect(metrics.scrollWidth, 'Status must not be clipped horizontally').toBeLessThanOrEqual(metrics.clientWidth);
+    expect(metrics.scrollHeight, 'Status must not be clipped vertically').toBeLessThanOrEqual(metrics.clientHeight);
+    expect(metrics.fontSize).toBeGreaterThanOrEqual(14);
+    if (size.name === 'mobile') {
+      expect(metrics.hudBottom, 'Mobile HUD remains above the combat plane').toBeLessThanOrEqual(metrics.canvasTop);
+    } else {
+      expect(metrics.hudBottom, 'Desktop HUD remains inside the reserved scoreboard band').toBeLessThanOrEqual(metrics.scoreboardBottom + 1);
+    }
+    mkdirSync('artifacts/visual', { recursive: true });
+    await page.screenshot({ path: `artifacts/visual/vis-05-status-${size.name}.png`, fullPage: true });
+  });
+}
+
+for (const size of [
   { name: 'desktop', width: 1280, height: 720 },
   { name: 'mobile', width: 390, height: 844 },
 ]) {
