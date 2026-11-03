@@ -126,6 +126,12 @@ Kahdeksan pelaajan katto, paikalliset botit ja kahdeksan slotin UI on yhdistetty
 
 **Jäljellä vain omistajan päätökset:** (1) kahdeksan pelaajan playtest; (2) viedäänkö kahdeksan verkkoon.
 
+### Lisäys 2026-11-03: voitonjuhla tulossivulle (omistajan pyyntö)
+
+Omistaja pyysi, että matsin lopussa olisi animaatio voiton kunniaksi: voittajan nimi isolla ja sen jälkeen kaksi seuraavaa sijaa, kun pelaajia oli enemmän kuin kolme. Suunnitelma: [M9_RESULTS_CELEBRATION.md](M9_RESULTS_CELEBRATION.md).
+
+Työ jaetaan kahtia: `M9-RESULT-RANKING` (gameplay) tuottaa puhtaan sijoitusjärjestyksen joka muodolle — Score Brawl pisteet, Deathmatch fragit/kuolemat, Last Man Standing pudotusjärjestys Knockout-tapahtumista ilman simulaatiomuutosta — ja `M9-RESULT-CELEBRATION` (graphics) renderöi ison voittajanimen, pronssikolmikon, 4.–8. sijan tiiviinä listana, ohitettavan animaation ja reduced-motion-tuen. Tasapeli näytetään tasapelinä, ei keksittynä voittajana.
+
 ### Tiedostorajaus ja omistus
 
 - Designer: `docs/GOALS.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/M2_*.md`, `docs/adr/**`, `.github/AGENT_TASKS.yaml`, `.opencode/agents/**`, `opencode.json`, `AGENTS.md`.
