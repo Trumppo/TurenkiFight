@@ -1,6 +1,7 @@
 # M9 results celebration: winner reveal and podium
 
-**Status:** Design spec, owner-requested 2026-11-03. Not implemented.
+**Status:** Implemented locally in PR #143 (`GRAPHICS:`), owner review pending. The ranking half shipped earlier
+as PR #140 (merged `72f3214`). Not accepted as a milestone and not merged at the time of writing.
 **Owner request:** at the end of a match there should be an animation or similar honouring the victory: the
 winner's name large, then the next two places when more than three players took part.
 
@@ -56,3 +57,31 @@ A draw is a valid result: the spec already says a full tie ends as a draw (owner
   order, so this needs a separate decision).
 - Persistent stats, replays or shareable results.
 - New audio composition; the existing match-end cue may be reused.
+
+## 6. Implementation notes (PR #143)
+
+What was built, as opposed to what was specified:
+
+- A DOM panel `#victory-reveal` lives inside the fight-HUD container in `index.html`, so it scales with the HUD,
+  stays above the frozen canvas and keeps the existing RESET/Esc control reachable.
+- `StationScene` accumulates the observed `GameEvent` stream (`matchEvents`) and calls `rankMatch` exactly once,
+  when the results phase begins. Nothing is re-ranked per frame; the renderer never derives an order itself.
+- The winner's name is the large title in the player colour, 2nd/3rd follow with their mode metric, and places
+  4–8 collapse into one compact line that wraps on narrow viewports.
+- A draw shows `DRAW` plus the tied player list; the panel is `aria-live="polite"` and every place carries an
+  explicit ordinal, so the result is not colour-only.
+- The flourish is a CSS pixel burst; any key or click ends it immediately, `prefers-reduced-motion: reduce`
+  renders the static podium with no timer, and RESET/Esc during the reveal clears the timer and returns to lobby.
+- Seven browser tests in `tests/browser/victory-celebration.spec.ts` cover the three modes, the draw case, the
+  Last Man Standing event carry-over, skipping, reduced motion, RESET during the reveal, and the four viewports.
+
+Known limitations, stated rather than hidden:
+
+- Local play only. The online client still has no results celebration; snapshots carry no elimination order, so
+  doing it online needs its own decision (and probably a protocol addition).
+- The `PLACES 4–8` label is a fixed range; with a four-player roster it lists only 4th even though the label
+  mentions 4–8.
+- The panel deliberately covers the middle of the frozen arena. At 640×360 and below that hides most of the
+  fighters behind it; the information is complete, but the arena is not readable at the same time.
+- The flourish is decorative CSS keyframes, not a sprite animation, so it does not follow the retro sprite style
+  exactly. It is cheap and testable at the cost of fidelity.
