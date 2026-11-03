@@ -140,6 +140,8 @@ Työ jaetaan kahtia: `M9-RESULT-RANKING` (gameplay) tuottaa puhtaan sijoitusjär
 - Riippumaton Tester antoi PASS WITH LIMITATIONS: täysi selainsarja 100/100, kohdetestit 11/11, ja mutaatiotesti osoitti LMS-kannan olevan ei-tyhjä. Avoin kosmeettinen löydös: kiinteä `PLACES 4–8` -otsikko, kirjattu tehtäväksi `M9-RESULT-LABEL`.
 - Omistaja pyysi 2026-11-03 pientä polishia. Työpaketti: `M9-KO-READABILITY` (KO-hahmo ei enää litisty väritäytöksi, osumavälähdys säilyttää siluetin) ja `M9-RESULT-LABEL`. Spec: [M9_READABILITY_POLISH.md](M9_READABILITY_POLISH.md).
 
+**Polish 2026-11-03 (PR #144, `0dff4ef`):** KO ei enää litisty väritäytöksi vaan säilyttää asennon ja ääriviivat, ja kaatuneen yläpuolella on pelaajatunnus. Retro-osumapalautteessa on yksi täyttöframe kuudesta ja viisi yksityiskohtia säilyttävää framea, joten osuma edelleen erottuu. Tulossivun otsikko on neutraali `PLACES:`. Riippumaton Tester antoi PASS WITH LIMITATIONS ja löysi samalla CI-vian (retro-vain-testi ilman buildimuuttujaa), joka korjattiin samassa PR:ssä. Rajoitteet kirjattu: tunnuksen korkeustaulukko on hahmokohtainen eikä kuvakaapattu jokaiselle pelaajalle, ja osuman luettavuus on todistettu still-kuvilla ja pikselimetriikoilla, ei videolla.
+
 **Jäljellä vain omistajan päätökset:** (1) kolmen muodon playtest; (2) kahdeksan pelaajan playtest botteja vastaan; (3) viedäänkö kahdeksan pelaajaa verkkopeliin (vaatii kahden koneen mittauksen); (4) milestone-hyväksynnät.
 
 ### Tiedostorajaus ja omistus
