@@ -118,6 +118,16 @@ test('draw names all tied players without announcing a winner', async ({ page })
   await expect(page.locator('#victory-ties')).toHaveText('TIED PLAYERS: P1 · P2 · P3');
   await expect(page.locator('#victory-title')).toHaveAttribute('aria-label', 'Draw. Tied players: P1, P2, P3');
   await expect(page.locator('#victory-reveal')).not.toContainText('WINNER:');
+  const cueCounts = () => page.evaluate(() => {
+    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+    return scene.audioDiagnostics().cueCounts as Record<string, number>;
+  });
+  expect(await cueCounts()).toMatchObject({ victory: 1, 'match-end': 1 });
+  await page.evaluate(() => {
+    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+    scene.update(0, 0);
+  });
+  expect(await cueCounts()).toMatchObject({ victory: 1, 'match-end': 1 });
 });
 
 test('victory cue is emitted once for a match end and is not replayed by skip, reset or rematch start', async ({ page }) => {
@@ -266,7 +276,10 @@ test('results screenshots fit all requested viewports with readable, non-clipped
     expect(layout.sizes.every(size => size >= 14)).toBe(true);
     expect(layout.overflow).toEqual([]);
     expect(layout.verticalOverflow).toBe(false);
-    if (viewport.height <= 420) expect(layout.visibleArenaRatio).toBeGreaterThanOrEqual(1 / 3);
+    if (viewport.height <= 420) {
+      expect(layout.visibleArenaRatio, 'visibleArenaRatio must stay at or above 0.6 (base layout 0.57, compact layout 0.65)')
+        .toBeGreaterThanOrEqual(0.6);
+    }
     expect(layout.panel.bottom).toBeLessThanOrEqual(layout.viewportHeight);
     expect(layout.title).toBe('P1');
     expect(layout.rest).toContain('8TH P8');
