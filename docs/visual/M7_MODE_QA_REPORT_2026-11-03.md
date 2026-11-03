@@ -108,7 +108,7 @@ Heittoskripti `modeqa-tiebreak.ts` rakensi alkutilat (`remainingTicks = 1`) ja l
 
 | Reitti (LMS: HP → KOs → damage) | Havaittu tapahtuma | Odotus |
 | --- | --- | --- |
-| LMS time-out, selvä HP-ero (90/80/80) | `{reason:'time', winner:'P1'}` | täsmää | 
+| LMS time-out, selvä HP-ero (90/80/80) | `{reason:'time', winner:'P1'}` | täsmää |
 | LMS time-out, HP tasan, KOs eri (2/1/2) | `{reason:'time', winner:null}` — P1 ja P3 samat kaikin mittapuin, säännön mukainen tasapeli | täsmää |
 | LMS time-out, HP tasan, damage eri (50/40/50) | `{reason:'time', winner:null}` — sama kolmen pelaajan tasatilanne | täsmää |
 | LMS time-out, kokonaan sama | `{reason:'time', winner:null}` | täsmää (tasapeli havaittiin) |
