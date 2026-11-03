@@ -138,7 +138,7 @@
 - [x] RESET button and `Esc` without a page reload, plus online LEAVE (#142)
 - [x] Independent Tester gate on #143: PASS WITH LIMITATIONS, full browser suite 100/100, targeted 11/11
 - [x] Owner approved the merge on 2026-11-03; merged as `c359e82`
-- [ ] Small polish package: `M9-KO-READABILITY` and `M9-RESULT-LABEL`
+- [x] Small polish package: KO keeps its silhouette and a player-ID badge, retro hit flash keeps its pop on one frame in six, results heading neutral (#144, `0dff4ef`)
 - [ ] Milestone acceptance as a whole (owner decision; merge is not acceptance)
 
 **Known limits:** eight fighters remain hard to tell apart in a tight crowd; the celebration is local-only, because online snapshots carry no elimination order; the celebration panel covers the middle of the frozen arena. See [results celebration](M9_RESULTS_CELEBRATION.md).

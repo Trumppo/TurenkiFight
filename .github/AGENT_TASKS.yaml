@@ -1187,7 +1187,7 @@ tasks:
   - id: M9-KO-READABILITY
     title: Make knocked-out fighters and hit flashes keep their silhouette
     assigned_role: graphics-session
-    status: ready
+    status: done
     priority: P1
     specification: docs/M9_READABILITY_POLISH.md
     depends_on: [M9-CHARACTERS, M9-RESULT-CELEBRATION]
@@ -1198,13 +1198,14 @@ tasks:
       - "At least half of the hit-flash frames keep the silhouette and the character features"
       - "No simulation, protocol, server or bot change; P1-P8 texture hashes and pinned fingerprints unchanged"
       - Browser readability spec plus existing visual suites, build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/144
     last_updated: "2026-11-03"
-    notes: "Owner asked for a small polish package on 2026-11-03. Addresses the documented M8 finding that a KO renders as a flat blob and that the hit flash tints the whole sprite."
+    notes: "PR #144 merged as 0dff4ef after independent Tester PASS WITH LIMITATIONS. KO uses a multiply tint plus a player-ID badge (rendered colour count 7 vs 5 source); retro flash is one fill frame per six-tick cycle with five detail frames. Tester found and we fixed a CI defect: the retro-only flash test needed the build variable guard. Remaining limits: badge height table is per-character and not screenshot-validated for every player; hit readability proven by stills and pixel metrics, not video."
 
   - id: M9-RESULT-LABEL
     title: Replace the fixed PLACES 4-8 heading with a neutral one
     assigned_role: graphics-session
-    status: ready
+    status: done
     priority: P2
     specification: docs/M9_READABILITY_POLISH.md
     depends_on: [M9-RESULT-CELEBRATION]
@@ -1213,8 +1214,9 @@ tasks:
       - "The extra-places heading no longer names a fixed 4-8 range and matches the actual roster"
       - "14 CSS px minimum and the no-ellipsis rule still hold at all four celebration viewports"
       - Existing celebration tests and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/144
     last_updated: "2026-11-03"
-    notes: "Cosmetic Tester finding on PR #143: a five-player roster shows places 4-6 under a 4-8 label."
+    notes: "Cosmetic finding from PR #143, fixed in PR #144: the heading reads PLACES: and lists exactly the places that exist."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
