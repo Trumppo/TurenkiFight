@@ -2,6 +2,24 @@
 
 Tämä on projektin päivitettävä tavoitedokumentti harness- ja agenttityölle. Aktiivinen tavoite on rajattu itsenäiseksi kokonaisuudeksi, jolla on todennettavat hyväksymisehdot. Päivitä tavoite omistajan päätöksen ja uuden näytön perusteella; älä merkitse suunnitelmaa toteutetuksi, hyväksytyksi tai yhdistetyksi ilman näyttöä ja omistajan lupaa.
 
+## Tila 2026-11-03
+
+Ei avointa agenttityötä. Kaikki dokumentoidut tavoitteet on viety loppuun tai ne odottavat omistajan päätöstä:
+
+| Alue | Tila |
+| --- | --- |
+| M1 ja M1.5 | hyväksytty rajoituksin (2026-10-30 / 2026-11-01) |
+| M2 kuljetuspäätös | päätetty: keskitetty WebSocket-auktoriteetti ([ADR 0001](adr/0001-network-topology.md)); verkkoa ei mitattu |
+| Pelimuodot | Score Brawl, Last Man Standing, Deathmatch — säännöt, UI, online-kentät ja QA valmiit; tasapeli vahvistettu |
+| Botit ja kahdeksan pelaajaa | toteutettu ja QA:ttu; kahdeksan ei ole luettavasti erotettavissa taistelussa |
+| Areena ja visuaalit | Mesku hyväksytty, VIS05-02/03 hyväksytty, 2×-tila ja ulkoinen HUD |
+| Ääni | placeholder-moottori ja 11 cue'ta; oikeat samplet deferoitu |
+| Verkkopeli | serveri, botit ja selainclient toimivat LAN/VPN-prototypyppinä; ei TLS/auth/rate limitiä |
+
+**Avoimet omistajapäätökset:** (1) kolmen muodon playtest-tuomio, (2) kahdeksan pelaajan playtest ja
+käytännön maksimi, (3) viedäänkö kahdeksan verkkoon (vaatii kaksikoneisen mittauksen), (4) äänen
+samplet/miksaus, (5) lisenssit (M0).
+
 ## Arkisto: suljetut tavoitteet
 
 ### 2026-10-31 — PR:t #21, #25 ja #28

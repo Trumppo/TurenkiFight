@@ -46,7 +46,7 @@ Four-player-or-more accessible 2.5D arena brawler: controlled chaos, readable hi
 - At least two participants, all READY, host starts manually; changes to character reset individual READY, changes to room settings reset all READY.
 - Countdown, match, results and return to same room for rematch.
 - Separate network connections, player slots and fighter identities; multiple local players may share one network client.
-- Room state machine independent of deterministic simulation. No transport decision yet.
+- Room state machine independent of deterministic simulation. Transport decision: central authoritative WebSocket server ([ADR 0001](adr/0001-network-topology.md), owner-approved 2026-11-02); no network measurement exists, and the WebRTC prototype remains an evaluated alternative.
 
 ## Design questions still open
 1. Exact guard duration, cooldown and throw input buffer; whether guard fully protects against every item projectile.
@@ -58,3 +58,15 @@ Four-player-or-more accessible 2.5D arena brawler: controlled chaos, readable hi
 
 ## Implementation strategy
 Do not bundle all of this into one PR. First define input/state transitions and headless tests for guard/throw/knockdown; then introduce typed items and deterministic spawn/lifetime; finally integrate visuals, effects and balance tests. Each slice needs owner-approved scope.
+
+## Decisions made in November 2026
+
+- **Player limit: eight.** Approved by the owner on 2026-11-03 after establishing that four was never a product
+  decision. Implemented as one `MAX_PLAYERS` constant; slots 5-8 are gamepad or bot slots.
+- **Three modes:** Score Brawl, Last Man Standing, Deathmatch, with mode chosen at match creation. A full tie
+  ends as a draw (owner, 2026-11-03).
+- **Local bots:** a deterministic, seeded input policy can fill empty slots so one player can test a full match.
+- **Arena:** Ravintola Mesku, selected and visually accepted by the owner on 2026-11-02; the station remains the
+  default.
+- **Audio:** procedural placeholder cues and chiptune only for now; real samples and mixing are deferred by the
+  owner.
