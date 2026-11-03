@@ -63,6 +63,88 @@ p { color: #c2cbd2; }
 #player-hud .hud-player.is-lobby-slot .hud-name { overflow: hidden; text-overflow: clip; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
+/* Local-results celebration: a restrained dark card over the frozen arena.
+   The HUD remains above it (including RESET); the card uses DOM text so its
+   labels remain readable and screen-reader accessible at every scale. */
+.victory-reveal {
+  position: absolute;
+  z-index: 1;
+  top: 55%;
+  left: 50%;
+  width: min(86%, 760px);
+  max-height: calc(100% - 68px);
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  overflow: hidden;
+  padding: 8px 12px;
+  border: 2px solid #d8b76f;
+  outline: 2px solid #172536;
+  background: rgba(17, 29, 42, .92);
+  color: #fff1c9;
+  text-align: center;
+  line-height: 1.15;
+  pointer-events: auto;
+}
+.victory-reveal[hidden] { display: none; }
+.victory-kicker { margin: 0; color: #f1d38b; font-size: 14px; font-weight: 700; letter-spacing: .14em; }
+.victory-title {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: var(--player-color, #fff1b7);
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: .06em;
+  text-shadow: 2px 2px #172536, -1px -1px #172536, 0 0 12px color-mix(in srgb, var(--player-color, #fff1b7) 45%, transparent);
+}
+.victory-ties { z-index: 1; margin: 0; color: #fff1c9; font-size: 14px; font-weight: 700; }
+.victory-podium {
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 16px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.victory-place { display: inline-flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 3px 7px; min-width: 0; font-size: 14px; }
+.victory-place-number { color: #f1d38b; font-weight: 800; }
+.victory-place-name { color: var(--player-color); font-size: 16px; text-shadow: 1px 1px #172536; }
+.victory-place-metric { color: #dbe5e4; font-size: 14px; }
+.victory-rest { z-index: 1; max-width: 100%; margin: 0; color: #dbe5e4; font-size: 14px; font-variant-numeric: tabular-nums; line-height: 1.3; overflow-wrap: anywhere; }
+.victory-skip { z-index: 1; margin: 2px 0 0; color: #bdc9cf; font-size: 14px; }
+.victory-burst { position: absolute; top: 25%; left: 50%; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.victory-burst::before,
+.victory-burst::after { content: ''; position: absolute; width: 8px; height: 8px; background: #e3b85e; box-shadow: -54px -20px 0 #cf665c, 52px -36px 0 #54b7ae, -72px 31px 0 #9e85cc, 70px 34px 0 #e56c9a, -27px 49px 0 #75c96b, 30px -54px 0 #65a7e8; image-rendering: pixelated; }
+.victory-burst::after { width: 5px; height: 5px; background: #fff1b7; box-shadow: -34px -42px 0 #e3b85e, 40px -8px 0 #cf665c, -48px 4px 0 #54b7ae, 46px 43px 0 #9e85cc; }
+.victory-reveal.is-revealing .victory-title { animation: victory-pop 1.8s steps(5, end) both; }
+.victory-reveal.is-revealing .victory-burst { opacity: 1; animation: burst-fade 1.8s steps(6, end) both; }
+.victory-reveal.is-revealing .victory-burst::before { animation: burst-out 1.8s steps(6, end) both; }
+.victory-reveal.is-revealing .victory-burst::after { animation: burst-out 1.5s steps(5, end) reverse both; }
+.victory-reveal.is-revealing .victory-podium { animation: podium-rise .55s steps(4, end) .32s both; }
+.victory-reveal.is-revealing .victory-rest { animation: podium-rise .55s steps(4, end) .58s both; }
+.victory-reveal:not(.is-revealing) .victory-skip { display: none; }
+@keyframes victory-pop { 0% { transform: translateY(12px) scale(.72); opacity: 0; } 22% { transform: translateY(-3px) scale(1.08); opacity: 1; } 38%, 100% { transform: translateY(0) scale(1); opacity: 1; } }
+@keyframes podium-rise { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes burst-out { from { transform: scale(.35) rotate(0deg); } to { transform: scale(1.1) rotate(24deg); } }
+@keyframes burst-fade { 0%, 70% { opacity: .8; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .victory-reveal.is-revealing .victory-title,
+  .victory-reveal.is-revealing .victory-podium,
+  .victory-reveal.is-revealing .victory-rest,
+  .victory-reveal.is-revealing .victory-burst,
+  .victory-reveal.is-revealing .victory-burst::before,
+  .victory-reveal.is-revealing .victory-burst::after { animation: none; }
+}
+
 /* At full-width desktop sizes, give match status its own compact HUD row. Its
    14px text can use the whole reserved band instead of being ellipsized beside
    the timer and controls; the native short-viewport HUD stays unchanged. */
@@ -146,6 +228,11 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   .online-page .page-header { padding-bottom: 28px; }
   .online-page .page-header > .audio-controls { top: auto; bottom: 0; }
   #game { display: flex; flex-direction: column; gap: 8px; max-width: none; margin: 8px auto; border: 0; }
+  .victory-reveal { top: 76%; left: 50%; width: calc(100% - 8px); max-height: 49%; gap: 3px; padding: 6px; }
+  .victory-title { font-size: clamp(24px, 8vw, 34px); }
+  .victory-podium { gap: 3px 10px; }
+  .victory-place { gap: 2px 5px; }
+  .victory-rest { line-height: 1.25; }
   #fight-hud { position: static; padding: 7px; border: 1px solid #c7a76a; font-size: 14px; }
   .hud-toolbar { grid-template-columns: auto minmax(0, 1fr); gap: 4px 6px; }
   #match-status { grid-column: 1 / -1; grid-row: 2; white-space: normal; line-height: 1.25; }
@@ -251,6 +338,7 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   .page-header { position: relative; height: 24px; }
   .page-header > .audio-controls { top: 0; right: 4px; }
   #game { width: min(100%, 597px) !important; height: auto !important; max-width: none !important; margin: 0 auto !important; border: 0 !important; }
+  .victory-reveal { top: 55%; max-height: calc(100% - 52px); }
   #game canvas { width: 100% !important; height: auto !important; }
   #fight-hud { padding: 2px 4px; }
   body.integer-scale-2 main { width: 100%; max-width: none; padding: 0; }
