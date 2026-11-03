@@ -20,13 +20,16 @@ test('keyboard guide labels keyboard, gamepad and bot slots without obscuring th
   await guide.locator('summary').click();
   await expect(guide).toHaveAttribute('open', '');
   const rows = guide.locator('tbody tr');
-  await expect(rows).toHaveCount(7);
+  await expect(rows).toHaveCount(8);
   await expect(rows.nth(1)).toContainText('Välilyönti');
   await expect(rows.nth(1)).toContainText('K');
   await expect(rows.nth(4)).toContainText('H');
   await expect(rows.nth(4)).toContainText('U');
   await expect(rows.nth(5)).toContainText('Shift');
   await expect(rows.nth(6)).toContainText('Enter');
+  // The reset shortcut is documented with the other bindings.
+  await expect(rows.nth(7)).toContainText('Esc');
+  await expect(rows.nth(7)).toContainText('RESET');
   const guideLayout = await page.evaluate(() => {
     const canvas = document.querySelector('#game canvas')!.getBoundingClientRect();
     const guide = document.querySelector('details.controls')!.getBoundingClientRect();

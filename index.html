@@ -17,13 +17,19 @@
           <div class="hud-toolbar">
             <strong id="match-timer" aria-label="Match time">02:00</strong>
             <span id="match-status" aria-live="polite">LOBBY P1:KEY · SHIFT/PAD SELECT: JOIN</span>
-            <label class="mode-control" for="game-mode">MODE
-              <select id="game-mode" aria-label="Game mode">
-                <option value="score-brawl">Score Brawl</option>
-                <option value="last-man-standing">Last Man Standing</option>
-                <option value="deathmatch">Deathmatch</option>
-              </select>
-            </label>
+            <!-- Gameplay-owned controls (M9-RESET-CONTROL). Graphics may restyle
+                 `.hud-actions`/`.hud-reset`; keep the `reset-match` id and its
+                 reset behaviour. -->
+            <span class="hud-actions">
+              <label class="mode-control" for="game-mode">MODE
+                <select id="game-mode" aria-label="Game mode">
+                  <option value="score-brawl">Score Brawl</option>
+                  <option value="last-man-standing">Last Man Standing</option>
+                  <option value="deathmatch">Deathmatch</option>
+                </select>
+              </label>
+              <button id="reset-match" class="hud-reset" type="button">RESET</button>
+            </span>
             <label class="scale-control" for="display-scale">SCALE
               <select id="display-scale" aria-label="Display scale">
                 <option value="fit">Fit</option>
@@ -55,6 +61,7 @@
             <tr><th>Hyppypotku</th><td>H</td><td>U</td></tr>
             <tr><th>Liity peliin</th><td>Isäntä (automaattisesti)</td><td>Vaihto (Shift), aulassa</td></tr>
             <tr><th>Aloita ottelu / uusi ottelu</th><td>Enter</td><td>Pelaaja 1 aloittaa</td></tr>
+            <tr><th>Nollaa (RESET)</th><td>Esc</td><td>Ottelussa: takaisin aulaan, pelaajat ja moodi säilyvät. Aulassa: tyhjentää botit ja liittyneet pelaajat, jäljelle jää P1.</td></tr>
           </tbody>
         </table>
       </details>

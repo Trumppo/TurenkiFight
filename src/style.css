@@ -30,6 +30,11 @@ p { color: #c2cbd2; }
 .mode-control { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .mode-control select { pointer-events: auto; min-height: 24px; max-width: 190px; padding: 1px 4px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-size: clamp(14px, 1vw, 16px); }
 .mode-control select:disabled { opacity: 1; color: #fff1b7; }
+/* Compact reset control; the two behaviours are documented in its aria-label. */
+.hud-actions { display: inline-flex; align-items: center; justify-self: end; gap: 5px; min-width: 0; white-space: nowrap; }
+.hud-reset { min-height: 24px; padding: 1px 5px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-size: clamp(14px, 1vw, 16px); line-height: 1.1; cursor: pointer; pointer-events: auto; white-space: nowrap; }
+.hud-reset:hover:not(:disabled) { background: #2b3a4c; }
+.hud-reset:disabled { opacity: .45; cursor: default; }
 .hud-player.is-eliminated { border-left-color: #ed786c; background: #382932; color: #ffd2c7; }
 .hud-player.is-eliminated .hud-health { color: #ff9f90; font-weight: 700; }
 .hud-player.is-bot { border-left-color: #77cfdf; background: #203644; }
@@ -145,6 +150,7 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   .hud-toolbar { grid-template-columns: auto minmax(0, 1fr); gap: 4px 6px; }
   #match-status { grid-column: 1 / -1; grid-row: 2; white-space: normal; line-height: 1.25; }
   .mode-control { grid-column: 2; grid-row: 1; justify-self: end; }
+  .hud-actions { grid-column: 2; grid-row: 1; justify-self: end; }
   .mode-control select { max-width: 180px; }
   .scale-control { grid-column: 1 / -1; grid-row: 3; justify-self: end; }
   #player-hud { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin-top: 6px; }
@@ -195,6 +201,10 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
 .online-form button:hover { background: #2b3a4c; }
 .online-error { margin: 6px 0 0; color: #ffb4a2; font-size: 14px; }
 .online-link p { margin: 2px 0; }
+.online-link-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.online-leave { flex: 0 0 auto; min-height: 30px; padding: 3px 10px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-weight: 700; cursor: pointer; }
+.online-leave:hover:not(:disabled) { background: #2b3a4c; }
+.online-leave:disabled { opacity: .45; cursor: default; }
 #online-status { font-size: 15px; font-weight: 700; color: #fff1b7; }
 #online-status[data-state="error"] { color: #ffb4a2; }
 #online-status[data-state="closed"],
@@ -219,6 +229,7 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   /* A 1280x720 2× canvas cannot fit vertically here; hide only this control to preserve the reserved HUD band. The URL scale preference still falls back responsively. */
   .scale-control { display: none; }
   .mode-control select { height: 16px; min-height: 16px; padding: 0 2px; line-height: 14px; }
+  .hud-reset { height: 16px; min-height: 16px; padding: 0 3px; line-height: 14px; }
   body.integer-scale-2 .controls { display: none; }
   body.integer-scale-2 main { padding: 4px 8px; }
   body.integer-scale-2 .hud-toolbar { min-height: 16px; }

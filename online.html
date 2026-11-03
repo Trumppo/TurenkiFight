@@ -31,7 +31,13 @@
       </section>
 
       <section class="online-panel online-link" aria-label="Connection state and network metrics">
-        <p id="online-status" role="status" aria-live="polite" data-state="idle">Not connected.</p>
+        <div class="online-link-head">
+          <p id="online-status" role="status" aria-live="polite" data-state="idle">Not connected.</p>
+          <!-- Gameplay-owned control (M9-RESET-CONTROL): disconnect and return to
+               the join form without reloading. Graphics may restyle; keep the id. -->
+          <button id="online-leave" class="online-leave" type="button" disabled
+            title="Close the connection and return to the join form. The page stays open.">LEAVE</button>
+        </div>
         <p id="online-metrics">LINK idle · RTT — · SNAP 0 · TICK 0</p>
         <p id="online-note" class="online-note">
           No prediction or client authority: the world is drawn by interpolating the last two
@@ -70,7 +76,7 @@
             <tr><th>Jump kick</th><td>H</td><td>U</td></tr>
           </tbody>
         </table>
-        <p>P3 and P4 use the P1 keyboard layout. Leave the page to close the session cleanly.</p>
+        <p>P3 and P4 use the P1 keyboard layout. LEAVE closes the session and returns to the join form; leaving the page also closes it.</p>
       </details>
     </main>
     <script type="module" src="/src/online.ts"></script>

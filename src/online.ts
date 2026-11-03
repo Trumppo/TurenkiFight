@@ -45,6 +45,7 @@ const errorBox = document.getElementById('online-error') as HTMLElement;
 const statusEl = document.getElementById('online-status') as HTMLElement;
 const metricsEl = document.getElementById('online-metrics') as HTMLElement;
 const keysEl = document.getElementById('online-keys') as HTMLElement;
+const leaveButton = document.getElementById('online-leave') as HTMLButtonElement | null;
 
 const trackedCodes = new Set<string>();
 for (const layout of Object.values(KEYBOARD_LAYOUTS)) {
@@ -122,6 +123,12 @@ function updatePanel(): void {
   // A connection failure reopens the form so the URL can be corrected. A
   // running or ended match keeps it hidden to leave the arena unobstructed.
   if (info.state === 'error' && setup.hidden) setup.hidden = false;
+  // LEAVE only means something while a session exists or its match is final.
+  if (leaveButton) {
+    const leaveDisabled = !(info.state === 'connecting' || info.state === 'joined' ||
+      info.state === 'running' || info.state === 'ended');
+    if (leaveButton.disabled !== leaveDisabled) leaveButton.disabled = leaveDisabled;
+  }
 }
 
 function start(url: string, requestedPlayer: string): void {
@@ -152,6 +159,23 @@ form.addEventListener('submit', event => {
   start(serverInput.value, playerSelect.value);
 });
 playerSelect.addEventListener('change', () => updateKeyHint(playerSelect.value));
+
+/**
+ * Close the session and return to the join form without reloading the page.
+ * The controller both closes the socket and drops the received snapshots, so
+ * the online HUD falls back to its honest defaults instead of keeping the
+ * departed match's mode, timer or scores. This does not set the `left` unload
+ * guard: a session started again from the form must still close on pagehide.
+ */
+function leaveMatch(): void {
+  controller.disconnect();
+  showError(null);
+  setup.hidden = false;
+  pressed.clear();
+  updatePanel();
+  leaveButton?.blur();
+}
+leaveButton?.addEventListener('click', leaveMatch);
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
