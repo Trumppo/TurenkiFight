@@ -97,6 +97,15 @@ Kahdeksan pelaajan katto, paikalliset botit ja kahdeksan slotin UI on yhdistetty
 
 **Jäljellä vain omistajan päätökset:** (1) pelaa kahdeksan pelaajan erä botteja vastaan ja päätä, onko se luettavissa ja hauskaa vai pitäisikö käytännön maksimin jäädä pienemmäksi; (2) päätä, viedäänkö kahdeksan myös verkkopeliin (mittaamatta). QA:n matalan prioriteetin löydökset on kirjattu tehtäviksi `M8-RESULTS-TICK` ja `M8-HUD-EDGE-CASES`.
 
+### Tila 2026-11-03: pelimuototavoite valmis agentin osalta
+
+- `M7-MODE-RULES` (#121), `M7-MODE-UI` (#122), `M7-MODE-ONLINE` (#124 + #135) ja `M7-MODE-QA` (#136) ovat yhdistetty.
+- Online-client näyttää muodon ja sen laskurit **snapshotista**; puuttuva kenttä näytetään muodossa `—`, ei nollana (PR #135).
+- Riippumaton QA vahvisti: eliminoitu hahmo ei liiku eikä ota osumia live-ottelussa, frag-attribuutio ja 20 fragin raja toimivat, deterministiset hashit täsmäävät, Score Brawl on tavuidenttinen.
+- QA nosti esiin kaksi tulkintakysymystä: kolmen pelaajan osittainen tasatila päätyy **tasapeliin** (specin "ties … otherwise draw" mukaisesti) ja `serve:match` on yhden ottelun istunto ilman rematchia.
+
+**Jäljellä vain omistajan päätökset:** (1) pelaa muodot ja päätä tuntuuko tasapeli kolmen pelaajan tasatilanteessa oikealta; (2) kahdeksan pelaajan playtest; (3) viedäänkö kahdeksan verkkoon.
+
 ### Tiedostorajaus ja omistus
 
 - Designer: `docs/GOALS.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/M2_*.md`, `docs/adr/**`, `.github/AGENT_TASKS.yaml`, `.opencode/agents/**`, `opencode.json`, `AGENTS.md`.

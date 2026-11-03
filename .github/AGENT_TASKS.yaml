@@ -960,7 +960,7 @@ tasks:
     title: Independent QA of the new modes end to end
     assigned_role: tester-session
     session_id: tester-session-20261103-modeqa
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/M7_GAME_MODES.md
     depends_on: [M7-MODE-UI, M7-MODE-ONLINE]
@@ -974,6 +974,8 @@ tasks:
       - "Verify Score Brawl is byte-identical to the accepted baseline"
       - "Report screenshots of mode selection, in-match HUD and results for each mode"
       - "State explicitly what needs owner judgement about how the modes feel"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/136
+    last_updated: "2026-11-03"
     notes: "Rules QA plus visual evidence; owner decides whether the modes feel right."
 
 
