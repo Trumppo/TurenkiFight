@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { createState, step, standings, TICK_RATE } from '../simulation/step';
-import type { EndReason, GameState, ModeId, PlayerInput, Fighter } from '../simulation/types';
+import type { EndReason, GameEvent, GameState, ModeId, PlayerInput, Fighter } from '../simulation/types';
 import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
 import { VIEWPORT, cameraScale } from './viewport';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
@@ -9,6 +9,9 @@ import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
 import { keyboardPlayerInput } from '../input/keyboardMapping';
 import { botInput } from '../input/botPolicy';
+import { rankMatch } from '../simulation/ranking';
+import type { MatchRanking, RankedEntry } from '../simulation/ranking';
+import { playerColor } from './visualTheme';
 import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
 import { CueBridge } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
@@ -29,7 +32,7 @@ const MODE_NAMES: Record<ModeId, string> = {
 const RESET_LABEL = 'Reset (Esc). In a match, countdown or results: return to the lobby and keep the '
   + 'players and mode. In the lobby: remove bots and joined players, leaving only P1. The mode is kept.';
 
-function resultReason(state: GameState): EndReason | 'draw' {
+function resultReason(state: GameState): EndReason {
   const event = [...state.events].reverse().find(item => item.type === 'MatchEnded');
   if (event?.reason) return event.reason;
   if (state.mode === 'last-man-standing' || state.mode === 'deathmatch') return 'time';
@@ -81,6 +84,13 @@ export class StationScene extends Phaser.Scene {
   private lastKeyboardJoin = false;
   private lastJoinButtons = new Map<number, boolean>();
   private lastResult?: { mode: ModeId; reason: EndReason; winner: string | null };
+  /** Full event stream observed by this local scene; state.events is only one tick. */
+  private matchEvents: GameEvent[] = [];
+  private resultRanking?: MatchRanking;
+  private resultPresentationReady = false;
+  private revealTimer?: Phaser.Time.TimerEvent;
+  private revealKeyHandler?: (event: KeyboardEvent) => void;
+  private revealClickHandler?: () => void;
   private audio?: AudioPresentation;
   private audioBridge?: CueBridge;
 
@@ -133,6 +143,9 @@ export class StationScene extends Phaser.Scene {
     this.audioBridge = new CueBridge(cue => this.audio?.director.playCue(cue));
     this.audioBridge.observe(this.state);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.clearRevealState();
+      if (this.revealKeyHandler) document.removeEventListener('keydown', this.revealKeyHandler);
+      if (this.revealClickHandler) document.removeEventListener('click', this.revealClickHandler);
       this.audioBridge?.reset();
       this.audio?.dispose();
       this.audioBridge = undefined;
@@ -140,6 +153,22 @@ export class StationScene extends Phaser.Scene {
     });
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,B,V,SPACE,ENTER,SHIFT,ESC') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.revealKeyHandler = event => {
+      if (event.key === 'Escape') {
+        // Handle Esc on keydown as well as through Phaser's polled key state.
+        // This keeps a quick press from being lost between scene frames.
+        if (this.canResetLocal()) {
+          event.preventDefault();
+          this.resetLocal();
+          this.lastResetKey = true;
+        }
+        return;
+      }
+      this.finishReveal();
+    };
+    this.revealClickHandler = () => this.finishReveal();
+    document.addEventListener('keydown', this.revealKeyHandler);
+    document.addEventListener('click', this.revealClickHandler);
     this.drawFighters();
   }
 
@@ -209,6 +238,10 @@ export class StationScene extends Phaser.Scene {
     if (((start && !this.lastStart) || padHostStart) && (this.state.phase === 'results' || (this.state.phase === 'lobby' && this.state.fighters.length >= 2))) {
       this.state = createState(this.state.fighters.map(f => f.id), 'countdown', { mode: this.selectedMode });
       this.lastResult = undefined;
+      this.matchEvents = [];
+      this.resultRanking = undefined;
+      this.resultPresentationReady = false;
+      this.clearRevealState();
       this.audioBridge?.reset();
       this.previous.clear();
       this.hitFlash.clear();
@@ -221,6 +254,7 @@ export class StationScene extends Phaser.Scene {
     // MatchEnded tick (QA finding F2). Countdown and fighting keep the exact
     // fixed-step accumulator below; results does not step at all.
     if (this.state.phase === 'results') {
+      if (!this.resultPresentationReady) this.prepareResultsPresentation();
       // Do not bank wall time while the results screen is open: a rematch must
       // start from an empty accumulator rather than a catch-up burst.
       this.elapsedMs = 0;
@@ -228,12 +262,17 @@ export class StationScene extends Phaser.Scene {
       this.elapsedMs = Math.min(this.elapsedMs + delta, 250);
       const interval = 1000 / TICK_RATE;
       while (this.elapsedMs >= interval) {
+        const previousPhase = this.state.phase;
         this.state = step(this.state, this.readInputs(pads));
+        if (previousPhase === 'fighting' || this.state.phase === 'fighting' || this.state.phase === 'results') {
+          this.matchEvents.push(...this.state.events);
+        }
         this.observeAudio(this.state);
         this.elapsedMs -= interval;
         // The step that ends the match is the last one: stop before the next
         // tick so `state.tick` equals the MatchEnded event tick.
         if (this.state.phase === 'results') {
+          this.prepareResultsPresentation();
           this.elapsedMs = 0;
           break;
         }
@@ -276,6 +315,10 @@ export class StationScene extends Phaser.Scene {
     }
     this.state = createState(ids, 'lobby', { mode: this.selectedMode });
     this.lastResult = undefined;
+    this.matchEvents = [];
+    this.resultRanking = undefined;
+    this.resultPresentationReady = false;
+    this.clearRevealState();
     this.elapsedMs = 0;
     this.previous.clear();
     this.hitFlash.clear();
@@ -465,10 +508,7 @@ export class StationScene extends Phaser.Scene {
   private renderDomHud(): void {
     const hud = this.domHud;
     if (!hud) return;
-    if (this.state.phase === 'results') {
-      const end = [...this.state.events].reverse().find(event => event.type === 'MatchEnded');
-      if (end?.reason) this.lastResult = { mode: this.state.mode ?? 'score-brawl', reason: end.reason, winner: end.winner ?? null };
-    }
+    if (this.state.phase !== 'results' && !document.getElementById('victory-reveal')?.hidden) this.hideVictoryReveal();
     const seconds = Math.ceil(this.state.remainingTicks / TICK_RATE);
     const timerText = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
     if (hud.timer.textContent !== timerText) hud.timer.textContent = timerText;
@@ -571,6 +611,122 @@ export class StationScene extends Phaser.Scene {
     hud.status.classList.toggle('is-results', this.state.phase === 'results');
     if (hud.status.getAttribute('aria-label') !== fullStatusText) hud.status.setAttribute('aria-label', fullStatusText);
     if (hud.status.title !== fullStatusText) hud.status.title = fullStatusText;
+  }
+
+  /** Compute the authoritative podium once, when results begin, not while formatting HUD text. */
+  private prepareResultsPresentation(): void {
+    if (this.resultPresentationReady || this.state.phase !== 'results') return;
+    const events = this.matchEvents.length > 0 ? this.matchEvents : this.state.events;
+    const end = [...events].reverse().find(event => event.type === 'MatchEnded');
+    this.lastResult = {
+      mode: this.state.mode ?? 'score-brawl',
+      reason: end?.reason ?? resultReason(this.state),
+      winner: end?.winner !== undefined ? end.winner ?? null : resultWinner(this.state),
+    };
+    this.resultRanking = rankMatch(this.state, events);
+    this.resultPresentationReady = true;
+    this.populateVictoryReveal(this.resultRanking);
+  }
+
+  private populateVictoryReveal(ranking: MatchRanking): void {
+    const panel = document.getElementById('victory-reveal');
+    const title = document.getElementById('victory-title');
+    const ties = document.getElementById('victory-ties');
+    const podium = document.getElementById('victory-podium');
+    const rest = document.getElementById('victory-rest');
+    if (!(panel && title && ties && podium && rest)) return;
+    panel.hidden = false;
+    panel.classList.remove('is-revealing');
+    panel.classList.add('is-results');
+    const entries = ranking.order;
+    const winner = ranking.winners[0];
+    const color = winner ? this.playerColorCss(winner) : '#fff1b7';
+    title.style.setProperty('--player-color', color);
+    title.textContent = ranking.draw ? 'DRAW' : winner ?? 'DRAW';
+    ties.textContent = '';
+    if (ranking.draw) {
+      const tied = document.createElement('span');
+      tied.className = 'victory-tie-names';
+      tied.textContent = `TIED PLAYERS: ${ranking.winners.join(' · ')}`;
+      ties.append(tied);
+      title.setAttribute('aria-label', `Draw. Tied players: ${ranking.winners.join(', ')}`);
+    } else {
+      title.setAttribute('aria-label', `Winner: ${winner}`);
+    }
+    podium.replaceChildren();
+    const remainingTop = ranking.draw ? entries.filter(entry => entry.rank > 1 && entry.rank <= 3) : entries.filter(entry => entry.rank === 2 || entry.rank === 3);
+    for (const entry of remainingTop) {
+      podium.append(this.makePodiumEntry(entry, ranking.mode));
+    }
+    rest.textContent = '';
+    const laterPlaces = entries.slice(3);
+    if (this.state.fighters.length > 3 && laterPlaces.length) {
+      rest.textContent = `PLACES 4–8: ${laterPlaces.map(entry => `${this.ordinal(entry.rank)} ${entry.id}`).join('  ·  ')}`;
+    }
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reducedMotion) {
+      panel.classList.add('is-revealing');
+      this.revealTimer?.remove(false);
+      this.revealTimer = this.time.delayedCall(1800, () => this.finishReveal());
+    } else {
+      this.clearRevealTimer();
+    }
+  }
+
+  private makePodiumEntry(entry: RankedEntry, mode: ModeId): HTMLLIElement {
+    const item = document.createElement('li');
+    item.className = 'victory-place';
+    item.style.setProperty('--player-color', this.playerColorCss(entry.id));
+    const label = document.createElement('span');
+    label.className = 'victory-place-number';
+    label.textContent = this.ordinal(entry.rank);
+    const name = document.createElement('strong');
+    name.className = 'victory-place-name';
+    name.textContent = entry.id;
+    const metric = document.createElement('span');
+    metric.className = 'victory-place-metric';
+    metric.textContent = this.metricLabel(entry, mode);
+    item.setAttribute('aria-label', `${this.ordinal(entry.rank)} place, ${entry.id}, ${metric.textContent}`);
+    item.append(label, name, metric);
+    return item;
+  }
+
+  private metricLabel(entry: RankedEntry, mode: ModeId): string {
+    if (mode === 'last-man-standing') return `SURVIVAL PLACE ${this.ordinal(entry.rank)}`;
+    return mode === 'deathmatch' ? `${entry.metric} FRAGS` : `${entry.metric} SCORE`;
+  }
+
+  private ordinal(place: number): string {
+    const suffix = place % 100 >= 11 && place % 100 <= 13 ? 'TH' : ({ 1: 'ST', 2: 'ND', 3: 'RD' } as Record<number, string>)[place % 10] ?? 'TH';
+    return `${place}${suffix}`;
+  }
+
+  private playerColorCss(id: string): string {
+    return `#${playerColor(id).toString(16).padStart(6, '0')}`;
+  }
+
+  private finishReveal(): void {
+    const panel = document.getElementById('victory-reveal');
+    if (!panel || panel.hidden || !panel.classList.contains('is-revealing')) return;
+    panel.classList.remove('is-revealing');
+    this.clearRevealTimer();
+  }
+
+  private hideVictoryReveal(): void {
+    this.clearRevealTimer();
+    const panel = document.getElementById('victory-reveal');
+    panel?.classList.remove('is-revealing', 'is-results');
+    if (panel) panel.hidden = true;
+  }
+
+  private clearRevealTimer(): void {
+    this.revealTimer?.remove(false);
+    this.revealTimer = undefined;
+  }
+
+  private clearRevealState(): void {
+    this.clearRevealTimer();
+    this.hideVictoryReveal();
   }
 
   private pose(f: Fighter, prev?: { x: number; y: number; health: number }): FighterPose {
