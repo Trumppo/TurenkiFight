@@ -93,6 +93,8 @@ Kahdeksan pelaajan katto, paikalliset botit ja kahdeksan slotin UI on yhdistetty
 - 12 (muoto × trace × seed) -yhdistelmää toistettiin identtisillä hasheilla; jokainen muoto päättyi omaan ehtoonsa ilman deadlockia. Neljän pelaajan tavut pysyivät identtisinä.
 - QA vahvisti luettavuusongelman: KO-hahmo on litteä blob ilman tunnistetta, ja kahdeksan hahmon ruuhkassa areena ei kerro kuka on kuollut ilman HUD:ia.
 
+**QA:n matalan prioriteetin korjaukset tehty 2026-11-03:** `M8-RESULTS-TICK` (PR #133) — simulaatio ei enää steppaa tulosten alettua, joten `MatchEnded` säilyy ja tick pysähtyy matsin loppuarvoon (ennen 7 382 → 7 472 kuudessa ruudussa, nyt 7 380 × 6). `M8-HUD-EDGE-CASES` (PR #132) — statusriville oma rivi ≥1024 px näytöillä, ei ellipsiä 1920×1080:llä. Negatiivinen pistemäärä todettiin säännöksi (+500 KO:sta, −200 KO:n kokeneelle) ja dokumentoitiin, ei koodattu piiloon.
+
 **Jäljellä vain omistajan päätökset:** (1) pelaa kahdeksan pelaajan erä botteja vastaan ja päätä, onko se luettavissa ja hauskaa vai pitäisikö käytännön maksimin jäädä pienemmäksi; (2) päätä, viedäänkö kahdeksan myös verkkopeliin (mittaamatta). QA:n matalan prioriteetin löydökset on kirjattu tehtäviksi `M8-RESULTS-TICK` ja `M8-HUD-EDGE-CASES`.
 
 ### Tiedostorajaus ja omistus

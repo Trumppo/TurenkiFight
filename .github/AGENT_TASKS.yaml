@@ -1065,7 +1065,7 @@ tasks:
     title: Stop advancing the match tick once the results phase begins
     assigned_role: gameplay-session
     session_id: gameplay-session-20261103-tick
-    status: review
+    status: done
     priority: P2
     specification: docs/visual/M8_QA_REPORT_2026-11-02.md
     depends_on: [M8-BOT-QA]
@@ -1085,7 +1085,7 @@ tasks:
     title: Resolve negative scores and long status text in the HUD
     assigned_role: graphics-session
     session_id: graphics-session-20261103-ellipsis
-    status: review
+    status: done
     priority: P2
     specification: docs/visual/M8_QA_REPORT_2026-11-02.md
     depends_on: [M8-BOT-QA]
