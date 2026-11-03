@@ -1163,8 +1163,8 @@ tasks:
   - id: M9-RESULT-CELEBRATION
     title: Animate the winner reveal and top-three podium on the results screen
     assigned_role: graphics-session
-    session_id: 143-session
-    status: in_progress
+    session_id: graphics-session-20261103-celebration
+    status: done
     priority: P1
     specification: docs/M9_RESULTS_CELEBRATION.md
     depends_on: [M9-RESULT-RANKING]
@@ -1182,7 +1182,39 @@ tasks:
       - Full browser suite and git diff --check pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/143
     last_updated: "2026-11-03"
-    notes: "Presentation only. No simulation, protocol, server or bot changes; pinned fingerprints must stay identical."
+    notes: "PR #143 merged as c359e82 after independent Tester PASS WITH LIMITATIONS: full browser suite 100/100, 11/11 targeted tests, rankMatch called once per match end, LMS event carry-over proven non-vacuous, draw and reduced motion correct. Remaining cosmetic finding: fixed PLACES 4-8 heading, now task M9-RESULT-LABEL."
+
+  - id: M9-KO-READABILITY
+    title: Make knocked-out fighters and hit flashes keep their silhouette
+    assigned_role: graphics-session
+    status: ready
+    priority: P1
+    specification: docs/M9_READABILITY_POLISH.md
+    depends_on: [M9-CHARACTERS, M9-RESULT-CELEBRATION]
+    scope: [src/game/presentation/, src/style.css, tests/browser/]
+    acceptance:
+      - "An eliminated fighter stays identifiable by shape, outline and the KO pose; a full-surface flat fill is removed"
+      - "KO versus standing survives a greyscale screenshot at 640x360 and 390x844"
+      - "At least half of the hit-flash frames keep the silhouette and the character features"
+      - "No simulation, protocol, server or bot change; P1-P8 texture hashes and pinned fingerprints unchanged"
+      - Browser readability spec plus existing visual suites, build and git diff --check pass
+    last_updated: "2026-11-03"
+    notes: "Owner asked for a small polish package on 2026-11-03. Addresses the documented M8 finding that a KO renders as a flat blob and that the hit flash tints the whole sprite."
+
+  - id: M9-RESULT-LABEL
+    title: Replace the fixed PLACES 4-8 heading with a neutral one
+    assigned_role: graphics-session
+    status: ready
+    priority: P2
+    specification: docs/M9_READABILITY_POLISH.md
+    depends_on: [M9-RESULT-CELEBRATION]
+    scope: [src/game/presentation/, tests/browser/]
+    acceptance:
+      - "The extra-places heading no longer names a fixed 4-8 range and matches the actual roster"
+      - "14 CSS px minimum and the no-ellipsis rule still hold at all four celebration viewports"
+      - Existing celebration tests and git diff --check pass
+    last_updated: "2026-11-03"
+    notes: "Cosmetic Tester finding on PR #143: a five-player roster shows places 4-6 under a 4-8 label."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility

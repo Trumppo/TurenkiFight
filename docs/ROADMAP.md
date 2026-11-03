@@ -136,8 +136,10 @@
 - [x] Ranked podium reveal on the local results screen: winner name large in the player colour, 2nd/3rd with their metric, 4th-8th compactly, skippable, reduced-motion aware, RESET still works (#143)
 - [x] Original P5-P8 fighter silhouettes so eight-player rosters are not recolours (#141)
 - [x] RESET button and `Esc` without a page reload, plus online LEAVE (#142)
-- [ ] Independent Tester gate on #143
-- [ ] Owner review and merge decision
+- [x] Independent Tester gate on #143: PASS WITH LIMITATIONS, full browser suite 100/100, targeted 11/11
+- [x] Owner approved the merge on 2026-11-03; merged as `c359e82`
+- [ ] Small polish package: `M9-KO-READABILITY` and `M9-RESULT-LABEL`
+- [ ] Milestone acceptance as a whole (owner decision; merge is not acceptance)
 
 **Known limits:** eight fighters remain hard to tell apart in a tight crowd; the celebration is local-only, because online snapshots carry no elimination order; the celebration panel covers the middle of the frozen arena. See [results celebration](M9_RESULTS_CELEBRATION.md).
 
