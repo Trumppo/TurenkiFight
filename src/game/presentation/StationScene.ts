@@ -200,12 +200,29 @@ export class StationScene extends Phaser.Scene {
     }
     this.lastStart = start;
 
-    this.elapsedMs = Math.min(this.elapsedMs + delta, 250);
-    const interval = 1000 / TICK_RATE;
-    while (this.elapsedMs >= interval) {
-      this.state = step(this.state, this.readInputs(pads));
-      this.observeAudio(this.state);
-      this.elapsedMs -= interval;
+    // A finished match is terminal for the presentation loop. `step` keeps its
+    // existing results early-out, which still advances `tick` and clears
+    // `events`; calling it here therefore reported ticks beyond the recorded
+    // MatchEnded tick (QA finding F2). Countdown and fighting keep the exact
+    // fixed-step accumulator below; results does not step at all.
+    if (this.state.phase === 'results') {
+      // Do not bank wall time while the results screen is open: a rematch must
+      // start from an empty accumulator rather than a catch-up burst.
+      this.elapsedMs = 0;
+    } else {
+      this.elapsedMs = Math.min(this.elapsedMs + delta, 250);
+      const interval = 1000 / TICK_RATE;
+      while (this.elapsedMs >= interval) {
+        this.state = step(this.state, this.readInputs(pads));
+        this.observeAudio(this.state);
+        this.elapsedMs -= interval;
+        // The step that ends the match is the last one: stop before the next
+        // tick so `state.tick` equals the MatchEnded event tick.
+        if (this.state.phase === 'results') {
+          this.elapsedMs = 0;
+          break;
+        }
+      }
     }
     this.observeAudio(this.state);
     this.drawFighters();
