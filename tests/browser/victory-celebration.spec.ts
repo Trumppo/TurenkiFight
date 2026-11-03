@@ -99,6 +99,15 @@ test('Score Brawl, Deathmatch and Last Man Standing reveal their ranked podium m
   await expect(page.locator('#victory-title')).toHaveText('P5');
   await expect(page.locator('#victory-podium li').nth(0)).toHaveAttribute('aria-label', '2ND place, P4, SURVIVAL PLACE 2ND');
   await expect(page.locator('#victory-podium li').nth(1)).toHaveAttribute('aria-label', '3RD place, P3, SURVIVAL PLACE 3RD');
+  const fivePlayerRest = await page.locator('#victory-rest').evaluate(element => ({
+    text: element.textContent,
+    fontSize: Number.parseFloat(getComputedStyle(element).fontSize),
+    overflow: element.scrollWidth > element.clientWidth + 1,
+  }));
+  expect(fivePlayerRest.text).toMatch(/^PLACES: .*4TH .*5TH /);
+  expect(fivePlayerRest.text).not.toContain('8TH');
+  expect(fivePlayerRest.fontSize).toBeGreaterThanOrEqual(14);
+  expect(fivePlayerRest.overflow).toBe(false);
 });
 
 test('draw names all tied players without announcing a winner', async ({ page }) => {

@@ -60,9 +60,10 @@ test('Last Man Standing HUD shows stocks and a visibly eliminated fighter', asyn
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
     const fighter = scene.state.fighters.find((f: { id: string }) => f.id === 'P2');
     const sprite = scene.fighterSprites.get('P2');
-    return { eliminated: fighter.eliminated, pose: scene.pose(fighter), alpha: sprite.alpha, texture: sprite.texture.key };
+    return { eliminated: fighter.eliminated, pose: scene.pose(fighter), alpha: sprite.alpha, tintFill: sprite.tintFill,
+      markerVisible: scene.koMarkers.get('P2').visible, texture: sprite.texture.key };
   });
-  expect(outVisual).toMatchObject({ eliminated: true, pose: 'ko', alpha: 0.72 });
+  expect(outVisual).toMatchObject({ eliminated: true, pose: 'ko', alpha: 0.92, tintFill: false, markerVisible: true });
   expect(outVisual.texture).toContain('fighter-P2-ko-');
   await expect(page.locator('[data-player="P2"]')).toHaveAttribute('aria-label', 'P2, stock 0, eliminated');
   const desktopFonts = await page.locator('#match-timer, #match-status, .hud-player, .hud-name, .hud-score, .hud-health, .mode-control select').evaluateAll(elements =>
