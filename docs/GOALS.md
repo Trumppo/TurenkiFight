@@ -104,7 +104,9 @@ Kahdeksan pelaajan katto, paikalliset botit ja kahdeksan slotin UI on yhdistetty
 - Riippumaton QA vahvisti: eliminoitu hahmo ei liiku eikä ota osumia live-ottelussa, frag-attribuutio ja 20 fragin raja toimivat, deterministiset hashit täsmäävät, Score Brawl on tavuidenttinen.
 - QA nosti esiin kaksi tulkintakysymystä: kolmen pelaajan osittainen tasatila päätyy **tasapeliin** (specin "ties … otherwise draw" mukaisesti) ja `serve:match` on yhden ottelun istunto ilman rematchia.
 
-**Jäljellä vain omistajan päätökset:** (1) pelaa muodot ja päätä tuntuuko tasapeli kolmen pelaajan tasatilanteessa oikealta; (2) kahdeksan pelaajan playtest; (3) viedäänkö kahdeksan verkkoon.
+**Omistajan päätös 2026-11-03: tasapeli on oikea tulos.** Jos HP, KO:t ja damage ovat tasan, matsi jää ratkaisemattomaksi; sääntöä ei muuteta.
+
+**Jäljellä vain omistajan päätökset:** (1) kahdeksan pelaajan playtest; (2) viedäänkö kahdeksan verkkoon.
 
 ### Tiedostorajaus ja omistus
 

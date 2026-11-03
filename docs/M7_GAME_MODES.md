@@ -24,6 +24,8 @@ select a mode later without protocol changes beyond carrying the mode id.
 - The match ends immediately when **one or zero** fighters remain. The remaining fighter wins.
 - If the 120 s timer expires with two or more alive, the winner is the fighter with the most
   remaining HP; ties on HP break on KOs dealt, then on damage dealt, otherwise the match is a draw.
+  **Owner confirmed on 2026-11-03 that a draw is the intended result; it is not resolved by a further
+  tie-break.**
 - HUD shows stocks (1/0) instead of score, and an "eliminated" state per fighter.
 - No respawn protection is needed after elimination; hit protection for the brief spawn moment still
   applies at match start.
