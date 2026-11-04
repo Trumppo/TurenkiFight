@@ -1255,6 +1255,7 @@ tasks:
   - id: M9-ONLINE-RESULT-FIELDS
     title: Send the authoritative match result and ranking in the server match-end message
     assigned_role: gameplay-session
+    session_id: gameplay-session-20261104-online-results
     status: in_progress
     priority: P1
     specification: docs/M9_ONLINE_RESULTS.md
@@ -1272,7 +1273,7 @@ tasks:
   - id: M9-ONLINE-REMATCH
     title: Allow a rematch in the same server process with the same roster
     assigned_role: gameplay-session
-    status: ready
+    status: blocked
     priority: P1
     specification: docs/M9_ONLINE_RESULTS.md
     depends_on: [M9-ONLINE-RESULT-FIELDS]
@@ -1289,7 +1290,7 @@ tasks:
   - id: M9-ONLINE-RESULTS-UI
     title: Show the online result card and a rematch control
     assigned_role: graphics-session
-    status: ready
+    status: blocked
     priority: P1
     specification: docs/M9_ONLINE_RESULTS.md
     depends_on: [M9-ONLINE-RESULT-FIELDS, M9-ONLINE-REMATCH]
