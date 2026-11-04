@@ -1252,6 +1252,57 @@ tasks:
     last_updated: "2026-11-03"
     notes: "PR #146 merged as 67348f8 after independent Tester PASS. At 640x360 the panel leaves 65.0% of the canvas visible (base layout 57.0%); the gate caught that the original one-third threshold did not discriminate, so the test now requires 0.6. Limit: 0.6 is the current layout measurement, not a design constant."
 
+  - id: M9-ONLINE-RESULT-FIELDS
+    title: Send the authoritative match result and ranking in the server match-end message
+    assigned_role: gameplay-session
+    status: in_progress
+    priority: P1
+    specification: docs/M9_ONLINE_RESULTS.md
+    depends_on: [M7-MODE-ONLINE, M9-RESULT-RANKING]
+    scope: [src/game/networking/, src/game/protocol/, server/ws/, tests/]
+    acceptance:
+      - "match-end optionally carries reason, winner (or null) and a full ranking computed by the server with rankMatch"
+      - "The payload matches rankMatch for all three modes and for a draw; the client never ranks"
+      - "Omitting result stays valid and no snapshot bytes, pinned fingerprints or existing session bytes change"
+      - Codec, server unit and integration tests cover payload presence, absence, draw and malformed payload rejection
+      - npm test, npm run build and git diff --check pass
+    last_updated: "2026-11-04"
+    notes: "Owner chose the online results screen and rematch as the next work package on 2026-11-04. Decision record: docs/adr/0003-online-match-result-fields.md (proposal)."
+
+  - id: M9-ONLINE-REMATCH
+    title: Allow a rematch in the same server process with the same roster
+    assigned_role: gameplay-session
+    status: ready
+    priority: P1
+    specification: docs/M9_ONLINE_RESULTS.md
+    depends_on: [M9-ONLINE-RESULT-FIELDS]
+    scope: [src/game/networking/, server/ws/, server/, tests/]
+    acceptance:
+      - "A rematch client message starts a new match in the same process with the same roster and zeroed scores"
+      - "rematch is rejected with a typed error outside the results phase or when a player has left; the session stays consistent"
+      - "match-start carries a monotonic matchId and clients drop stale snapshots from the previous match"
+      - serve:match keeps its one-shot default behind an explicit opt-in for repeat matches
+      - Integration tests cover a second match, the refusal paths and clean shutdown; npm test, build and git diff --check pass
+    last_updated: "2026-11-04"
+    notes: "Removes the documented one-match-per-process limitation without adding matchmaking, rejoin or host migration."
+
+  - id: M9-ONLINE-RESULTS-UI
+    title: Show the online result card and a rematch control
+    assigned_role: graphics-session
+    status: ready
+    priority: P1
+    specification: docs/M9_ONLINE_RESULTS.md
+    depends_on: [M9-ONLINE-RESULT-FIELDS, M9-ONLINE-REMATCH]
+    scope: [src/online.ts, online.html, src/game/networking/, src/style.css, tests/browser/]
+    acceptance:
+      - "The online page shows winner or DRAW, reason, 2nd/3rd and 4th-8th from the server payload only"
+      - "A REMATCH control starts a new match without a page reload and returns to the countdown"
+      - "Waiting for others and a refused rematch are shown as readable states, not silent failures"
+      - "Online-specific layout is readable at 1280x720 and 390x844 and does not regress the local screens"
+      - Browser tests with a real server cover the result card, draw, refused rematch and a successful rematch
+    last_updated: "2026-11-04"
+    notes: "Presentation only: renders the payload, never computes a ranking. Owner requested the online results screen on 2026-11-04."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
