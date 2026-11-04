@@ -46,6 +46,19 @@ const statusEl = document.getElementById('online-status') as HTMLElement;
 const metricsEl = document.getElementById('online-metrics') as HTMLElement;
 const keysEl = document.getElementById('online-keys') as HTMLElement;
 const leaveButton = document.getElementById('online-leave') as HTMLButtonElement | null;
+const fightHud = document.getElementById('fight-hud') as HTMLElement;
+const resultCard = document.getElementById('online-result') as HTMLElement;
+const resultWinner = document.getElementById('online-result-winner') as HTMLElement;
+const resultReason = document.getElementById('online-result-reason') as HTMLElement;
+const resultTies = document.getElementById('online-result-ties') as HTMLElement;
+const resultPodium = document.getElementById('online-result-podium') as HTMLOListElement;
+const resultRest = document.getElementById('online-result-rest') as HTMLElement;
+const rematchStatus = document.getElementById('online-rematch-status') as HTMLElement;
+const rematchButton = document.getElementById('online-rematch') as HTMLButtonElement;
+let rematchWaiting = false;
+let rematchMatchId: number | null = null;
+let rematchRefusal = '';
+let renderedResultKey = '';
 
 const trackedCodes = new Set<string>();
 for (const layout of Object.values(KEYBOARD_LAYOUTS)) {
@@ -106,7 +119,152 @@ function updateKeyHint(playerId: string): void {
   setText(keysEl, layoutText(playerId));
 }
 
+function ordinal(place: number): string {
+  const suffix = place % 100 >= 11 && place % 100 <= 13
+    ? 'TH'
+    : ({ 1: 'ST', 2: 'ND', 3: 'RD' } as Record<number, string>)[place % 10] ?? 'TH';
+  return `${place}${suffix}`;
+}
+
+function resultReasonLabel(reason: string): string {
+  switch (reason) {
+    case 'elimination': return 'ELIMINATION';
+    case 'frag-limit': return 'FRAG LIMIT';
+    case 'time': return 'TIME';
+    default: return reason;
+  }
+}
+
+function rematchRefusalText(code: string): string {
+  switch (code) {
+    case 'rematch-disabled': return 'Rematch is disabled on this server.';
+    case 'roster-incomplete': return 'Rematch refused: everyone must still be connected.';
+    case 'not-in-results': return 'Rematch is only available after a finished match.';
+    default: return `Rematch refused (${code}).`;
+  }
+}
+
+function clearResultRows(): void {
+  resultPodium.replaceChildren();
+  resultTies.hidden = true;
+  setText(resultTies, '');
+  setText(resultRest, '');
+}
+
+function hideResultCard(): void {
+  if (!resultCard.hidden) {
+    resultCard.hidden = true;
+    clearResultRows();
+    setText(resultWinner, '');
+    setText(resultReason, '');
+    resultWinner.removeAttribute('aria-label');
+  }
+  if (fightHud.hidden) fightHud.hidden = false;
+  renderedResultKey = '';
+}
+
+/** Displays only server-authored match-end fields. No ranking is reconstructed here. */
+function updateResultCard(): void {
+  const status = controller.status;
+  const result = controller.matchResult;
+  const hasResultScreen = status.state === 'ended' && result !== null;
+
+  if (rematchWaiting && controller.rematchRefusedCode !== null) {
+    rematchWaiting = false;
+    rematchRefusal = rematchRefusalText(controller.rematchRefusedCode);
+  }
+  const matchId = controller.matchStart?.matchId ?? null;
+  if (rematchWaiting && matchId !== null && rematchMatchId !== null && matchId !== rematchMatchId &&
+      status.state === 'running') {
+    rematchWaiting = false;
+    rematchRefusal = '';
+    hideResultCard();
+    rematchButton.disabled = false;
+    return;
+  }
+  if (!hasResultScreen) {
+    if (!rematchWaiting) {
+      hideResultCard();
+    }
+    return;
+  }
+
+  resultCard.hidden = false;
+  fightHud.hidden = true;
+  resultCard.classList.toggle('is-waiting', rematchWaiting);
+  if (rematchButton.disabled !== rematchWaiting) rematchButton.disabled = rematchWaiting;
+  setText(rematchButton, rematchWaiting ? 'WAITING' : 'REMATCH');
+  const hideRematchStatus = !rematchWaiting && !rematchRefusal;
+  if (rematchStatus.hidden !== hideRematchStatus) rematchStatus.hidden = hideRematchStatus;
+  setText(rematchStatus, rematchWaiting ? 'Waiting for the others to start the rematch.' : rematchRefusal);
+
+  const mode = controller.latestState()?.mode ?? 'score-brawl';
+  const cardKey = JSON.stringify({ result, mode, rematchWaiting, rematchRefusal });
+  if (renderedResultKey === cardKey) return;
+  renderedResultKey = cardKey;
+  clearResultRows();
+  if (!result) {
+    setText(resultWinner, 'RESULT UNAVAILABLE');
+    setText(resultReason, 'The server did not send an authoritative result payload.');
+    return;
+  }
+  setText(resultWinner, result.winner === null ? 'DRAW' : result.winner);
+  resultWinner.setAttribute('aria-label', result.winner === null ? 'Draw' : `Winner: ${result.winner}`);
+  setText(resultReason, `END REASON · ${resultReasonLabel(result.reason)}`);
+
+  if (result.winner === null) {
+    const tiedEntries = result.ranking.filter(entry => entry.rank === 1);
+    const tiedNames = tiedEntries.map(entry => entry.id).join(' · ');
+    if (tiedEntries.length > 1) {
+      setText(resultTies, `TIED PLAYERS · ${tiedNames}`);
+      resultTies.hidden = false;
+    }
+  }
+
+  for (const entry of result.ranking) {
+    if (entry.rank !== 2 && entry.rank !== 3) continue;
+    const item = document.createElement('li');
+    item.className = 'online-result-place';
+    const place = document.createElement('span');
+    place.className = 'online-result-place-number';
+    place.textContent = ordinal(entry.rank);
+    const name = document.createElement('strong');
+    name.className = 'online-result-place-name';
+    name.textContent = entry.id;
+    const metric = document.createElement('span');
+    metric.className = 'online-result-place-metric';
+    const metricName = mode === 'deathmatch' ? 'FRAGS' : mode === 'last-man-standing' ? 'SURVIVAL' : 'SCORE';
+    metric.textContent = `${metricName} ${entry.metric}`;
+    item.setAttribute('aria-label', `${ordinal(entry.rank)} place, ${entry.id}, ${metric.textContent}`);
+    item.append(place, name, metric);
+    resultPodium.append(item);
+  }
+
+  if (result.ranking.length > 3) {
+    const laterPlaces = result.ranking.filter(entry => entry.rank >= 4 && entry.rank <= 8);
+    if (laterPlaces.length) {
+      setText(resultRest, `PLACES · ${laterPlaces.map(entry => `${ordinal(entry.rank)} ${entry.id}`).join(' · ')}`);
+    }
+  }
+}
+
+rematchButton.addEventListener('click', () => {
+  if (rematchWaiting) return;
+  rematchRefusal = '';
+  rematchWaiting = true;
+  rematchMatchId = controller.matchStart?.matchId ?? null;
+  updateResultCard();
+  try {
+    controller.requestRematch();
+  } catch (error) {
+    rematchWaiting = false;
+    rematchRefusal = `Could not request rematch: ${error instanceof Error ? error.message : String(error)}`;
+    updateResultCard();
+  }
+});
+
 function updatePanel(): void {
+  updateResultCard();
   const info = controller.linkInfo();
   const label = STATE_LABEL[info.state];
   setDataState(statusEl, info.state);
@@ -168,6 +326,9 @@ playerSelect.addEventListener('change', () => updateKeyHint(playerSelect.value))
  * guard: a session started again from the form must still close on pagehide.
  */
 function leaveMatch(): void {
+  rematchWaiting = false;
+  rematchMatchId = null;
+  rematchRefusal = '';
   controller.disconnect();
   showError(null);
   setup.hidden = false;
@@ -252,6 +413,7 @@ if (import.meta.env.DEV) {
         })),
       };
     },
+    resultPayload() { return controller.matchResult; },
     renderedFighters(): Array<{ id: string; x: number; y: number; pose: string; alpha: number }> {
       const scene = game.scene.getScene('OnlineScene') as OnlineScene | null;
       return (scene?.debugFighters() ?? []).map(fighter => ({

@@ -132,6 +132,7 @@ export class OnlineMatchController {
   private matchStartValue: MatchStartInfo | null = null;
   private matchStartedAt: number | null = null;
   private matchResultValue: WsMatchResult | null = null;
+  private rematchRefusedCodeValue: string | null = null;
   private nextTick = 0;
   private joined = false;
   private running = false;
@@ -165,6 +166,8 @@ export class OnlineMatchController {
   get matchStart(): MatchStartInfo | null { return this.matchStartValue; }
   /** Server-authored result of the last finished match; the client never ranks. */
   get matchResult(): WsMatchResult | null { return this.matchResultValue; }
+  /** Typed server denial for the most recent rematch request, if refused. */
+  get rematchRefusedCode(): string | null { return this.rematchRefusedCodeValue; }
   get ownedPlayerIds(): readonly string[] { return this.session?.client.ownedPlayerIds ?? []; }
   get isRunning(): boolean { return this.running; }
 
@@ -249,6 +252,7 @@ export class OnlineMatchController {
           this.lastSnapshotAt = null;
           this.matchResultValue = null;
         }
+        this.rematchRefusedCodeValue = null;
         this.matchStartValue = { ...info };
         this.matchStartedAt = this.clock();
         this.nextTick = info.startTick;
@@ -263,7 +267,17 @@ export class OnlineMatchController {
         this.noteSnapshot(snapshot);
       },
       onError: error => {
-        if (attempt !== this.attemptToken || this.terminal) return;
+        if (attempt !== this.attemptToken) return;
+        // A results-phase rematch refusal is an expected, recoverable reply.
+        // Preserve the finished match and surface the typed denial to the page;
+        // all other errors after a terminal state remain ignored as before.
+        if (this.terminal) {
+          if (['rematch-disabled', 'roster-incomplete', 'not-in-results'].includes(error.code)) {
+            this.rematchRefusedCodeValue = error.code;
+            this.setStatus('ended', 'Rematch refused.', `${error.code}: ${error.message}`);
+          }
+          return;
+        }
         const text = `${error.code}: ${error.message}`;
         this.lastDetail = text;
         if (!this.joined) {
@@ -285,6 +299,7 @@ export class OnlineMatchController {
       onMatchEnd: (tick, result) => {
         if (attempt !== this.attemptToken || this.terminal) return;
         this.matchResultValue = result ?? null;
+        this.rematchRefusedCodeValue = null;
         this.terminal = true;
         this.running = false;
         this.stopTimers();
@@ -398,6 +413,10 @@ export class OnlineMatchController {
    */
   requestRematch(): number {
     if (this.session === null) throw new Error('No open session to rematch');
+    // Do not let a prior refusal masquerade as the response to a new request.
+    this.lastDetail = undefined;
+    this.rematchRefusedCodeValue = null;
+    this.setStatus(this.statusValue.state, this.statusValue.message);
     return this.session.client.rematch();
   }
 
@@ -437,6 +456,7 @@ export class OnlineMatchController {
     this.matchStartValue = null;
     this.matchStartedAt = null;
     this.matchResultValue = null;
+    this.rematchRefusedCodeValue = null;
     this.nextTick = 0;
     if (hadSession && this.statusValue.state !== 'error' && this.statusValue.state !== 'ended') {
       this.setStatus('closed', 'Disconnected from the match server.');
@@ -543,6 +563,7 @@ export class OnlineMatchController {
     this.matchStartValue = null;
     this.matchStartedAt = null;
     this.matchResultValue = null;
+    this.rematchRefusedCodeValue = null;
     this.nextTick = 0;
     this.joined = false;
     this.running = false;
