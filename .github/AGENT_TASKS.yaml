@@ -1255,7 +1255,8 @@ tasks:
   - id: M9-RETRO-P5-P8
     title: Draw retro textures for P5-P8 so a retro build stops mixing art styles
     assigned_role: graphics-session
-    status: ready
+    session_id: graphics-session-20261104-retro-bots
+    status: review
     priority: P1
     specification: docs/M9_BOTS_AND_RETRO.md
     depends_on: [M9-CHARACTERS]
@@ -1266,13 +1267,15 @@ tasks:
       - "The four silhouettes stay distinguishable and use the retro palette conventions"
       - Retro contract test and eight-fighter retro screenshots pass and are inspected
       - "No simulation, protocol or server change; git diff --check passes"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/148
     last_updated: "2026-11-04"
     notes: "Owner report 2026-11-04: four bots still carry old graphics. Diagnosis: retro builds only overwrite P1-P4 textures, so slots 5-8 fall back to classic art."
 
   - id: M9-ALL-BOT-MATCH
     title: Add an all-bot match mode for unattended testing and spectating
     assigned_role: graphics-session
-    status: ready
+    session_id: graphics-session-20261104-retro-bots
+    status: review
     priority: P1
     specification: docs/M9_BOTS_AND_RETRO.md
     depends_on: [M8-BOT-OPPONENT, M9-RESET-CONTROL]
@@ -1283,6 +1286,7 @@ tasks:
       - "The HUD marks P1 as a bot in this mode; RESET restores a human P1 lobby"
       - A URL flag for headless QA may exist, but the visible action is the primary path
       - Browser tests cover start, HUD labels, determinism and reset; existing suites stay green
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/148
     last_updated: "2026-11-04"
     notes: "Owner asked 2026-11-04 for support where only bots play, to make testing easier. No simulation, protocol or server change: only the input source changes."
 
