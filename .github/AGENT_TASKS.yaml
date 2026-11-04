@@ -983,7 +983,7 @@ tasks:
     title: Let players fill empty slots with deterministic local bots
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-bots
-    status: review
+    status: done
     priority: P0
     specification: docs/M8_BOTS_AND_EIGHT_PLAYERS.md
     depends_on: []
