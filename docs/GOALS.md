@@ -40,7 +40,12 @@ Nämä ovat pieniä, rajattuja ja testattavia. Suositusjärjestys:
 2. **Kahdeksan pelaajan verkkopeli.** Toteutus on pääosin olemassa; tarvitaan päätös siitä, hyväksytäänkö kahdeksan verkkoon ennen mittausta vai vasta sen jälkeen, sekä mittausohje omistajalle.
 3. **HUD-tunnistus.** Hahmoille lyhyet nimet tai kuvakkeet HUDiin, jotta P5–P8 erottuvat muustakin kuin väristä. Pieni, mutta koskettaa HUDin ellipsis- ja kokorajoja.
 4. **Tulossivun viimeistely.** 1280×720 KO-kaappaus spektiin, osumapalautteen liikkuva todentaminen ja paneelin 0,6-kynnyksen dokumentointi osaksi layoutin sääntöä.
-5. **Siivous.** Vanhat työpuut ja haaraliittännäiset, jotka ovat jo `main`issa, sekä M0-lisenssit.
+5. **Siivous.** ✅ Tehty 2026-11-04: 31 vanhaa työpuuta poistettu (noin 6,6 GB), 133 yhdistettyä etähaaraa poistettu,
+   paikalliset yhdistetyt haarat siivottu. Jäljelle jäi `main` ja yksi historiallinen haara
+   (`revision/m2-protocol-hardening`, suljettu PR #25, 56 committia jotka eivät ole mainissa) sekä 15 vanhaa
+   etähaaraa, jotka eivät ole yhdistettyjä PR:iä. **M0-lisenssit odottavat omistajan valintaa:**
+   [LICENSE_DECISION.md](LICENSE_DECISION.md) listaa vaihtoehdot ja suosituksen (koodi MIT, taide ja ääni CC BY 4.0),
+   mutta ei päätä puolestasi.
 
 ### C. Tietoisesti siirretty
 
