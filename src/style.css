@@ -164,6 +164,54 @@ p { color: #c2cbd2; }
 
 .instructions { font-size: 13px; line-height: 1.7; }
 
+/* A primary, visible lobby path for unattended eight-bot QA/spectating. */
+.lobby-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  max-width: 960px;
+  margin: 6px auto 10px;
+  padding: 8px 12px;
+  border: 1px solid #77cfdf;
+  background: #203644;
+  color: #e4f3ec;
+  text-align: left;
+}
+.lobby-actions[hidden] { display: none; }
+.lobby-actions button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 4px 12px;
+  border: 2px solid #a7e4e7;
+  border-radius: 0;
+  background: #172536;
+  color: #fff1b7;
+  font: inherit;
+  font-weight: 900;
+  letter-spacing: .08em;
+  cursor: pointer;
+}
+.lobby-actions button:hover { background: #2b5260; }
+.lobby-actions p { margin: 0; color: #d7e6e4; font-size: 14px; line-height: 1.35; }
+.lobby-actions strong { color: #ffe39a; }
+.lobby-actions kbd { padding: 1px 5px; border: 1px solid #c7a76a; background: #293849; color: #fff1b7; font: inherit; font-weight: 800; }
+/* Integer 2× is an edge-to-edge 1280×720 composition. Keep the lobby CTA
+   over the quiet strip just below the HUD instead of adding page height. */
+body.integer-scale-2 .lobby-actions {
+  position: fixed;
+  z-index: 3;
+  top: max(112px, calc((100dvh - 720px) / 2 + 120px));
+  left: 50%;
+  width: auto;
+  max-width: 95vw;
+  margin: 0;
+  padding: 2px 6px;
+  transform: translateX(-50%);
+}
+body.integer-scale-2 .lobby-actions p { display: none; }
+body.integer-scale-2 .lobby-actions button { min-height: 28px; padding: 2px 8px; }
+
 /* Remove the old page's ~20px overflow at the measured 1280x720 viewport. */
 @media (min-width: 601px) and (max-height: 760px) {
   main { padding: 8px 16px; }
@@ -228,6 +276,8 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   .online-page .page-header { padding-bottom: 28px; }
   .online-page .page-header > .audio-controls { top: auto; bottom: 0; }
   #game { display: flex; flex-direction: column; gap: 8px; max-width: none; margin: 8px auto; border: 0; }
+  .lobby-actions { align-items: stretch; flex-direction: column; gap: 6px; margin: 8px auto; padding: 8px; }
+  .lobby-actions button { width: 100%; }
   .victory-reveal { top: 76%; left: 50%; width: calc(100% - 8px); max-height: 49%; gap: 3px; padding: 6px; }
   .victory-title { font-size: clamp(24px, 8vw, 34px); }
   .victory-podium { gap: 3px 10px; }

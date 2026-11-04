@@ -983,7 +983,7 @@ tasks:
     title: Let players fill empty slots with deterministic local bots
     assigned_role: gameplay-session
     session_id: gameplay-session-20261102-bots
-    status: review
+    status: done
     priority: P0
     specification: docs/M8_BOTS_AND_EIGHT_PLAYERS.md
     depends_on: []
@@ -1252,6 +1252,44 @@ tasks:
     last_updated: "2026-11-03"
     notes: "PR #146 merged as 67348f8 after independent Tester PASS. At 640x360 the panel leaves 65.0% of the canvas visible (base layout 57.0%); the gate caught that the original one-third threshold did not discriminate, so the test now requires 0.6. Limit: 0.6 is the current layout measurement, not a design constant."
 
+  - id: M9-RETRO-P5-P8
+    title: Draw retro textures for P5-P8 so a retro build stops mixing art styles
+    assigned_role: graphics-session
+    session_id: graphics-session-20261104-retro-bots
+    status: review
+    priority: P1
+    specification: docs/M9_BOTS_AND_RETRO.md
+    depends_on: [M9-CHARACTERS]
+    scope: [src/game/presentation/, tests/browser/]
+    acceptance:
+      - "P5-P8 have retro textures for all ten poses and four frames at 32x48 with the existing key contract"
+      - "P1-P4 classic and retro texture hashes are unchanged, and P5-P8 retro textures differ from their classic ones"
+      - "The four silhouettes stay distinguishable and use the retro palette conventions"
+      - Retro contract test and eight-fighter retro screenshots pass and are inspected
+      - "No simulation, protocol or server change; git diff --check passes"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/148
+    last_updated: "2026-11-04"
+    notes: "Owner report 2026-11-04: four bots still carry old graphics. Diagnosis: retro builds only overwrite P1-P4 textures, so slots 5-8 fall back to classic art."
+
+  - id: M9-ALL-BOT-MATCH
+    title: Add an all-bot match mode for unattended testing and spectating
+    assigned_role: graphics-session
+    session_id: graphics-session-20261104-retro-bots
+    status: review
+    priority: P1
+    specification: docs/M9_BOTS_AND_RETRO.md
+    depends_on: [M8-BOT-OPPONENT, M9-RESET-CONTROL]
+    scope: [src/game/presentation/, index.html, src/style.css, tests/browser/]
+    acceptance:
+      - "ALL BOTS fills every slot including P1, starts the match, and the match finishes without further human input"
+      - "P1 is driven by the same deterministic bot policy and the match is reproducible for the same seed"
+      - "The HUD marks P1 as a bot in this mode; RESET restores a human P1 lobby"
+      - A URL flag for headless QA may exist, but the visible action is the primary path
+      - Browser tests cover start, HUD labels, determinism and reset; existing suites stay green
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/148
+    last_updated: "2026-11-04"
+    notes: "Owner asked 2026-11-04 for support where only bots play, to make testing easier. No simulation, protocol or server change: only the input source changes."
+
   - id: M9-ONLINE-RESULT-FIELDS
     title: Send the authoritative match result and ranking in the server match-end message
     assigned_role: gameplay-session
@@ -1269,7 +1307,7 @@ tasks:
       - npm test, npm run build and git diff --check pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/149
     last_updated: "2026-11-04"
-    notes: "Owner chose the online results screen and rematch as the next work package on 2026-11-04. Decision record: docs/adr/0003-online-match-result-fields.md (proposal)."
+    notes: "Owner chose the online results screen and rematch as the next work package on 2026-11-04. Decision record: docs/adr/0003-online-match-result-fields.md."
 
   - id: M9-ONLINE-REMATCH
     title: Allow a rematch in the same server process with the same roster

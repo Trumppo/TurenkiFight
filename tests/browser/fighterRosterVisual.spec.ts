@@ -54,7 +54,11 @@ test('P5-P8 are original monochrome silhouettes; P1-P4 textures match main', asy
             minX = Math.min(minX, x); minY = Math.min(minY, y);
             maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
           }
-          if (minX < 0 || minY < 0 || maxX >= 32 || maxY >= 48 || maxY < 43) throw new Error(`Clipped or incomplete pose ${key}`);
+           const airborne = pose === 'jump' || pose === 'jumpkick';
+           // Grounded cel drawings reach the shared foot baseline. Jump cels
+           // may lift the feet, but must still retain a substantial silhouette
+           // within the 32x48 cell; world Z and origin remain scene-owned.
+           if (minX < 0 || minY < 0 || maxX >= 32 || maxY >= 48 || maxY < (airborne ? 35 : 43)) throw new Error(`Clipped or incomplete pose ${key}`);
           bounds[key] = { minX, minY, maxX, maxY };
         }
       }

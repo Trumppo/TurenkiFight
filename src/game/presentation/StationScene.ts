@@ -7,6 +7,7 @@ import { createFighterTextures, fighterKey, type FighterPose } from './fighterSp
 import { createRetroP1Textures, RETRO_PREVIEW } from './retroPrototype';
 import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
+import { createRetroP5P8Textures } from './retroP5P8';
 import { keyboardPlayerInput } from '../input/keyboardMapping';
 import { botInput } from '../input/botPolicy';
 import { rankMatch } from '../simulation/ranking';
@@ -31,6 +32,8 @@ const MODE_NAMES: Record<ModeId, string> = {
  */
 const RESET_LABEL = 'Reset (Esc). In a match, countdown or results: return to the lobby and keep the '
   + 'players and mode. In the lobby: remove bots and joined players, leaving only P1. The mode is kept.';
+const ALL_BOT_RESET_LABEL = 'Reset (Esc). In the all-bot match, return to the lobby with a human P1 and no bots. '
+  + 'Use ALL BOTS again to start another all-bot match.';
 
 function resultReason(state: GameState): EndReason {
   const event = [...state.events].reverse().find(item => item.type === 'MatchEnded');
@@ -62,6 +65,7 @@ export class StationScene extends Phaser.Scene {
     status: HTMLElement;
     modeSelect: HTMLSelectElement;
     resetButton?: HTMLButtonElement;
+    allBotsPanel?: HTMLElement;
     playerList: HTMLElement;
     players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; action: HTMLButtonElement }>;
   };
@@ -69,16 +73,14 @@ export class StationScene extends Phaser.Scene {
   private hitFlash = new Map<string, number>();
   private gamepadSlots = new Map<number, string>();
   private reclaimableGamepadSlots = new Set<string>();
-  /**
-   * Placeholder local-bot roster. Slots in this set are driven by the pure
-   * seeded policy from `src/game/input/botPolicy.ts`; P1 is always human.
-   * Graphics owns the final lobby control, so this is deliberately a minimal
-   * keyboard toggle (B add / V remove) alongside per-slot lobby controls.
-   */
+  /** Slots in this set are driven by the pure seeded bot policy. */
   private botSlots = new Set<string>();
+  /** All-bot matches reset to the normal human P1 lobby, unlike ordinary rematches. */
+  private allBotMatch = false;
   private static readonly BOT_SEED = 0x5eed;
   private lastBotAdd = false;
   private lastBotRemove = false;
+  private lastAllBots = false;
   private lastResetKey = false;
   private lastStart = false;
   private lastPadStart = new Map<number, boolean>();
@@ -127,6 +129,7 @@ export class StationScene extends Phaser.Scene {
       createRetroP1Textures(this);
       createRetroP2Textures(this);
       createRetroExtraTextures(this);
+      createRetroP5P8Textures(this);
     }
     const textureKey = arenaBackdropTextureKey(this.arenaSelection.manifest.id);
     const backgroundDepth = this.arenaSelection.layers.find(layer => layer.id === 'architecture')?.depth ?? -100;
@@ -155,7 +158,7 @@ export class StationScene extends Phaser.Scene {
       this.audio = undefined;
     });
     this.cursors = this.input.keyboard!.createCursorKeys();
-    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,B,V,SPACE,ENTER,SHIFT,ESC') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,B,V,O,SPACE,ENTER,SHIFT,ESC') as Record<string, Phaser.Input.Keyboard.Key>;
     this.revealKeyHandler = event => {
       if (event.key === 'Escape') {
         // Handle Esc on keydown as well as through Phaser's polled key state.
@@ -207,6 +210,9 @@ export class StationScene extends Phaser.Scene {
     const removeBot = this.keys.V.isDown;
     if (removeBot && !this.lastBotRemove) this.removeBotSlot();
     this.lastBotRemove = removeBot;
+    const allBots = this.keys.O.isDown;
+    if (allBots && !this.lastAllBots) this.startAllBotMatch();
+    this.lastAllBots = allBots;
     // Only a deliberate Start press by the host begins the match.
     // Gamepad button 9 is Start; button 8 is the dedicated Join button.
     if (this.state.phase === 'lobby') {
@@ -238,18 +244,7 @@ export class StationScene extends Phaser.Scene {
     });
     for (const pad of pads) this.lastPadStart.set(pad.index, !!pad.buttons[9]?.pressed);
     const start = this.keys.ENTER.isDown;
-    if (((start && !this.lastStart) || padHostStart) && (this.state.phase === 'results' || (this.state.phase === 'lobby' && this.state.fighters.length >= 2))) {
-      this.state = createState(this.state.fighters.map(f => f.id), 'countdown', { mode: this.selectedMode });
-      this.lastResult = undefined;
-      this.matchEvents = [];
-      this.resultRanking = undefined;
-      this.resultPresentationReady = false;
-      this.victoryCueEndKey = undefined;
-      this.clearRevealState();
-      this.audioBridge?.reset();
-      this.previous.clear();
-      this.hitFlash.clear();
-    }
+    if (((start && !this.lastStart) || padHostStart) && (this.state.phase === 'results' || (this.state.phase === 'lobby' && this.state.fighters.length >= 2))) this.startLocalMatch();
     this.lastStart = start;
 
     // A finished match is terminal for the presentation loop. `step` keeps its
@@ -297,9 +292,10 @@ export class StationScene extends Phaser.Scene {
   /**
    * Return to the lobby without reloading the page.
    *
-   * - From countdown/fighting/results the roster (humans and bots) and the
-   *   selected mode are kept, while the match state itself is recreated: tick,
-   *   timer, scores, health, events and the results summary all start fresh.
+   * - From a normal match, the roster and selected mode are kept. From an
+   *   all-bot match, RESET deliberately restores a human P1-only lobby.
+   * - In either case the match state is recreated: tick, timer, scores, health,
+   *   events and the results summary all start fresh.
    * - In the lobby, bots and joined non-host slots are cleared, leaving a
    *   P1-only lobby; the selected mode stays.
    *
@@ -309,14 +305,16 @@ export class StationScene extends Phaser.Scene {
   private resetLocal(): void {
     if (!this.canResetLocal()) return;
     const clearingLobby = this.state.phase === 'lobby';
-    const ids = clearingLobby ? ['P1'] : this.state.fighters.map(fighter => fighter.id);
-    if (clearingLobby) {
+    const clearingAllBotMatch = this.allBotMatch && !clearingLobby;
+    const ids = clearingLobby || clearingAllBotMatch ? ['P1'] : this.state.fighters.map(fighter => fighter.id);
+    if (clearingLobby || clearingAllBotMatch) {
       this.botSlots.clear();
       this.gamepadSlots.clear();
       this.reclaimableGamepadSlots.clear();
       this.lastPadStart.clear();
       this.lastJoinButtons.clear();
     }
+    this.allBotMatch = false;
     this.state = createState(ids, 'lobby', { mode: this.selectedMode });
     this.lastResult = undefined;
     this.matchEvents = [];
@@ -338,6 +336,35 @@ export class StationScene extends Phaser.Scene {
     this.lastKeyboardJoin = down('SHIFT');
     this.lastBotAdd = down('B');
     this.lastBotRemove = down('V');
+    this.lastAllBots = down('O');
+    this.drawFighters();
+  }
+
+  /** Start a normal match or rematch without repeating its presentation reset. */
+  private startLocalMatch(): void {
+    this.state = createState(this.state.fighters.map(f => f.id), 'countdown', { mode: this.selectedMode });
+    this.lastResult = undefined;
+    this.matchEvents = [];
+    this.resultRanking = undefined;
+    this.resultPresentationReady = false;
+    this.victoryCueEndKey = undefined;
+    this.clearRevealState();
+    this.audioBridge?.reset();
+    this.previous.clear();
+    this.hitFlash.clear();
+  }
+
+  /** Fill P1-P8 with bots and immediately begin the countdown. */
+  private startAllBotMatch(): void {
+    if (this.state.phase !== 'lobby') return;
+    this.botSlots = new Set(PLAYER_IDS);
+    this.gamepadSlots.clear();
+    this.reclaimableGamepadSlots.clear();
+    this.lastPadStart.clear();
+    this.lastJoinButtons.clear();
+    this.allBotMatch = true;
+    this.state = createState(PLAYER_IDS, 'lobby', { mode: this.selectedMode });
+    this.startLocalMatch();
     this.drawFighters();
   }
 
@@ -390,11 +417,12 @@ export class StationScene extends Phaser.Scene {
   }
 
   private readInputs(pads: Gamepad[]): PlayerInput[] {
-    // P1 and human P2 use the keyboard. A bot occupying P2 must not receive
-    // stray keyboard input, so P2's layout is only sampled for a human slot.
-    const inputs: PlayerInput[] = [
-      keyboardPlayerInput('P1', code => this.isKeyboardCodeDown(code)),
-    ];
+    // Keyboard slots are sampled only when human-controlled. All bots, including
+    // P1 in spectator mode, flow through the same seeded policy below.
+    const inputs: PlayerInput[] = [];
+    if (this.state.fighters.some(fighter => fighter.id === 'P1') && !this.botSlots.has('P1')) {
+      inputs.push(keyboardPlayerInput('P1', code => this.isKeyboardCodeDown(code)));
+    }
     if (this.state.fighters.some(fighter => fighter.id === 'P2') && !this.botSlots.has('P2')) {
       inputs.push(keyboardPlayerInput('P2', code => this.isKeyboardCodeDown(code)));
     }
@@ -503,6 +531,8 @@ export class StationScene extends Phaser.Scene {
     const status = document.getElementById('match-status');
     const modeSelect = document.getElementById('game-mode') as HTMLSelectElement | null;
     const resetButton = document.getElementById('reset-match') as HTMLButtonElement | null;
+    const allBotsButton = document.getElementById('all-bots-match') as HTMLButtonElement | null;
+    const allBotsPanel = document.getElementById('lobby-actions');
     const playerList = document.getElementById('player-hud');
     if (!timer || !status || !modeSelect || !playerList) return;
     const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; action: HTMLButtonElement }>();
@@ -540,7 +570,11 @@ export class StationScene extends Phaser.Scene {
         resetButton.blur();
       });
     }
-    this.domHud = { timer, status, modeSelect, resetButton: resetButton ?? undefined, playerList, players };
+    allBotsButton?.addEventListener('click', () => {
+      this.startAllBotMatch();
+      allBotsButton.blur();
+    });
+    this.domHud = { timer, status, modeSelect, resetButton: resetButton ?? undefined, allBotsPanel: allBotsPanel ?? undefined, playerList, players };
     this.renderDomHud();
   }
 
@@ -556,7 +590,11 @@ export class StationScene extends Phaser.Scene {
     if (hud.resetButton) {
       const resetEnabled = this.canResetLocal();
       if (hud.resetButton.disabled !== !resetEnabled) hud.resetButton.disabled = !resetEnabled;
+      const resetLabel = this.allBotMatch ? ALL_BOT_RESET_LABEL : RESET_LABEL;
+      if (hud.resetButton.title !== resetLabel) hud.resetButton.title = resetLabel;
+      if (hud.resetButton.getAttribute('aria-label') !== resetLabel) hud.resetButton.setAttribute('aria-label', resetLabel);
     }
+    if (hud.allBotsPanel) hud.allBotsPanel.hidden = this.state.phase !== 'lobby';
     hud.playerList.classList.toggle('mode-specific', this.state.mode === 'last-man-standing' || this.state.mode === 'deathmatch');
     for (const [id, nodes] of hud.players) {
       const fighter = this.state.fighters.find(f => f.id === id);
@@ -618,7 +656,7 @@ export class StationScene extends Phaser.Scene {
     let statusText: string;
     let fullStatusText: string;
     if (this.state.phase === 'lobby') {
-      fullStatusText = 'LOBBY · P1 HOST · P2 KEYBOARD/GAMEPAD · P3–P4 GAMEPAD · P5–P8 GAMEPAD OR BOT · B/V BOT SHORTCUTS · ENTER/PAD START';
+      fullStatusText = 'LOBBY · P1 HOST · P2 KEYBOARD/GAMEPAD · P3–P4 GAMEPAD · P5–P8 GAMEPAD OR BOT · B/V BOT SHORTCUTS · O: ALL BOTS (P1 BOT-DRIVEN) · ENTER/PAD START';
       statusText = window.innerHeight <= 540 ? 'SHIFT/PAD JOIN · START' : 'SHIFT/PAD JOIN · ENTER';
     }
     else if (this.state.phase === 'results') {
