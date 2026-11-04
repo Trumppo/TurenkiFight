@@ -88,6 +88,15 @@ export class SessionInputBuffer {
     return { version: 1, tick, inputs };
   }
 
+  /**
+   * Drop every queued frame without touching tick counters or sequence domains.
+   * Used between matches: input submitted ahead of a finished match must not
+   * leak into the next one, while the same connections keep their sequences.
+   */
+  discardPending(): void {
+    this.pending.clear();
+  }
+
   /** Immediately revoke queued controls for a disconnected slot. */
   revokePlayer(playerId: string): void {
     for (const [tick, inputs] of this.pending) {

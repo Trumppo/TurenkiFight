@@ -119,6 +119,14 @@ export class SessionEnvelopeGateway {
     return revoked;
   }
 
+  /**
+   * Drops input queued for ticks that will never run (for example ahead of a
+   * finished match) without revoking slots or per-connection sequences.
+   */
+  discardPendingInputs(): void {
+    this.ingress.discardPending();
+  }
+
   /** Consumes the next authoritative frame; missing players stay neutral. */
   consume(): InputFrame {
     return consumeAuthorizedFrame(this.ingress);
@@ -182,6 +190,13 @@ export class SessionEnvelopeGateway {
         return accepted(envelope);
       }
       case 'ping': {
+        const envelope = decodeClientEnvelope(message, header);
+        this.sequences.set(connectionId, header.sequence);
+        return accepted(envelope);
+      }
+      case 'rematch': {
+        // The room decides phase and roster eligibility; the gateway only
+        // authenticates the envelope and advances the sequence domain.
         const envelope = decodeClientEnvelope(message, header);
         this.sequences.set(connectionId, header.sequence);
         return accepted(envelope);

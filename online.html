@@ -62,6 +62,17 @@
             <div class="hud-player" data-player="P4"><strong class="hud-name">P4</strong><span class="hud-score" aria-label="Score">0</span><span class="hud-health">HP —</span></div>
           </div>
         </section>
+        <section id="online-result" class="online-result" aria-label="Online match result"
+          aria-live="polite" aria-atomic="true" hidden>
+          <p class="online-result-kicker">MATCH COMPLETE</p>
+          <h2 id="online-result-winner" class="online-result-winner"></h2>
+          <p id="online-result-reason" class="online-result-reason"></p>
+          <p id="online-result-ties" class="online-result-ties" hidden></p>
+          <ol id="online-result-podium" class="online-result-podium" aria-label="Podium"></ol>
+          <p id="online-result-rest" class="online-result-rest"></p>
+          <p id="online-rematch-status" class="online-rematch-status" role="status" aria-live="polite" hidden></p>
+          <button id="online-rematch" class="online-rematch" type="button">REMATCH</button>
+        </section>
       </div>
 
       <details class="controls">

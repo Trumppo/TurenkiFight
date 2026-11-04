@@ -74,6 +74,11 @@ export type MatchServerOptions = {
   startDelayMs?: number;
   /** Delay after `match-start` before the first authoritative tick. */
   firstTickDelayMs?: number;
+  /**
+   * Opt in to a results-phase rematch in this process. Default false keeps the
+   * historical one-match lifecycle and every existing runbook unchanged.
+   */
+  allowRematch?: boolean;
   /** Human-readable lifecycle status. Never contains a client's remote address. */
   log?: (line: string) => void;
   /** Called once after the socket binds, with the advertised connection info. */
@@ -99,6 +104,8 @@ export type ServeMatchCliOptions = {
   snapshotHz: SnapshotHz;
   startMode: MatchStartMode;
   mode: ModeId;
+  /** Opt in to repeated matches in one process (default false). */
+  rematch: boolean;
   help: boolean;
 };
 
@@ -173,11 +180,16 @@ export function parseServeMatchArgs(argv: readonly string[]): ServeMatchCliOptio
   let snapshotHz = DEFAULT_MATCH_SNAPSHOT_HZ;
   let startMode: MatchStartMode = 'auto';
   let mode: ModeId = 'score-brawl';
+  let rematch = false;
   let help = false;
 
   for (const arg of argv) {
     if (arg === '--help' || arg === '-h') {
       help = true;
+      continue;
+    }
+    if (arg === '--rematch') {
+      rematch = true;
       continue;
     }
     if (!arg.startsWith('--')) throw new Error(`Unexpected argument: ${arg}`);
@@ -216,6 +228,7 @@ export function parseServeMatchArgs(argv: readonly string[]): ServeMatchCliOptio
     snapshotHz,
     startMode,
     mode,
+    rematch,
     help,
   };
 }
@@ -233,6 +246,8 @@ export function serveMatchUsage(): string {
     '                       "start" line on stdin (default auto)',
     '  --mode=<mode>        score-brawl, last-man-standing or deathmatch',
     '                       (default score-brawl; unknown modes are rejected)',
+    '  --rematch            Allow a results-phase rematch with the full roster in',
+    '                       this process (default off: one match per process)',
     '  --help               Show this text',
     '',
     'stdin controls:',
@@ -375,6 +390,7 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
     mode,
     snapshotHz,
     startMode,
+    allowRematch: options.allowRematch === true,
     startDelayMs: options.startDelayMs,
     firstTickDelayMs: options.firstTickDelayMs,
     // Exactly the roster: a fifth socket is closed before registration.

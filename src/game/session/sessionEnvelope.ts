@@ -17,7 +17,9 @@ import {
 export const SESSION_ENVELOPE_VERSION = 1 as const;
 
 /** Client-authored envelopes understood by the transport-neutral boundary. */
-export const CLIENT_SESSION_ENVELOPE_KINDS = ['join-request', 'leave-request', 'input', 'ping'] as const;
+export const CLIENT_SESSION_ENVELOPE_KINDS = [
+  'join-request', 'leave-request', 'input', 'ping', 'rematch',
+] as const;
 export type ClientSessionEnvelopeKind = (typeof CLIENT_SESSION_ENVELOPE_KINDS)[number];
 
 /**
@@ -94,11 +96,24 @@ export type PingEnvelope = {
   roomId?: string;
 };
 
+/**
+ * Asks the authoritative session for another match with the same roster. The
+ * session decides acceptance; this envelope carries no roster, mode or result
+ * claims that a client could use to change them.
+ */
+export type RematchEnvelope = {
+  version: typeof SESSION_ENVELOPE_VERSION;
+  kind: 'rematch';
+  sequence: number;
+  roomId?: string;
+};
+
 export type ClientSessionEnvelope =
   | JoinRequestEnvelope
   | LeaveRequestEnvelope
   | InputEnvelope
-  | PingEnvelope;
+  | PingEnvelope
+  | RematchEnvelope;
 
 /**
  * Envelope metadata after strict field/version/kind/range checks. The gameplay
