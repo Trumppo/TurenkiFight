@@ -2,23 +2,55 @@
 
 Tämä on projektin päivitettävä tavoitedokumentti harness- ja agenttityölle. Aktiivinen tavoite on rajattu itsenäiseksi kokonaisuudeksi, jolla on todennettavat hyväksymisehdot. Päivitä tavoite omistajan päätöksen ja uuden näytön perusteella; älä merkitse suunnitelmaa toteutetuksi, hyväksytyksi tai yhdistetyksi ilman näyttöä ja omistajan lupaa.
 
-## Tila 2026-11-03
+## Tila 2026-11-04
 
-Ei avointa agenttityötä. Kaikki dokumentoidut tavoitteet on viety loppuun tai ne odottavat omistajan päätöstä:
+Ei avointa koodityötä. Kaikki dokumentoidut tavoitteet on viety loppuun agentin osalta tai ne odottavat omistajan päätöstä. `main` = `67348f8` (PR #146 yhdistetty), 63 validoitua tehtävää, 376 yksikkötestiä ja täysi selainsarja vihreä sekä oletus- että retro-buildissa.
 
 | Alue | Tila |
 | --- | --- |
 | M1 ja M1.5 | hyväksytty rajoituksin (2026-10-30 / 2026-11-01) |
 | M2 kuljetuspäätös | päätetty: keskitetty WebSocket-auktoriteetti ([ADR 0001](adr/0001-network-topology.md)); verkkoa ei mitattu |
 | Pelimuodot | Score Brawl, Last Man Standing, Deathmatch — säännöt, UI, online-kentät ja QA valmiit; tasapeli vahvistettu |
-| Botit ja kahdeksan pelaajaa | toteutettu ja QA:ttu; kahdeksan ei ole luettavasti erotettavissa taistelussa |
+| Botit ja kahdeksan pelaajaa | toteutettu ja QA:ttu; kahdeksan pelaajaa tuettu, mutta tiivis 8 hahmon ruuhka ei ole täysin luettava |
 | Areena ja visuaalit | Mesku hyväksytty, VIS05-02/03 hyväksytty, 2×-tila ja ulkoinen HUD |
-| Ääni | placeholder-moottori ja 11 cue'ta; oikeat samplet deferoitu |
-| Verkkopeli | serveri, botit ja selainclient toimivat LAN/VPN-prototypyppinä; ei TLS/auth/rate limitiä |
+| Tulossivu | sijoitusjärjestys, voittajan paljastus, pronssikolmikko, 4.–8. sija, tasapeli, ohitus, reduced motion, RESET |
+| Luettavuus | KO säilyttää siluetin ja saa pelaajatunnuksen; retro-osumapalautteessa 1 täyttöframe / 6 |
+| Ääni | placeholder-moottori ja 12 cue'ta (ml. voittoääni); oikeat samplet ja miksaus deferoitu |
+| Hahmot | P1–P4 ennallaan, P5–P8 omat siluetit (asemapäällikkö, kioskimyyjä, opiskelija, työmatkalainen) |
+| Verkkopeli | serveri, botit ja selainclient toimivat LAN/VPN-prototypyypinä; ei TLS/auth/rate limitiä, ei rematchia samassa serverissä |
 
-**Avoimet omistajapäätökset:** (1) kolmen muodon playtest-tuomio, (2) kahdeksan pelaajan playtest ja
-käytännön maksimi, (3) viedäänkö kahdeksan verkkoon (vaatii kaksikoneisen mittauksen), (4) äänen
-samplet/miksaus, (5) lisenssit (M0).
+**Avoimet omistajapäätökset:** (1) kolmen muodon playtest-tuomio, (2) kahdeksan pelaajan playtest ja käytännön maksimi, (3) viedäänkö kahdeksan verkkoon (vaatii kaksikoneisen mittauksen), (4) äänen samplet/miksaus ja voittoäänen kuuntelu, (5) lisenssit (M0), (6) milestone-hyväksynnät (M5, M7, M8, M9).
+
+## Lähitulevaisuus: mitä seuraavaksi kehitetään
+
+Tämä osio on **designerin ehdotus**, ei omistajan hyväksymä suunnitelma. Jokainen rivi tarvitsee erillisen päätöksen ennen kuin siitä tulee tehtävä.
+
+### A. Odottaa omistajan näyttöä (ei agentin tehtävissä)
+
+1. **Playtest: kolme muotoa.** Score Brawl, Deathmatch ja Last Man Standing samalla kokoonpanolla. Päätös: ovatko säännöt ja kierron pituus kohdallaan.
+2. **Playtest: kahdeksan pelaajaa botteja vastaan.** Päätös: onko kahdeksan luettava ja hauska, vai pitäisikö käytännön maksimin laskea. QA on jo todennut, että tiivis ruuhka ei ole täysin luettava.
+3. **Kuuntelu: äänet.** Voittoääni ja `match-end` menevät hetken päällekkäin. Kuuntelupäätös ratkaisee, tarvitaanko duckaus tai viive, ja tulevatko oikeat samplet myöhemmin.
+4. **Kahden koneen mittaus.** Ainoa tapa saada verkkopelille oikeat luvut (kaista, RTT, palvelinkuorma, TURN). Agentit eivät voi tehdä tätä; kaikki verkkoluvut pysyvät `NOT_MEASURED`, kunnes mitataan.
+
+### B. Valmiina aloitettavaksi, jos sanot "jatka"
+
+Nämä ovat pieniä, rajattuja ja testattavia. Suositusjärjestys:
+
+1. **Verkkopelin tulosruutu ja rematch.** `serve:match` on nyt yhden ottelun istunto, eikä online-clientillä ole tulosruutua. Tämä on suurin jäljellä oleva tuoteaukko. Vaatii yhden protokollapäätöksen: mitä tuloskenttiä snapshot kantaa (voittaja, syy, pudotusjärjestys), jotta podium voidaan näyttää myös verkossa ilman asiakaspään arvailua.
+2. **Kahdeksan pelaajan verkkopeli.** Toteutus on pääosin olemassa; tarvitaan päätös siitä, hyväksytäänkö kahdeksan verkkoon ennen mittausta vai vasta sen jälkeen, sekä mittausohje omistajalle.
+3. **HUD-tunnistus.** Hahmoille lyhyet nimet tai kuvakkeet HUDiin, jotta P5–P8 erottuvat muustakin kuin väristä. Pieni, mutta koskettaa HUDin ellipsis- ja kokorajoja.
+4. **Tulossivun viimeistely.** 1280×720 KO-kaappaus spektiin, osumapalautteen liikkuva todentaminen ja paneelin 0,6-kynnyksen dokumentointi osaksi layoutin sääntöä.
+5. **Siivous.** Vanhat työpuut ja haaraliittännäiset, jotka ovat jo `main`issa, sekä M0-lisenssit.
+
+### C. Tietoisesti siirretty
+
+- Oikeat äänisamplet ja miksaus (`M7-AUDIO-MIX`), kunnes pyydät.
+- WebTransport ja arkkitehtuuri B: vaihtoehtoina ADR 0001:n uudelleenarvioinnissa, ei nyt.
+- Yli kahdeksan pelaajaa: uusi päätös ja mittaus.
+
+### D. Määritelmä "valmis" tälle vaiheelle
+
+Peli on tämän vaiheen osalta valmis, kun (a) omistaja on pelannut kolme muotoa ja kahdeksan pelaajaa ja antanut tuomion, (b) äänet on kuunneltu tai tietoisesti hyväksytty placeholder-tasolla, ja (c) milestone-hyväksynnät M5, M7, M8 ja M9 on kirjattu. Verkkopelin tuotantokunto on erillinen myöhempi tavoite.
 
 ## Arkisto: suljetut tavoitteet
 
