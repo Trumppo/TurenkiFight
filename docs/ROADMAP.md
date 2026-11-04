@@ -14,7 +14,7 @@
 - [x] Initialize TypeScript + Vite + Phaser prototype scaffold
 - [x] Add Vitest smoke tests and GitHub Actions deployment workflow (execution not yet verified)
 - [x] Verify clean build and CI; publish and verify first GitHub Pages build (user confirmed Actions and deployed game work on 2026-10-24)
-- [ ] Decide code and art licenses (administrative follow-up; not blocking technical M0 acceptance)
+- [ ] Decide code and art licenses (administrative follow-up; options and a recommendation in [LICENSE_DECISION.md](LICENSE_DECISION.md), owner choice pending)
 
 ## Milestone 1 – Local playable slice
 
