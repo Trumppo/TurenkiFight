@@ -28,6 +28,11 @@ That is a real inconsistency: one scene mixes two art styles. It is not a simula
    texture for P5–P8; a monochrome-mask distinctness check; screenshots of an eight-fighter retro lineup inspected.
 5. Update the known-limitation notes: after this, "retro covers P1–P4 only" is no longer true.
 
+**Status note (designer, 2026-11-04):** this slice extends the retro texture set to cover P1–P8. P1–P4 classic and
+retro hashes are unchanged, and the M1.5 acceptance (2026-11-01) is not revised by this follow-up. The known
+eight-fighter crowding limitation remains: one consistent art style does not guarantee that every fighter is
+readable while overlapping.
+
 Out of scope: new poses, new characters beyond P5–P8, changes to P1–P4 art.
 
 ## 2. All-bot match
