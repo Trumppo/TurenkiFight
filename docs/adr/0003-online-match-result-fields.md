@@ -48,20 +48,29 @@ weakening the session guarantees.
 
 ### 2. `rematch` is a client message with explicit guards
 
-A new client message `rematch` (session envelope unchanged) asks the server for another match:
+A new client message `rematch` asks the server for another match. It is a new **kind inside the approved v1
+session envelope**, not a new envelope format: the version, sequence domain, room ownership and strict decoding
+stay exactly as approved, and existing kinds keep their bytes.
 
 - accepted only while the session phase is `results`;
 - accepted only when the full original roster is still connected; otherwise the server replies with a typed error
   and stays in `results`;
 - repeated requests while a rematch is already starting are idempotent, not an error storm;
 - a new match keeps the same player ids and mode, resets scores, HP, timer and the event stream, and starts a fresh
-  countdown.
+  countdown;
+- the capability is opt-in, not a default: the session and the `serve:match` harness both refuse `rematch` unless
+  repeat matches are explicitly enabled, so existing one-shot tests, benchmark runs and runbooks keep their
+  semantics.
 
 `match-start` gains a monotonic `matchId`. Clients use it to drop stale snapshots and to clear their interpolation
 buffer, so the new countdown never renders positions from the previous match.
 
 `serve:match` stays a single-match process by default: the repeatable behaviour is a session capability, and the
 harness opts into it with a flag so existing one-shot tests and runbooks keep their current semantics.
+
+The state tick keeps counting across a rematch instead of resetting to zero. Input target ticks are absolute in the
+gateway, so resetting the state tick would desynchronise the two domains; `matchId`, not the tick, is the
+discriminator for "this snapshot belongs to a different match".
 
 ## Consequences
 
