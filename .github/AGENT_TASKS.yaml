@@ -1221,7 +1221,7 @@ tasks:
   - id: M9-VICTORY-AUDIO
     title: Play a distinct procedural victory cue when the podium reveal starts
     assigned_role: graphics-session
-    status: ready
+    status: done
     priority: P2
     specification: docs/M9_CELEBRATION_POLISH.md
     depends_on: [M9-RESULT-CELEBRATION]
@@ -1231,13 +1231,14 @@ tasks:
       - "The cue plays once per match end when the reveal starts, and never when muted or without a user gesture"
       - "Skip, RESET and a new match do not retrigger it; match-end behaviour is unchanged"
       - Unit and browser tests cover the cue path deterministically; npm test, build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/146
     last_updated: "2026-11-03"
-    notes: "Owner asked for further small polish on 2026-11-03. Procedural chiptune only; real samples and mixing stay deferred."
+    notes: "PR #146 merged as 67348f8 after independent Tester PASS. Four rising square-wave notes, no binary assets, once per match end, mute and suspended-context safe; the draw path is asserted in the browser test. Limit: audibility was never verified on a real audio device, and victory overlaps match-end by design."
 
   - id: M9-RESULT-COMPACT
     title: Keep part of the frozen arena visible at short viewport heights
     assigned_role: graphics-session
-    status: ready
+    status: done
     priority: P2
     specification: docs/M9_CELEBRATION_POLISH.md
     depends_on: [M9-RESULT-CELEBRATION]
@@ -1247,8 +1248,9 @@ tasks:
       - "All required lines stay present with text at least 14 CSS px and no ellipsis"
       - "640x360, 390x844, 1280x720 and 1920x1080 screenshots are inspected and do not regress"
       - Celebration and readability browser specs plus git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/146
     last_updated: "2026-11-03"
-    notes: "Addresses the stated limitation of PR #143: the panel covers the fighters at 640x360, so the result and the arena cannot be read at the same time."
+    notes: "PR #146 merged as 67348f8 after independent Tester PASS. At 640x360 the panel leaves 65.0% of the canvas visible (base layout 57.0%); the gate caught that the original one-third threshold did not discriminate, so the test now requires 0.6. Limit: 0.6 is the current layout measurement, not a design constant."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility

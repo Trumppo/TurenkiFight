@@ -142,6 +142,8 @@ Työ jaetaan kahtia: `M9-RESULT-RANKING` (gameplay) tuottaa puhtaan sijoitusjär
 
 **Polish 2026-11-03 (PR #144, `0dff4ef`):** KO ei enää litisty väritäytöksi vaan säilyttää asennon ja ääriviivat, ja kaatuneen yläpuolella on pelaajatunnus. Retro-osumapalautteessa on yksi täyttöframe kuudesta ja viisi yksityiskohtia säilyttävää framea, joten osuma edelleen erottuu. Tulossivun otsikko on neutraali `PLACES:`. Riippumaton Tester antoi PASS WITH LIMITATIONS ja löysi samalla CI-vian (retro-vain-testi ilman buildimuuttujaa), joka korjattiin samassa PR:ssä. Rajoitteet kirjattu: tunnuksen korkeustaulukko on hahmokohtainen eikä kuvakaapattu jokaiselle pelaajalle, ja osuman luettavuus on todistettu still-kuvilla ja pikselimetriikoilla, ei videolla.
 
+**Toinen polish 2026-11-03/04 (PR #146, `67348f8`):** podium-paljastus saa oman proseduraalisen voittoäänen (neljä nousevaa square-nuottia, ei binääritiedostoja), joka soi kerran matsia kohden ja kunnioittaa mutea sekä keskeytynyttä audiokontekstia. 640x360:llä paneeli on kompakti ja jättää 65 % kankaasta näkyviin (aiempi pohjalayout 57 %), joten tulos ja areena ovat luettavissa yhtä aikaa. Tester huomasi, että alkuperäinen kolmasosa-kynnys ei erotellut muutosta; kynnys nostettiin 0,6:een ja mutaatiot todistavat nyt molemmat. Rajoitteet: ääntä ei kuunneltu oikealla laitteella ja voittoääni menee hetken päällekkäin `match-end`-äänen kanssa — molemmat ovat kuuntelupäätöksiä, ei koodivikoja.
+
 **Jäljellä vain omistajan päätökset:** (1) kolmen muodon playtest; (2) kahdeksan pelaajan playtest botteja vastaan; (3) viedäänkö kahdeksan pelaajaa verkkopeliin (vaatii kahden koneen mittauksen); (4) milestone-hyväksynnät.
 
 ### Tiedostorajaus ja omistus
