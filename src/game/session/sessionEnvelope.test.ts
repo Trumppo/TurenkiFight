@@ -188,7 +188,7 @@ describe('M2 session envelope codec', () => {
   });
 
   it('documents the approved client and server kind names', () => {
-    expect([...CLIENT_SESSION_ENVELOPE_KINDS]).toEqual(['join-request', 'leave-request', 'input', 'ping']);
+    expect([...CLIENT_SESSION_ENVELOPE_KINDS]).toEqual(['join-request', 'leave-request', 'input', 'ping', 'rematch']);
     expect([...SERVER_SESSION_ENVELOPE_KINDS]).toEqual([
       'join-result', 'roster', 'match-start', 'snapshot', 'events', 'error', 'pong',
     ]);

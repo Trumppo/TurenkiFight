@@ -69,6 +69,11 @@ export class AuthorizedSessionIngress {
     return revoked;
   }
 
+  /** Drops queued frames without revoking slots or sequence domains. */
+  discardPending(): void {
+    this.buffer.discardPending();
+  }
+
   get playerCount(): number {
     return this.roster.playerCount;
   }

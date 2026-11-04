@@ -320,6 +320,7 @@ describe('M7 serve:match command surface', () => {
       snapshotHz: 20,
       startMode: 'auto',
       mode: 'score-brawl',
+      rematch: false,
       help: false,
     });
     expect(parseServeMatchArgs([
@@ -336,8 +337,10 @@ describe('M7 serve:match command surface', () => {
       snapshotHz: 30,
       startMode: 'manual',
       mode: 'last-man-standing',
+      rematch: false,
       help: false,
     });
+    expect(parseServeMatchArgs(['--rematch']).rematch).toBe(true);
     expect(parseServeMatchArgs(['--help']).help).toBe(true);
     expect(parseServeMatchArgs(['--snapshot-hz=10', '--players=1']).playerIds).toEqual(['P1']);
     expect(parseServeMatchArgs(['--players=8']).playerIds)

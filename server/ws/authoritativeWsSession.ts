@@ -20,6 +20,7 @@ import {
   type SnapshotHz,
   type WsServerMessage,
 } from '../../src/game/networking/wsMessages';
+import { computeMatchResult } from './matchResult';
 
 /**
  * Authoritative in-process session for the architecture-A WebSocket prototype.
@@ -52,6 +53,11 @@ export type WsSessionOptions = {
   maxLead?: number;
   /** Benchmark-only bound. Stops after this many authoritative ticks. */
   maxTicks?: number;
+  /**
+   * Opt-in repeatable session. When false (the default), a `rematch` is denied
+   * with `rematch-disabled` and the historical one-match lifecycle is intact.
+   */
+  allowRematch?: boolean;
   onOutgoing?: (targetConnectionId: string | null, message: WsServerMessage) => void;
   onPhaseChange?: (phase: WsSessionPhase) => void;
   /**
@@ -101,6 +107,7 @@ export class AuthoritativeWsSession {
   private readonly snapshotHz: SnapshotHz;
   private readonly maxLead: number;
   private readonly maxTicks: number | null;
+  private readonly allowRematch: boolean;
   private readonly onOutgoing: (targetConnectionId: string | null, message: WsServerMessage) => void;
   private readonly onPhaseChange: (phase: WsSessionPhase) => void;
   private readonly onRoomDenial: (connectionId: string, code: string) => void;
@@ -112,6 +119,10 @@ export class AuthoritativeWsSession {
   private phaseValue: WsSessionPhase = 'lobby';
   private host: string | null = null;
   private runComplete = false;
+  /** Monotonic across matches in this process; echoed by `match-start`. */
+  private matchId = 1;
+  /** True between an accepted rematch and the first tick of the new match. */
+  private rematchInProgress = false;
 
   constructor(options: WsSessionOptions = {}) {
     const roomId = options.roomId ?? DEFAULT_WS_ROOM_ID;
@@ -141,6 +152,7 @@ export class AuthoritativeWsSession {
     this.snapshotInterval = TICK_RATE / snapshotHz;
     this.maxLead = options.maxLead ?? DEFAULT_MAX_INPUT_LEAD_TICKS;
     this.maxTicks = options.maxTicks ?? null;
+    this.allowRematch = options.allowRematch === true;
     this.onOutgoing = options.onOutgoing ?? (() => undefined);
     this.onPhaseChange = options.onPhaseChange ?? (() => undefined);
     this.onRoomDenial = options.onRoomDenial ?? (() => undefined);
@@ -167,6 +179,10 @@ export class AuthoritativeWsSession {
   get connectionCount(): number { return this.connections.size; }
   get isRunComplete(): boolean { return this.runComplete; }
   get configuredPlayerIds(): readonly string[] { return [...this.playerIds]; }
+  /** Identifier of the current match; starts at 1 and increases on rematch. */
+  get matchIdValue(): number { return this.matchId; }
+  /** Whether this session accepts `rematch` in `results`. */
+  get rematchAllowed(): boolean { return this.allowRematch; }
 
   isJoined(connectionId: string): boolean {
     return this.ownership.has(connectionId);
@@ -230,6 +246,43 @@ export class AuthoritativeWsSession {
       );
     }
 
+    if (header?.kind === 'rematch') {
+      if (!this.allowRematch) {
+        return this.denyRoom(
+          connectionId,
+          'rematch-disabled',
+          'This session serves one match; restart the server to play again',
+          header,
+        );
+      }
+      if (this.phaseValue !== 'results' && !this.rematchInProgress) {
+        return this.denyRoom(
+          connectionId,
+          'not-in-results',
+          'Rematch is accepted only after a finished match',
+          header,
+        );
+      }
+      if (this.phaseValue === 'results') {
+        if (this.runComplete) {
+          return this.denyRoom(
+            connectionId,
+            'not-in-results',
+            'A bounded benchmark run cannot be rematched',
+            header,
+          );
+        }
+        if (!this.hasFullRoster()) {
+          return this.denyRoom(
+            connectionId,
+            'roster-incomplete',
+            'Every configured player must still be connected for a rematch',
+            header,
+          );
+        }
+      }
+    }
+
     const result = this.gateway.handle(this.binding(connectionId), data);
     if (!result.accepted) {
       this.emitError(connectionId, result.code, result.message, header);
@@ -270,6 +323,15 @@ export class AuthoritativeWsSession {
       return result;
     }
 
+    if (header?.kind === 'rematch') {
+      if (this.phaseValue === 'results') {
+        this.beginRematch();
+      }
+      // A duplicate request while the accepted rematch is still starting is a
+      // no-op: the sequence is valid, but no second match is created.
+      return result;
+    }
+
     // Accepted input needs no direct acknowledgement; it is consumed on tick.
     return result;
   }
@@ -281,14 +343,37 @@ export class AuthoritativeWsSession {
   beginMatch(): boolean {
     if (this.phaseValue !== 'starting' || this.gateway.playerCount !== this.playerIds.length) return false;
     this.setPhase('running');
+    this.emitMatchStart();
+    return true;
+  }
+
+  /**
+   * Starts another match with the same roster and mode after an accepted
+   * `rematch`. Counters that define a match reset; the absolute tick and every
+   * connection keep moving forward so client input targets stay valid and a
+   * late snapshot from the previous match is never mistaken for this one.
+   */
+  private beginRematch(): void {
+    const startTick = this.gateway.nextTick;
+    this.matchId += 1;
+    this.eventLog.length = 0;
+    this.gateway.discardPendingInputs();
+    this.state = createState({ ids: [...this.playerIds], phase: 'countdown', mode: this.mode });
+    this.state.tick = startTick;
+    this.rematchInProgress = true;
+    this.setPhase('running');
+    this.emitMatchStart();
+  }
+
+  private emitMatchStart(): void {
     this.emit(null, {
       version: 1,
       kind: 'match-start',
       startTick: this.gateway.nextTick,
       tickRate: TICK_RATE,
       snapshotHz: this.snapshotHz,
+      matchId: this.matchId,
     });
-    return true;
   }
 
   /** Advances exactly one authoritative tick; no-op outside `running`. */
@@ -298,6 +383,8 @@ export class AuthoritativeWsSession {
     }
     const frame = this.gateway.consume();
     this.state = step(this.state, frame.inputs);
+    // The rematch idempotency window closes once the new match actually ticks.
+    this.rematchInProgress = false;
     this.eventLog.push(...this.state.events);
 
     let snapshotSent = false;
@@ -312,7 +399,12 @@ export class AuthoritativeWsSession {
         snapshotSent = true;
       }
       this.setPhase('results');
-      this.emit(null, { version: 1, kind: 'match-end', tick: this.state.tick });
+      this.emit(null, {
+        version: 1,
+        kind: 'match-end',
+        tick: this.state.tick,
+        result: computeMatchResult(this.state, this.eventLog),
+      });
     }
 
     if (this.maxTicks !== null && this.state.tick >= this.maxTicks) {
@@ -366,6 +458,12 @@ export class AuthoritativeWsSession {
 
   private binding(connectionId: string): TrustedSessionBinding {
     return { connectionId, roomId: this.roomId };
+  }
+
+  /** A rematch keeps the original roster; every configured slot must be held. */
+  private hasFullRoster(): boolean {
+    const owned = new Set([...this.ownership.values()].flat());
+    return this.playerIds.every(playerId => owned.has(playerId));
   }
 
   private emitSnapshot(): void {

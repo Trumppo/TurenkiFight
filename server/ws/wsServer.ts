@@ -32,6 +32,7 @@ export type WsServerEnvelopeEvent =
   | { connectionId: string; accepted: true; kind: 'input'; targetTick: number }
   | { connectionId: string; accepted: true; kind: 'ping'; sequence: number }
   | { connectionId: string; accepted: true; kind: 'leave-request' }
+  | { connectionId: string; accepted: true; kind: 'rematch' }
   | { connectionId: string; accepted: false; code: string; source: 'gateway' | 'room' };
 
 /**
@@ -62,6 +63,8 @@ export type WsServerConfig = {
   snapshotHz?: SnapshotHz;
   maxLead?: number;
   maxTicks?: number;
+  /** Opt-in repeatable session; see `AuthoritativeWsSession`. Default false. */
+  allowRematch?: boolean;
   /** Delay after the roster fills before the match enters `running`. */
   startDelayMs?: number;
   /** Delay after `match-start` before the first authoritative tick. */
@@ -127,6 +130,8 @@ function envelopeEvent(connectionId: string, result: SessionEnvelopeResult): WsS
       return { connectionId, accepted: true, kind: 'ping', sequence: envelope.sequence };
     case 'leave-request':
       return { connectionId, accepted: true, kind: 'leave-request' };
+    case 'rematch':
+      return { connectionId, accepted: true, kind: 'rematch' };
   }
 }
 
@@ -259,6 +264,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
     ...(config.snapshotHz === undefined ? {} : { snapshotHz: config.snapshotHz }),
     ...(config.maxLead === undefined ? {} : { maxLead: config.maxLead }),
     ...(config.maxTicks === undefined ? {} : { maxTicks: config.maxTicks }),
+    ...(config.allowRematch === undefined ? {} : { allowRematch: config.allowRematch }),
     onOutgoing: (targetConnectionId, message) => {
       let encoded: string;
       try {

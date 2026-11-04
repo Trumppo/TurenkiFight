@@ -8,7 +8,7 @@ import {
 } from './browserWsAdapter';
 import { interpolateTimedSnapshots, type TimedSnapshot } from './snapshotInterpolation';
 import type { SessionClientHandlers } from './wsSessionClient';
-import type { SnapshotHz } from './wsMessages';
+import type { SnapshotHz, WsMatchResult } from './wsMessages';
 
 /**
  * Browser online match client: one authoritative WebSocket session, no local
@@ -77,6 +77,7 @@ type MatchStartInfo = {
   readonly startTick: number;
   readonly tickRate: number;
   readonly snapshotHz: SnapshotHz;
+  readonly matchId?: number;
 };
 
 const ROOM_ID = 'match';
@@ -130,6 +131,7 @@ export class OnlineMatchController {
 
   private matchStartValue: MatchStartInfo | null = null;
   private matchStartedAt: number | null = null;
+  private matchResultValue: WsMatchResult | null = null;
   private nextTick = 0;
   private joined = false;
   private running = false;
@@ -161,6 +163,8 @@ export class OnlineMatchController {
     return this.rttSamples.length > 0 ? this.rttSamples[this.rttSamples.length - 1]! : null;
   }
   get matchStart(): MatchStartInfo | null { return this.matchStartValue; }
+  /** Server-authored result of the last finished match; the client never ranks. */
+  get matchResult(): WsMatchResult | null { return this.matchResultValue; }
   get ownedPlayerIds(): readonly string[] { return this.session?.client.ownedPlayerIds ?? []; }
   get isRunning(): boolean { return this.running; }
 
@@ -231,7 +235,20 @@ export class OnlineMatchController {
           'Waiting for every configured slot…');
       },
       onMatchStart: info => {
-        if (attempt !== this.attemptToken || this.terminal || !this.joined) return;
+        if (attempt !== this.attemptToken || !this.joined) return;
+        const previousMatchId = this.matchStartValue?.matchId;
+        const rematch = info.matchId !== undefined && previousMatchId !== undefined &&
+          info.matchId !== previousMatchId;
+        if (this.terminal && !rematch) return;
+        if (rematch) {
+          // A higher match identifier means the previous match's snapshots and
+          // interpolation history are stale. Drop them before the new countdown.
+          this.terminal = false;
+          this.snapshots = [];
+          this.snapshotCountValue = 0;
+          this.lastSnapshotAt = null;
+          this.matchResultValue = null;
+        }
         this.matchStartValue = { ...info };
         this.matchStartedAt = this.clock();
         this.nextTick = info.startTick;
@@ -265,8 +282,9 @@ export class OnlineMatchController {
         if (attempt !== this.attemptToken) return;
         this.notePong(sequence);
       },
-      onMatchEnd: tick => {
+      onMatchEnd: (tick, result) => {
         if (attempt !== this.attemptToken || this.terminal) return;
+        this.matchResultValue = result ?? null;
         this.terminal = true;
         this.running = false;
         this.stopTimers();
@@ -374,6 +392,15 @@ export class OnlineMatchController {
     };
   }
 
+  /**
+   * Asks the authoritative session for another match with the same roster.
+   * The server accepts only in `results` with every player still connected.
+   */
+  requestRematch(): number {
+    if (this.session === null) throw new Error('No open session to rematch');
+    return this.session.client.rematch();
+  }
+
   /** Best-effort graceful leave, then close the socket. Idempotent. */
   disconnect(): void {
     const hadSession = this.session !== null;
@@ -409,6 +436,7 @@ export class OnlineMatchController {
     this.pingSends.clear();
     this.matchStartValue = null;
     this.matchStartedAt = null;
+    this.matchResultValue = null;
     this.nextTick = 0;
     if (hadSession && this.statusValue.state !== 'error' && this.statusValue.state !== 'ended') {
       this.setStatus('closed', 'Disconnected from the match server.');
@@ -514,6 +542,7 @@ export class OnlineMatchController {
     this.lastDetail = undefined;
     this.matchStartValue = null;
     this.matchStartedAt = null;
+    this.matchResultValue = null;
     this.nextTick = 0;
     this.joined = false;
     this.running = false;

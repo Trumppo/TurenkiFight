@@ -10,6 +10,7 @@ import {
   decodeWsServerMessage,
   type SessionClosedReason,
   type SnapshotHz,
+  type WsMatchResult,
   type WsServerMessage,
 } from './wsMessages';
 
@@ -25,11 +26,18 @@ export type SessionClientHandlers = {
   onWelcome?: (info: { connectionId: string; roomId: string }) => void;
   onJoinResult?: (info: { accepted: boolean; playerIds: readonly string[]; code?: string }) => void;
   onRoster?: (playerIds: readonly string[]) => void;
-  onMatchStart?: (info: { startTick: number; tickRate: number; snapshotHz: SnapshotHz }) => void;
+  onMatchStart?: (info: {
+    startTick: number;
+    tickRate: number;
+    snapshotHz: SnapshotHz;
+    /** Monotonic across rematches; undefined for the legacy server shape. */
+    matchId?: number;
+  }) => void;
   onSnapshot?: (snapshot: StateSnapshot) => void;
   onError?: (error: { code: string; message: string; targetTick?: number }) => void;
   onPong?: (sequence: number) => void;
-  onMatchEnd?: (tick: number) => void;
+  /** `result` is the server-authored ranking; absent on the legacy message. */
+  onMatchEnd?: (tick: number, result?: WsMatchResult) => void;
   onRunComplete?: (tick: number) => void;
   onSessionClosed?: (reason: SessionClosedReason) => void;
   /** Malformed server bytes are ignored without mutating client state. */
@@ -48,8 +56,10 @@ export class SessionClientCore {
   private owned: readonly string[] = [];
   private snapshot: StateSnapshot | null = null;
   private lastStartTick = 0;
-  private startInfo: { startTick: number; tickRate: number; snapshotHz: SnapshotHz } | null = null;
+  private startInfo: { startTick: number; tickRate: number; snapshotHz: SnapshotHz; matchId?: number } | null = null;
   private connection: string | null = null;
+  private matchIdValue: number | null = null;
+  private resultValue: WsMatchResult | null = null;
 
   constructor(handlers: SessionClientHandlers = {}) {
     this.handlers = handlers;
@@ -66,7 +76,13 @@ export class SessionClientCore {
   get lastSnapshot(): StateSnapshot | null { return this.snapshot; }
   /** Last authoritative tick announced by match-start or a snapshot. */
   get serverTick(): number { return this.snapshot?.state.tick ?? this.lastStartTick; }
-  get matchStart(): { startTick: number; tickRate: number; snapshotHz: SnapshotHz } | null { return this.startInfo; }
+  get matchStart(): { startTick: number; tickRate: number; snapshotHz: SnapshotHz; matchId?: number } | null {
+    return this.startInfo;
+  }
+  /** Latest server-announced match identifier, null before the first match. */
+  get matchId(): number | null { return this.matchIdValue; }
+  /** Server-authored result of the last finished match, null until `match-end`. */
+  get matchResult(): WsMatchResult | null { return this.resultValue; }
 
   join(playerIds: readonly string[]): number {
     if (!Array.isArray(playerIds) || playerIds.length < 1 || playerIds.length > MAX_PLAYERS_PER_FRAME) {
@@ -87,6 +103,12 @@ export class SessionClientCore {
 
   ping(): number {
     return this.send({ version: 1, kind: 'ping', sequence: this.nextSequence() });
+  }
+
+  /** Asks the server for another match with the same roster. Server decides. */
+  rematch(): number {
+    if (this.state !== 'joined') throw new Error('Rematch requires an accepted join');
+    return this.send({ version: 1, kind: 'rematch', sequence: this.nextSequence() });
   }
 
   submitInput(tick: number, inputs: readonly PlayerInput[]): number {
@@ -134,15 +156,24 @@ export class SessionClientCore {
       case 'roster':
         this.handlers.onRoster?.([...message.playerIds]);
         return;
-      case 'match-start':
+      case 'match-start': {
+        const previousMatchId = this.matchIdValue;
+        if (message.matchId !== undefined) {
+          // A new match identifier invalidates the previous match's last state;
+          // callers can now drop their interpolation history deterministically.
+          if (previousMatchId !== null && message.matchId !== previousMatchId) this.snapshot = null;
+          this.matchIdValue = message.matchId;
+        }
         this.lastStartTick = message.startTick;
         this.startInfo = {
           startTick: message.startTick,
           tickRate: message.tickRate,
           snapshotHz: message.snapshotHz,
+          ...(message.matchId === undefined ? {} : { matchId: message.matchId }),
         };
         this.handlers.onMatchStart?.({ ...this.startInfo });
         return;
+      }
       case 'snapshot':
         this.snapshot = message.snapshot;
         this.handlers.onSnapshot?.(message.snapshot);
@@ -158,7 +189,8 @@ export class SessionClientCore {
         this.handlers.onPong?.(message.sequence);
         return;
       case 'match-end':
-        this.handlers.onMatchEnd?.(message.tick);
+        this.resultValue = message.result ?? null;
+        this.handlers.onMatchEnd?.(message.tick, message.result);
         return;
       case 'run-complete':
         this.handlers.onRunComplete?.(message.tick);

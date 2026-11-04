@@ -14,9 +14,10 @@ import {
  * find the URL; everything a human reads goes to stderr. SIGINT/SIGTERM stop the
  * 60 Hz tick timer and close every socket before the process exits.
  *
- * Run one match per process. After the match ends (`results`) or the host
- * disconnects (`closed`), the session keeps its final state until the operator
- * stops the server: no reconnect, rematch or host migration is implemented.
+ * One match per process by default. With `--rematch`, an accepted client
+ * `rematch` starts another match in the same process with the same roster and
+ * mode; without it, a `rematch` is denied and the historical lifecycle stands.
+ * Reconnect, rejoin and host migration remain out of scope.
  */
 
 const STATUS_PREFIX = 'match server: ';
@@ -67,6 +68,7 @@ export async function runServeMatch(argv: readonly string[]): Promise<void> {
       mode: options.mode,
       snapshotHz: options.snapshotHz,
       startMode: options.startMode,
+      allowRematch: options.rematch,
       log: status,
       onReady: info => {
         // The only stdout output: exactly one line, no peer addresses or metrics.
