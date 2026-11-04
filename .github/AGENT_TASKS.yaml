@@ -1256,7 +1256,7 @@ tasks:
     title: Draw retro textures for P5-P8 so a retro build stops mixing art styles
     assigned_role: graphics-session
     session_id: graphics-session-20261104-retro-bots
-    status: review
+    status: done
     priority: P1
     specification: docs/M9_BOTS_AND_RETRO.md
     depends_on: [M9-CHARACTERS]
@@ -1269,13 +1269,13 @@ tasks:
       - "No simulation, protocol or server change; git diff --check passes"
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/148
     last_updated: "2026-11-04"
-    notes: "Owner report 2026-11-04: four bots still carry old graphics. Diagnosis: retro builds only overwrite P1-P4 textures, so slots 5-8 fall back to classic art."
+    notes: "PR #148 merged as e431cff after independent Tester PASS: 320 retro textures at 32x48, 160 retro-vs-classic comparisons all different, P1-P4 hashes unchanged, one consistent art style confirmed from the eight-fighter screenshot. The relaxed airborne foot baseline was judged justified: retro jump cels reach 40-41 px while grounded poses reach 45-47."
 
   - id: M9-ALL-BOT-MATCH
     title: Add an all-bot match mode for unattended testing and spectating
     assigned_role: graphics-session
     session_id: graphics-session-20261104-retro-bots
-    status: review
+    status: done
     priority: P1
     specification: docs/M9_BOTS_AND_RETRO.md
     depends_on: [M8-BOT-OPPONENT, M9-RESET-CONTROL]
@@ -1288,13 +1288,13 @@ tasks:
       - Browser tests cover start, HUD labels, determinism and reset; existing suites stay green
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/148
     last_updated: "2026-11-04"
-    notes: "Owner asked 2026-11-04 for support where only bots play, to make testing easier. No simulation, protocol or server change: only the input source changes."
+    notes: "PR #148 merged as e431cff after independent Tester PASS: ALL BOTS fills eight slots including P1, keyboard input to P1 does not change the match fingerprint, the end state is pinned (tick 493), and RESET restores a human P1 lobby. Limit: no ?bots=all URL flag; QA drives the visible button."
 
   - id: M9-ONLINE-RESULT-FIELDS
     title: Send the authoritative match result and ranking in the server match-end message
     assigned_role: gameplay-session
     session_id: gameplay-session-20261104-online-results
-    status: review
+    status: done
     priority: P1
     specification: docs/M9_ONLINE_RESULTS.md
     depends_on: [M7-MODE-ONLINE, M9-RESULT-RANKING]
@@ -1307,13 +1307,13 @@ tasks:
       - npm test, npm run build and git diff --check pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/149
     last_updated: "2026-11-04"
-    notes: "Owner chose the online results screen and rematch as the next work package on 2026-11-04. Decision record: docs/adr/0003-online-match-result-fields.md."
+    notes: "PR #149 merged as eeeb084 after independent Tester PASS: match-end carries the server-computed { reason, winner, ranking }, equal to rankMatch for all modes and the draw; the legacy message keeps its bytes; 14 malformed payload probes were all rejected."
 
   - id: M9-ONLINE-REMATCH
     title: Allow a rematch in the same server process with the same roster
     assigned_role: gameplay-session
     session_id: gameplay-session-20261104-online-results
-    status: review
+    status: done
     priority: P1
     specification: docs/M9_ONLINE_RESULTS.md
     depends_on: [M9-ONLINE-RESULT-FIELDS]
@@ -1326,13 +1326,13 @@ tasks:
       - Integration tests cover a second match, the refusal paths and clean shutdown; npm test, build and git diff --check pass
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/149
     last_updated: "2026-11-04"
-    notes: "Removes the documented one-match-per-process limitation without adding matchmaking, rejoin or host migration."
+    notes: "PR #149 merged as eeeb084 after independent Tester PASS: rematch is accepted only in results with the full roster and only when enabled, repeats are idempotent, matchId is monotonic, and serve:match stays one-shot unless --rematch is passed."
 
   - id: M9-ONLINE-RESULTS-UI
     title: Show the online result card and a rematch control
     assigned_role: graphics-session
     session_id: graphics-session-20261104-online-results
-    status: review
+    status: done
     priority: P1
     specification: docs/M9_ONLINE_RESULTS.md
     depends_on: [M9-ONLINE-RESULT-FIELDS, M9-ONLINE-REMATCH]
@@ -1345,7 +1345,7 @@ tasks:
       - Browser tests with a real server cover the result card, draw, refused rematch and a successful rematch
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/149
     last_updated: "2026-11-04"
-    notes: "Presentation only: renders the payload, never computes a ranking. Owner requested the online results screen on 2026-11-04."
+    notes: "PR #149 merged as eeeb084 after independent Tester PASS: the online card renders only the server payload, draw and refusals are readable, REMATCH works without a reload, and the layout was inspected at 1280x720 and 390x844. Limit: webrtc.spec.ts flaked once at the end of a default suite and passed alone."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
