@@ -19,7 +19,7 @@ Ei avointa koodityötä. Kaikki dokumentoidut tavoitteet on viety loppuun agenti
 | Hahmot | P1–P4 ennallaan, P5–P8 omat siluetit (asemapäällikkö, kioskimyyjä, opiskelija, työmatkalainen); retro-grafiikat kattavat nyt P1–P8 |
 | Verkkopeli | serveri, botit ja selainclient toimivat LAN/VPN-prototypyypinä; tuloskentät ja rematch samassa prosessissa (`--rematch`), ei TLS/auth/rate limitiä |
 
-**Avoimet omistajapäätökset:** (1) kolmen muodon playtest-tuomio, (2) kahdeksan pelaajan playtest ja käytännön maksimi, (3) viedäänkö kahdeksan verkkoon (vaatii kaksikoneisen mittauksen), (4) äänen samplet/miksaus ja voittoäänen kuuntelu, (5) lisenssit (M0), (6) milestone-hyväksynnät (M5, M7, M8, M9).
+**Avoimet omistajapäätökset:** (1) kolmen muodon playtest-tuomio, (2) kahdeksan pelaajan playtest ja käytännön maksimi, (3) viedäänkö kahdeksan verkkoon (vaatii kaksikoneisen mittauksen), (4) äänen samplet/miksaus ja voittoäänen kuuntelu, (5) milestone-hyväksynnät (M5, M7, M8, M9).
 
 ## Lähitulevaisuus: mitä seuraavaksi kehitetään
 
@@ -43,9 +43,9 @@ Nämä ovat pieniä, rajattuja ja testattavia. Suositusjärjestys:
 5. **Siivous.** ✅ Tehty 2026-11-04: 31 vanhaa työpuuta poistettu (noin 6,6 GB), 133 yhdistettyä etähaaraa poistettu,
    paikalliset yhdistetyt haarat siivottu. Jäljelle jäi `main` ja yksi historiallinen haara
    (`revision/m2-protocol-hardening`, suljettu PR #25, 56 committia jotka eivät ole mainissa) sekä 15 vanhaa
-   etähaaraa, jotka eivät ole yhdistettyjä PR:iä. **M0-lisenssit odottavat omistajan valintaa:**
-   [LICENSE_DECISION.md](LICENSE_DECISION.md) listaa vaihtoehdot ja suosituksen (koodi MIT, taide ja ääni CC BY 4.0),
-   mutta ei päätä puolestasi.
+   etähaaraa, jotka eivät ole yhdistettyjä PR:iä. **M0-lisenssit päätetty 2026-11-04:** koodi MIT, taide ja ääni
+   CC0 1.0 ([LICENSE](../LICENSE), [LICENSE-ASSETS](../LICENSE-ASSETS), perustelut
+   [LICENSE_DECISION.md](LICENSE_DECISION.md)).
 
 ### C. Tietoisesti siirretty
 

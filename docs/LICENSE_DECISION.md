@@ -1,12 +1,13 @@
 # License decision brief (M0 follow-up)
 
-**Status:** Decision brief, 2026-11-04. No license has been chosen. This file records options and consequences; the
-choice is the owner's.
+**Status:** **Decided 2026-11-04 by the owner: code MIT, art and audio CC0 1.0.** Implemented in `LICENSE`,
+`LICENSE-ASSETS`, `README.md` and `package.json`. The options below are kept as the record of what was considered.
 
 ## Where things stand
 
-- `package.json` has `"private": true` and no `license` field. A public GitHub repository without a license means
-  default copyright: others may view and fork on GitHub, but have no permission to reuse, modify or redistribute.
+- Before this decision, `package.json` had `"private": true` and no `license` field. A public GitHub repository
+  without a license means default copyright: others may view and fork on GitHub, but have no permission to reuse,
+  modify or redistribute.
 - The repository contains two categories that should be licensed **separately**:
   1. **Code** - TypeScript, Vite/Phaser game, server, tests, benchmarks.
   2. **Art and audio** - the pixel-art characters, the arena, and the procedurally generated chiptune and effects.
