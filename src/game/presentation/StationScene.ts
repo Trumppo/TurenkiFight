@@ -13,7 +13,7 @@ import { rankMatch } from '../simulation/ranking';
 import type { MatchRanking, RankedEntry } from '../simulation/ranking';
 import { playerColor } from './visualTheme';
 import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
-import { CueBridge } from './audio/cueBridge';
+import { CueBridge, type AudioCue } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
 import { MAX_PLAYERS } from '../protocol/players';
 
@@ -94,6 +94,8 @@ export class StationScene extends Phaser.Scene {
   private revealClickHandler?: () => void;
   private audio?: AudioPresentation;
   private audioBridge?: CueBridge;
+  private readonly audioCueCounts: Partial<Record<AudioCue, number>> = {};
+  private victoryCueEndKey?: string;
 
   constructor(arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic'), mode: ModeId = 'score-brawl') {
     super('StationScene');
@@ -141,7 +143,7 @@ export class StationScene extends Phaser.Scene {
     // above the playfield on narrow screens.
     this.initDomHud();
     this.audio = createAudioPresentation(audioControlsHost());
-    this.audioBridge = new CueBridge(cue => this.audio?.director.playCue(cue));
+    this.audioBridge = new CueBridge(cue => this.playAudioCue(cue));
     this.audioBridge.observe(this.state);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.clearRevealState();
@@ -242,6 +244,7 @@ export class StationScene extends Phaser.Scene {
       this.matchEvents = [];
       this.resultRanking = undefined;
       this.resultPresentationReady = false;
+      this.victoryCueEndKey = undefined;
       this.clearRevealState();
       this.audioBridge?.reset();
       this.previous.clear();
@@ -319,6 +322,7 @@ export class StationScene extends Phaser.Scene {
     this.matchEvents = [];
     this.resultRanking = undefined;
     this.resultPresentationReady = false;
+    this.victoryCueEndKey = undefined;
     this.clearRevealState();
     this.elapsedMs = 0;
     this.previous.clear();
@@ -365,9 +369,19 @@ export class StationScene extends Phaser.Scene {
   }
 
   /** Read-only audio diagnostics used by browser QA; no simulation state is exposed. */
-  audioDiagnostics(): { state: string; muted: boolean; volume: number } {
+  audioDiagnostics(): { state: string; muted: boolean; volume: number; cueCounts: Partial<Record<AudioCue, number>> } {
     const settings = this.audio?.director.settings;
-    return { state: this.audio?.director.contextState ?? 'not-created', muted: settings?.muted ?? false, volume: settings?.volume ?? 0.55 };
+    return {
+      state: this.audio?.director.contextState ?? 'not-created',
+      muted: settings?.muted ?? false,
+      volume: settings?.volume ?? 0.55,
+      cueCounts: { ...this.audioCueCounts },
+    };
+  }
+
+  private playAudioCue(cue: AudioCue): void {
+    this.audioCueCounts[cue] = (this.audioCueCounts[cue] ?? 0) + 1;
+    this.audio?.director.playCue(cue);
   }
 
   private observeAudio(state: GameState): void {
@@ -650,16 +664,23 @@ export class StationScene extends Phaser.Scene {
     };
     this.resultRanking = rankMatch(this.state, events);
     this.resultPresentationReady = true;
-    this.populateVictoryReveal(this.resultRanking);
+    this.populateVictoryReveal(this.resultRanking, end);
   }
 
-  private populateVictoryReveal(ranking: MatchRanking): void {
+  private populateVictoryReveal(ranking: MatchRanking, end?: GameEvent): void {
     const panel = document.getElementById('victory-reveal');
     const title = document.getElementById('victory-title');
     const ties = document.getElementById('victory-ties');
     const podium = document.getElementById('victory-podium');
     const rest = document.getElementById('victory-rest');
     if (!(panel && title && ties && podium && rest)) return;
+    if (end?.type === 'MatchEnded' && (ranking.draw || ranking.winners.length > 0)) {
+      const endKey = `${end.tick}:${end.reason ?? ''}:${end.winner ?? ''}`;
+      if (this.victoryCueEndKey !== endKey) {
+        this.victoryCueEndKey = endKey;
+        this.playAudioCue('victory');
+      }
+    }
     panel.hidden = false;
     panel.classList.remove('is-revealing');
     panel.classList.add('is-results');

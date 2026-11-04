@@ -7,7 +7,12 @@ import type { VoiceShape } from './synthVoice';
  * decoded sample buffer without changing cue callers or scene wiring.
  */
 export type AudioVoiceAsset =
-  | { readonly kind: 'synth'; readonly shape: VoiceShape }
+  | {
+    readonly kind: 'synth';
+    readonly shape: VoiceShape;
+    /** Optional short melodic phrase, scheduled as individual procedural notes. */
+    readonly notes?: readonly { readonly frequency: number; readonly offset: number }[];
+  }
   | { readonly kind: 'sample'; readonly buffer: AudioBuffer; readonly playbackRate?: number; readonly peak?: number };
 
 /** Every cue has an explicit, intentionally simple placeholder definition. */
@@ -22,5 +27,15 @@ export const PLACEHOLDER_CUE_ASSETS: Readonly<Record<AudioCue, AudioVoiceAsset>>
   'match-start': { kind: 'synth', shape: { frequency: 880, duration: 0.14, waveform: 'square', peak: 0.11 } },
   'time-warning': { kind: 'synth', shape: { frequency: 990, duration: 0.075, waveform: 'square', peak: 0.095, noise: 0.02, noiseDuration: 0.035 } },
   'match-end': { kind: 'synth', shape: { frequency: 350, duration: 0.2, waveform: 'triangle', peak: 0.11, pitchDrop: 0.78 } },
+  victory: {
+    kind: 'synth',
+    shape: { frequency: 523.25, duration: 0.12, waveform: 'square', peak: 0.12, attack: 0.004, release: 0.035 },
+    notes: [
+      { frequency: 523.25, offset: 0 },
+      { frequency: 659.25, offset: 0.105 },
+      { frequency: 783.99, offset: 0.21 },
+      { frequency: 1046.5, offset: 0.315 },
+    ],
+  },
   confirm: { kind: 'synth', shape: { frequency: 620, duration: 0.06, waveform: 'square', peak: 0.075 } },
 };

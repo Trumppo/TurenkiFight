@@ -1218,6 +1218,38 @@ tasks:
     last_updated: "2026-11-03"
     notes: "Cosmetic finding from PR #143, fixed in PR #144: the heading reads PLACES: and lists exactly the places that exist."
 
+  - id: M9-VICTORY-AUDIO
+    title: Play a distinct procedural victory cue when the podium reveal starts
+    assigned_role: graphics-session
+    status: ready
+    priority: P2
+    specification: docs/M9_CELEBRATION_POLISH.md
+    depends_on: [M9-RESULT-CELEBRATION]
+    scope: [src/game/presentation/audio/, src/game/presentation/, tests/]
+    acceptance:
+      - "A new victory cue is distinct from the existing match-end cue and uses no new binary assets"
+      - "The cue plays once per match end when the reveal starts, and never when muted or without a user gesture"
+      - "Skip, RESET and a new match do not retrigger it; match-end behaviour is unchanged"
+      - Unit and browser tests cover the cue path deterministically; npm test, build and git diff --check pass
+    last_updated: "2026-11-03"
+    notes: "Owner asked for further small polish on 2026-11-03. Procedural chiptune only; real samples and mixing stay deferred."
+
+  - id: M9-RESULT-COMPACT
+    title: Keep part of the frozen arena visible at short viewport heights
+    assigned_role: graphics-session
+    status: ready
+    priority: P2
+    specification: docs/M9_CELEBRATION_POLISH.md
+    depends_on: [M9-RESULT-CELEBRATION]
+    scope: [src/style.css, src/game/presentation/, index.html, tests/browser/]
+    acceptance:
+      - "At 420 px viewport height or less the celebration panel leaves at least one third of the canvas height visible"
+      - "All required lines stay present with text at least 14 CSS px and no ellipsis"
+      - "640x360, 390x844, 1280x720 and 1920x1080 screenshots are inspected and do not regress"
+      - Celebration and readability browser specs plus git diff --check pass
+    last_updated: "2026-11-03"
+    notes: "Addresses the stated limitation of PR #143: the panel covers the fighters at 640x360, so the result and the arena cannot be read at the same time."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
