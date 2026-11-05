@@ -2,7 +2,7 @@
 
 TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting game with an 8-bit-inspired pixel-art aesthetic. Inspired by the energy of classic arcade fighters (including IK+), but with its own mechanics, art and identity.
 
-**Status (2026-11-03):** M1 and M1.5 are accepted with documented limitations. Three modes are playable locally and online (Score Brawl, Last Man Standing, Deathmatch), local bots can fill empty slots, the roster supports up to **eight** players, the Ravintola Mesku arena is available with `?arena=mesku`, and placeholder audio exists. An authoritative WebSocket prototype serves real matches over LAN or VPN; it has no TLS, authentication or rate limiting, and eight-player network load is not measured. See [roadmap](docs/ROADMAP.md) and [ADR 0001](docs/adr/0001-network-topology.md).
+**Status (2026-11-04):** M1 and M1.5 are accepted with documented limitations. Three modes are playable locally and online (Score Brawl, Last Man Standing, Deathmatch), local bots can fill empty slots, and an **ALL BOTS** action runs an eight-bot match unattended for testing. The roster supports up to **eight** players, the Ravintola Mesku arena is available with `?arena=mesku`, the local results screen shows a ranked podium with a victory cue, and placeholder audio exists. An authoritative WebSocket prototype serves real matches over LAN or VPN, now with an authoritative result payload and an opt-in rematch in the same process; it has no TLS, authentication or rate limiting, and eight-player network load is not measured. See [roadmap](docs/ROADMAP.md) and [ADR 0001](docs/adr/0001-network-topology.md).
 
 ## Core vision
 
@@ -40,15 +40,16 @@ npm run serve:match -- --host=127.0.0.1 --port=8787 --players=4 --snapshot-hz=20
 | --- | --- | --- |
 | `--host` | `127.0.0.1` | Bind address. Use `0.0.0.0` to accept LAN peers; a wildcard bind prints no URL. |
 | `--port` | `8787` | Bind port; `0` selects an ephemeral port. |
-| `--players` | `4` | Claimable slots `P1`..`PN`, 1-4. |
+| `--players` | `4` | Claimable slots `P1`..`PN`, 1-8. |
 | `--snapshot-hz` | `20` | Snapshot rate: 10, 20 or 30. Ticks stay at 60 Hz. |
 | `--start` | `auto` | `auto` starts when every slot is claimed; `manual` waits for an explicit `start` line on stdin. |
+| `--rematch` | off | Allow an accepted `rematch` to start another match in the same process with the same roster. Without it, a rematch request is refused and the one-shot lifecycle stands. |
 
 The command prints exactly one machine-readable ready line on stdout (for example `{"kind":"match-server-ready","url":"ws://127.0.0.1:8787",...}`) and human-readable status on stderr. Type `start` to request an explicit start (the roster must still be full) and `quit` to stop. Ctrl+C/SIGINT and SIGTERM stop the 60 Hz loop and close every socket.
 
 A fifth connection is closed before registration with close code `1008`, so extra peers cannot join or disturb a running match. A mid-match disconnect revokes that connection's slots under the existing session rules; if the host disconnects, the session closes (`host-lost`) rather than migrating authority.
 
-**Security and latency:** `ws://` is unencrypted and has no authentication or rate limiting. Use it only on a LAN or over a VPN/SSH tunnel, never exposed to the open internet. The online client does not exist yet and prediction is out of scope for it, so expect input latency of roughly the round-trip time plus up to one snapshot interval (50 ms at 20 Hz) once it lands.
+**Security and latency:** `ws://` is unencrypted and has no authentication or rate limiting. Use it only on a LAN or over a VPN/SSH tunnel, never exposed to the open internet. The online client exists at `/online.html`; it renders snapshots by interpolation, shows RTT, and shows the authoritative result plus a rematch control at match end. There is still no prediction, so expect input latency of roughly the round-trip time plus up to one snapshot interval (50 ms at 20 Hz).
 
 ## Design and project status
 
@@ -62,9 +63,9 @@ A fifth connection is closed before registration with close code `1008`, so extr
 
 The authoritative agent task queue is [`.github/AGENT_TASKS.yaml`](.github/AGENT_TASKS.yaml). Updating it does not automatically launch agents. Merge and milestone approval follow its coordination policy.
 
-## Implemented stack and future transport candidates
+## Implemented stack and transport
 
-The game uses TypeScript, Vite, Phaser 3, Vitest, Playwright and GitHub Actions. WebSocket, WebRTC DataChannels, signaling and optional TURN are **future experiment candidates**, not existing game networking.
+The game uses TypeScript, Vite, Phaser 3, Vitest, Playwright and GitHub Actions. The transport decision is a **central authoritative WebSocket server** ([ADR 0001](docs/adr/0001-network-topology.md)); a working prototype, an online browser client and headless bots exist. WebRTC DataChannels, signaling and optional TURN remain an evaluated alternative, and no real network measurement has been performed.
 
 ## Project principles
 
@@ -72,4 +73,7 @@ Keep simulation deterministic and separate from rendering, networking, input and
 
 ## License
 
-**Not yet selected.** Public GitHub visibility does not itself grant an open-source license or reuse rights. Choose code and asset licenses before accepting external contributions or distributing reusable assets.
+- **Code:** [MIT](LICENSE) - use, modify, redistribute and sell, with attribution and no warranty.
+- **Art and audio:** [CC0 1.0](LICENSE-ASSETS) - the pixel art, arena art, music, sound effects and screenshots are dedicated to the public domain. No permission and no attribution required.
+
+The split is deliberate: Creative Commons recommends against using its licenses for software, while CC0 fits creative work. The procedural pixel art and chiptune are generated by MIT-licensed code; the generated output is CC0. The decision and its alternatives are recorded in [LICENSE_DECISION.md](docs/LICENSE_DECISION.md).
