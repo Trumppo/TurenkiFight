@@ -1,6 +1,6 @@
 # M2-SESSION-01 — Session authority and ingress contract
 
-**Status:** DESIGN PROPOSAL, not implemented. No WebSocket/WebRTC selection. Baseline: M2 transport-neutral InputFrame v1 on `feature/m2-input-frame-contract`, pending integration; see `docs/M2_INTEGRATION_GATE.md`.
+**Status:** Implemented. Shipped as the transport-neutral session boundary in PRs #41/#43 and the envelope contract in #94; see `M2_SESSION_ENVELOPE_V1.md`. Kept as the original proposal record.
 
 ## Goal
 Introduce an explicit trust boundary between untrusted network packets and deterministic `step()`. Preserve the existing versioned `InputFrame {version:1,tick,inputs[]}` as the simulation-facing format. The session layer validates sender identity, tick freshness, player ownership and bounded buffering **before** it constructs an InputFrame. Do not change simulation rules, attack timing, rendering or local keyboard controls.

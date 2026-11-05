@@ -1,6 +1,6 @@
 # ADR 0003: Carrying the finished match result and asking for a rematch
 
-- **Status:** Proposed. Implementation is `M9-ONLINE-RESULT-FIELDS` and `M9-ONLINE-REMATCH`.
+- **Status:** Proposed; implemented and merged in PR #149 (`eeeb084`). Owner acceptance of the ADR itself is still pending and is not implied by the merge.
 - **Date:** 2026-11-04
 - **Related:** [ADR 0001](0001-network-topology.md), [ADR 0002](0002-mode-fields.md), [online results spec](../M9_ONLINE_RESULTS.md), `src/game/networking/wsMessages.ts`, `server/ws/authoritativeWsSession.ts`, `src/game/simulation/ranking.ts`.
 

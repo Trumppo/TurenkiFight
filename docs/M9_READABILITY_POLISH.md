@@ -1,6 +1,6 @@
 # M9 readability polish: knocked-out fighters, hit flashes and result labels
 
-**Status:** Design spec, 2026-11-03. Not implemented.
+**Status:** Implemented in PR #144 (merged `0dff4ef`), independently gated by Tester.
 **Origin:** the M8 QA finding that a KO'd fighter renders as a flat blob and that the hit flash tints the
 whole sprite, plus the cosmetic result-label finding from the M9 celebration gate. The owner asked for a small
 polish package on 2026-11-03.

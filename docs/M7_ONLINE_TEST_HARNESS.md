@@ -1,6 +1,6 @@
 # M7 online test harness: real multiplayer between this machine and a remote agent
 
-**Status:** Design plan, owner-requested 2026-11-02. Not implemented.
+**Status:** Implemented in three parts: match server (PR #111), headless bot clients (PR #113) and the browser online client (PR #114); the online result screen and opt-in rematch landed in PR #149. Two-machine network measurements remain open and every network number stays `NOT_MEASURED`.
 **Owner request:** an agent (for example Codex) plays the game in a headless browser on a virtual machine
 elsewhere while the owner plays in a browser on this machine, and the same mechanism is used to test
 multiplayer with several players.

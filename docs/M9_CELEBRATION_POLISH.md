@@ -1,6 +1,6 @@
 # M9 celebration polish: victory cue and short-viewport layout
 
-**Status:** Design spec, 2026-11-03. Not implemented.
+**Status:** Implemented in PR #146 (merged `67348f8`), independently gated by Tester.
 **Origin:** owner asked for further small polish after the celebration and readability packages merged. Two
 contained improvements, both presentation-only.
 

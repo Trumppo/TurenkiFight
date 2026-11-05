@@ -1,7 +1,7 @@
 # M9 results celebration: winner reveal and podium
 
-**Status:** Implemented locally in PR #143 (`GRAPHICS:`), owner review pending. The ranking half shipped earlier
-as PR #140 (merged `72f3214`). Not accepted as a milestone and not merged at the time of writing.
+**Status:** Implemented and merged: PR #143 (`c359e82`), with the ranking half from PR #140 (`72f3214`). Independently
+gated by Tester (PASS WITH LIMITATIONS). Not accepted as a milestone; milestone acceptance remains an owner decision.
 **Owner request:** at the end of a match there should be an animation or similar honouring the victory: the
 winner's name large, then the next two places when more than three players took part.
 

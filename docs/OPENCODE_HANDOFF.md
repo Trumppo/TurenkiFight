@@ -7,8 +7,9 @@ Move ongoing TurenkiFight development from three manually coordinated ChatGPT se
 - Repository: https://github.com/Trumppo/TurenkiFight
 - Stack: TypeScript, Phaser 3, Vite, deterministic fixed-step simulation, Vitest and Playwright/CI.
 - M1: owner accepted 2026-10-30 with documented limitations. See docs/M1_ACCEPTANCE_REPORT.md.
-- M1.5: retro raster upgrade and gameplay robustness work. Verify current PRs and branch state before taking over; do not assume work is merged.
-- M2+: transport-neutral networking foundation; benchmark central WebSocket authority versus WebRTC browser host before choosing.
+- M1.5: accepted with documented limitations on 2026-11-01; VIS05-02/03 and the arena work were approved later under M7.
+- M2+: the transport is **decided: central authoritative WebSocket server** ([ADR 0001](adr/0001-network-topology.md)), on literature plus single-machine measurements only. No network measurement exists; every network field stays `NOT_MEASURED`.
+- Current checkpoint (2026-11-05, `main` at `4153156`): three modes, eight players, bots, ALL BOTS, the local results celebration, the online result card with an opt-in rematch, retro art for P1-P8, and MIT/CC0 licensing are merged. Milestone acceptance for M5, M7, M8 and M9 and the playtest verdicts are still owner decisions.
 - Main gameplay arena: Turenki railway station; later arenas remain candidates.
 - Resolution: 640×360 logical presentation, configurable rendering; provisional 320×180 raster art grid.
 
@@ -25,7 +26,7 @@ Recommended work sequence:
 3. **gameplay** or **graphics** takes the assigned task; if both run simultaneously, their file scopes must not overlap.
 4. **tester** checks the implementation, tests and CI evidence. Defects return to the owning worker; Tester re-checks the correction.
 5. **designer** reviews integration and prepares a PR; project owner decides acceptance and merging.
-5. Repeat. Never imply agents run persistently or autonomously without a configured runner.
+6. Repeat. Never imply agents run persistently or autonomously without a configured runner.
 
 Suggested prompts:
 - Designer: "Read AGENTS.md, docs/OPENCODE_HANDOFF.md, docs/GAME_DESIGN_DECISIONS.md, docs/ROADMAP.md and current PRs. Propose the next smallest task and acceptance tests. Do not implement or merge."

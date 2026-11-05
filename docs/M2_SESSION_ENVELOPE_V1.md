@@ -1,6 +1,6 @@
 # M2 session envelope v1 — approved design contract
 
-**Status:** **APPROVED as the design contract by the project owner on 2026-11-01**, for implementation as a transport-neutral layer. Not implemented yet and **not a transport selection**. Baseline: `main` after #41, #43 and #79. Preserve the existing `src/game/protocol/inputFrame.ts` canonical InputFrame; do not add a competing simulation codec.
+**Status:** **APPROVED as the design contract by the project owner on 2026-11-01** and **implemented** in PR #94 (`ce8c5a1`) under `src/game/session/**`; independently gated by Tester (PASS WITH LIMITATIONS). Not a transport selection. Baseline at approval: `main` after #41, #43 and #79. Preserve the existing `src/game/protocol/inputFrame.ts` canonical InputFrame; do not add a competing simulation codec.
 
 **Owner decisions recorded 2026-11-01:**
 1. **Slot ownership:** one connection **may own multiple player slots** (shared local controllers in one browser). Ownership always comes from trusted adapter context.

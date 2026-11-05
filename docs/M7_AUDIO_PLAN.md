@@ -1,6 +1,6 @@
 # M7 audio: background music and combat effects
 
-**Status:** Design plan, owner-requested 2026-11-02. Not implemented.
+**Status:** Implemented at the placeholder level in PR #117 (`graphics/m7-audio-core`): procedural chiptune, twelve cues including the victory flourish, and the asset-agnostic cue interface. Real recorded samples and mixing remain deferred by the owner (`M7-AUDIO-MIX`).
 **Owner request:** the game must have background music and proper effects for hits, kicks, jumps and the like.
 **Scope:** presentation only. Audio must never feed the simulation, change timing or affect determinism.
 
