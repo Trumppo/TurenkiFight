@@ -1,6 +1,6 @@
 # M9 online results: result fields, rematch and the online result screen
 
-**Status:** Design spec, 2026-11-04. Not implemented. Related ADR proposal: [ADR 0003](adr/0003-online-match-result-fields.md).
+**Status:** Implemented in PR #149 (merged `eeeb084`), independently gated by Tester. Related decision record: [ADR 0003](adr/0003-online-match-result-fields.md).
 **Owner choice 2026-11-04:** the next work package is the online results screen plus rematch. This is the largest
 remaining product gap: the online client has no result screen, and `serve:match` serves exactly one match per
 process.

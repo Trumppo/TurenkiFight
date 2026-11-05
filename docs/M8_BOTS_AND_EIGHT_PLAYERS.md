@@ -1,6 +1,6 @@
 # Bots and eight-player matches
 
-**Status:** Design spec, owner-requested 2026-11-02. Not implemented.
+**Status:** Implemented: bots (#127), the eight-player cap (#128), the eight-slot UI (#129) and independent QA (#130-#134). The ALL BOTS spectator match was added in PR #148. Eight fighters remain hard to tell apart in a tight crowd, which is recorded rather than hidden.
 **Owner request:** when starting a match and players join, allow choosing to fight one or more bots, so a full
 eight-player round can be tested alone against the computer.
 **Scope:** local play first; networked bots already exist separately as the `npm run bot` CLI.

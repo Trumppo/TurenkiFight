@@ -2,9 +2,9 @@
 
 Tämä on projektin päivitettävä tavoitedokumentti harness- ja agenttityölle. Aktiivinen tavoite on rajattu itsenäiseksi kokonaisuudeksi, jolla on todennettavat hyväksymisehdot. Päivitä tavoite omistajan päätöksen ja uuden näytön perusteella; älä merkitse suunnitelmaa toteutetuksi, hyväksytyksi tai yhdistetyksi ilman näyttöä ja omistajan lupaa.
 
-## Tila 2026-11-04
+## Tila 2026-11-05
 
-Ei avointa koodityötä. Kaikki dokumentoidut tavoitteet on viety loppuun agentin osalta tai ne odottavat omistajan päätöstä. `main` = `67348f8` (PR #146 yhdistetty), 63 validoitua tehtävää, 376 yksikkötestiä ja täysi selainsarja vihreä sekä oletus- että retro-buildissa.
+Ei avointa koodityötä. Kaikki dokumentoidut tavoitteet on viety loppuun agentin osalta tai ne odottavat omistajan päätöstä. `main` = `4153156` (PR #152 yhdistetty), 68 validoitua tehtävää, 395 yksikkötestiä, täysi selainsarja vihreä sekä oletus- että retro-buildissa, ja etärepossa on vain `main`. Koodi on MIT, taide ja ääni CC0.
 
 | Alue | Tila |
 | --- | --- |
@@ -36,16 +36,15 @@ Tämä osio on **designerin ehdotus**, ei omistajan hyväksymä suunnitelma. Jok
 
 Nämä ovat pieniä, rajattuja ja testattavia. Suositusjärjestys:
 
-1. **Verkkopelin tulosruutu ja rematch.** `serve:match` on nyt yhden ottelun istunto, eikä online-clientillä ole tulosruutua. Tämä on suurin jäljellä oleva tuoteaukko. Vaatii yhden protokollapäätöksen: mitä tuloskenttiä snapshot kantaa (voittaja, syy, pudotusjärjestys), jotta podium voidaan näyttää myös verkossa ilman asiakaspään arvailua.
+1. **Verkkopelin tulosruutu ja rematch.** ✅ Tehty 2026-11-04 (PR #149, `eeeb084`): `match-end` kantaa palvelimen laskeman tuloksen ja sijoituksen, `rematch` käynnistää uuden matsin samassa prosessissa opt-in-lipulla (`serve:match --rematch`), ja online-sivulla on tuloskortti sekä REMATCH-nappi. Ei matchmakingia, rejoinia eikä host migrationia.
 2. **Kahdeksan pelaajan verkkopeli.** Toteutus on pääosin olemassa; tarvitaan päätös siitä, hyväksytäänkö kahdeksan verkkoon ennen mittausta vai vasta sen jälkeen, sekä mittausohje omistajalle.
 3. **HUD-tunnistus.** Hahmoille lyhyet nimet tai kuvakkeet HUDiin, jotta P5–P8 erottuvat muustakin kuin väristä. Pieni, mutta koskettaa HUDin ellipsis- ja kokorajoja.
 4. **Tulossivun viimeistely.** 1280×720 KO-kaappaus spektiin, osumapalautteen liikkuva todentaminen ja paneelin 0,6-kynnyksen dokumentointi osaksi layoutin sääntöä.
-5. **Siivous.** ✅ Tehty 2026-11-04: 31 vanhaa työpuuta poistettu (noin 6,6 GB), 133 yhdistettyä etähaaraa poistettu,
-   paikalliset yhdistetyt haarat siivottu. Jäljelle jäi `main` ja yksi historiallinen haara
-   (`revision/m2-protocol-hardening`, suljettu PR #25, 56 committia jotka eivät ole mainissa) sekä 15 vanhaa
-   etähaaraa, jotka eivät ole yhdistettyjä PR:iä. **M0-lisenssit päätetty 2026-11-04:** koodi MIT, taide ja ääni
-   CC0 1.0 ([LICENSE](../LICENSE), [LICENSE-ASSETS](../LICENSE-ASSETS), perustelut
-   [LICENSE_DECISION.md](LICENSE_DECISION.md)).
+5. **Siivous.** ✅ Tehty 2026-11-04/05: 31 vanhaa työpuuta poistettu (noin 6,6 GB), kaikki yhdistettyjen PR:ien
+   etähaarat ja paikalliset haarat siivottu. Etärepossa on nyt vain `main`; paikallisesti jäi `main` ja yksi
+   historiallinen haara (`revision/m2-protocol-hardening`, suljettu PR #25, 56 committia jotka eivät ole mainissa).
+   **M0-lisenssit päätetty 2026-11-04:** koodi MIT, taide ja ääni CC0 1.0 ([LICENSE](../LICENSE),
+   [LICENSE-ASSETS](../LICENSE-ASSETS), perustelut [LICENSE_DECISION.md](LICENSE_DECISION.md)).
 
 ### C. Tietoisesti siirretty
 

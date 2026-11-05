@@ -1,6 +1,6 @@
 # M9 bots and retro: P5–P8 retro textures and an all-bot match
 
-**Status:** Design spec, 2026-11-04. Not implemented.
+**Status:** Implemented in PR #148 (merged `e431cff`), independently gated by Tester. Retro art now covers P1-P8 and the ALL BOTS match runs unattended.
 **Owner report 2026-11-04:** four bots still carry old graphics, and the game should support a match where only
 bots play, so testing is easier.
 

@@ -1,6 +1,6 @@
 # M7 game modes: Last Man Standing and Deathmatch
 
-**Status:** Design spec, owner-selected goal 2026-11-02. Not implemented.
+**Status:** Implemented: rules PR #121, mode UI #122, online mode fields #124/#135 and independent QA #136. A full tie ends as a draw by owner decision 2026-11-03. Score Brawl bytes and pinned fingerprints are unchanged.
 **Scope:** deterministic gameplay rules plus presentation. The existing Score Brawl stays exactly as it is.
 
 ## 1. Mode contract
