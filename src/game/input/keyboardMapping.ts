@@ -8,6 +8,11 @@ import type { PlayerInput } from '../simulation/types';
  * P3 and P4 have no original keyboard layout in the local prototype, so they
  * deliberately reuse P1's layout rather than inventing a new scheme. The online
  * page states which layout is in use.
+ *
+ * `grab` is the M12 pickup/throw action. P1 uses `T`, the free key directly
+ * above P1's attack cluster (F/G/H). P2 uses `I`, the free key directly above
+ * its attack cluster (J/K/L) and next to jumpkick `U`. Both codes are also
+ * sampled by `StationScene` and the online page, and documented in the guide.
  */
 export type KeyboardLayout = {
   readonly moveX: readonly [string, string];
@@ -16,6 +21,7 @@ export type KeyboardLayout = {
   readonly punch: string;
   readonly kick: string;
   readonly jumpkick: string;
+  readonly grab: string;
 };
 
 export const KEYBOARD_LAYOUTS: Readonly<Record<'P1' | 'P2', KeyboardLayout>> = {
@@ -26,6 +32,7 @@ export const KEYBOARD_LAYOUTS: Readonly<Record<'P1' | 'P2', KeyboardLayout>> = {
     punch: 'KeyF',
     kick: 'KeyG',
     jumpkick: 'KeyH',
+    grab: 'KeyT',
   },
   P2: {
     moveX: ['ArrowLeft', 'ArrowRight'],
@@ -34,6 +41,7 @@ export const KEYBOARD_LAYOUTS: Readonly<Record<'P1' | 'P2', KeyboardLayout>> = {
     punch: 'KeyL',
     kick: 'KeyJ',
     jumpkick: 'KeyU',
+    grab: 'KeyI',
   },
 };
 
@@ -54,6 +62,7 @@ export function keyboardPlayerInput(
     punch: isDown(layout.punch),
     kick: isDown(layout.kick),
     jumpkick: isDown(layout.jumpkick),
+    grab: isDown(layout.grab),
   };
 }
 

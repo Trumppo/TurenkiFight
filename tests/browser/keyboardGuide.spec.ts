@@ -20,16 +20,21 @@ test('keyboard guide labels keyboard, gamepad and bot slots without obscuring th
   await guide.locator('summary').click();
   await expect(guide).toHaveAttribute('open', '');
   const rows = guide.locator('tbody tr');
-  await expect(rows).toHaveCount(8);
+  await expect(rows).toHaveCount(9);
   await expect(rows.nth(1)).toContainText('Välilyönti');
   await expect(rows.nth(1)).toContainText('K');
   await expect(rows.nth(4)).toContainText('H');
   await expect(rows.nth(4)).toContainText('U');
-  await expect(rows.nth(5)).toContainText('Shift');
-  await expect(rows.nth(6)).toContainText('Enter');
+  // The M12 grab action is documented for both keyboard players.
+  await expect(rows.nth(5)).toContainText('T');
+  await expect(rows.nth(5)).toContainText('I');
+  await expect(rows.nth(5)).toContainText('Poimi / heitä');
+  await expect(rows.nth(6)).toContainText('Shift');
+  await expect(rows.nth(7)).toContainText('Enter');
   // The reset shortcut is documented with the other bindings.
-  await expect(rows.nth(7)).toContainText('Esc');
-  await expect(rows.nth(7)).toContainText('RESET');
+  await expect(rows.nth(8)).toContainText('Esc');
+  await expect(rows.nth(8)).toContainText('RESET');
+  await expect(guide.locator('.controls-note')).toContainText('LB (button 4)');
   const guideLayout = await page.evaluate(() => {
     const canvas = document.querySelector('#game canvas')!.getBoundingClientRect();
     const guide = document.querySelector('details.controls')!.getBoundingClientRect();

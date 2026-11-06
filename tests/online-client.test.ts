@@ -78,12 +78,12 @@ describe('canonical keyboard mapping', () => {
     expect(keyboardPlayerInput('P1', pressed('KeyD', 'KeyS', 'Space', 'KeyF', 'KeyG', 'KeyH')))
       .toEqual({
         playerId: 'P1', moveX: 1, moveY: 1, jump: true,
-        punch: true, kick: true, jumpkick: true,
+        punch: true, kick: true, jumpkick: true, grab: false,
       });
     expect(keyboardPlayerInput('P1', pressed('KeyA', 'KeyW')))
       .toEqual({
         playerId: 'P1', moveX: -1, moveY: -1, jump: false,
-        punch: false, kick: false, jumpkick: false,
+        punch: false, kick: false, jumpkick: false, grab: false,
       });
   });
 
@@ -92,7 +92,7 @@ describe('canonical keyboard mapping', () => {
     expect(keyboardPlayerInput('P2', pressed('ArrowRight', 'ArrowDown', 'KeyK', 'KeyL', 'KeyJ', 'KeyU')))
       .toEqual({
         playerId: 'P2', moveX: 1, moveY: 1, jump: true,
-        punch: true, kick: true, jumpkick: true,
+        punch: true, kick: true, jumpkick: true, grab: false,
       });
   });
 

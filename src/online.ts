@@ -62,7 +62,7 @@ let renderedResultKey = '';
 
 const trackedCodes = new Set<string>();
 for (const layout of Object.values(KEYBOARD_LAYOUTS)) {
-  for (const code of [...layout.moveX, ...layout.moveY, layout.jump, layout.punch, layout.kick, layout.jumpkick]) {
+  for (const code of [...layout.moveX, ...layout.moveY, layout.jump, layout.punch, layout.kick, layout.jumpkick, layout.grab]) {
     trackedCodes.add(code);
   }
 }
@@ -102,12 +102,12 @@ function setDataState(element: HTMLElement, state: string): void {
 
 function layoutText(playerId: string): string {
   if (playerId === 'P2') {
-    return 'P2 layout: arrow keys move · K jump · L punch · J kick · U jump kick';
+    return 'P2 layout: arrow keys move · K jump · L punch · J kick · U jump kick · I pick up/throw';
   }
   if (playerId === 'P3' || playerId === 'P4') {
-    return `${playerId} uses the P1 layout: WASD move · Space jump · F punch · G kick · H jump kick`;
+    return `${playerId} uses the P1 layout: WASD move · Space jump · F punch · G kick · H jump kick · T pick up/throw`;
   }
-  return 'P1 layout: WASD move · Space jump · F punch · G kick · H jump kick';
+  return 'P1 layout: WASD move · Space jump · F punch · G kick · H jump kick · T pick up/throw';
 }
 
 function showError(message: string | null): void {
