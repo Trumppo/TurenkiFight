@@ -27,6 +27,7 @@ export const MODE_RULES: Readonly<Record<ModeId, ModeRules>> = {
     fragScoring: false,
     trackDamage: false,
     trackDeaths: false,
+    shrinkingZone: false,
   },
   'last-man-standing': {
     id: 'last-man-standing',
@@ -40,6 +41,7 @@ export const MODE_RULES: Readonly<Record<ModeId, ModeRules>> = {
     fragScoring: false,
     trackDamage: true,
     trackDeaths: false,
+    shrinkingZone: false,
   },
   deathmatch: {
     id: 'deathmatch',
@@ -53,6 +55,7 @@ export const MODE_RULES: Readonly<Record<ModeId, ModeRules>> = {
     fragScoring: true,
     trackDamage: true,
     trackDeaths: true,
+    shrinkingZone: true,
   },
 };
 

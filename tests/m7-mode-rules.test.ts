@@ -52,6 +52,10 @@ function deathmatchFixture(): { initial: GameState; frames: PlayerInput[][] } {
 }
 
 // Independently recorded SHA-256 fingerprints for the scripted fixtures below.
+// M10 zone note: this Deathmatch fixture ends at tick 186, before the first
+// shrink at tick 1080, so the zone is inert here and its fingerprint is
+// intentionally unchanged. Zone-crossing coverage and its own pins live in
+// `tests/m10-deathmatch-zone.test.ts`.
 const LMS_FINAL_STATE_SHA256 = '95c0e63b3344635094e3436d060bb393077b79efbc48e7109caa6a77bd9447f1';
 const LMS_ORDERED_EVENTS_SHA256 = '87be89ee9228dfab5463a69f3f014f6dea8048a3367f561a58ef1a89ecf872cd';
 const DEATHMATCH_FINAL_STATE_SHA256 = '6e92d22dd779d6a193ffc8d97f8066937a97e643bdedd26257eda20a5b0f03e3';

@@ -1363,6 +1363,60 @@ tasks:
     last_updated: "2026-11-06"
     notes: "Owner request 2026-11-06: movement may be about 20 percent faster. Queue after the M10 zone work to avoid conflicting edits in step.ts; depends_on is left empty only because M10 lives on its own branch until merged."
 
+  - id: M10-DM-ZONE-RULES
+    title: Give Deathmatch a shrinking safe platform in the simulation
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261106-zone
+    status: review
+    priority: P1
+    specification: docs/M10_DEATHMATCH_ZONE.md
+    depends_on: [M7-MODE-RULES]
+    scope: [src/game/simulation/, tests/]
+    acceptance:
+      - "The stage is a pure function of the tick with documented boundaries and unit tests at every transition"
+      - "Outside the zone a fighter loses exactly 1 HP per 6 ticks, never inside, and never during countdown or results"
+      - "A zone knockout counts as a death with no frag credit, and the respawn lands inside the current safe range"
+      - "Deathmatch still ends on 20 frags or the timer; ranking and tie-break match rankMatch"
+      - "Score Brawl and Last Man Standing bytes and pinned fingerprints are unchanged"
+      - npm test, npm run build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/156
+    last_updated: "2026-11-06"
+    notes: "Owner chose the shrinking platform (C2) on 2026-11-06 because Deathmatch played almost like Score Brawl. No protocol change: the zone is derived from the tick."
+
+  - id: M10-DM-ZONE-UI
+    title: Show the shrinking platform, its warning and the HUD stage
+    assigned_role: graphics-session
+    session_id: graphics-session-20261106-zone
+    status: review
+    priority: P1
+    specification: docs/M10_DEATHMATCH_ZONE.md
+    depends_on: [M10-DM-ZONE-RULES]
+    scope: [src/game/presentation/, src/style.css, tests/browser/]
+    acceptance:
+      - "The safe range is visible as a moving edge at 640x360 and 1280x720, with a warning before each shrink"
+      - "The HUD shows the current stage and the next shrink time; a fighter outside the zone has a readable danger state"
+      - "The online scene derives the same zone from the tick and shows the same warning"
+      - "Existing visual suites stay green; screenshots inspected in classic and retro builds"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/156
+    last_updated: "2026-11-06"
+    notes: "Presentation only: no simulation or protocol change. Derive the zone from the same shared function as the simulation."
+
+  - id: M10-DM-ZONE-QA
+    title: Independently verify the Deathmatch zone and its boundaries
+    assigned_role: tester-session
+    status: blocked
+    priority: P1
+    specification: docs/M10_DEATHMATCH_ZONE.md
+    depends_on: [M10-DM-ZONE-RULES, M10-DM-ZONE-UI]
+    scope: [tests/, docs/visual/]
+    acceptance:
+      - "Zone damage cadence, zone KO attribution and respawn clamping are reproduced independently"
+      - "Score Brawl and Last Man Standing pinned fingerprints are proven unchanged"
+      - "The documented Deathmatch fingerprint change is reviewed and explained"
+      - "Zone rendering and HUD are inspected at native and desktop sizes in both builds"
+    last_updated: "2026-11-06"
+    notes: "Independent gate: do not accept the implementer numbers without reproducing them."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
