@@ -1478,6 +1478,207 @@ tasks:
     last_updated: "2026-11-06"
     notes: "Presentation only, driven by the existing HitLanded and Knockout events."
 
+  - id: M12-ITEM-CORE
+    title: Add a deterministic throwable object to the simulation
+    assigned_role: gameplay-session
+    status: blocked
+    priority: P1
+    specification: docs/M12_OBJECTS.md
+    depends_on: [M11-HITSTOP-KNOCKBACK]
+    scope: [src/game/simulation/, src/game/protocol/, tests/]
+    acceptance:
+      - "One bottle object spawns on a deterministic schedule and exists in the simulation state"
+      - "Pickup, hold, throw, flight, impact and break are processed in one documented order"
+      - "Snapshots carry objects optionally with canonical omission; fixtures without objects stay byte-identical"
+      - "Object ids, spawn positions and outcomes are deterministic and replay identically"
+      - "Bandwidth impact is measured on a maximum-object fixture and reported as measured bytes"
+      - "npm test, npm run build and git diff --check pass"
+    last_updated: "2026-11-06"
+    notes: "ADR 0004 decision. Owner chose the object system for throwing; first slice is one object type. Do not add chairs or signs before this works."
+
+  - id: M12-ITEM-INPUT
+    title: Add the grab and throw action to input and the wire
+    assigned_role: gameplay-session
+    status: blocked
+    priority: P1
+    specification: docs/M12_OBJECTS.md
+    depends_on: [M12-ITEM-CORE]
+    scope: [src/game/protocol/, src/game/input/, tests/]
+    acceptance:
+      - "PlayerInput carries an optional grab action; the input codec round-trips it and rejects malformed frames"
+      - "Existing recordings and fixtures without the button remain valid"
+      - "Keyboard and gamepad mappings are documented in the in-game guide"
+    last_updated: "2026-11-06"
+    notes: "One new button bit, canonical omission. ADR 0004."
+
+  - id: M12-ITEM-UI
+    title: Render bottles, held objects and throw arcs
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/M12_OBJECTS.md
+    depends_on: [M12-ITEM-CORE]
+    scope: [src/game/presentation/, src/style.css, tests/browser/]
+    acceptance:
+      - "A bottle on the floor is distinguishable from fighters at 640x360 and 1280x720"
+      - "A held bottle is visible in the holder silhouette and a thrown bottle has a readable arc"
+      - "Pickup, throw and break have placeholder audio cues that respect mute"
+      - "No simulation or protocol change; classic and retro both look correct"
+    last_updated: "2026-11-06"
+    notes: "Presentation only, driven by the object state in snapshots."
+
+  - id: M12-BOT-ITEMS
+    title: Teach bots to pick up and throw objects
+    assigned_role: gameplay-session
+    status: blocked
+    priority: P1
+    specification: docs/M12_OBJECTS.md
+    depends_on: [M12-ITEM-INPUT]
+    scope: [src/game/input/, tests/]
+    acceptance:
+      - "Bots pick up a nearby object and throw it at the nearest opponent using the seeded policy"
+      - "Throw rate is bounded and measured; bots do not ignore combat entirely"
+      - "Determinism holds and bot fixture pins are updated with old and new values reported"
+    last_updated: "2026-11-06"
+    notes: "Bots and humans share the same rules; no special-case combat for bots."
+
+  - id: M12-STATION-EVENTS
+    title: Make the station hazard a shared, telegraphed event in more modes
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/M12_OBJECTS.md
+    depends_on: [M10-DM-ZONE-RULES]
+    scope: [src/game/presentation/, tests/browser/]
+    acceptance:
+      - "The train warning becomes visible and audible in the modes that enable it"
+      - "Every hazard is telegraphed before it can hurt anyone"
+      - "No new damage source outside the existing mode rules"
+    last_updated: "2026-11-06"
+    notes: "Presentation only; simulation damage stays in the mode rules."
+
+  - id: M14-TLS-ROOMCODES
+    title: Serve wss with optional certificates and require a room code
+    assigned_role: gameplay-session
+    status: ready
+    priority: P1
+    specification: docs/M14_ONLINE_SECURITY.md
+    depends_on: []
+    scope: [server/ws/, src/game/networking/, src/online.ts, online.html, tests/]
+    acceptance:
+      - "serve:match --cert --key serves wss; without the flags it stays ws with the same ready line"
+      - "A room code is printed and enforced; a wrong or missing code is rejected before any slot is allocated"
+      - "The browser client connects to wss on an https page and accepts ?room= codes"
+      - "Existing one-shot and rematch runbooks keep working"
+    last_updated: "2026-11-06"
+    notes: "M14 first slice. Certificate management stays with the operator; no certificate is committed."
+
+  - id: M14-RATE-LIMITS
+    title: Enforce per-connection message rate and size limits
+    assigned_role: gameplay-session
+    status: blocked
+    priority: P1
+    specification: docs/M14_ONLINE_SECURITY.md
+    depends_on: [M14-TLS-ROOMCODES]
+    scope: [server/ws/, tests/]
+    acceptance:
+      - "A flooding connection is closed with a typed code and the server keeps serving others"
+      - "Oversized messages are rejected before parsing"
+      - "Limits are configuration constants and are printed in the ready line"
+    last_updated: "2026-11-06"
+    notes: "No invented performance numbers; these are policy limits, not measurements."
+
+  - id: M14-REJOIN
+    title: Allow a dropped player to rejoin the same slot within a window
+    assigned_role: gameplay-session
+    status: blocked
+    priority: P1
+    specification: docs/M14_ONLINE_SECURITY.md
+    depends_on: [M14-RATE-LIMITS]
+    scope: [server/ws/, src/game/session/, tests/]
+    acceptance:
+      - "A reconnect within the window resumes the same player slot with a fresh sequence domain"
+      - "Stale frames from the old connection are rejected"
+      - "After the window the slot is released and the match continues without that player"
+      - "Host migration and peer authority remain out of scope"
+    last_updated: "2026-11-06"
+    notes: "Server keeps authority; rejoin is not host migration."
+
+  - id: M14-SINGLE-MACHINE-8P
+    title: Measure eight-player server cost on one machine
+    assigned_role: gameplay-session
+    status: ready
+    priority: P1
+    specification: docs/M14_ONLINE_SECURITY.md
+    depends_on: []
+    scope: [benchmarks/, tests/, server/ws/]
+    acceptance:
+      - "Eight-player snapshot bytes, encode time, tick duration and RSS measured on one machine with provenance"
+      - "Results committed under benchmarks/results/ and clearly labelled single-machine, not network"
+      - "No network latency, jitter or loss number is claimed"
+    last_updated: "2026-11-06"
+    notes: "Complements M7-NETWORK-MEASUREMENTS, which needs two machines and is owner-blocked."
+
+  - id: M15-INPUT-COMFORT
+    title: Make four-human local play comfortable
+    assigned_role: graphics-session
+    status: ready
+    priority: P1
+    specification: docs/LONG_TERM_PLAN.md
+    depends_on: []
+    scope: [src/game/presentation/, src/game/input/, index.html, src/style.css, tests/browser/]
+    acceptance:
+      - "Gamepad pairing shows which pad controls which slot and survives reconnect"
+      - "Per-slot remapping exists for keyboard layouts 2-4, documented in the guide"
+      - "Pause works locally and is visible in the HUD"
+    last_updated: "2026-11-06"
+    notes: "Local 4-human comfort, owner-approved direction in the long-term plan."
+
+  - id: M15-ARENA-2
+    title: Add a second arena with its own hazard
+    assigned_role: graphics-session
+    status: ready
+    priority: P1
+    specification: docs/LONG_TERM_PLAN.md
+    depends_on: []
+    scope: [src/game/presentation/, public/assets/, tests/browser/]
+    acceptance:
+      - "A second Turenki location is selectable without changing simulation rules"
+      - "Its hazard is telegraphed and presentation-only unless the mode rules already define damage"
+      - "Station and Mesku screenshots stay byte-identical"
+    last_updated: "2026-11-06"
+    notes: "Candidate locations already listed in GAME_DESIGN.md. Owner picks the concept before implementation."
+
+  - id: M15-CHARACTERS
+    title: Extend the roster beyond P1-P8 if needed
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/LONG_TERM_PLAN.md
+    depends_on: [M9-CHARACTERS]
+    scope: [src/game/presentation/, tests/browser/]
+    acceptance:
+      - "New silhouettes are distinct in classic and retro"
+      - "P1-P8 textures stay byte-identical"
+      - "The eight-player cap is unchanged"
+    last_updated: "2026-11-06"
+    notes: "Only if the roster needs it; blocked until a concrete need or owner request."
+
+  - id: M15-AUDIO-SAMPLES
+    title: Replace placeholder audio with recorded samples and mixing
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/M7_AUDIO_PLAN.md
+    depends_on: []
+    scope: [src/game/presentation/audio/, public/assets/]
+    acceptance:
+      - "Licensed or original samples are committed with provenance"
+      - "The cue interface stays asset-agnostic"
+      - "The owner has listened and accepted the mix"
+    last_updated: "2026-11-06"
+    notes: "Owner-blocked: real samples and mixing wait for an explicit request and a listening decision."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
