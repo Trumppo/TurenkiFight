@@ -51,7 +51,9 @@ async function captureBackdrop(page: import('@playwright/test').Page, query: str
 }
 
 async function assetSha256(assetPath: string): Promise<string> {
-  const bytes = await readFile(resolve(process.cwd(), 'public', assetPath));
+  const text = await readFile(resolve(process.cwd(), 'public', assetPath), 'utf8');
+  // Git may check out these committed SVGs with CRLF on Windows or LF on Linux.
+  const bytes = Buffer.from(text.replace(/\r\n/g, '\n'), 'utf8');
   return createHash('sha256').update(bytes).digest('hex');
 }
 
@@ -170,13 +172,14 @@ test('the shelf event is a harmless, non-text presentation telegraph', async ({ 
   expect(cue.text).not.toMatch(/hazard|collapse|damage|warning/i);
 });
 
-test('station and Mesku source SVG bytes match the pre-arena baseline', async () => {
+test('station and Mesku SVG content matches the line-ending-independent pre-arena baseline', async () => {
+  // SHA-256 values are computed over UTF-8 text after CRLF-to-LF normalization.
   expect(await assetSha256('assets/station/turenki-station-background.svg'))
-    .toBe('bacb6357d9a41343d9739d636ab58aed640b9c76a1407e602ab3de9a48bfdee3');
+    .toBe('738e9082dd3b73ff0893d877047455c7fea20cb38438c174299c2fb0a01e5962');
   expect(await assetSha256('assets/station/turenki-station-retro.svg'))
-    .toBe('453e14942836f8119d1c889a02327ac7d3ffd744ae6c90e06786509b6f49a602');
+    .toBe('01fcb21015ce6a8666dd15738927480d85353421bf1db59a37a45d6bba0ed4c5');
   expect(await assetSha256('assets/mesku/ravintola-mesku-evening.svg'))
-    .toBe('8bf4fe09a023b505f68d6c2ee294df938a3949386cb73e538536e844b8f683c0');
+    .toBe('61ec56637ee9c33ebae4543a18e029f3ab148a7c3663a12fbed9d374d74779e5');
 });
 
 test('classic Mesku fallback produces the same nonblank station capture in this run', async ({ page }) => {
