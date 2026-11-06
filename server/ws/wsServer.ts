@@ -12,6 +12,14 @@ import {
   type WsSessionPhase,
   type WsStepResult,
 } from './authoritativeWsSession';
+import {
+  CLIENT_FRAME_SLACK_BYTES,
+  ClientMessageGuard,
+  isRoomCodeDenial,
+  roomCodeCloseAction,
+  type ClientMessagePolicy,
+  type PolicyCloseAction,
+} from './clientMessageLimits';
 
 /**
  * Read-only observation of one client envelope after the session handled it.
@@ -41,10 +49,19 @@ export type WsServerEnvelopeEvent =
  * Read-only transport/lifecycle observation for an operator-facing server role.
  * It is reported after the decision was made, so a throwing callback (or slow
  * logging sink) can never accept, reject, reorder or delay a client envelope.
+ *
+ * `closeCode`/`reason` are present when the transport itself closed the socket
+ * for a policy reason (rate limit, oversized message, admission failure).
  */
 export type WsServerEvent =
   | { kind: 'connection-opened'; connectionId: string; connections: number }
-  | { kind: 'connection-closed'; connectionId: string; connections: number }
+  | {
+    kind: 'connection-closed';
+    connectionId: string;
+    connections: number;
+    closeCode?: number;
+    reason?: string;
+  }
   | { kind: 'connection-rejected'; reason: 'connection-limit' | 'server-closed' }
   | { kind: 'phase'; phase: WsSessionPhase };
 
@@ -53,9 +70,14 @@ export type WsServerEvent =
  *
  * The only trusted identity a socket gets is the ID allocated here; nothing in
  * a client payload can set or influence it. Supplying PEM certificate and key
- * material switches the listener to HTTPS/WSS. This prototype still has no
- * authentication, origin checks or rate limiting; the room code is admission
- * only and is not an account or a secret with cryptographic guarantees.
+ * material switches the listener to HTTPS/WSS. There is still no
+ * authentication and no origin check; the room code is admission only and is
+ * not an account or a secret with cryptographic guarantees.
+ *
+ * An optional {@link WsServerConfig.messagePolicy} enforces a per-connection
+ * size/rate/validation budget. It is opt-in because the deterministic benchmark
+ * harness deliberately submits synthetic bursts on loopback; the
+ * operator-facing `startMatchServer` always supplies the documented policy.
  */
 export type WsServerConfig = {
   port: number;
@@ -99,6 +121,13 @@ export type WsServerConfig = {
    * Undefined keeps the transport unbounded as before.
    */
   maxConnections?: number;
+  /**
+   * Per-connection abuse policy. Undefined keeps the historical harness
+   * behaviour (no message budget); `startMatchServer` always supplies the
+   * exported policy constants. Exceeding a limit closes that socket with a
+   * typed close code and frees its room slot immediately.
+   */
+  messagePolicy?: ClientMessagePolicy;
   /** Benchmark-only, read-only envelope observation; never affects semantics. */
   onClientEnvelope?: (event: WsServerEnvelopeEvent) => void;
   /** Read-only connection/phase observation for an operator-facing server. */
@@ -179,6 +208,12 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
   if (maxConnections !== null && (!nonnegativeInteger(maxConnections) || maxConnections < 1)) {
     throw new Error('Invalid connection limit');
   }
+  const messagePolicy = config.messagePolicy ?? null;
+  if (messagePolicy !== null) {
+    // Constructing a guard validates every policy field without allocating one
+    // per connection yet.
+    new ClientMessageGuard(messagePolicy);
+  }
   const onClientEnvelope = config.onClientEnvelope ?? null;
   if (onClientEnvelope !== null && typeof onClientEnvelope !== 'function') {
     throw new Error('Invalid envelope observer');
@@ -214,6 +249,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
   };
 
   const sockets = new Map<string, WebSocket>();
+  const guards = new Map<string, ClientMessageGuard>();
   let nextConnectionId = 1;
   let startTimer: ReturnType<typeof setTimeout> | null = null;
   let tickTimer: ReturnType<typeof setTimeout> | null = null;
@@ -235,6 +271,39 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
       socket.send(message, error => {
         if (error) socket.terminate();
       });
+    }
+  };
+
+  /**
+   * Revokes a peer immediately: the connection slot, its room slots and its
+   * sequence domain are released before the close handshake finishes. Waiting
+   * for the peer to acknowledge the close would let a rejected client keep
+   * consuming the room's connection margin.
+   */
+  const closePeer = (connectionId: string, action: PolicyCloseAction): void => {
+    const socket = sockets.get(connectionId);
+    if (!socket) return;
+    sockets.delete(connectionId);
+    guards.delete(connectionId);
+    // `disconnect` is what frees player slots and queued input; if this peer
+    // was the host the existing host-lost lifecycle still applies.
+    room.disconnect(connectionId);
+    notifyServerEvent({
+      kind: 'connection-closed',
+      connectionId,
+      connections: sockets.size,
+      closeCode: action.closeCode,
+      reason: action.reason,
+    });
+    if (socket.readyState === WebSocket.OPEN) {
+      // Any already-queued error frame is sent before this close frame.
+      socket.close(action.closeCode, action.reason);
+    } else {
+      try {
+        socket.terminate();
+      } catch {
+        // Already closed.
+      }
     }
   };
 
@@ -285,6 +354,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
       socket.close(1000, 'session closed');
     }
     sockets.clear();
+    guards.clear();
   }
 
   const room = new AuthoritativeWsSession({
@@ -326,16 +396,27 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
       }
     },
     // Room-level denials are sent to the client by the session itself; this hook
-    // only reports the already-decided code to the benchmark observer.
+    // reports the already-decided code and applies the transport admission
+    // policy. A room-code rejection ends the socket at once so a rejected peer
+    // cannot hold the connection margin.
     onRoomDenial: (connectionId, code) => {
       notifyEnvelope({ connectionId, accepted: false, code, source: 'room' });
+      if (isRoomCodeDenial(code)) {
+        closePeer(connectionId, roomCodeCloseAction(code));
+        return;
+      }
+      const failure = guards.get(connectionId)?.noteDenial(code) ?? null;
+      if (failure) closePeer(connectionId, failure);
     },
   });
 
+  const maxPayload = messagePolicy === null
+    ? MAX_SESSION_ENVELOPE_BYTES
+    : messagePolicy.maxMessageBytes + CLIENT_FRAME_SLACK_BYTES;
   const httpsServer = tls === null ? null : createHttpsServer({ cert: tls.cert, key: tls.key });
   const wss = httpsServer === null
-    ? new WebSocketServer({ host, port: config.port, maxPayload: MAX_SESSION_ENVELOPE_BYTES })
-    : new WebSocketServer({ server: httpsServer, maxPayload: MAX_SESSION_ENVELOPE_BYTES });
+    ? new WebSocketServer({ host, port: config.port, maxPayload })
+    : new WebSocketServer({ server: httpsServer, maxPayload });
   const httpServer = httpsServer;
 
   await new Promise<void>((resolve, reject) => {
@@ -386,22 +467,43 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
     }
     const connectionId = `conn-${nextConnectionId++}`;
     sockets.set(connectionId, socket);
+    if (messagePolicy !== null) guards.set(connectionId, new ClientMessageGuard(messagePolicy));
     try {
       room.addConnection(connectionId);
     } catch {
       sockets.delete(connectionId);
+      guards.delete(connectionId);
       notifyServerEvent({ kind: 'connection-rejected', reason: 'server-closed' });
       socket.close(1008, 'registration denied');
       return;
     }
     notifyServerEvent({ kind: 'connection-opened', connectionId, connections: sockets.size });
     socket.on('message', (data: RawData) => {
+      const guard = guards.get(connectionId);
+      const bytes = rawBytes(data);
+      if (guard) {
+        // Transport policy runs before any parsing: size first, then the rate
+        // window. A breach revokes the connection slot immediately.
+        const violation = guard.admit(bytes.byteLength, performance.now());
+        if (violation) {
+          closePeer(connectionId, violation);
+          return;
+        }
+      }
       // Trusted context is the socket's allocated ID, never a payload field.
-      const result = room.handleMessage(connectionId, rawBytes(data));
-      if (result !== null && onClientEnvelope) observeResult(connectionId, result);
+      const result = room.handleMessage(connectionId, bytes);
+      if (result === null) return;
+      if (onClientEnvelope) observeResult(connectionId, result);
+      if (result.accepted) {
+        guard?.noteAccepted();
+        return;
+      }
+      const failure = guard?.noteDenial(result.code) ?? null;
+      if (failure) closePeer(connectionId, failure);
     });
     socket.on('close', () => {
       if (!sockets.delete(connectionId)) return;
+      guards.delete(connectionId);
       room.disconnect(connectionId);
       notifyServerEvent({ kind: 'connection-closed', connectionId, connections: sockets.size });
     });
@@ -463,6 +565,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
         }
       }
       sockets.clear();
+      guards.clear();
       await new Promise<void>(resolve => {
         wss.close(() => resolve());
       });

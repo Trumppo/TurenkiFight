@@ -12,6 +12,13 @@ import {
   normalizeRoomCode,
 } from '../../src/game/session/sessionEnvelope';
 import type { AuthoritativeWsSession } from './authoritativeWsSession';
+import {
+  CLIENT_MESSAGE_POLICY,
+  CLIENT_MESSAGE_WINDOW_MS,
+  MAX_CLIENT_MESSAGE_BYTES,
+  MAX_CLIENT_MESSAGES_PER_WINDOW,
+  MAX_CLIENT_VALIDATION_FAILURES,
+} from './clientMessageLimits';
 import { startWsServer, type WsServerEnvelopeEvent, type WsServerEvent } from './wsServer';
 
 /**
@@ -31,6 +38,10 @@ import { startWsServer, type WsServerEnvelopeEvent, type WsServerEvent } from '.
  *   admission, not authentication;
  * - the room has a hard socket cap (roster plus a documented margin) printed in
  *   the ready line; surplus sockets are closed before registration;
+ * - every connection has the documented message-size, message-rate and
+ *   consecutive-validation-failure budget; a breach closes that socket with a
+ *   typed close code and frees its slot immediately. These are policy limits,
+ *   not measured network performance;
  * - no client prediction, so input-to-render latency is RTT plus up to one
  *   snapshot interval;
  * - a match starts when every configured slot is claimed (auto) or when an
@@ -79,6 +90,14 @@ export type MatchReadyInfo = {
   readonly roomCode: string | null;
   /** Hard socket cap for this room (roster plus the configured margin). */
   readonly maxConnections: number;
+  /** Largest accepted client message, in UTF-8 bytes. */
+  readonly maxMessageBytes: number;
+  /** Sliding message-rate window length in milliseconds. */
+  readonly messageRateWindowMs: number;
+  /** Messages allowed per sliding window on one connection. */
+  readonly maxMessagesPerWindow: number;
+  /** Consecutive invalid messages before that connection is closed. */
+  readonly maxValidationFailures: number;
   readonly playerIds: readonly string[];
   readonly snapshotHz: SnapshotHz;
   readonly startMode: MatchStartMode;
@@ -387,6 +406,12 @@ export function serveMatchUsage(): string {
     '                       this process (default off: one match per process)',
     '  --help               Show this text',
     '',
+    'Per-connection policy (fixed, not measured):',
+    `  at most ${MAX_CLIENT_MESSAGE_BYTES} bytes per message, ` +
+      `${MAX_CLIENT_MESSAGES_PER_WINDOW} messages per ${CLIENT_MESSAGE_WINDOW_MS} ms,`,
+    `  and ${MAX_CLIENT_VALIDATION_FAILURES} consecutive invalid messages. Exceeding`,
+    '  any limit closes that connection and frees its room slot immediately.',
+    '',
     'Flags also accept a separate value: --cert cert.pem --key key.pem',
     '',
     'stdin controls:',
@@ -409,6 +434,10 @@ export function formatMatchReadyLine(info: MatchReadyInfo): string {
     roomId: info.roomId,
     roomCode: info.roomCode,
     maxConnections: info.maxConnections,
+    maxMessageBytes: info.maxMessageBytes,
+    messageRateWindowMs: info.messageRateWindowMs,
+    maxMessagesPerWindow: info.maxMessagesPerWindow,
+    maxValidationFailures: info.maxValidationFailures,
     players: [...info.playerIds],
     snapshotHz: info.snapshotHz,
     tickRate: TICK_RATE,
@@ -521,7 +550,9 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
         log(`connection ${event.connectionId} opened (${event.connections}/${maxConnections} sockets)`);
         return;
       case 'connection-closed':
-        log(`connection ${event.connectionId} closed (${event.connections}/${maxConnections} sockets, ` +
+        log(`connection ${event.connectionId} closed` +
+          `${event.closeCode === undefined ? '' : ` by policy (${event.closeCode}: ${event.reason ?? ''})`}` +
+          ` (${event.connections}/${maxConnections} sockets, ` +
           `${room?.playerCount ?? 0}/${playerIds.length} slots claimed)`);
         return;
       case 'connection-rejected':
@@ -551,6 +582,9 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
     // Roster plus the documented margin: surplus sockets are closed before
     // registration, so they cannot join, take a slot or delay the match.
     maxConnections,
+    // The operator-facing server always enforces the abuse policy; the
+    // synthetic benchmark harness calls `startWsServer` without it.
+    messagePolicy: CLIENT_MESSAGE_POLICY,
     onClientEnvelope: noteEnvelope,
     onServerEvent: noteServerEvent,
   });
@@ -563,6 +597,10 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
     roomId: DEFAULT_MATCH_ROOM_ID,
     roomCode,
     maxConnections,
+    maxMessageBytes: CLIENT_MESSAGE_POLICY.maxMessageBytes,
+    messageRateWindowMs: CLIENT_MESSAGE_POLICY.windowMs,
+    maxMessagesPerWindow: CLIENT_MESSAGE_POLICY.maxMessagesPerWindow,
+    maxValidationFailures: CLIENT_MESSAGE_POLICY.maxValidationFailures,
     playerIds,
     snapshotHz,
     startMode,

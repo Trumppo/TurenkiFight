@@ -381,6 +381,10 @@ describe('M7 serve:match command surface', () => {
       roomId: 'match',
       roomCode: 'ABCDE',
       maxConnections: 6,
+      maxMessageBytes: 5120,
+      messageRateWindowMs: 1000,
+      maxMessagesPerWindow: 240,
+      maxValidationFailures: 5,
       playerIds: PLAYERS,
       snapshotHz: 20,
       startMode: 'auto',
@@ -390,7 +394,8 @@ describe('M7 serve:match command surface', () => {
     expect(line).not.toContain('\n');
     const parsed = JSON.parse(line) as Record<string, unknown>;
     expect(Object.keys(parsed).sort()).toEqual([
-      'host', 'kind', 'maxConnections', 'mode', 'players', 'port', 'roomCode', 'roomId',
+      'host', 'kind', 'maxConnections', 'maxMessageBytes', 'maxMessagesPerWindow',
+      'maxValidationFailures', 'messageRateWindowMs', 'mode', 'players', 'port', 'roomCode', 'roomId',
       'secure', 'snapshotHz', 'startMode', 'tickRate', 'url',
     ]);
     expect(parsed.kind).toBe('match-server-ready');

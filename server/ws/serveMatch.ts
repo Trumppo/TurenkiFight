@@ -105,6 +105,9 @@ export async function runServeMatch(argv: readonly string[]): Promise<void> {
         status(`mode: ${info.mode}`);
         status(`room code: ${info.roomCode ?? 'not enforced'} · ` +
           `max connections: ${info.maxConnections}${info.secure ? ' · TLS' : ''}`);
+        status(`per-connection limits: ${info.maxMessageBytes} B/message · ` +
+          `${info.maxMessagesPerWindow} messages/${info.messageRateWindowMs} ms · ` +
+          `${info.maxValidationFailures} consecutive invalid messages (policy, not measured)`);
       },
     });
   } catch (error) {
