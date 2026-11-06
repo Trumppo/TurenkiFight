@@ -42,8 +42,9 @@ played it and said so.
 
 ## 4. M11 - Arcade feel (next)
 
-**Owner-approved part:** movement speed **+20 %**. Current movement is 1.3 px per tick per axis (78 px/s at 60 Hz);
-the target is **1.56 px/tick (93.6 px/s)**, with the diagonal normalisation kept.
+**Owner-approved part:** movement speed **+20 %**, implemented: the original `1.3` px/tick baseline became
+**`FIGHTER_SPEED = 1.56`** px/tick (**93.6 px/s** at 60 Hz), with diagonal normalisation kept and the arena bounds
+unchanged. Every pinned simulation fingerprint moved and is updated deliberately in the M11 PR.
 
 **Proposed additions, in order of value per risk:**
 

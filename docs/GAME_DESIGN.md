@@ -72,7 +72,7 @@ chaos and 20 % is skill**. Spiritual ancestors: *Target Renegade* and *Streets o
 - **Player counts (owner decisions)**: **up to four humans locally** (keyboard and gamepads), **eight players online** as one `MAX_PLAYERS` constant; bots fill empty slots and an ALL BOTS match exists for testing and spectating.
 - **LAN and internet multiplayer**; multiple local controllers on one computer must work.
 - **Modes**: Score Brawl, Last Man Standing and Deathmatch. A full tie ends as a draw (owner decision 2026-11-03). Deathmatch is being given its own identity as a shrinking-platform mode (M10).
-- **Movement speed**: 1.3 px/tick per axis is the current baseline. The owner asked for roughly **+20 %** (target 1.56 px/tick, 93.6 px/s at 60 Hz); see M11 in the long-term plan.
+- **Movement speed**: **1.56 px/tick per axis** (93.6 px/s at 60 Hz) since the M11 speed change; the original baseline was 1.3 px/tick. Diagonals are normalised with `Math.SQRT1_2`. The constant and the px/s value live in `src/game/simulation/step.ts`.
 
 ## Camera and visual baseline
 
