@@ -236,10 +236,11 @@ function zoneFixture(): { initial: GameState; inputs: PlayerInput[][] } {
 }
 
 // Independently recorded SHA-256 fingerprints for the zone fixture below.
-// M11's optional counters are absent by the end of this run, so both hashes are
-// byte-identical to their pre-M11 pins (state
-// a319d1d23937207e625dcc9f7e5c539a4bd286cc8f408370bf526ac481684098).
-const ZONE_FINAL_STATE_SHA256 = 'a319d1d23937207e625dcc9f7e5c539a4bd286cc8f408370bf526ac481684098';
+// M11's optional counters are absent by the end of this run, so the event hash
+// is unchanged from the pre-M11 pin. M12 adds the object layer: a bottle spawns
+// at tick 3000, so the state hash moved deliberately from
+// a319d1d23937207e625dcc9f7e5c539a4bd286cc8f408370bf526ac481684098 to the value below.
+const ZONE_FINAL_STATE_SHA256 = 'c146f10a54c09ee6d3b1d7702f15a6e8c579c7bf0f8a9820d21918305368044c';
 const ZONE_ORDERED_EVENTS_SHA256 = 'c6b4da098c34788d3a9e18a5694f990b244d7b6cbeffb48bcd976158a6eb9594';
 
 describe('M10 Deathmatch zone determinism and ranking', () => {
@@ -271,10 +272,10 @@ describe('M10 Deathmatch zone determinism and ranking', () => {
     expect(first.state.fighters[0].x).toBeGreaterThan(70);
     expect(first.state.fighters[0].x).toBeLessThanOrEqual(respawnRange.maxX);
 
-    // No new snapshot field and no malformed event: the zone state round-trips
-    // through the unchanged protocol codec (M11 counters are absent when zero).
+    // M12 adds the object layer: bottles spawn from tick 600 and remain on the
+    // ground, so the state keeps its optional `objects` field here.
     expect(Object.keys(first.state).sort())
-      .toEqual(['events', 'fighters', 'mode', 'phase', 'remainingTicks', 'tick', 'countdownTicks'].sort());
+      .toEqual(['events', 'fighters', 'mode', 'objects', 'phase', 'remainingTicks', 'tick', 'countdownTicks'].sort());
     expect(() => encodeStateSnapshot({ version: 1, state: first.state })).not.toThrow();
 
     // Deathmatch ranking is unchanged in rules and still matches rankMatch.

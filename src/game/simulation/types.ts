@@ -1,6 +1,31 @@
 export type Direction = -1 | 1;
 export type PlayerId = string;
-export type Move = 'punch' | 'kick' | 'jumpkick';
+/** `throw` is a projectile hit, not a fighter attack; `MOVES.throw` carries only hit values. */
+export type Move = 'punch' | 'kick' | 'jumpkick' | 'throw';
+/** The first playable object type. More kinds stay out of the M12 first slice. */
+export type ObjectKind = 'bottle';
+export type ObjectState = 'ground' | 'held' | 'airborne' | 'broken';
+/**
+ * Deterministic non-fighter entity. `id` is stable while the object exists
+ * (`O1`, `O2`, ...). `holder` is present while the object is held or in flight
+ * (the thrower keeps attribution). Airborne objects persist their velocity so a
+ * snapshot restores the exact arc without recomputing it.
+ */
+export type SimObject = {
+  id: string;
+  kind: ObjectKind;
+  x: number;
+  y: number;
+  z: number;
+  state: ObjectState;
+  holder?: PlayerId;
+  /** Simulation tick the object entered the arena. */
+  spawnTick?: number;
+  /** Airborne only: horizontal px per tick, signed. */
+  vx?: number;
+  /** Airborne only: vertical px per tick. */
+  vz?: number;
+};
 export type Phase = 'lobby' | 'countdown' | 'fighting' | 'results';
 /** Match rules are selected once at match creation, never per input frame. */
 export type ModeId = 'score-brawl' | 'last-man-standing' | 'deathmatch';
@@ -29,7 +54,7 @@ export type ModeRules = {
    */
   shrinkingZone: boolean;
 };
-export type PlayerInput = { playerId: PlayerId; moveX: -1 | 0 | 1; moveY: -1 | 0 | 1; jump: boolean; punch?: boolean; kick?: boolean; jumpkick?: boolean; attack?: boolean };
+export type PlayerInput = { playerId: PlayerId; moveX: -1 | 0 | 1; moveY: -1 | 0 | 1; jump: boolean; punch?: boolean; kick?: boolean; jumpkick?: boolean; attack?: boolean; /** Pick up a nearby ground object, or throw the held one. */ grab?: boolean };
 /**
  * Mode-specific fields are optional so a Score Brawl fighter keeps its exact
  * historical JSON shape. Last Man Standing adds `eliminated`/`damageDealt`;
@@ -44,4 +69,4 @@ export type GameEvent = { tick: number; type: 'HitLanded' | 'Knockout' | 'Respaw
  * `mode` is absent for Score Brawl; it is present only for the newer
  * rules-driven modes.
  */
-export type GameState = { tick: number; fighters: Fighter[]; phase: Phase; countdownTicks: number; remainingTicks: number; hitStopTicks?: number; events: GameEvent[]; mode?: ModeId };
+export type GameState = { tick: number; fighters: Fighter[]; /** Present only while at least one object exists; canonically omitted when empty. */ objects?: SimObject[]; phase: Phase; countdownTicks: number; remainingTicks: number; hitStopTicks?: number; events: GameEvent[]; mode?: ModeId };

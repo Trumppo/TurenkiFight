@@ -1,4 +1,4 @@
-import type { Fighter, GameState, PlayerInput, Move, GameEvent, ModeId, EndReason, PlayerId } from './types';
+import type { Direction, Fighter, GameState, PlayerInput, Move, GameEvent, ModeId, EndReason, PlayerId, SimObject } from './types';
 import { aliveCount, modeRules, modeWinner } from './modes';
 import { isZoneDamageTick, zoneRangeAt, ZONE_DAMAGE_HP } from './zone';
 export { MATCH_TICKS } from './modes';
@@ -20,6 +20,9 @@ export const MOVES: Record<Move, { startup: number; active: number; recovery: nu
   punch: { startup: 4, active: 5, recovery: 12, damage: 10, points: 100, reach: 32, depth: 14, height: 18 },
   kick: { startup: 7, active: 6, recovery: 16, damage: 15, points: 150, reach: 42, depth: 17, height: 20 },
   jumpkick: { startup: 6, active: 7, recovery: 18, damage: 20, points: 200, reach: 45, depth: 19, height: 30 },
+  // A thrown bottle is a projectile hit, not a fighter attack: the startup,
+  // active, recovery and reach fields are unused by the shared hit pipeline.
+  throw: { startup: 0, active: 0, recovery: 0, damage: 20, points: 200, reach: 0, depth: 0, height: 0 },
 };
 /**
  * Arcade-feel constants (M11). All of them advance with the fixed tick; none
@@ -38,7 +41,41 @@ export const MOVES: Record<Move, { startup: number; active: number; recovery: nu
 export const HIT_STOP_TICKS = 3;
 export const KO_HIT_STOP_TICKS = 5;
 export const HITSTUN_TICKS = 8;
-export const KNOCKBACK_PX: Readonly<Record<Move, number>> = { punch: 2, kick: 4, jumpkick: 6 };
+export const KNOCKBACK_PX: Readonly<Record<Move, number>> = { punch: 2, kick: 4, jumpkick: 6, throw: 3 };
+/**
+ * M12 object layer. One bottle type, one deterministic spawn table. Nothing
+ * here reads wall time or `Math.random`; the tick and the input edge are the
+ * only inputs.
+ *
+ * - `intervalTicks`: a bottle spawns on every simulation tick divisible by 600
+ *   (10 s at 60 Hz) while the phase is `fighting` and fewer than `maxUnbroken`
+ *   objects are unbroken.
+ * - `points`: fixed table, used in order and cycled by spawn tick. All points
+ *   are inside `ARENA_BOUNDS`.
+ * - Pickup reach and throw physics are fixed values, not per-object tuning.
+ * - A broken object is removed in the same tick's cleanup pass, so a valid
+ *   simulation state never carries `state: 'broken'`; the wire still accepts
+ *   and validates it for forward compatibility.
+ */
+export const OBJECT_SPAWN_TABLE = {
+  intervalTicks: 600,
+  maxUnbroken: 3,
+  points: [
+    { x: 110, y: 190 },
+    { x: 274, y: 138 },
+    { x: 192, y: 176 },
+  ],
+} as const;
+export const OBJECT_PICKUP_REACH_X = 18;
+export const OBJECT_PICKUP_REACH_Y = 14;
+/** Hand height while held; also the throw start height. */
+export const HELD_OBJECT_Z = 12;
+export const THROW_SPEED_X = 3;
+export const THROW_START_Z = 12;
+export const THROW_START_VZ = 2;
+export const OBJECT_GRAVITY = 0.35;
+export const THROW_HIT_RADIUS = 8;
+export const THROW_HIT_HEIGHT = 24;
 /**
  * Playable arena bounds. Fighters may not leave them through movement,
  * knockback or a respawn. `y` is the ground-plane depth.
@@ -46,6 +83,40 @@ export const KNOCKBACK_PX: Readonly<Record<Move, number>> = { punch: 2, kick: 4,
 export const ARENA_BOUNDS = { minX: 16, maxX: 368, minY: 124, maxY: 204 } as const;
 const clampX = (x: number): number => Math.max(ARENA_BOUNDS.minX, Math.min(ARENA_BOUNDS.maxX, x));
 const clampY = (y: number): number => Math.max(ARENA_BOUNDS.minY, Math.min(ARENA_BOUNDS.maxY, y));
+
+/** Numeric suffix of a generated object id (`O12` -> 12). */
+function objectNumber(id: string): number {
+  return Number(id.slice(1));
+}
+/**
+ * Deterministic id allocation: one past the highest live id. A removed id may
+ * be reused only after its object is gone, so two live objects never share an
+ * id; no external state or counter field is needed on the wire.
+ */
+function nextObjectId(objects: readonly SimObject[]): string {
+  let highest = 0;
+  for (const object of objects) {
+    const number = objectNumber(object.id);
+    if (Number.isSafeInteger(number) && number > highest) highest = number;
+  }
+  return `O${highest + 1}`;
+}
+const unbrokenCount = (objects: readonly SimObject[]): number =>
+  objects.reduce((count, object) => count + (object.state === 'broken' ? 0 : 1), 0);
+/** A dropped bottle lands at its holder's current position and loses flight state. */
+function dropObject(object: SimObject, holder?: Fighter): void {
+  object.state = 'ground';
+  object.z = 0;
+  if (holder) {
+    // Use the holder's post-movement position, not the object's previous
+    // follow position, so a KO'd holder drops the bottle where it stood.
+    object.x = clampX(holder.x);
+    object.y = clampY(holder.y);
+  }
+  delete object.holder;
+  delete object.vx;
+  delete object.vz;
+}
 
 /**
  * Slide a hitstun target toward the last hit by an equal share of the
@@ -103,6 +174,7 @@ export function standings(state: GameState): { id: string; rank: number; score: 
 }
 export function step(state: GameState, inputs: PlayerInput[]): GameState {
   const rules = modeRules(state.mode);
+  const objects = (state.objects ?? []).map(object => ({ ...object }));
   const fighters = state.fighters.map(f => {
     const copy = { ...f, hitTargets: [...f.hitTargets], previousButtons: [...f.previousButtons] };
     // Canonical in-memory form: a zero remainder is absent, so JSON.stringify
@@ -111,6 +183,8 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     return copy;
   });
   const next: GameState = { ...state, tick: state.tick + 1, fighters, events: [] };
+  if (objects.length) next.objects = objects;
+  else delete next.objects;
   if (next.hitStopTicks === 0) delete next.hitStopTicks;
   const event = (type: GameEvent['type'], extra: Partial<GameEvent> = {}) => next.events.push({ tick: next.tick, type, ...extra });
   const finish = (reason: EndReason, winner: PlayerId | null) => {
@@ -147,6 +221,39 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
       if (rules.trackDeaths) target.deaths = (target.deaths ?? 0) + 1;
     }
   };
+  /**
+   * Shared hit resolution for fighter attacks and thrown objects. Scoring,
+   * damage, KO counters, hit stop and knockback are identical so a bottle is a
+   * real hit rather than a special case. `facing` lets a projectile keep the
+   * direction it was thrown even if the thrower has turned since.
+   */
+  const knockouts: { attacker: PlayerId; target: PlayerId }[] = [];
+  const applyHit = (attacker: Fighter, target: Fighter, move: Move, facing: Direction = attacker.facing): void => {
+    const profile = MOVES[move];
+    if (rules.hitScoring) attacker.score += profile.points;
+    if (rules.trackDamage) attacker.damageDealt = (attacker.damageDealt ?? 0) + profile.damage;
+    target.hitsReceived++;
+    target.health = Math.max(0, target.health - profile.damage);
+    event('HitLanded', { attacker: attacker.id, target: target.id, move });
+    if (target.health === 0 && !target.koTimer) {
+      if (rules.koScoring) { attacker.score += 500; target.score -= 200; }
+      attacker.koCount++;
+      event('Knockout', { attacker: attacker.id, target: target.id });
+      knockOut(target);
+      // A knockout reads longer than an ordinary hit. `max` keeps an existing
+      // KO freeze at 5 and lets a later clean hit refresh but never shrink it.
+      next.hitStopTicks = Math.max(next.hitStopTicks ?? 0, KO_HIT_STOP_TICKS);
+      if (rules.fragScoring) knockouts.push({ attacker: attacker.id, target: target.id });
+    } else if (!target.koTimer) {
+      // Ordinary hit: refresh hitstun, queue the deterministic push and start
+      // (or refresh) the 3-tick freeze. Hits in the same tick or during an
+      // active freeze refresh the counter; they never exceed the KO maximum.
+      target.hitstun = Math.max(target.hitstun, HITSTUN_TICKS);
+      const pending = (target.knockback ?? 0) + KNOCKBACK_PX[move] * facing;
+      if (pending === 0) delete target.knockback; else target.knockback = pending;
+      next.hitStopTicks = Math.max(next.hitStopTicks ?? 0, HIT_STOP_TICKS);
+    }
+  };
   if (state.phase === 'results' || state.phase === 'lobby') return next;
   if (state.phase === 'countdown') {
     next.countdownTicks = Math.max(0, state.countdownTicks - 1);
@@ -165,6 +272,8 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     if (remaining > 0) next.hitStopTicks = remaining;
     else delete next.hitStopTicks;
   }
+  /** Fighters whose `grab` input produced a press edge on this tick. */
+  const grabPressed = new Set<PlayerId>();
   for (const f of fighters) {
     // An eliminated fighter is out: no movement, attacks, edge detection or respawn.
     if (f.eliminated) continue;
@@ -172,7 +281,7 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     let pressed: string[] = [];
     let jumpPressed = false;
     if (!frozen) {
-      const buttons: string[] = i ? [...(['punch','kick','jumpkick'] as Move[]).filter(m => i[m] || (m === 'punch' && i.attack)), ...(i.jump ? ['jump'] : [])] : [];
+      const buttons: string[] = i ? [...(['punch','kick','jumpkick'] as const).filter(m => i[m] || (m === 'punch' && i.attack)), ...(i.jump ? ['jump'] : []), ...(i.grab ? ['grab'] : [])] : [];
       pressed = buttons.filter(b => !f.previousButtons.includes(b));
       jumpPressed = buttons.includes('jump') && !f.previousButtons.includes('jump');
       f.previousButtons = buttons;
@@ -218,9 +327,16 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
       if (i.moveX) f.facing = i.moveX;
       if (jumpPressed && f.z === 0 && !f.attackMove) f.vz = 5.2;
       if (!f.attackMove) {
-        const move = (pressed.filter(m => m !== 'jump') as Move[]).find(m => m === 'jumpkick' ? f.z > 0 : f.z === 0);
+        // `grab` is an action, not a move: only the three fighter attacks may
+        // seed `attackMove`.
+        const move = pressed.find((m): m is 'punch' | 'kick' | 'jumpkick' =>
+          (m === 'punch' || m === 'kick' || m === 'jumpkick') && (m === 'jumpkick' ? f.z > 0 : f.z === 0));
         if (move) { f.attackMove=move; const d=MOVES[move]; f.attackFrames=d.startup+d.active+d.recovery; f.attackCooldown=f.attackFrames; f.hitTargets=[]; f.protection=0; }
       }
+      // Grab is processed after combat so it sees this tick's final position
+      // and knockout state. A press is consumed by one action only: pickup
+      // when empty-handed, throw when already holding.
+      if (pressed.includes('grab')) grabPressed.add(f.id);
     }
     f.z = Math.max(0, f.z+f.vz);
     f.vz = f.z === 0 ? 0 : f.vz-0.35;
@@ -237,7 +353,6 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     }
   }
   hits.sort((a,b)=>a.attacker.id.localeCompare(b.attacker.id)||a.target.id.localeCompare(b.target.id));
-  const knockouts: { attacker: PlayerId; target: PlayerId }[] = [];
   for (const h of hits) {
     const {attacker:a,target:t,move}=h;
     // Eligibility was captured before resolution: a fighter KO'd by an earlier
@@ -246,31 +361,146 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     // Eliminated fighters are no longer valid targets, even later in the same tick.
     if (t.eliminated) continue;
     a.hitTargets.push(t.id);
-    const m=MOVES[move];
-    if (rules.hitScoring) a.score+=m.points;
-    if (rules.trackDamage) a.damageDealt = (a.damageDealt ?? 0) + m.damage;
-    t.hitsReceived++; t.health=Math.max(0,t.health-m.damage);
-    event('HitLanded',{attacker:a.id,target:t.id,move});
-    if (t.health === 0 && !t.koTimer) {
-      if (rules.koScoring) { a.score+=500; t.score-=200; }
-      a.koCount++;
-      event('Knockout',{attacker:a.id,target:t.id});
-      knockOut(t);
-      // A knockout reads longer than an ordinary hit. `max` keeps an existing
-      // KO freeze at 5 and lets a later clean hit refresh but never shrink it.
-      next.hitStopTicks = Math.max(next.hitStopTicks ?? 0, KO_HIT_STOP_TICKS);
-      if (rules.fragScoring) knockouts.push({ attacker: a.id, target: t.id });
+    applyHit(a, t, move);
+  }
+  /*
+   * M12 object stage. Fixed per-tick order, after movement and combat and
+   * before match timers (see `docs/M12_OBJECTS.md` and `tests/m12-items.test.ts`):
+   *
+   *   spawn -> drop/pickup -> throw -> flight -> impact/break -> cleanup
+   *
+   * Spawn runs first on its tick schedule. Drop and pickup are part of the
+   * interaction stage so a KO'd holder releases its bottle before anyone else
+   * can pick it up, and a bottle that appears can be grabbed on the same tick.
+   * While hit stop is active the whole interaction/physics stage is frozen
+   * exactly like fighter movement (drop, pickup, throw, flight and impact do
+   * not advance); only the tick-scheduled spawn still runs, so the cadence
+   * stays a pure function of the simulation tick.
+   */
+  const canHandleObjects = (fighter: Fighter): boolean =>
+    !fighter.eliminated && fighter.koTimer === 0 && fighter.health > 0;
+  /** Release held objects whose holder can no longer hold them. */
+  const dropInvalidHeld = (): void => {
+    for (const object of objects) {
+      if (object.state !== 'held') continue;
+      const holder = fighters.find(fighter => fighter.id === object.holder);
+      if (!holder || !canHandleObjects(holder)) dropObject(object, holder);
     }
-    else if (!t.koTimer) {
-      // Ordinary hit: refresh hitstun, queue the deterministic push and start
-      // (or refresh) the 3-tick freeze. Hits in the same tick or during an
-      // active freeze refresh the counter; they never exceed the KO maximum.
-      t.hitstun = Math.max(t.hitstun, HITSTUN_TICKS);
-      const pending = (t.knockback ?? 0) + KNOCKBACK_PX[move] * a.facing;
-      if (pending === 0) delete t.knockback; else t.knockback = pending;
-      next.hitStopTicks = Math.max(next.hitStopTicks ?? 0, HIT_STOP_TICKS);
+  };
+  // Drop first: an object held by a fighter knocked out in the combat stage
+  // must not stay attached or keep a spawn slot occupied.
+  if (!frozen) dropInvalidHeld();
+  // One bottle per 600 fighting ticks, at the next point in the fixed table,
+  // while the unbroken cap has room. Both conditions are pure functions of the
+  // tick and the state.
+  if (next.tick > 0 && next.tick % OBJECT_SPAWN_TABLE.intervalTicks === 0 &&
+      unbrokenCount(objects) < OBJECT_SPAWN_TABLE.maxUnbroken) {
+    const spawnIndex = Math.floor(next.tick / OBJECT_SPAWN_TABLE.intervalTicks) - 1;
+    const point = OBJECT_SPAWN_TABLE.points[spawnIndex % OBJECT_SPAWN_TABLE.points.length];
+    objects.push({ id: nextObjectId(objects), kind: 'bottle', x: point.x, y: point.y, z: 0,
+      state: 'ground', spawnTick: next.tick });
+  }
+  if (!frozen) {
+    // Held objects follow their holder. A press while already holding is not
+    // consumed by pickup; the throw stage below turns the same edge into a throw.
+    for (const object of objects) {
+      if (object.state !== 'held') continue;
+      const holder = fighters.find(fighter => fighter.id === object.holder);
+      if (!holder || !canHandleObjects(holder)) continue;
+      object.x = holder.x;
+      object.y = holder.y;
+      object.z = HELD_OBJECT_Z;
+    }
+    const grabbedFighters = fighters.filter(fighter => grabPressed.has(fighter.id) && canHandleObjects(fighter))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const pickedUp = new Set<PlayerId>();
+    for (const fighter of grabbedFighters) {
+      if (objects.some(object => object.state === 'held' && object.holder === fighter.id)) continue;
+      // The bottle must be in front of the fighter: the half-plane along
+      // `facing`. A bottle exactly underfoot is allowed (dx * facing === 0).
+      const candidates = objects.filter(object => object.state === 'ground' &&
+        (object.x - fighter.x) * fighter.facing >= 0 &&
+        Math.abs(object.x - fighter.x) <= OBJECT_PICKUP_REACH_X &&
+        Math.abs(object.y - fighter.y) <= OBJECT_PICKUP_REACH_Y);
+      candidates.sort((a, b) =>
+        (Math.abs(a.x - fighter.x) + Math.abs(a.y - fighter.y)) -
+        (Math.abs(b.x - fighter.x) + Math.abs(b.y - fighter.y)) ||
+        objectNumber(a.id) - objectNumber(b.id));
+      const target = candidates[0];
+      if (!target) continue;
+      target.state = 'held';
+      target.holder = fighter.id;
+      target.z = HELD_OBJECT_Z;
+      delete target.vx;
+      delete target.vz;
+      pickedUp.add(fighter.id);
+    }
+    // Throw: the same grab edge, but only for a fighter that was already holding
+    // at the start of this stage (not one that just picked a bottle up).
+    for (const fighter of grabbedFighters) {
+      if (pickedUp.has(fighter.id)) continue;
+      const held = objects.find(object => object.state === 'held' && object.holder === fighter.id);
+      if (!held) continue;
+      held.state = 'airborne';
+      held.x = fighter.x;
+      held.y = fighter.y;
+      held.z = THROW_START_Z;
+      held.vx = fighter.facing * THROW_SPEED_X;
+      held.vz = THROW_START_VZ;
+    }
+    // Flight: advance every airborne object exactly once. Held objects already
+    // followed their holder; ground and broken objects do not move.
+    for (const object of objects) {
+      if (object.state !== 'airborne') continue;
+      object.x += object.vx ?? 0;
+      object.z += object.vz ?? 0;
+      object.vz = (object.vz ?? 0) - OBJECT_GRAVITY;
+    }
+    // Impact: a thrown bottle breaks on the first opposing fighter in range, or
+    // on the ground/arena edge. Impacts are resolved in object-id order so the
+    // event stream is replay-stable.
+    const airborne = objects.filter(object => object.state === 'airborne')
+      .sort((a, b) => objectNumber(a.id) - objectNumber(b.id));
+    for (const object of airborne) {
+      const targets = fighters.filter(fighter => fighter.id !== object.holder && canHandleObjects(fighter) &&
+        !fighter.protection &&
+        Math.abs(fighter.x - object.x) <= THROW_HIT_RADIUS &&
+        Math.abs(fighter.y - object.y) <= THROW_HIT_RADIUS &&
+        Math.abs(fighter.z - object.z) <= THROW_HIT_HEIGHT);
+      targets.sort((a, b) =>
+        (Math.abs(a.x - object.x) + Math.abs(a.y - object.y)) -
+        (Math.abs(b.x - object.x) + Math.abs(b.y - object.y)) ||
+        a.id.localeCompare(b.id));
+      const target = targets[0];
+      if (target) {
+        const thrower = fighters.find(fighter => fighter.id === object.holder);
+        if (thrower) applyHit(thrower, target, 'throw', (object.vx ?? THROW_SPEED_X) < 0 ? -1 : 1);
+        object.state = 'broken';
+        delete object.holder;
+        delete object.vx;
+        delete object.vz;
+        continue;
+      }
+      if (object.z <= 0 || object.x < ARENA_BOUNDS.minX || object.x > ARENA_BOUNDS.maxX) {
+        object.x = clampX(object.x);
+        object.z = 0;
+        object.state = 'broken';
+        delete object.holder;
+        delete object.vx;
+        delete object.vz;
+      }
+    }
+    // An impact can knock out a holder after the pickup pass; release in cleanup
+    // so no snapshot shows a KO'd fighter holding a bottle.
+    dropInvalidHeld();
+    // Cleanup: a broken bottle is gone before the snapshot is taken, so the
+    // unbroken cap and the wire payload are bounded by OBJECT_SPAWN_TABLE.maxUnbroken.
+    for (let index = objects.length - 1; index >= 0; index--) {
+      if (objects[index].state === 'broken') objects.splice(index, 1);
     }
   }
+  if (objects.length) next.objects = objects;
+  else delete next.objects;
   if (rules.fragScoring) {
     // A fighter knocked out on the same tick credits no frag: mutual and
     // multi-fighter simultaneous KOs are draws in the frag table.

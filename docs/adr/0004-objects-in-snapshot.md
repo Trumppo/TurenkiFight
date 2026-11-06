@@ -23,15 +23,21 @@ type SimObject = {
   x: number; y: number; z: number;
   state: 'ground' | 'held' | 'airborne' | 'broken';
   holder?: PlayerId;     // only while held or thrown by someone
-  tick?: number;         // spawn or break tick, for deterministic cleanup
+  spawnTick?: number;    // tick the object entered the arena
+  vx?: number;           // airborne only: signed horizontal px per tick
+  vz?: number;           // airborne only: vertical px per tick
 };
 ```
 
-- Object ids are allocated deterministically from a counter in the state, never from randomness.
-- Spawn cadence and positions come from a fixed table plus the seeded noise already used by bots; no wall clock, no
-  `Math.random`.
-- Objects are processed in a fixed order each tick: pickup, throw, flight, impact, break, cleanup. The order is
-  documented and tested.
+- Object ids are allocated deterministically from the live id set, never from randomness.
+- Spawn cadence and positions come from a fixed table plus the deterministic tick, with no wall
+  clock and no `Math.random`.
+- Objects are processed in a fixed order each tick: spawn/drop/pickup, throw, flight, impact/break,
+  cleanup. The order is documented and tested.
+- **Deviation from the original sketch:** airborne objects carry `vx`/`vz`; without them a snapshot
+  could not restore the exact arc deterministically. The field is named `spawnTick` rather than
+  `tick` so its meaning is unambiguous. A broken bottle is removed in the same tick's cleanup pass,
+  so `broken` is a validated wire state but not a persistent simulation state in this slice.
 
 ### 2. The wire carries objects optionally
 
@@ -58,8 +64,9 @@ type SimObject = {
 
 ## Consequences
 
-- Every snapshot with objects grows by roughly 30-60 bytes per object depending on field count; measure, do not
-  guess.
+- Every snapshot with objects grows with the object list; measured on the M12 worst-case
+  three-object fixture, a snapshot grows from 589 to 898 UTF-8 bytes (309 bytes, about 103 bytes
+  per object). These are measured bytes, not estimates.
 - The simulation gains a new entity list that must be included in replay fingerprints, ranking is unaffected, and
   object state changes emit events only where the game needs feedback.
 - Existing pinned fixtures without objects stay unchanged, which is the regression gate for this ADR.

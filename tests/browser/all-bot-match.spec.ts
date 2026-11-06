@@ -66,11 +66,13 @@ test('ALL BOTS starts a visibly bot-driven P1-P8 match, finishes unattended, and
   // M11 hit stop/knockback + M12 bot mobility with the point-blank jump-in
   // guard: this match is pinned at tick 663. The optional hit-stop/knockback
   // counters are omitted at the result, so the fingerprint reflects positions
-  // and events only. Previous speed-only pins were tick 526, 904d3be1 and
-  // 75 events (and 493, 9723adb8, 71 events at 1.3 px/tick). These counts are
-  // recorded, not a trend claim.
+  // and events only. M12 items adds the deterministic bottle spawn (three
+  // ground bottles by the end); the event count stays 72. Previous M12-mobility
+  // pin was 446f06f7, 72 events. Earlier speed-only pins were tick 526,
+  // 904d3be1 and 75 events (and 493, 9723adb8, 71 events at 1.3 px/tick).
+  // These counts are recorded, not a trend claim.
   expect(finalState.tick).toBe(663);
-  expect(browserRun).toEqual({ fingerprint: '446f06f7', eventCount: 72 });
+  expect(browserRun).toEqual({ fingerprint: '0ff703eb', eventCount: 72 });
   expect(errors).toEqual([]);
 
   await expect(page.locator('#reset-match')).toHaveAttribute('aria-label', /human P1 and no bots/i);
