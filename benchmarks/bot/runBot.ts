@@ -7,6 +7,7 @@ import {
 import { defaultRunTimeoutMs } from '../ws/benchmarkSetup';
 import { BOT_NETWORK_PATHS, writeBotManifest, type BotNetworkPath } from './botManifest';
 import { describeBotFailure, runBotClient } from './botClient';
+import { isRoomCode, normalizeRoomCode } from '../../src/game/session/sessionEnvelope';
 
 /**
  * CLI entry for `npm run bot`.
@@ -29,6 +30,8 @@ export const DEFAULT_PING_INTERVAL_MS = 250;
 export type BotCliOptions = {
   readonly url: string | null;
   readonly playerIds: readonly string[];
+  /** Optional server admission code, normalized to uppercase. */
+  readonly roomCode: string | null;
   readonly pattern: BotInputPattern;
   readonly ticks: number;
   readonly seed: number | null;
@@ -91,6 +94,7 @@ function validateUrl(raw: string): string {
 export function parseBotArgs(argv: readonly string[]): BotCliOptions {
   let url: string | null = null;
   let playerIds: readonly string[] = [];
+  let roomCode: string | null = null;
   let pattern: BotInputPattern = 'fixture';
   let ticks = DEFAULT_BOT_TICKS;
   let seed: number | null = null;
@@ -122,6 +126,12 @@ export function parseBotArgs(argv: readonly string[]): BotCliOptions {
       case 'players':
         playerIds = parsePlayers(value);
         break;
+      case 'room': {
+        const normalized = normalizeRoomCode(value);
+        if (!isRoomCode(normalized)) throw new Error(`Invalid --room: ${value} (4-12 letters or digits)`);
+        roomCode = normalized;
+        break;
+      }
       case 'pattern':
         if (!isBotInputPattern(value)) throw new Error(`Invalid --pattern: ${value} (expected fixture or wander)`);
         pattern = value;
@@ -154,6 +164,7 @@ export function parseBotArgs(argv: readonly string[]): BotCliOptions {
     return {
       url,
       playerIds,
+      roomCode,
       pattern,
       ticks,
       seed,
@@ -172,6 +183,7 @@ export function parseBotArgs(argv: readonly string[]): BotCliOptions {
   return {
     url,
     playerIds,
+    roomCode,
     pattern,
     ticks,
     seed,
@@ -193,6 +205,8 @@ export function botUsage(): string {
     'Options:',
     '  --url=<ws://host:port>  Match server URL (required; ws:// only, no TLS)',
     '  --players=<slots>       Comma-separated slots to claim, e.g. P2,P3,P4 (required)',
+    '  --room=<code>           Server admission code (4-12 letters or digits); required',
+    '                          when serve:match was started with one',
     '  --pattern=<pattern>     fixture (committed BASE-4 inputs) or wander (seeded walk)',
     '                          (default fixture)',
     `  --ticks=<1-${MAX_TICKS}>       Authoritative ticks to play before exiting (default ${DEFAULT_BOT_TICKS})`,
@@ -224,6 +238,7 @@ export function manifestArguments(options: BotCliOptions): string[] {
     `--ticks=${options.ticks}`,
   ];
   if (options.seed !== null) args.push(`--seed=${options.seed}`);
+  if (options.roomCode !== null) args.push('--room=<redacted>');
   if (options.pingIntervalMs !== DEFAULT_PING_INTERVAL_MS) {
     args.push(`--ping-interval-ms=${options.pingIntervalMs}`);
   }
@@ -252,6 +267,7 @@ export async function runBot(argv: readonly string[], io: BotCliIo = defaultIo):
     const { manifest } = await runBotClient({
       url: options.url,
       playerIds: options.playerIds,
+      ...(options.roomCode === null ? {} : { roomCode: options.roomCode }),
       pattern: options.pattern,
       ticks: options.ticks,
       ...(options.seed === null ? {} : { seed: options.seed }),

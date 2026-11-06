@@ -1,10 +1,14 @@
 import {
+  DEFAULT_MATCH_CONNECTION_MARGIN,
   formatMatchReadyLine,
+  generateRoomCode,
+  loadTlsFiles,
   parseServeMatchArgs,
   serveMatchUsage,
   startMatchServer,
   type MatchServerHandle,
   type MatchStartFailureReason,
+  type MatchTlsMaterial,
 } from './matchServer';
 
 /**
@@ -18,6 +22,10 @@ import {
  * `rematch` starts another match in the same process with the same roster and
  * mode; without it, a `rematch` is denied and the historical lifecycle stands.
  * Reconnect, rejoin and host migration remain out of scope.
+ *
+ * A short room code is always printed in the ready line and required on join.
+ * `--room` fixes it; otherwise one is generated. `--cert`/`--key` switch the
+ * listener to https/wss with the operator's PEM material.
  */
 
 const STATUS_PREFIX = 'match server: ';
@@ -59,6 +67,21 @@ export async function runServeMatch(argv: readonly string[]): Promise<void> {
     return;
   }
 
+  // The room code is an admission code, not authentication: it is printed so
+  // the operator can pass it to the players. `--room` fixes it; otherwise a
+  // short unambiguous code is generated per process.
+  const roomCode = options.roomCode ?? generateRoomCode();
+  let tls: MatchTlsMaterial | null = null;
+  if (options.cert !== null && options.key !== null) {
+    try {
+      tls = loadTlsFiles(options.cert, options.key);
+    } catch (error) {
+      status(errorText(error));
+      process.exitCode = 1;
+      return;
+    }
+  }
+
   let handle: MatchServerHandle;
   try {
     handle = await startMatchServer({
@@ -69,6 +92,9 @@ export async function runServeMatch(argv: readonly string[]): Promise<void> {
       snapshotHz: options.snapshotHz,
       startMode: options.startMode,
       allowRematch: options.rematch,
+      roomCode,
+      connectionMargin: DEFAULT_MATCH_CONNECTION_MARGIN,
+      ...(tls === null ? {} : { tls }),
       log: status,
       onReady: info => {
         // The only stdout output: exactly one line, no peer addresses or metrics.
@@ -77,6 +103,8 @@ export async function runServeMatch(argv: readonly string[]): Promise<void> {
           ? `bound ${info.host}:${info.port}; wildcard bind, connect with this machine's LAN address`
           : `listening on ${info.url} for ${info.playerIds.join(', ')}`);
         status(`mode: ${info.mode}`);
+        status(`room code: ${info.roomCode ?? 'not enforced'} · ` +
+          `max connections: ${info.maxConnections}${info.secure ? ' · TLS' : ''}`);
       },
     });
   } catch (error) {

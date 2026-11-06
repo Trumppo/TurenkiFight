@@ -13,6 +13,11 @@ export type NodeSessionOptions = {
   handlers?: SessionClientHandlers;
   openTimeoutMs?: number;
   /**
+   * TLS client options for a `wss://` URL. A self-signed test certificate is
+   * supplied as `ca`; production callers rely on the system trust store.
+   */
+  tls?: { ca?: string; rejectUnauthorized?: boolean };
+  /**
    * Read-only wire accounting at the socket boundary: one event per text frame
    * with its UTF-8 byte length. It never rewrites, delays or reorders a payload,
    * so wrapping this hook cannot change protocol behaviour.
@@ -56,7 +61,9 @@ export async function openNodeSession(options: NodeSessionOptions): Promise<Node
     }
   };
   const byteLength = (text: string): number => Buffer.byteLength(text, 'utf8');
-  const socket = new WebSocket(options.url);
+  const socket = options.tls === undefined
+    ? new WebSocket(options.url)
+    : new WebSocket(options.url, options.tls);
   const client = new SessionClientCore(options.handlers);
 
   let resolveClosed: () => void = () => undefined;

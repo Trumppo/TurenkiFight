@@ -5,7 +5,9 @@ import type { GameEvent, GameState, ModeId } from '../../src/game/simulation/typ
 import { DEFAULT_MAX_INPUT_LEAD_TICKS } from '../../src/game/session/sessionInputBuffer';
 import type { StateSnapshot } from '../../src/game/protocol/stateSnapshot';
 import {
+  isRoomCode,
   isSessionIdentifier,
+  normalizeRoomCode,
   parseClientEnvelopeHeader,
   type ClientEnvelopeHeader,
 } from '../../src/game/session/sessionEnvelope';
@@ -45,6 +47,11 @@ export type WsSessionPhase = 'lobby' | 'starting' | 'running' | 'results' | 'clo
 
 export type WsSessionOptions = {
   roomId?: string;
+  /**
+   * Optional admission code. When set, a join must carry the matching code or
+   * it is denied before a slot is allocated. Undefined keeps legacy sessions.
+   */
+  roomCode?: string;
   /** Simulation roster; the default is the historical P1..P4, up to MAX_PLAYERS. */
   playerIds?: readonly string[];
   /** Match rules chosen at creation. Defaults to Score Brawl. */
@@ -100,6 +107,7 @@ const wireState = (state: GameState): GameState => {
 export class AuthoritativeWsSession {
   private readonly gateway: SessionEnvelopeGateway;
   private readonly roomId: string;
+  private readonly roomCode: string | null;
   private readonly playerIds: readonly string[];
   private readonly playerIdSet: ReadonlySet<string>;
   private readonly mode: ModeId;
@@ -127,6 +135,12 @@ export class AuthoritativeWsSession {
   constructor(options: WsSessionOptions = {}) {
     const roomId = options.roomId ?? DEFAULT_WS_ROOM_ID;
     if (!isSessionIdentifier(roomId)) throw new Error('Invalid room binding');
+    let roomCode: string | null = null;
+    if (options.roomCode !== undefined) {
+      const normalized = normalizeRoomCode(options.roomCode);
+      if (!isRoomCode(normalized)) throw new Error('Invalid room code');
+      roomCode = normalized;
+    }
     const playerIds = options.playerIds ?? DEFAULT_WS_PLAYER_IDS;
     if (!Array.isArray(playerIds) || playerIds.length < 1 || playerIds.length > MAX_PLAYERS ||
         new Set(playerIds).size !== playerIds.length || !playerIds.every(isSessionIdentifier)) {
@@ -145,6 +159,7 @@ export class AuthoritativeWsSession {
     }
 
     this.roomId = roomId;
+    this.roomCode = roomCode;
     this.playerIds = [...playerIds];
     this.playerIdSet = new Set(playerIds);
     this.mode = mode;
@@ -158,6 +173,7 @@ export class AuthoritativeWsSession {
     this.onRoomDenial = options.onRoomDenial ?? (() => undefined);
     this.gateway = new SessionEnvelopeGateway({
       roomId,
+      ...(roomCode === null ? {} : { roomCode }),
       ...(options.maxLead === undefined ? {} : { maxLead: options.maxLead }),
       maxPlayers: this.playerIds.length,
     });
@@ -168,6 +184,8 @@ export class AuthoritativeWsSession {
   }
 
   get roomIdValue(): string { return this.roomId; }
+  /** Admission code this session enforces, or null when no code is configured. */
+  get roomCodeValue(): string | null { return this.roomCode; }
   get modeValue(): ModeId { return this.mode; }
   get phase(): WsSessionPhase { return this.phaseValue; }
   get tick(): number { return this.state.tick; }
@@ -215,6 +233,17 @@ export class AuthoritativeWsSession {
 
     if (this.phaseValue === 'closed') {
       return this.denyRoom(connectionId, 'session-closed', 'Session is closed', header);
+    }
+
+    if (header?.kind === 'join-request' && this.roomCode !== null) {
+      // Admission precedes phase and roster checks: a peer without the code
+      // learns nothing about the match state and can never reach slot allocation.
+      if (header.roomCode === undefined) {
+        return this.denyRoom(connectionId, 'room-code-required', 'Join requires the server room code', header);
+      }
+      if (header.roomCode !== this.roomCode) {
+        return this.denyRoom(connectionId, 'room-code-mismatch', 'Join room code does not match this server', header);
+      }
     }
 
     if (header?.kind === 'join-request') {

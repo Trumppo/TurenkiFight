@@ -1,9 +1,16 @@
+import { readFileSync } from 'node:fs';
+import { randomInt } from 'node:crypto';
+import { createSecureContext } from 'node:tls';
 import { TICK_RATE } from '../../src/game/simulation/step';
 import { MODE_IDS } from '../../src/game/simulation/modes';
 import { MAX_PLAYERS } from '../../src/game/protocol/players';
 import type { ModeId } from '../../src/game/simulation/types';
 import { SUPPORTED_SNAPSHOT_HZ, type SnapshotHz } from '../../src/game/networking/wsMessages';
-import { isSessionIdentifier } from '../../src/game/session/sessionEnvelope';
+import {
+  isRoomCode,
+  isSessionIdentifier,
+  normalizeRoomCode,
+} from '../../src/game/session/sessionEnvelope';
 import type { AuthoritativeWsSession } from './authoritativeWsSession';
 import { startWsServer, type WsServerEnvelopeEvent, type WsServerEvent } from './wsServer';
 
@@ -17,7 +24,13 @@ import { startWsServer, type WsServerEnvelopeEvent, type WsServerEvent } from '.
  * any other session; the server stays authoritative and deterministic.
  *
  * Honest scope:
- * - plain `ws://` only: no TLS, authentication, origin checks or rate limiting;
+ * - plain `ws://` by default; `tls` PEM material switches the listener to
+ *   `https`/`wss`. There is still no authentication, origin check or rate
+ *   limiting;
+ * - an optional short room code is required on join when configured; it is
+ *   admission, not authentication;
+ * - the room has a hard socket cap (roster plus a documented margin) printed in
+ *   the ready line; surplus sockets are closed before registration;
  * - no client prediction, so input-to-render latency is RTT plus up to one
  *   snapshot interval;
  * - a match starts when every configured slot is claimed (auto) or when an
@@ -30,6 +43,15 @@ import { startWsServer, type WsServerEnvelopeEvent, type WsServerEvent } from '.
 export const DEFAULT_MATCH_HOST = '127.0.0.1';
 export const DEFAULT_MATCH_PORT = 8787;
 export const DEFAULT_MATCH_ROOM_ID = 'match';
+/**
+ * Extra sockets allowed above the player roster. The cap is documented and
+ * printed in the ready line; it leaves room for an observer or a reconnect
+ * hand-off without disturbing a running match.
+ */
+export const DEFAULT_MATCH_CONNECTION_MARGIN = 2;
+/** Generated codes avoid characters that are easy to confuse when read aloud. */
+export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const ROOM_CODE_LENGTH = 5;
 /** Roster bound derived from the single `MAX_PLAYERS` source of truth. */
 export const MAX_MATCH_PLAYERS = MAX_PLAYERS;
 /**
@@ -41,17 +63,29 @@ export const DEFAULT_MATCH_SNAPSHOT_HZ: SnapshotHz = 20;
 
 export type MatchStartMode = 'auto' | 'manual';
 
+/** PEM contents, already read from the operator's files. */
+export type MatchTlsMaterial = {
+  readonly cert: string;
+  readonly key: string;
+};
+
 export type MatchReadyInfo = {
   /** `null` for a wildcard bind such as `0.0.0.0`, which has no usable URL. */
   readonly url: string | null;
   readonly host: string;
   readonly port: number;
   readonly roomId: string;
+  /** Admission code when one is enforced; `null` for the legacy no-code mode. */
+  readonly roomCode: string | null;
+  /** Hard socket cap for this room (roster plus the configured margin). */
+  readonly maxConnections: number;
   readonly playerIds: readonly string[];
   readonly snapshotHz: SnapshotHz;
   readonly startMode: MatchStartMode;
   /** Match rules this server creates. Score Brawl is the default. */
   readonly mode: ModeId;
+  /** True when the listener is HTTPS/WSS. */
+  readonly secure: boolean;
 };
 
 export type MatchStartFailureReason = 'roster-incomplete' | 'already-started' | 'not-startable' | 'closed';
@@ -66,6 +100,17 @@ export type MatchServerOptions = {
   port?: number;
   /** Simulation roster; 1..MAX_MATCH_PLAYERS unique identifiers. Defaults to P1..P4. */
   playerIds?: readonly string[];
+  /**
+   * Optional admission code. When set, every join must carry it and a missing
+   * or wrong code is denied before a slot is allocated. Undefined preserves the
+   * historical code-less sessions so existing callers and tests stay valid;
+   * `serve:match` always supplies a generated or fixed code.
+   */
+  roomCode?: string;
+  /** Extra sockets above the roster. Defaults to DEFAULT_MATCH_CONNECTION_MARGIN. */
+  connectionMargin?: number;
+  /** PEM material; both values together switch the listener to HTTPS/WSS. */
+  tls?: MatchTlsMaterial;
   /** Match rules chosen at creation; unknown ids are rejected, never defaulted. */
   mode?: ModeId;
   snapshotHz?: SnapshotHz;
@@ -104,6 +149,12 @@ export type ServeMatchCliOptions = {
   snapshotHz: SnapshotHz;
   startMode: MatchStartMode;
   mode: ModeId;
+  /** Fixed room code, already normalized; null means generate one. */
+  roomCode: string | null;
+  /** TLS certificate path; null when TLS is off. */
+  cert: string | null;
+  /** TLS private-key path; null when TLS is off. */
+  key: string | null;
   /** Opt in to repeated matches in one process (default false). */
   rematch: boolean;
   help: boolean;
@@ -114,10 +165,10 @@ function isWildcardHost(host: string): boolean {
 }
 
 /** A wildcard bind cannot be dialled, so the ready line carries host/port only. */
-export function matchConnectUrl(host: string, port: number): string | null {
+export function matchConnectUrl(host: string, port: number, secure = false): string | null {
   if (isWildcardHost(host)) return null;
   const formatted = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
-  return `ws://${formatted}:${port}`;
+  return `${secure ? 'wss' : 'ws'}://${formatted}:${port}`;
 }
 
 function validateHost(raw: string): string {
@@ -170,8 +221,59 @@ export function matchPlayerIds(count: number): readonly string[] {
 }
 
 /**
- * Parses `--name=value` flags for `npm run serve:match`. Pure and synchronous so
- * the CLI stays a thin loop and argument errors are testable.
+ * Deterministic-friendly room code generator. The injected `nextInt` exists so
+ * tests can pin the alphabet; it has nothing to do with simulation randomness.
+ */
+export function generateRoomCode(
+  nextInt: (maxExclusive: number) => number = max => randomInt(max),
+): string {
+  let code = '';
+  for (let index = 0; index < ROOM_CODE_LENGTH; index++) {
+    code += ROOM_CODE_ALPHABET[nextInt(ROOM_CODE_ALPHABET.length)];
+  }
+  return code;
+}
+
+/** Canonical operator room code, or a clear argument error. */
+export function parseRoomCode(raw: string): string {
+  const code = normalizeRoomCode(raw);
+  if (!isRoomCode(code)) {
+    throw new Error(`Invalid room code: ${raw} (4-12 letters or digits)`);
+  }
+  return code;
+}
+
+/**
+ * Reads and validates operator PEM files. Missing or malformed material fails
+ * before any socket is bound, with the offending path in the message.
+ */
+export function loadTlsFiles(certPath: string, keyPath: string): MatchTlsMaterial {
+  const read = (label: string, path: string): string => {
+    let text: string;
+    try {
+      text = readFileSync(path, 'utf8');
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`Cannot read TLS ${label} ${path}: ${detail}`);
+    }
+    if (text.trim().length === 0) throw new Error(`TLS ${label} ${path} is empty`);
+    return text;
+  };
+  const cert = read('certificate', certPath);
+  const key = read('private key', keyPath);
+  try {
+    createSecureContext({ cert, key });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Invalid TLS certificate or key: ${detail}`);
+  }
+  return { cert, key };
+}
+
+/**
+ * Parses `--name=value` (and `--name value`) flags for `npm run serve:match`.
+ * Pure and synchronous so the CLI stays a thin loop and argument errors are
+ * testable.
  */
 export function parseServeMatchArgs(argv: readonly string[]): ServeMatchCliOptions {
   let host = DEFAULT_MATCH_HOST;
@@ -180,10 +282,14 @@ export function parseServeMatchArgs(argv: readonly string[]): ServeMatchCliOptio
   let snapshotHz = DEFAULT_MATCH_SNAPSHOT_HZ;
   let startMode: MatchStartMode = 'auto';
   let mode: ModeId = 'score-brawl';
+  let roomCode: string | null = null;
+  let cert: string | null = null;
+  let key: string | null = null;
   let rematch = false;
   let help = false;
 
-  for (const arg of argv) {
+  for (let index = 0; index < argv.length; index++) {
+    const arg = argv[index] as string;
     if (arg === '--help' || arg === '-h') {
       help = true;
       continue;
@@ -194,9 +300,19 @@ export function parseServeMatchArgs(argv: readonly string[]): ServeMatchCliOptio
     }
     if (!arg.startsWith('--')) throw new Error(`Unexpected argument: ${arg}`);
     const separator = arg.indexOf('=');
-    if (separator < 0) throw new Error(`Argument must be --name=value: ${arg}`);
-    const name = arg.slice(2, separator);
-    const value = arg.slice(separator + 1);
+    // Both `--name=value` (the runbook form) and `--name value` are accepted.
+    const name = separator < 0 ? arg.slice(2) : arg.slice(2, separator);
+    let value: string;
+    if (separator >= 0) {
+      value = arg.slice(separator + 1);
+    } else {
+      const next = argv[index + 1];
+      if (next === undefined || next.startsWith('--')) {
+        throw new Error(`Argument must be --name=value or --name value: ${arg}`);
+      }
+      value = next;
+      index += 1;
+    }
     switch (name) {
       case 'host':
         host = validateHost(value);
@@ -216,9 +332,24 @@ export function parseServeMatchArgs(argv: readonly string[]): ServeMatchCliOptio
       case 'mode':
         mode = parseMode(value);
         break;
+      case 'room':
+        roomCode = parseRoomCode(value);
+        break;
+      case 'cert':
+        if (value.length === 0) throw new Error('--cert requires a PEM file path');
+        cert = value;
+        break;
+      case 'key':
+        if (value.length === 0) throw new Error('--key requires a PEM file path');
+        key = value;
+        break;
       default:
         throw new Error(`Unknown option: --${name}`);
     }
+  }
+
+  if (!help && (cert === null) !== (key === null)) {
+    throw new Error('--cert and --key must be provided together for https/wss');
   }
 
   return {
@@ -228,6 +359,9 @@ export function parseServeMatchArgs(argv: readonly string[]): ServeMatchCliOptio
     snapshotHz,
     startMode,
     mode,
+    roomCode,
+    cert,
+    key,
     rematch,
     help,
   };
@@ -246,20 +380,26 @@ export function serveMatchUsage(): string {
     '                       "start" line on stdin (default auto)',
     '  --mode=<mode>        score-brawl, last-man-standing or deathmatch',
     '                       (default score-brawl; unknown modes are rejected)',
+    '  --room=<code>        Fixed 4-12 character room code (default: generated)',
+    '  --cert=<pem>         TLS certificate chain (PEM) for https/wss',
+    '  --key=<pem>          TLS private key (PEM); must be paired with --cert',
     '  --rematch            Allow a results-phase rematch with the full roster in',
     '                       this process (default off: one match per process)',
     '  --help               Show this text',
+    '',
+    'Flags also accept a separate value: --cert cert.pem --key key.pem',
     '',
     'stdin controls:',
     '  start                Request an explicit start (the roster must be full)',
     '  quit | stop          Stop the server cleanly (same as SIGINT/SIGTERM)',
     '',
     'Prints one JSON ready line on stdout, then human-readable status on stderr.',
-    'ws:// is unencrypted: LAN or VPN only, never the open internet.',
+    'Without --cert/--key the server speaks plain ws://: LAN or VPN only, never',
+    'the open internet. With both it serves https/wss using the operator key.',
   ].join('\n');
 }
 
-/** One machine-readable line; secrets, peer addresses and metrics are absent. */
+/** One machine-readable line; no account credentials, key material, peer addresses or metrics. */
 export function formatMatchReadyLine(info: MatchReadyInfo): string {
   return JSON.stringify({
     kind: 'match-server-ready',
@@ -267,11 +407,14 @@ export function formatMatchReadyLine(info: MatchReadyInfo): string {
     host: info.host,
     port: info.port,
     roomId: info.roomId,
+    roomCode: info.roomCode,
+    maxConnections: info.maxConnections,
     players: [...info.playerIds],
     snapshotHz: info.snapshotHz,
     tickRate: TICK_RATE,
     startMode: info.startMode,
     mode: info.mode,
+    secure: info.secure,
   });
 }
 
@@ -333,6 +476,16 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
   if (!(MODE_IDS as readonly string[]).includes(mode)) {
     throw new Error(`Invalid match mode: ${String(mode)} (expected ${MODE_IDS.join(', ')})`);
   }
+  const roomCode = options.roomCode === undefined ? null : parseRoomCode(options.roomCode);
+  const connectionMargin = options.connectionMargin ?? DEFAULT_MATCH_CONNECTION_MARGIN;
+  if (!Number.isSafeInteger(connectionMargin) || connectionMargin < 0 || connectionMargin > 16) {
+    throw new Error(`Invalid connection margin: ${String(connectionMargin)} (expected 0..16)`);
+  }
+  const maxConnections = playerIds.length + connectionMargin;
+  const tls = options.tls ?? null;
+  if (tls !== null && (typeof tls.cert !== 'string' || typeof tls.key !== 'string')) {
+    throw new Error('TLS requires both a certificate and a private key in PEM form');
+  }
   const log = options.log ?? (() => undefined);
   if (typeof log !== 'function') throw new Error('Invalid status sink');
   const onReady = options.onReady ?? null;
@@ -365,15 +518,15 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
   const noteServerEvent = (event: WsServerEvent): void => {
     switch (event.kind) {
       case 'connection-opened':
-        log(`connection ${event.connectionId} opened (${event.connections}/${playerIds.length} sockets)`);
+        log(`connection ${event.connectionId} opened (${event.connections}/${maxConnections} sockets)`);
         return;
       case 'connection-closed':
-        log(`connection ${event.connectionId} closed (${event.connections}/${playerIds.length} sockets, ` +
+        log(`connection ${event.connectionId} closed (${event.connections}/${maxConnections} sockets, ` +
           `${room?.playerCount ?? 0}/${playerIds.length} slots claimed)`);
         return;
       case 'connection-rejected':
         log(event.reason === 'connection-limit'
-          ? `connection rejected before registration: ${playerIds.length}/${playerIds.length} sockets in use`
+          ? `connection rejected before registration: ${maxConnections}/${maxConnections} sockets in use`
           : 'connection rejected before registration: server is closing');
         return;
       case 'phase':
@@ -386,6 +539,8 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
     host,
     port,
     roomId: DEFAULT_MATCH_ROOM_ID,
+    ...(roomCode === null ? {} : { roomCode }),
+    ...(tls === null ? {} : { tls }),
     playerIds,
     mode,
     snapshotHz,
@@ -393,22 +548,26 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
     allowRematch: options.allowRematch === true,
     startDelayMs: options.startDelayMs,
     firstTickDelayMs: options.firstTickDelayMs,
-    // Exactly the roster: a fifth socket is closed before registration.
-    maxConnections: playerIds.length,
+    // Roster plus the documented margin: surplus sockets are closed before
+    // registration, so they cannot join, take a slot or delay the match.
+    maxConnections,
     onClientEnvelope: noteEnvelope,
     onServerEvent: noteServerEvent,
   });
   room = server.room;
 
   const ready: MatchReadyInfo = {
-    url: matchConnectUrl(host, server.port),
+    url: matchConnectUrl(host, server.port, tls !== null),
     host: server.host,
     port: server.port,
     roomId: DEFAULT_MATCH_ROOM_ID,
+    roomCode,
+    maxConnections,
     playerIds,
     snapshotHz,
     startMode,
     mode,
+    secure: tls !== null,
   };
   onReady?.(ready);
 

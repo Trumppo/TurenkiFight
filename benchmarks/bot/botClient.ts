@@ -4,6 +4,7 @@ import type { SnapshotHz } from '../../src/game/networking/wsMessages';
 import type { SessionClientHandlers } from '../../src/game/networking/wsSessionClient';
 import { TICK_RATE } from '../../src/game/simulation/step';
 import type { PlayerInput } from '../../src/game/simulation/types';
+import { isRoomCode, normalizeRoomCode } from '../../src/game/session/sessionEnvelope';
 import { openNodeSession, type NodeSession } from '../../server/ws/nodeWsClient';
 import {
   BOT_ADDRESS_NOT_RECORDED,
@@ -62,6 +63,8 @@ export type BotClientOptions = {
   readonly url: string;
   /** Exactly the slots this process claims; one envelope may own up to four. */
   readonly playerIds: readonly string[];
+  /** Optional server admission code; sent with the join. */
+  readonly roomCode?: string;
   readonly pattern: BotInputPattern;
   /** Planned authoritative ticks counted from the first post-start tick. */
   readonly ticks: number;
@@ -203,6 +206,10 @@ function assertOptions(options: BotClientOptions): void {
  */
 export async function runBotClient(options: BotClientOptions): Promise<BotClientResult> {
   assertOptions(options);
+  const roomCode = options.roomCode === undefined ? undefined : normalizeRoomCode(options.roomCode);
+  if (roomCode !== undefined && !isRoomCode(roomCode)) {
+    throw new BotClientError('invalid-options', `Invalid room code: ${options.roomCode}`);
+  }
   const status = options.onStatus ?? (() => undefined);
   const clock = options.clock ?? monotonicClock();
   const pingIntervalMs = options.pingIntervalMs ?? 250;
@@ -418,7 +425,7 @@ export async function runBotClient(options: BotClientOptions): Promise<BotClient
       ));
     }, options.timeoutMs);
 
-    activeSession.client.join(expected);
+    activeSession.client.join(expected, roomCode);
     await Promise.race([joined.promise, complete.promise]);
     status(`server granted exactly ${expected.join(', ')}`);
 

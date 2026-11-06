@@ -34,12 +34,24 @@ export type ServerSessionEnvelopeKind = (typeof SERVER_SESSION_ENVELOPE_KINDS)[n
 /**
  * Pre-parse UTF-8 cap. The canonical InputFrame codec already caps a payload at
  * MAX_INPUT_FRAME_BYTES; this adds a fixed 1024-byte allowance for envelope
- * metadata (kind, sequence, targetTick and an optional 64-byte room ID). The
- * schema-maximal envelope is measured in sessionEnvelope.test.ts.
+ * metadata (kind, sequence, targetTick, an optional 64-byte room ID and an
+ * optional 12-byte room code). The schema-maximal envelope is measured in
+ * sessionEnvelope.test.ts.
  */
 export const MAX_SESSION_ENVELOPE_BYTES = MAX_INPUT_FRAME_BYTES + 1024;
 
 const SESSION_IDENTIFIER = /^[A-Za-z0-9_-]{1,64}$/;
+
+/**
+ * Operator-issued room code: 4-12 ASCII letters or digits, canonical uppercase.
+ * This is an admission code for a single-room server, not authentication: it
+ * only prevents an accidental or casual join to the wrong room.
+ */
+export const ROOM_CODE_PATTERN = /^[A-Za-z0-9]{4,12}$/;
+export const isRoomCode = (value: unknown): value is string =>
+  typeof value === 'string' && ROOM_CODE_PATTERN.test(value);
+/** Canonical form used on the wire, in the ready line and in the join form. */
+export const normalizeRoomCode = (value: string): string => value.trim().toUpperCase();
 const utf8 = new TextEncoder();
 const strictUtf8 = new TextDecoder('utf-8', { fatal: true });
 const own = (value: Record<string, unknown>, key: string) => Object.prototype.hasOwnProperty.call(value, key);
@@ -69,6 +81,11 @@ export type JoinRequestEnvelope = {
   version: typeof SESSION_ENVELOPE_VERSION;
   kind: 'join-request';
   sequence: number;
+  /**
+   * Operator room code. A server that was started with a code requires it on
+   * every join; omitting it is denied before a player slot is allocated.
+   */
+  roomCode?: string;
   roomId?: string;
   playerIds: string[];
 };
@@ -125,6 +142,7 @@ export type ClientEnvelopeHeader = {
   kind: ClientSessionEnvelopeKind;
   sequence: number;
   roomId?: string;
+  roomCode?: string;
   targetTick?: number;
   playerIds?: string[];
   frame?: unknown;
@@ -188,6 +206,7 @@ function parseEnvelopeValue(value: unknown): ClientEnvelopeHeader {
     allowed.add('frame');
   } else if (kind === 'join-request') {
     allowed.add('playerIds');
+    allowed.add('roomCode');
   }
   if (Object.keys(value).some(key => !allowed.has(key))) throw new SessionEnvelopeError('unknown-field', 'Unknown envelope field');
 
@@ -200,6 +219,13 @@ function parseEnvelopeValue(value: unknown): ClientEnvelopeHeader {
     if (!isSessionIdentifier(value.roomId)) throw new SessionEnvelopeError('invalid-envelope', 'Invalid room identifier');
     roomId = value.roomId;
   }
+  let roomCode: string | undefined;
+  if (kind === 'join-request' && own(value, 'roomCode')) {
+    if (!isRoomCode(value.roomCode)) throw new SessionEnvelopeError('invalid-envelope', 'Invalid room code');
+    // Canonical wire form is uppercase; a lowercase claim is re-encoded and
+    // therefore rejected by the canonical-byte check rather than accepted.
+    roomCode = normalizeRoomCode(value.roomCode);
+  }
 
   if (kind === 'input') {
     if (!own(value, 'targetTick')) throw new SessionEnvelopeError('invalid-tick', 'Input envelope requires targetTick');
@@ -209,7 +235,14 @@ function parseEnvelopeValue(value: unknown): ClientEnvelopeHeader {
   }
   if (kind === 'join-request') {
     const playerIds = readPlayerIds(value.playerIds);
-    return { version: SESSION_ENVELOPE_VERSION, kind, sequence, ...(roomId === undefined ? {} : { roomId }), playerIds };
+    return {
+      version: SESSION_ENVELOPE_VERSION,
+      kind,
+      sequence,
+      ...(roomCode === undefined ? {} : { roomCode }),
+      ...(roomId === undefined ? {} : { roomId }),
+      playerIds,
+    };
   }
   return { version: SESSION_ENVELOPE_VERSION, kind, sequence, ...(roomId === undefined ? {} : { roomId }) };
 }
@@ -239,6 +272,7 @@ function completeEnvelope(header: ClientEnvelopeHeader): ClientSessionEnvelope {
       version: SESSION_ENVELOPE_VERSION,
       kind: 'join-request',
       sequence: header.sequence,
+      ...(header.roomCode === undefined ? {} : { roomCode: header.roomCode }),
       ...(header.roomId === undefined ? {} : { roomId: header.roomId }),
       // Canonical slot order makes join encoding deterministic regardless of claims order.
       playerIds: [...(header.playerIds as string[])].sort(),

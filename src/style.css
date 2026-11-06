@@ -368,7 +368,7 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
 }
 .online-form {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 6px 8px;
   font-size: 14px;

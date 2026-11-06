@@ -4,7 +4,9 @@ import { consumeAuthorizedFrame } from './protocolIntegration';
 import {
   SessionEnvelopeError,
   decodeClientEnvelope,
+  isRoomCode,
   isSessionIdentifier,
+  normalizeRoomCode,
   parseClientEnvelopeHeader,
   type ClientEnvelopeHeader,
   type ClientSessionEnvelope,
@@ -24,6 +26,8 @@ export type SessionEnvelopeDenialCode =
   | SessionEnvelopeErrorCode
   | 'invalid-binding'
   | 'room-mismatch'
+  | 'room-code-required'
+  | 'room-code-mismatch'
   | 'not-joined'
   | 'already-joined'
   | 'replayed-sequence'
@@ -55,6 +59,12 @@ export type SessionEnvelopeResult = SessionEnvelopeAccepted | SessionEnvelopeDen
 export type SessionEnvelopeGatewayOptions = {
   /** Room/session binding for this gateway; client payloads cannot select it. */
   roomId: string;
+  /**
+   * Optional admission code. When set, every join must carry the matching
+   * `roomCode`; a missing or wrong code is denied before any slot is allocated.
+   * Undefined keeps the historical sessions (and their tests) unchanged.
+   */
+  roomCode?: string;
   startTick?: number;
   maxLead?: number;
   maxPlayers?: number;
@@ -91,12 +101,20 @@ function classifyStateError(message: string): SessionEnvelopeDenialCode {
  */
 export class SessionEnvelopeGateway {
   private readonly roomId: string;
+  private readonly requiredRoomCode: string | null;
   private readonly ingress: AuthorizedSessionIngress;
   private readonly sequences = new Map<string, number>();
 
   constructor(options: SessionEnvelopeGatewayOptions) {
     if (!isSessionIdentifier(options?.roomId)) throw new Error('Invalid room binding');
     this.roomId = options.roomId;
+    if (options.roomCode === undefined) {
+      this.requiredRoomCode = null;
+    } else {
+      const roomCode = normalizeRoomCode(options.roomCode);
+      if (!isRoomCode(roomCode)) throw new Error('Invalid room code');
+      this.requiredRoomCode = roomCode;
+    }
     // Undefined optional values keep the existing session defaults (tick 0,
     // bounded look-ahead, MAX_PLAYERS slots) instead of inventing new timings.
     this.ingress = new AuthorizedSessionIngress(options.startTick, options.maxLead, options.maxPlayers);
@@ -214,6 +232,15 @@ export class SessionEnvelopeGateway {
     if (sequenceDenial) return sequenceDenial;
     const envelope = decodeClientEnvelope(message, header);
     if (envelope.kind !== 'join-request') return denied('invalid-state', 'Join envelope expected');
+    if (this.requiredRoomCode !== null) {
+      // Admission happens before `joinMany`, so a rejected join allocates no slot.
+      if (envelope.roomCode === undefined) {
+        return denied('room-code-required', 'Join requires the server room code');
+      }
+      if (envelope.roomCode !== this.requiredRoomCode) {
+        return denied('room-code-mismatch', 'Join room code does not match this server');
+      }
+    }
     this.ingress.joinMany(connectionId, envelope.playerIds);
     this.sequences.set(connectionId, header.sequence);
     return accepted(envelope);
