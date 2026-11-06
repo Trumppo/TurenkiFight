@@ -1,5 +1,5 @@
-import type { Fighter, GameEvent, GameState, ModeId, Move, Phase } from '../simulation/types';
-import { COUNTDOWN_TICKS, KO_HIT_STOP_TICKS, MATCH_TICKS, MOVES } from '../simulation/step';
+import type { Fighter, GameEvent, GameState, ModeId, Move, ObjectKind, ObjectState, Phase, SimObject } from '../simulation/types';
+import { ARENA_BOUNDS, COUNTDOWN_TICKS, KO_HIT_STOP_TICKS, MATCH_TICKS, MOVES } from '../simulation/step';
 import { COMBAT_MOVES, END_REASONS, parseGameEvent } from './gameEvent';
 import { MAX_PLAYERS } from './players';
 
@@ -18,6 +18,13 @@ export const MAX_SNAPSHOT_BYTES = 131072;
 /** Derived from the single roster bound; a snapshot carries a full match roster. */
 export const MAX_SNAPSHOT_FIGHTERS = MAX_PLAYERS;
 export const MAX_SNAPSHOT_EVENTS = 64;
+/**
+ * Defensive schema bound for the object list. The simulation keeps at most
+ * `OBJECT_SPAWN_TABLE.maxUnbroken` (3) live objects, but the codec accepts a
+ * bounded larger list so inspection and future object types do not need a codec
+ * edit.
+ */
+export const MAX_SNAPSHOT_OBJECTS = 32;
 export type StateSnapshot = { version: typeof SNAPSHOT_VERSION; state: GameState };
 /**
  * Highest tick the parser accepts. `step()` increments the tick by one, so
@@ -58,9 +65,15 @@ const modeFighterKeys = ['eliminated', 'frags', 'deaths', 'damageDealt'];
 const optionalFighterKeys = ['knockback'];
 const fighterKeys = [...requiredFighterKeys, ...modeFighterKeys, ...optionalFighterKeys];
 const requiredStateKeys = ['tick', 'fighters', 'phase', 'countdownTicks', 'remainingTicks', 'events'];
-/** Optional and canonically omitted when zero; absent means 0. */
-const optionalStateKeys = ['hitStopTicks'];
+/** Optional and canonically omitted when zero/empty; absent means 0 or none. */
+const optionalStateKeys = ['hitStopTicks', 'objects'];
 const stateKeys = [...requiredStateKeys, 'mode', ...optionalStateKeys];
+/** Object fields emitted by the simulation; unknown keys are rejected. */
+const objectKeys = ['id', 'kind', 'x', 'y', 'z', 'state', 'holder', 'spawnTick', 'vx', 'vz'];
+const objectKinds: readonly ObjectKind[] = ['bottle'];
+const objectStates: readonly ObjectState[] = ['ground', 'held', 'airborne', 'broken'];
+/** Stable generated id: `O1`, `O2`, ... (no random or external sequence). */
+const objectIdPattern = /^O[1-9][0-9]*$/;
 /**
  * Score Brawl is the historical default and omits `mode`, so an explicit
  * `score-brawl` value is not canonical and is rejected by the decoder.
@@ -91,10 +104,10 @@ const MAX_ATTACK_TICKS = Math.max(...COMBAT_MOVES.map(totalAttackTicks));
 
 /**
  * Every label `step()` can write into `previousButtons`: the enabled combat
- * moves in fixed order, plus `jump`. The simulator never records any other
- * string, so the codec rejects unknown labels instead of passing them through.
+ * moves in fixed order, plus `jump` and `grab`. The simulator never records any
+ * other string, so the codec rejects unknown labels instead of passing them through.
  */
-export const BUTTON_LABELS = ['punch', 'kick', 'jumpkick', 'jump'] as const;
+export const BUTTON_LABELS = ['punch', 'kick', 'jumpkick', 'jump', 'grab'] as const;
 
 /**
  * Labels are unique by construction in `step()`, so the whitelist alone caps
@@ -188,6 +201,56 @@ function parseFighter(value: unknown, mode: ModeId | undefined): Fighter | null 
 }
 
 /**
+ * Strict object validation. The rules mirror what the simulation can emit:
+ * - `kind` and `state` are closed unions.
+ * - coordinates stay inside the playable arena; `z` is never negative.
+ * - `holder` must be a roster member and is required exactly while held or
+ *   airborne (a thrown bottle keeps its thrower for attribution).
+ * - `vx`/`vz` exist only while airborne and are required there; without them a
+ *   snapshot could not restore the exact arc deterministically.
+ * - `spawnTick` may not be in the future.
+ */
+function parseObject(value: unknown, roster: ReadonlySet<string>, tick: number): SimObject | null {
+  if (!obj(value) || !keys(value, objectKeys)) return null;
+  if (typeof value.id !== 'string' || !objectIdPattern.test(value.id)) return null;
+  if (!objectKinds.includes(value.kind as ObjectKind)) return null;
+  if (!objectStates.includes(value.state as ObjectState)) return null;
+  if (!['x', 'y', 'z'].every(key => finite(value[key]))) return null;
+  const x = value.x as number, y = value.y as number, z = value.z as number;
+  if (z < 0 || x < ARENA_BOUNDS.minX || x > ARENA_BOUNDS.maxX ||
+      y < ARENA_BOUNDS.minY || y > ARENA_BOUNDS.maxY) return null;
+  if (has(value, 'spawnTick') && (!nonnegative(value.spawnTick) || (value.spawnTick as number) > tick)) return null;
+  const holder = value.holder;
+  if (holder !== undefined && (typeof holder !== 'string' || !roster.has(holder))) return null;
+  const state = value.state as ObjectState;
+  const hasMotion = has(value, 'vx') || has(value, 'vz');
+  switch (state) {
+    case 'ground':
+      // A ground bottle rests on the floor and belongs to nobody.
+      if (holder !== undefined || hasMotion || z !== 0) return null;
+      break;
+    case 'held':
+      if (holder === undefined || hasMotion) return null;
+      break;
+    case 'airborne':
+      if (holder === undefined || !finite(value.vx) || !finite(value.vz)) return null;
+      break;
+    case 'broken':
+      if (holder !== undefined || hasMotion) return null;
+      break;
+  }
+  return {
+    id: value.id,
+    kind: 'bottle',
+    x, y, z,
+    state,
+    ...(holder !== undefined ? { holder: holder as string } : {}),
+    ...(has(value, 'spawnTick') ? { spawnTick: value.spawnTick as number } : {}),
+    ...(state === 'airborne' ? { vx: value.vx as number, vz: value.vz as number } : {}),
+  };
+}
+
+/**
  * Timers are bounded by the simulation constants that seed them. A `fighting`
  * state must leave at least one remaining tick, and a `countdown` state must
  * too because it transitions into `fighting`.
@@ -234,6 +297,19 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
       !Array.isArray(state.events) || state.events.length > MAX_SNAPSHOT_EVENTS) {
     throw new Error('Malformed simulation state');
   }
+  const objects: SimObject[] = [];
+  if (has(state, 'objects')) {
+    if (!Array.isArray(state.objects) || state.objects.length > MAX_SNAPSHOT_OBJECTS) {
+      throw new Error('Malformed simulation state');
+    }
+    const objectIds = new Set<string>();
+    for (const raw of state.objects) {
+      const parsed = parseObject(raw, roster, state.tick as number);
+      if (parsed === null || objectIds.has(parsed.id)) throw new Error('Malformed simulation state');
+      objectIds.add(parsed.id);
+      objects.push(parsed);
+    }
+  }
   const events: GameEvent[] = state.events.map(event => parseGameEvent(event, state.tick as number, roster));
   for (const event of events) {
     if (event.type !== 'MatchEnded') continue;
@@ -259,6 +335,7 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
       ...(has(state, 'hitStopTicks') && state.hitStopTicks !== 0
         ? { hitStopTicks: state.hitStopTicks as number }
         : {}),
+      ...(objects.length ? { objects } : {}),
       events,
       ...(mode === undefined ? {} : { mode: mode as ModeId }),
     },
@@ -281,9 +358,11 @@ function withoutKey(source: Record<string, unknown>, key: string): Record<string
  * - a zero `hitStopTicks` or `knockback` is omitted; absent means zero, so an
  *   idle snapshot keeps its pre-M11 bytes even though the in-memory object may
  *   carry explicit zeros.
+ * - an empty `objects` array is omitted; absent means no objects, so a state
+ *   without objects keeps its pre-M12 bytes.
  * - Last Man Standing `eliminated: false` is omitted as before.
  * The decoder still rejects unknown keys and out-of-range values. An explicit
- * zero on the wire is accepted and normalised away by the decoder.
+ * zero or empty list on the wire is accepted and normalised away by the decoder.
  */
 function canonicalEncodeInput(value: unknown): unknown {
   if (!obj(value) || !obj(value.state)) return value;
@@ -291,6 +370,9 @@ function canonicalEncodeInput(value: unknown): unknown {
   let nextState: Record<string, unknown> = state;
   if (has(nextState, 'hitStopTicks') && nextState.hitStopTicks === 0) {
     nextState = withoutKey(nextState, 'hitStopTicks');
+  }
+  if (has(nextState, 'objects') && Array.isArray(nextState.objects) && nextState.objects.length === 0) {
+    nextState = withoutKey(nextState, 'objects');
   }
   if (!Array.isArray(nextState.fighters)) return { ...value, state: nextState };
   const mode = nextState.mode;

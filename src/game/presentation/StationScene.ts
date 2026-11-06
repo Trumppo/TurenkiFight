@@ -896,7 +896,7 @@ export class StationScene extends Phaser.Scene {
     if (f.koTimer) return 'ko';
     if (f.protection > 0) return 'respawn';
     if ((this.hitFlash.get(f.id) ?? 0) > this.state.tick) return 'hit';
-    if (f.attackMove) return f.attackMove;
+    if (f.attackMove && f.attackMove !== 'throw') return f.attackMove;
     if (f.z > 0) return 'jump';
     if (prev && Math.abs(prev.x - f.x) > 0.05) return 'walk';
     if (prev && Math.abs(prev.y - f.y) > 0.05) return 'depth';

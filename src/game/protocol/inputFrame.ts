@@ -31,15 +31,15 @@ export function parseInputFrame(value: unknown): InputFrame {
   const inputs: PlayerInput[] = frame.inputs.map((raw: unknown) => {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Invalid player input');
     const p = raw as Record<string, unknown>;
-    if (Object.keys(p).some(k => !['playerId', 'moveX', 'moveY', 'jump', 'punch', 'kick', 'jumpkick', 'attack'].includes(k)) ||
+    if (Object.keys(p).some(k => !['playerId', 'moveX', 'moveY', 'jump', 'punch', 'kick', 'jumpkick', 'attack', 'grab'].includes(k)) ||
         typeof p.playerId !== 'string' || p.playerId.length < 1 || p.playerId.length > 64 ||
         ids.has(p.playerId) || !axis(p.moveX) || !axis(p.moveY) || !boolean(p.jump) ||
-        !['punch', 'kick', 'jumpkick', 'attack'].every(k => optionalBoolean(p, k))) {
+        !['punch', 'kick', 'jumpkick', 'attack', 'grab'].every(k => optionalBoolean(p, k))) {
       throw new Error('Malformed or duplicate player input');
     }
     ids.add(p.playerId);
     const result: PlayerInput = { playerId: p.playerId, moveX: p.moveX, moveY: p.moveY, jump: p.jump };
-    for (const key of ['punch', 'kick', 'jumpkick', 'attack'] as const) {
+    for (const key of ['punch', 'kick', 'jumpkick', 'attack', 'grab'] as const) {
       if (own(p, key)) result[key] = p[key] as boolean;
     }
     return result;

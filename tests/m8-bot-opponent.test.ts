@@ -212,10 +212,13 @@ describe('M8 bot match determinism', () => {
     // M12 bot mobility + the point-blank jump-in guard changed both pins again.
     // The merge from main added seeded hops; constraining jump-ins to targets
     // strictly outside punch reach restores ground attacks at touching range.
+    // M12 items adds deterministic bottle spawns; bots do not pick them up yet,
+    // so the state pin moves again and the ordered event stream is unchanged.
     // Previous hit-stop-only pins:
     // state 27349f211dcf44de2d24454004d9fd9e872caa5213252617caf82e42194643cc,
     // events 0cc6d12cdde9d33716d7eb3aff0fbd143da17ad9155cd6d8210d183420d12064.
-    expect(hash(run.state)).toBe('8c11ffb1c40ffd06645f8490aa40f6f6c3ec1646d9696a07899492af98cb42ce');
+    // Previous M12-mobility state pin: 8c11ffb1c40ffd06645f8490aa40f6f6c3ec1646d9696a07899492af98cb42ce.
+    expect(hash(run.state)).toBe('fda12ce0b37865f62349bcb69daeed9cabe8c5c8fd01294017b364d054ec7e6b');
     expect(hash(run.events)).toBe('3b41dc0584908a2a6aaf41266791528ef996ddb74de6ff2e22418c4b4b9d89b9');
   });
 });

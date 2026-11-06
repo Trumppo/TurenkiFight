@@ -165,7 +165,7 @@ describe('M2 StateSnapshot v1', () => {
     for (let tick = 0; tick < 120; tick++) {
       state = step(state, [{
         playerId: 'P1', moveX: 0, moveY: 0, jump: tick % 3 === 0,
-        punch: tick % 5 === 0, kick: tick % 7 === 0, jumpkick: tick % 11 === 0,
+        punch: tick % 5 === 0, kick: tick % 7 === 0, jumpkick: tick % 11 === 0, grab: tick % 13 === 0,
       }]);
       for (const fighter of state.fighters) {
         for (const label of fighter.previousButtons) {

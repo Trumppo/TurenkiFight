@@ -27,17 +27,14 @@ const FULL_TICKS = 7200;
 const SOCKET_TICKS = FULL_TICKS;
 
 // Independently recorded fingerprints for the BASE-4-60-20 fixture, seed 12345.
-// The fixture hash covers inputs only and is unchanged by M11. The two result
-// hashes changed with M11 (hit stop + knockback), from the speed-era:
-//   final state e3f6fa8370b5987c14cc0fbee48a6c68079ca73074417bcc21ae8436580c675e
-//   events      bf516bd8c081a74b120f5dbabf930531e1a767da26fbef7682eeda8857bb75f4
-// The optional counters are absent at the final tick, so this hash reflects the
-// changed positions and event ticks only. The deterministic push plus frozen
-// attack frames reduce this 7200-tick fixture from 57 to 34 events because hit
-// targets end up just outside reach. This is a real behaviour change, not a
-// hash reset.
+// The fixture hash covers inputs only and is unchanged by M11. The event hash is
+// also unchanged by M12 items: no fixture input sets `grab`, so bottles spawn
+// but never move. The final state hash changed with the object layer because the
+// state now carries up to three ground bottles:
+//   M11/pre-M12 state 160db4542beeff43e4a44c4ddca9123bfefc9ca7a423b243f6d941b7d8541732
+//   events            b74691a838f7548b132b9b9eb9e8d418efbef005bf8aaae3268e9f15741232b6
 const FIXTURE_SHA256 = '7fddf007fc1910d9944d409864fad101e70d0956d864f60a700135f6205b1790';
-const FULL_FINAL_STATE_SHA256 = '160db4542beeff43e4a44c4ddca9123bfefc9ca7a423b243f6d941b7d8541732';
+const FULL_FINAL_STATE_SHA256 = '4f5a81d3ab8cd87e4baf710305e030840680865d114623ee198435ceaf795aba';
 const FULL_ORDERED_EVENTS_SHA256 = 'b74691a838f7548b132b9b9eb9e8d418efbef005bf8aaae3268e9f15741232b6';
 const EMPTY_EVENTS_SHA256 = sha256('[]');
 

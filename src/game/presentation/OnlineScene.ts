@@ -227,7 +227,7 @@ export class OnlineScene extends Phaser.Scene {
     if (fighter.koTimer) return 'ko';
     if (fighter.protection > 0) return 'respawn';
     if ((this.hitUntil.get(fighter.id) ?? 0) > tick) return 'hit';
-    if (fighter.attackMove) return fighter.attackMove;
+    if (fighter.attackMove && fighter.attackMove !== 'throw') return fighter.attackMove;
     if (fighter.z > 0.01) return 'jump';
     if (previous && Math.abs(previous.x - fighter.x) > 0.05) return 'walk';
     if (previous && Math.abs(previous.y - fighter.y) > 0.05) return 'depth';

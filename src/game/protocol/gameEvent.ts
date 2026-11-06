@@ -24,6 +24,12 @@ export const GAME_EVENT_TYPES: readonly GameEvent['type'][] = [
   'MatchEnded',
 ];
 export const COMBAT_MOVES: readonly Move[] = ['punch', 'kick', 'jumpkick'];
+/**
+ * Moves a `HitLanded` event may carry. `throw` is a projectile hit resolved by
+ * the same pipeline; fighter `attackMove` validation deliberately keeps using
+ * `COMBAT_MOVES` so a thrown object can never become a fighter attack state.
+ */
+export const HIT_MOVES: readonly Move[] = ['punch', 'kick', 'jumpkick', 'throw'];
 /** End reasons the simulation can attach to `MatchEnded`. */
 export const END_REASONS: readonly EndReason[] = ['elimination', 'frag-limit', 'time'];
 
@@ -45,7 +51,7 @@ export function parseGameEvent(value: unknown, tick: number, roster?: ReadonlySe
   const participant = (player: unknown): player is string => id(player) && (!roster || roster.has(player));
   if (type === 'HitLanded') {
     if (!participant(value.attacker) || !participant(value.target) || value.attacker === value.target ||
-        !COMBAT_MOVES.includes(value.move as Move)) throw new Error('Invalid combat event');
+        !HIT_MOVES.includes(value.move as Move)) throw new Error('Invalid combat event');
   } else if (type === 'Knockout') {
     if (!participant(value.attacker) || !participant(value.target) || value.attacker === value.target ||
         value.move !== undefined) throw new Error('Invalid knockout event');
