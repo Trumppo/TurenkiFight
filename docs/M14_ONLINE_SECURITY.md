@@ -8,8 +8,8 @@ is implementable without it.
 
 An authoritative WebSocket prototype: `serve:match` hosts one match (opt-in rematch), the session envelope validates
 input, snapshots are sent at 10/20/30 Hz, and an online browser client renders them. The M14 hardening slices add TLS,
-room codes, a per-room connection cap and per-connection rate/size limits (see §5–§6). There is still no
-authentication and no rejoin.
+room codes, a per-room connection cap, per-connection rate/size limits and a mid-match rejoin window (see §5–§8).
+There is still no authentication.
 
 ## 2. What this phase adds, in order
 
@@ -133,3 +133,36 @@ Behaviour:
 - Accounts, matchmaking, persistence, leaderboards.
 - Multiple rooms per process, horizontal scaling.
 - Host migration and peer authority (architecture B stays an evaluated alternative).
+
+## 8. Implemented in `M14-REJOIN`
+
+This third hardening slice implements §2.4. It changes no simulation rule, adds no network measurement and does not
+introduce authentication or host migration.
+
+- **Window.** A non-host player who drops while the session is `running` keeps their player id reserved for
+  `DEFAULT_REJOIN_WINDOW_MS = 30_000` ms. `startMatchServer({ rejoinWindowMs })` configures it; `0` restores the
+  historical immediate revocation, and `MAX_REJOIN_WINDOW_MS = 600_000` bounds a misconfiguration. The ready line
+  reports `rejoinWindowMs`.
+- **Reservation.** During the window the slot stays claimed (`playerCount` and the `roster` message are unchanged),
+  the connection is no longer trusted and the fighter receives neutral input. The other players keep playing. Queued
+  input for the reserved slot and the dropped connection's sequence domain are revoked immediately.
+- **Rejoin.** A new connection with the same room code and player id may claim the complete reserved slot set. The
+  join is reattached by `join-request` and confirmed with `join-result`, followed by a targeted `match-start` and an
+  immediate `snapshot`; subsequent snapshots follow the ordinary 10/20/30 Hz broadcast. The slot is transferred, so
+  there is one fighter and one roster entry, never a duplicate.
+- **Fresh sequence domain.** The rejoining connection starts its own monotonic sequence counter. The old connection is
+  absent from the trusted connection set, so its late frames are ignored; its sequence domain is deleted, so a rejoin
+  cannot resurrect the old counter with a small sequence number.
+- **Expiry.** `expireReservations()` runs from the tick/message/connection paths and from a transport expiry timer. After
+  the window the roster drops the player (`roster`), the match continues, and the id follows the ordinary admission
+  path: a `running` match denies a late join with `match-started`. Closing the session still releases every slot and
+  emits `session-closed` as before.
+- **Limits.** Rejoin uses the same `join-request` code path: a missing or wrong room code is denied with
+  `room-code-required` / `room-code-mismatch`, and the new connection gets its own `ClientMessageGuard`. A policy close
+  (`1008`, `1009`, `1013`) passes `reserve: false`, so an abusive peer never leaves a recoverable slot.
+- **Host.** A host disconnect still terminates the session with `session-closed: host-lost`; the host slot is never
+  reserved, because rejoin is not host migration.
+
+Honest limitations: the room code plus player id is the whole identity. There is no account, token or cryptographic
+proof, so any peer that knows both values can reclaim a reserved slot. This slice adds no bandwidth, RTT, jitter or
+server-cost number; every network figure remains `NOT_MEASURED` and the two-machine measurement stays owner-blocked.

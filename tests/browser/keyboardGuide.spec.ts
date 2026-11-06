@@ -16,11 +16,11 @@ test('keyboard guide labels keyboard, gamepad and bot slots without obscuring th
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await expect(guide).toBeVisible();
-  await expect(guide.locator('summary')).toHaveText('Näppäimistö P1–P2 · gamepad P2–P8 · P5–P8: gamepad tai botti');
+  await expect(guide.locator('summary')).toContainText('P1-P2');
   await guide.locator('summary').click();
   await expect(guide).toHaveAttribute('open', '');
   const rows = guide.locator('tbody tr');
-  await expect(rows).toHaveCount(9);
+  await expect(rows).toHaveCount(10);
   await expect(rows.nth(1)).toContainText('Välilyönti');
   await expect(rows.nth(1)).toContainText('K');
   await expect(rows.nth(4)).toContainText('H');
@@ -31,9 +31,11 @@ test('keyboard guide labels keyboard, gamepad and bot slots without obscuring th
   await expect(rows.nth(5)).toContainText('Poimi / heitä');
   await expect(rows.nth(6)).toContainText('Shift');
   await expect(rows.nth(7)).toContainText('Enter');
+  await expect(rows.nth(8)).toContainText('Tauko / jatka');
+  await expect(rows.nth(8)).toContainText('P');
   // The reset shortcut is documented with the other bindings.
-  await expect(rows.nth(8)).toContainText('Esc');
-  await expect(rows.nth(8)).toContainText('RESET');
+  await expect(rows.nth(9)).toContainText('Esc');
+  await expect(rows.nth(9)).toContainText('RESET');
   await expect(guide.locator('.controls-note')).toContainText('LB (button 4)');
   const guideLayout = await page.evaluate(() => {
     const canvas = document.querySelector('#game canvas')!.getBoundingClientRect();

@@ -55,6 +55,7 @@ p { color: #c2cbd2; }
 #match-timer { font-size: clamp(16px, 2vw, 28px); line-height: 1.1; letter-spacing: .04em; white-space: nowrap; }
 #match-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #match-status.is-results { overflow: visible; text-overflow: clip; white-space: normal; font-size: 14px; line-height: 1.15; }
+#match-status.is-paused { overflow: visible; text-overflow: clip; white-space: normal; font-size: 14px; line-height: 1.15; color: #ffe39a; font-weight: 900; }
 #match-status.is-wave-lobby {
   grid-column: 1 / -1;
   grid-row: 2;
@@ -69,9 +70,11 @@ p { color: #c2cbd2; }
 .mode-control select:disabled { opacity: 1; color: #fff1b7; }
 /* Compact reset control; the two behaviours are documented in its aria-label. */
 .hud-actions { display: inline-flex; align-items: center; justify-self: end; gap: 5px; min-width: 0; white-space: nowrap; }
-.hud-reset { min-height: 24px; padding: 1px 5px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-size: clamp(14px, 1vw, 16px); line-height: 1.1; cursor: pointer; pointer-events: auto; white-space: nowrap; }
+.hud-reset, .hud-pause { min-height: 24px; padding: 1px 5px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-size: clamp(14px, 1vw, 16px); line-height: 1.1; cursor: pointer; pointer-events: auto; white-space: nowrap; }
+.hud-pause { border-color: #77cfdf; color: #c6f0e7; }
 .hud-reset:hover:not(:disabled) { background: #2b3a4c; }
-.hud-reset:disabled { opacity: .45; cursor: default; }
+.hud-pause:hover:not(:disabled) { background: #2b5260; }
+.hud-reset:disabled, .hud-pause:disabled { opacity: .45; cursor: default; }
 .hud-player.is-eliminated { border-left-color: #ed786c; background: #382932; color: #ffd2c7; }
 .hud-player.is-eliminated .hud-health { color: #ff9f90; font-weight: 700; }
 .hud-player.is-zone-danger { border-left-color: #ff765b; background: #4a3329; }
@@ -326,12 +329,12 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   .victory-place { gap: 2px 5px; }
   .victory-rest { line-height: 1.25; }
   #fight-hud { position: static; padding: 7px; border: 1px solid #c7a76a; font-size: 14px; }
-  .hud-toolbar { grid-template-columns: auto minmax(0, 1fr); gap: 4px 6px; }
-  #match-status { grid-column: 1 / -1; grid-row: 2; white-space: normal; line-height: 1.25; }
-  .mode-control { grid-column: 2; grid-row: 1; justify-self: end; }
-  .hud-actions { grid-column: 2; grid-row: 1; justify-self: end; }
+  .hud-toolbar { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 6px; }
+  #match-status { grid-column: 1 / -1; grid-row: 3; white-space: normal; line-height: 1.25; }
+  .mode-control { grid-column: 1; grid-row: 2; justify-self: start; }
+  .hud-actions { grid-column: 2; grid-row: 2; justify-self: end; }
   .mode-control select { max-width: 180px; }
-  .scale-control { grid-column: 1 / -1; grid-row: 3; justify-self: end; }
+  .scale-control { grid-column: 1 / -1; grid-row: 4; justify-self: end; }
   #player-hud { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin-top: 6px; }
   .hud-player { min-height: 28px; padding: 3px 5px; column-gap: 5px; line-height: 18px; }
   .hud-slot-action { min-height: 28px; padding: 3px 5px; line-height: 18px; }
@@ -440,9 +443,9 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
 }
 
 /* Keyboard reference stays collapsed so the native 640x360 arena still fits. */
-.controls { margin: 8px auto; max-width: 640px; text-align: left; font-size: 14px; }
+.controls { margin: 8px auto; max-width: 640px; overflow-x: auto; text-align: left; font-size: 14px; }
 .controls summary { cursor: pointer; padding: 5px 8px; color: #f5e9c7; }
-.controls table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+.controls table { width: 100%; min-width: 560px; border-collapse: collapse; margin-top: 5px; }
 .controls th, .controls td { border-bottom: 1px solid #526071; padding: 6px 8px; text-align: left; }
 .controls thead th { color: #f1d38b; }
 @media (max-height: 540px) {
@@ -452,7 +455,7 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   /* A 1280x720 2× canvas cannot fit vertically here; hide only this control to preserve the reserved HUD band. The URL scale preference still falls back responsively. */
   .scale-control { display: none; }
   .mode-control select { height: 16px; min-height: 16px; padding: 0 2px; line-height: 14px; }
-  .hud-reset { height: 16px; min-height: 16px; padding: 0 3px; line-height: 14px; }
+  .hud-reset, .hud-pause { height: 16px; min-height: 16px; padding: 0 3px; line-height: 14px; }
   body.integer-scale-2 .controls { display: none; }
   body.integer-scale-2 main { padding: 4px 8px; }
   body.integer-scale-2 .hud-toolbar { min-height: 16px; }

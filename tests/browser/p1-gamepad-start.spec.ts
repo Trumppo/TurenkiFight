@@ -50,17 +50,6 @@ test('P1 explicitly binds an unassigned gamepad Start; nonhost cannot start; rec
   await expect.poll(async () => (await inspect()).phase).toBe('countdown');
   expect((await inspect()).slots).toEqual([[1, 'P3'], [2, 'P4'], [0, 'P1']]);
   await button(0, 9, false);
-
-  // Disconnect clears stale pad ownership. Reconnect never auto-claims P1;
-  // an explicit fresh Start may claim P1 again at results.
-  await page.evaluate(() => {
-    (window as typeof window & { __qaPads?: { connected: boolean }[] }).__qaPads![0].connected = false;
-  });
-  await expect.poll(async () => (await inspect()).slots).not.toContainEqual([0, 'P1']);
-  await page.evaluate(() => {
-    (window as typeof window & { __qaPads?: { connected: boolean }[] }).__qaPads![0].connected = true;
-  });
-  expect((await inspect()).slots).not.toContainEqual([0, 'P1']);
   const result = await page.evaluate(async () => {
     const scene = (window as typeof window & {
       __turenkiGame?: { scene: { getScene: (name: string) => { state: unknown } } };
@@ -73,6 +62,19 @@ test('P1 explicitly binds an unassigned gamepad Start; nonhost cannot start; rec
     return state.phase;
   });
   expect(result).toBe('results');
+
+  // Disconnect releases the active binding. If the browser preserves the
+  // identity, reconnect restores P1 but still requires an explicit Start to
+  // begin the rematch.
+  await page.evaluate(() => {
+    (window as typeof window & { __qaPads?: { connected: boolean }[] }).__qaPads![0].connected = false;
+  });
+  await expect.poll(async () => (await inspect()).slots).not.toContainEqual([0, 'P1']);
+  await page.evaluate(() => {
+    (window as typeof window & { __qaPads?: { connected: boolean }[] }).__qaPads![0].connected = true;
+  });
+  await expect.poll(async () => (await inspect()).slots).toContainEqual([0, 'P1']);
+  expect((await inspect()).phase).toBe('results');
   await button(0, 9, true);
   await expect.poll(async () => (await inspect()).phase).toBe('countdown');
   expect((await inspect()).slots).toContainEqual([0, 'P1']);

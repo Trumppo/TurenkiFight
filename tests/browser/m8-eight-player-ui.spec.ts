@@ -80,7 +80,8 @@ test('unassigned gamepads can explicitly join non-host slots through P8', async 
   for (const id of ids.slice(4)) {
     const card = page.locator(`[data-player="${id}"]`);
     await expect(card).not.toHaveClass(/is-empty|is-bot/);
-    await expect(card.locator('.hud-name')).toHaveText(`${id} HUMAN`);
+    const playerNumber = Number(id.slice(1));
+    await expect(card.locator('.hud-name')).toHaveText(`${id} PAD ${playerNumber - 2}`);
   }
 });
 

@@ -1595,7 +1595,8 @@ tasks:
   - id: M14-REJOIN
     title: Allow a dropped player to rejoin the same slot within a window
     assigned_role: gameplay-session
-    status: blocked
+    session_id: gameplay-session-20261106-rejoin
+    status: review
     priority: P1
     specification: docs/M14_ONLINE_SECURITY.md
     depends_on: [M14-RATE-LIMITS]
@@ -1605,8 +1606,9 @@ tasks:
       - "Stale frames from the old connection are rejected"
       - "After the window the slot is released and the match continues without that player"
       - "Host migration and peer authority remain out of scope"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/170
     last_updated: "2026-11-06"
-    notes: "Server keeps authority; rejoin is not host migration."
+    notes: "Server keeps authority; rejoin is not host migration. Default 30 s, configurable via startMatchServer({ rejoinWindowMs })."
 
   - id: M14-SINGLE-MACHINE-8P
     title: Measure eight-player server cost on one machine
@@ -1626,7 +1628,8 @@ tasks:
   - id: M15-INPUT-COMFORT
     title: Make four-human local play comfortable
     assigned_role: graphics-session
-    status: ready
+    session_id: graphics-session-20261106-inputcomfort
+    status: in_progress
     priority: P1
     specification: docs/LONG_TERM_PLAN.md
     depends_on: []

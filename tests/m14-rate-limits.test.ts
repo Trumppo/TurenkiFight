@@ -193,6 +193,7 @@ describe('M14 client message policy constants', () => {
       messageRateWindowMs: CLIENT_MESSAGE_WINDOW_MS,
       maxMessagesPerWindow: MAX_CLIENT_MESSAGES_PER_WINDOW,
       maxValidationFailures: MAX_CLIENT_VALIDATION_FAILURES,
+      rejoinWindowMs: 30000,
       playerIds: ['P1', 'P2'],
       snapshotHz: 20,
       startMode: 'manual',

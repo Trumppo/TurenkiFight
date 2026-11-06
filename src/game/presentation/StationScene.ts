@@ -82,6 +82,7 @@ export class StationScene extends Phaser.Scene {
     zoneSummary?: HTMLElement;
     zoneDanger?: HTMLElement;
     resetButton?: HTMLButtonElement;
+    pauseButton?: HTMLButtonElement;
     allBotsPanel?: HTMLElement;
     waveHelp?: HTMLElement;
     playerList: HTMLElement;
@@ -91,6 +92,9 @@ export class StationScene extends Phaser.Scene {
   private hitFlash = new Map<string, number>();
   private gamepadSlots = new Map<number, string>();
   private reclaimableGamepadSlots = new Set<string>();
+  /** Restore an explicit pairing after reconnect when index and device id survive. */
+  private rememberedGamepadSlots = new Map<number, { id: string; slot: string }>();
+  private connectedGamepadIndices: number[] = [];
   /** Slots in this set are driven by the pure seeded bot policy. */
   private botSlots = new Set<string>();
   /** All-bot matches reset to the normal human P1 lobby, unlike ordinary rematches. */
@@ -100,6 +104,7 @@ export class StationScene extends Phaser.Scene {
   private lastBotRemove = false;
   private lastAllBots = false;
   private lastResetKey = false;
+  private paused = false;
   private lastStart = false;
   private lastPadStart = new Map<number, boolean>();
   private lastKeyboardJoin = false;
@@ -196,6 +201,15 @@ export class StationScene extends Phaser.Scene {
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,T,L,K,J,U,I,B,V,O,SPACE,ENTER,SHIFT,ESC') as Record<string, Phaser.Input.Keyboard.Key>;
     this.revealKeyHandler = event => {
+      if (event.code === 'KeyP') {
+        if (!event.repeat) {
+          if (this.canPauseLocal()) {
+            event.preventDefault();
+            this.togglePause();
+          } else this.finishReveal();
+        }
+        return;
+      }
       if (event.key === 'Escape') {
         // Handle Esc on keydown as well as through Phaser's polled key state.
         // This keeps a quick press from being lost between scene frames.
@@ -216,14 +230,28 @@ export class StationScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     const pads = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter((p): p is Gamepad => p !== null) : [];
+    this.connectedGamepadIndices = pads.map(pad => pad.index).sort((a, b) => a - b);
     // Release missing gamepads and their button-edge state. The roster remains
     // stable; an absent controller contributes no input until explicitly rejoined.
     const connected = new Set(pads.map(pad => pad.index));
     for (const [index, id] of this.gamepadSlots) {
       if (!connected.has(index)) {
         if (id !== 'P1') this.reclaimableGamepadSlots.add(id);
+        const remembered = this.rememberedGamepadSlots.get(index);
+        if (remembered) remembered.slot = id;
         this.gamepadSlots.delete(index);
       }
+    }
+    // Browsers commonly preserve both Gamepad.index and Gamepad.id on a
+    // reconnect. Rebind only when both match, never just because an index was
+    // recycled for a different controller.
+    for (const pad of pads) {
+      const remembered = this.rememberedGamepadSlots.get(pad.index);
+      if (!remembered || !pad.id || pad.id !== remembered.id || this.gamepadSlots.has(pad.index)) continue;
+      if ([...this.gamepadSlots.values()].includes(remembered.slot)) continue;
+      if (!this.state.fighters.some(fighter => fighter.id === remembered.slot)) continue;
+      this.gamepadSlots.set(pad.index, remembered.slot);
+      this.reclaimableGamepadSlots.delete(remembered.slot);
     }
     for (const index of this.lastPadStart.keys()) if (!connected.has(index)) this.lastPadStart.delete(index);
     for (const index of this.lastJoinButtons.keys()) if (!connected.has(index)) this.lastJoinButtons.delete(index);
@@ -261,6 +289,7 @@ export class StationScene extends Phaser.Scene {
             ?? joinableSlots.find(candidate => !this.state.fighters.some(f => f.id === candidate));
           if (!id) continue;
           this.gamepadSlots.set(pad.index, id);
+          if (pad.id) this.rememberedGamepadSlots.set(pad.index, { id: pad.id, slot: id });
           this.reclaimableGamepadSlots.delete(id);
           if (!this.state.fighters.some(f => f.id === id)) this.state = this.createLobbyState([...this.state.fighters.map(f => f.id), id]);
         }
@@ -275,6 +304,7 @@ export class StationScene extends Phaser.Scene {
       const fresh = pressed && !this.lastPadStart.get(p.index);
       if (fresh && this.state.fighters.length >= 2 && !this.gamepadSlots.has(p.index) && ![...this.gamepadSlots.values()].includes('P1')) {
         this.gamepadSlots.set(p.index, 'P1');
+        if (p.id) this.rememberedGamepadSlots.set(p.index, { id: p.id, slot: 'P1' });
       }
       return fresh && this.gamepadSlots.get(p.index) === 'P1';
     });
@@ -282,7 +312,6 @@ export class StationScene extends Phaser.Scene {
     const start = this.keys.ENTER.isDown;
     if (((start && !this.lastStart) || padHostStart) && (this.state.phase === 'results' || this.canStartLocalMatch())) this.startLocalMatch();
     this.lastStart = start;
-
     // A finished match is terminal for the presentation loop. `step` keeps its
     // existing results early-out, which still advances `tick` and clears
     // `events`; calling it here therefore reported ticks beyond the recorded
@@ -292,6 +321,9 @@ export class StationScene extends Phaser.Scene {
       if (!this.resultPresentationReady) this.prepareResultsPresentation();
       // Do not bank wall time while the results screen is open: a rematch must
       // start from an empty accumulator rather than a catch-up burst.
+      this.elapsedMs = 0;
+    } else if (this.paused) {
+      // Freeze locally without calling the simulation or accumulating wall time.
       this.elapsedMs = 0;
     } else {
       this.elapsedMs = Math.min(this.elapsedMs + delta, 250);
@@ -326,6 +358,17 @@ export class StationScene extends Phaser.Scene {
     return this.state.phase !== 'lobby' || this.state.fighters.length > 1;
   }
 
+  private canPauseLocal(): boolean {
+    return this.state.phase === 'countdown' || this.state.phase === 'fighting';
+  }
+
+  private togglePause(): void {
+    if (!this.canPauseLocal()) return; // Results and lobby remain terminal/unambiguous.
+    this.paused = !this.paused;
+    this.elapsedMs = 0;
+    this.drawFighters();
+  }
+
   /**
    * Return to the lobby without reloading the page.
    *
@@ -348,10 +391,12 @@ export class StationScene extends Phaser.Scene {
       this.botSlots.clear();
       this.gamepadSlots.clear();
       this.reclaimableGamepadSlots.clear();
+      this.rememberedGamepadSlots.clear();
       this.lastPadStart.clear();
       this.lastJoinButtons.clear();
     }
     this.allBotMatch = false;
+    this.paused = false;
     this.state = this.createLobbyState(ids);
     this.lastResult = undefined;
     this.matchEvents = [];
@@ -385,6 +430,8 @@ export class StationScene extends Phaser.Scene {
       mode: this.selectedMode,
       ...(this.selectedMode === 'wave' ? { teams: this.waveTeams(ids) } : {}),
     });
+    this.paused = false;
+    this.elapsedMs = 0;
     this.lastResult = undefined;
     this.matchEvents = [];
     this.resultRanking = undefined;
@@ -402,6 +449,7 @@ export class StationScene extends Phaser.Scene {
     this.botSlots = new Set(PLAYER_IDS);
     this.gamepadSlots.clear();
     this.reclaimableGamepadSlots.clear();
+    this.rememberedGamepadSlots.clear();
     this.lastPadStart.clear();
     this.lastJoinButtons.clear();
     this.allBotMatch = true;
@@ -643,6 +691,7 @@ export class StationScene extends Phaser.Scene {
     const zoneSummary = document.getElementById('zone-summary');
     const zoneDanger = document.getElementById('zone-danger');
     const resetButton = document.getElementById('reset-match') as HTMLButtonElement | null;
+    const pauseButton = document.getElementById('pause-match') as HTMLButtonElement | null;
     const allBotsButton = document.getElementById('all-bots-match') as HTMLButtonElement | null;
     const startButton = document.getElementById('start-match') as HTMLButtonElement | null;
     const allBotsPanel = document.getElementById('lobby-actions');
@@ -684,6 +733,10 @@ export class StationScene extends Phaser.Scene {
         resetButton.blur();
       });
     }
+    pauseButton?.addEventListener('click', () => {
+      this.togglePause();
+      pauseButton.blur();
+    });
     allBotsButton?.addEventListener('click', () => {
       this.startAllBotMatch();
       allBotsButton.blur();
@@ -700,6 +753,7 @@ export class StationScene extends Phaser.Scene {
       waveHelp: waveHelp ?? undefined,
       zoneStatus: zoneStatus ?? undefined, zoneSummary: zoneSummary ?? undefined,
       zoneDanger: zoneDanger ?? undefined, resetButton: resetButton ?? undefined,
+      pauseButton: pauseButton ?? undefined,
       allBotsPanel: allBotsPanel ?? undefined, playerList, players,
     };
     this.renderDomHud();
@@ -746,6 +800,16 @@ export class StationScene extends Phaser.Scene {
       if (hud.resetButton.title !== resetLabel) hud.resetButton.title = resetLabel;
       if (hud.resetButton.getAttribute('aria-label') !== resetLabel) hud.resetButton.setAttribute('aria-label', resetLabel);
     }
+    if (hud.pauseButton) {
+      const enabled = this.canPauseLocal();
+      hud.pauseButton.disabled = !enabled;
+      hud.pauseButton.textContent = this.paused ? 'RESUME' : 'PAUSE';
+      hud.pauseButton.setAttribute('aria-label', this.paused
+        ? 'Resume local match (P)'
+        : 'Pause local match (P). Disabled during lobby and results.');
+      hud.pauseButton.title = this.paused ? 'Resume the local match (P)' : 'Pause the local match (P)';
+      hud.pauseButton.setAttribute('aria-pressed', String(this.paused));
+    }
     if (hud.allBotsPanel) hud.allBotsPanel.hidden = this.state.phase !== 'lobby';
     if (hud.waveHelp) hud.waveHelp.hidden = this.selectedMode !== 'wave' || this.state.phase !== 'lobby';
     if (hud.startButton) hud.startButton.disabled = !this.canStartLocalMatch();
@@ -768,7 +832,11 @@ export class StationScene extends Phaser.Scene {
       const slotNumber = Number(id.slice(1));
       nodes.name.textContent = this.state.phase === 'lobby'
         ? this.selectedMode === 'wave' && fighter ? `${id} ${isBot ? 'ENEMY' : 'PLAYER'}`
-          : id === 'P1' ? 'P1 HOST' : isBot ? id : fighter ? `${id} HUMAN` : slotNumber === 2 ? `${id} KEY/PAD` : slotNumber <= 4 ? `${id} PAD` : `${id} PAD/BOT`
+          : id === 'P1' ? (this.gamepadSlotFor(id) !== undefined ? `${id} PAD ${this.gamepadSlotFor(id)}` : 'P1 HOST / KEY')
+            : isBot ? id
+              : fighter && this.gamepadSlotFor(id) !== undefined ? `${id} PAD ${this.gamepadSlotFor(id)}`
+                : fighter && id === 'P2' ? `${id} KEYBOARD`
+                  : fighter ? `${id} NO PAD` : slotNumber === 2 ? `${id} KEY/PAD` : slotNumber <= 4 ? `${id} PAD` : `${id} PAD/BOT`
         : id;
       const canEditBot = this.state.phase === 'lobby' && id !== 'P1' && (!fighter || isBot);
       nodes.action.hidden = !canEditBot;
@@ -820,17 +888,25 @@ export class StationScene extends Phaser.Scene {
     let statusText: string;
     let fullStatusText: string;
     if (this.state.phase === 'lobby') {
-      fullStatusText = 'LOBBY · P1 HOST · P2 KEYBOARD/GAMEPAD · P3–P4 GAMEPAD · P5–P8 GAMEPAD OR BOT · B/V BOT SHORTCUTS · O: ALL BOTS (P1 BOT-DRIVEN) · ENTER/PAD START';
+      const padStatus = this.connectedGamepadIndices.map(index => {
+        const slot = this.gamepadSlots.get(index);
+        return `PAD ${index} ${slot ? `→ ${slot}` : 'READY · PRESS VIEW'}`;
+      }).join(' · ');
+      const pairing = padStatus ? ` · ${padStatus}` : '';
+      fullStatusText = `LOBBY · P1 HOST · P2 KEYBOARD/GAMEPAD · P3–P4 GAMEPAD · P5–P8 GAMEPAD OR BOT · B/V BOT SHORTCUTS · O: ALL BOTS (P1 BOT-DRIVEN) · ENTER/PAD START${pairing}`;
       if (this.selectedMode === 'wave') {
         const hasBot = this.state.fighters.some(fighter => this.botSlots.has(fighter.id));
         const ready = this.waveRosterReady();
         fullStatusText += ' · WAVE RULE: AT LEAST ONE HUMAN AND ONE BOT; HUMANS ARE PLAYERS, BOTS ARE ENEMIES.';
         statusText = ready
-          ? 'WAVE READY · HUMANS=PLAYERS · BOTS=ENEMIES · ENTER TO START'
-          : `WAVE NEEDS HUMAN + BOT${hasBot ? '' : ' · ADD BOT'} · HUMANS=PLAYERS, BOTS=ENEMIES`;
+          ? `WAVE READY · HUMANS=PLAYERS · BOTS=ENEMIES · ENTER TO START${pairing}`
+          : `WAVE NEEDS HUMAN + BOT${hasBot ? '' : ' · ADD BOT'} · HUMANS=PLAYERS, BOTS=ENEMIES${pairing}`;
       } else {
-        statusText = window.innerHeight <= 540 ? 'SHIFT/PAD JOIN · START' : 'SHIFT/PAD JOIN · ENTER';
+        statusText = window.innerHeight <= 540 ? `SHIFT/PAD JOIN${pairing} · START` : `SHIFT/PAD JOIN${pairing} · ENTER`;
       }
+    }
+    else if (this.paused && this.canPauseLocal()) {
+      fullStatusText = statusText = 'PAUSED · LOCAL MATCH FROZEN · PRESS P OR RESUME';
     }
     else if (this.state.phase === 'results') {
       const winner = this.lastResult?.mode === (this.state.mode ?? 'score-brawl') ? this.lastResult.winner : resultWinner(this.state);
@@ -863,8 +939,13 @@ export class StationScene extends Phaser.Scene {
     if (hud.status.textContent !== statusText) hud.status.textContent = statusText;
     hud.status.classList.toggle('is-wave-lobby', this.state.phase === 'lobby' && this.selectedMode === 'wave');
     hud.status.classList.toggle('is-results', this.state.phase === 'results');
+    hud.status.classList.toggle('is-paused', this.paused && this.canPauseLocal());
     if (hud.status.getAttribute('aria-label') !== fullStatusText) hud.status.setAttribute('aria-label', fullStatusText);
     if (hud.status.title !== fullStatusText) hud.status.title = fullStatusText;
+  }
+
+  private gamepadSlotFor(id: string): number | undefined {
+    return [...this.gamepadSlots.entries()].find(([, slot]) => slot === id)?.[0];
   }
 
   /** Compute the authoritative podium once, when results begin, not while formatting HUD text. */
