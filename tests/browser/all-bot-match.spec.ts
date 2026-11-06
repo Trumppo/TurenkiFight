@@ -63,14 +63,14 @@ test('ALL BOTS starts a visibly bot-driven P1-P8 match, finishes unattended, and
   });
   // Cross-check the real Phaser input adapter against the two-run deterministic
   // simulation proof below, including the complete event stream.
-  // M11 (hit stop + knockback): this match is pinned at tick 665,
-  // fingerprint 20d2e967 and 72 events. The optional hit-stop/knockback
-  // counters are omitted at the result, so this fingerprint reflects the
-  // changed positions and event stream only. Previous M11 speed-only pins were
-  // tick 526, 904d3be1 and 75 events (and 493, 9723adb8, 71 events at
-  // 1.3 px/tick). These counts are recorded, not a trend claim.
-  expect(finalState.tick).toBe(665);
-  expect(browserRun).toEqual({ fingerprint: '20d2e967', eventCount: 72 });
+  // M11 hit stop/knockback + M12 bot mobility with the point-blank jump-in
+  // guard: this match is pinned at tick 663. The optional hit-stop/knockback
+  // counters are omitted at the result, so the fingerprint reflects positions
+  // and events only. Previous speed-only pins were tick 526, 904d3be1 and
+  // 75 events (and 493, 9723adb8, 71 events at 1.3 px/tick). These counts are
+  // recorded, not a trend claim.
+  expect(finalState.tick).toBe(663);
+  expect(browserRun).toEqual({ fingerprint: '446f06f7', eventCount: 72 });
   expect(errors).toEqual([]);
 
   await expect(page.locator('#reset-match')).toHaveAttribute('aria-label', /human P1 and no bots/i);
