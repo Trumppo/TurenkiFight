@@ -190,7 +190,14 @@ function isTargetable(fighter: Fighter): boolean {
   return !fighter.eliminated && fighter.koTimer === 0;
 }
 
-/** Nearest targetable opponent; ties are broken by stable player id. */
+/**
+ * Nearest targetable opponent; ties are broken by stable player id.
+ *
+ * In team modes (ADR 0005) a teammate is never a target: an enemy bot walks to
+ * the nearest player and a player's bot walks to the nearest enemy. A teamless
+ * fighter keeps the historical free-for-all behaviour, so every existing mode
+ * and replay is unchanged.
+ */
 function nearestOpponent(state: GameState, selfId: string): Fighter | undefined {
   const self = state.fighters.find(fighter => fighter.id === selfId);
   if (!self) return undefined;
@@ -198,6 +205,7 @@ function nearestOpponent(state: GameState, selfId: string): Fighter | undefined 
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const fighter of state.fighters) {
     if (fighter.id === selfId || !isTargetable(fighter)) continue;
+    if (self.team !== undefined && fighter.team === self.team) continue;
     const distance = (fighter.x - self.x) ** 2 + (fighter.y - self.y) ** 2;
     if (distance < bestDistance || (distance === bestDistance && best !== undefined && fighter.id.localeCompare(best.id) < 0)) {
       best = fighter;

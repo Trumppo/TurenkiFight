@@ -1,10 +1,19 @@
-import type { Direction, Fighter, GameState, PlayerInput, Move, GameEvent, ModeId, EndReason, PlayerId, SimObject } from './types';
+import type { Direction, Fighter, GameState, PlayerInput, Move, GameEvent, ModeId, EndReason, PlayerId, SimObject, Team, WaveRules, WaveState } from './types';
 import { aliveCount, modeRules, modeWinner } from './modes';
 import { isZoneDamageTick, zoneRangeAt, ZONE_DAMAGE_HP } from './zone';
 export { MATCH_TICKS } from './modes';
-export { MODE_RULES, aliveCount, compareTieBreak, modeMetric, modeRules, modeWinner } from './modes';
-export type { EndReason, ModeId, ModeRules, RespawnPolicy, TieBreakCriterion } from './types';
-export type MatchSetup = { ids?: string[]; phase?: GameState['phase']; mode?: ModeId };
+export { MODE_RULES, aliveCount, compareTieBreak, modeMetric, modeRules, modeWinner, WAVE_RULES } from './modes';
+export type { EndReason, ModeId, ModeRules, RespawnPolicy, Team, TieBreakCriterion, WaveRules, WaveState } from './types';
+export type MatchSetup = {
+  ids?: string[];
+  phase?: GameState['phase'];
+  mode?: ModeId;
+  /**
+   * Explicit combat sides. Required in `wave` mode (both sides non-empty) and
+   * optional elsewhere: an omitted team keeps the historical free-for-all.
+   */
+  teams?: Readonly<Record<PlayerId, Team>>;
+};
 export const TICK_RATE = 60;
 export const COUNTDOWN_TICKS = 180;
 /**
@@ -137,11 +146,31 @@ function spawn(index: number, count: number): { x: number; y: number } {
   return { x: 70 + (244 * index) / Math.max(1, count - 1), y: 148 + (index % 2) * 35 };
 }
 /**
+ * Enemy slots active in a wave. The first wave activates `firstWaveEnemies`
+ * slots and each later wave one more, capped by the roster. Slot order is the
+ * stable roster order (spawn-point order), so the result is deterministic.
+ */
+function waveEnemyCount(wave: WaveRules, index: number, enemySlots: number): number {
+  return Math.min(enemySlots, wave.firstWaveEnemies + index);
+}
+/**
+ * True only when both fighters carry a side and it is the same side. A
+ * teamless fighter keeps the historical free-for-all behaviour with everyone.
+ */
+function sameTeam(a: Fighter | undefined, b: Fighter | undefined): boolean {
+  return a?.team !== undefined && b?.team !== undefined && a.team === b.team;
+}
+/**
  * Match creation accepts either the historical positional form
  * (`createState(ids, phase)`) or a setup object (`createState({ mode })`).
  * Score Brawl is the default and omits `mode` so the state keeps its canonical
  * shape. The M11 `hitStopTicks`/`knockback` fields are optional and absent when
  * zero, so an idle state keeps its pre-M11 bytes.
+ *
+ * Wave mode additionally assigns explicit teams and starts wave 1 immediately:
+ * `wave.index` counts cleared waves (0 while wave 1 is being fought), the
+ * pre-match countdown is still the normal `countdownTicks`, and enemy slots
+ * beyond the first wave's count start eliminated until their wave revives them.
  */
 export function createState(setup?: MatchSetup): GameState;
 export function createState(ids?: string[], phase?: GameState['phase'], setup?: MatchSetup): GameState;
@@ -157,16 +186,50 @@ export function createState(
   if (ids.length < 1 || new Set(ids).size !== ids.length) throw new Error('Roster must contain unique players');
   const mode = setup.mode && setup.mode !== 'score-brawl' ? setup.mode : undefined;
   const rules = modeRules(mode);
+  const teams = setup.teams;
+  if (teams) {
+    const roster = new Set(ids);
+    for (const [id, team] of Object.entries(teams)) {
+      if (!roster.has(id)) throw new Error('Team assignment contains an unknown player');
+      if (team !== 'players' && team !== 'enemies') throw new Error('Invalid team');
+    }
+  }
+  const wave = rules.wave;
+  if (wave) {
+    if (!teams) throw new Error('Wave mode requires a team assignment');
+    const missing = ids.filter(id => teams[id] === undefined);
+    if (missing.length) throw new Error('Wave mode requires a team for every fighter');
+    const players = ids.filter(id => teams[id] === 'players').length;
+    const enemies = ids.filter(id => teams[id] === 'enemies').length;
+    if (players < 1 || enemies < 1) throw new Error('Wave mode needs at least one player and one enemy');
+  }
   const extras: Partial<Fighter> = {};
   if (rules.fragScoring) extras.frags = 0;
   if (rules.trackDeaths) extras.deaths = 0;
   if (rules.trackDamage) extras.damageDealt = 0;
   if (rules.respawn === 'eliminate') extras.eliminated = false;
+  const fighters = ids.map((id, i) => ({
+    id, ...spawn(i, ids.length), z: 0, vz: 0, facing: (i % 2 ? -1 : 1) as -1 | 1,
+    health: 100, score: 0, koCount: 0, hitsReceived: 0, attackCooldown: 0, attackFrames: 0, attackMove: null,
+    hitTargets: [], hitstun: 0, koTimer: 0, protection: 0, previousButtons: [], ...extras,
+    ...(teams?.[id] ? { team: teams[id] } : {}),
+  }));
+  let waveState: WaveState | undefined;
+  if (wave) {
+    const active = waveEnemyCount(wave, 0, fighters.filter(f => f.team === wave.enemyTeam).length);
+    let seen = 0;
+    for (const fighter of fighters) {
+      if (fighter.team !== wave.enemyTeam) continue;
+      // Enemy slots that are not part of wave 1 wait eliminated at their spawn
+      // point; a later wave revives them with the same transition as a clear.
+      if (seen++ >= active) { fighter.eliminated = true; fighter.health = 0; }
+    }
+    waveState = { index: 0, countdownTicks: 0, remaining: active };
+  }
   return { tick: 0, phase, countdownTicks: COUNTDOWN_TICKS, remainingTicks: rules.timerTicks, events: [],
     ...(mode ? { mode } : {}),
-    fighters: ids.map((id, i) => ({ id, ...spawn(i, ids.length), z: 0, vz: 0, facing: (i % 2 ? -1 : 1) as -1 | 1,
-      health: 100, score: 0, koCount: 0, hitsReceived: 0, attackCooldown: 0, attackFrames: 0, attackMove: null,
-      hitTargets: [], hitstun: 0, koTimer: 0, protection: 0, previousButtons: [], ...extras })) };
+    ...(waveState ? { wave: waveState } : {}),
+    fighters };
 }
 export function standings(state: GameState): { id: string; rank: number; score: number }[] {
   const sorted = [...state.fighters].sort((a,b) => b.score-a.score || b.koCount-a.koCount || a.hitsReceived-b.hitsReceived || a.id.localeCompare(b.id));
@@ -182,7 +245,8 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     if (copy.knockback === 0) delete copy.knockback;
     return copy;
   });
-  const next: GameState = { ...state, tick: state.tick + 1, fighters, events: [] };
+  const next: GameState = { ...state, tick: state.tick + 1, fighters, events: [],
+    ...(state.wave ? { wave: { ...state.wave } } : {}) };
   if (objects.length) next.objects = objects;
   else delete next.objects;
   if (next.hitStopTicks === 0) delete next.hitStopTicks;
@@ -199,6 +263,7 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
         break;
       case 'last-man-standing':
       case 'deathmatch':
+      case 'wave':
         event('MatchEnded', { reason, winner });
         break;
     }
@@ -214,7 +279,12 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     target.attackFrames = 0;
     target.hitstun = 0;
     delete target.knockback;
-    if (rules.respawn === 'eliminate') {
+    // Wave enemies leave the current wave instead of respawning. The wave
+    // lifecycle revives the active slots when the next wave starts.
+    if (wave && target.team === wave.enemyTeam) {
+      target.eliminated = true;
+      target.koTimer = 0;
+    } else if (rules.respawn === 'eliminate') {
       target.eliminated = true;
     } else {
       target.koTimer = 180;
@@ -226,17 +296,25 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
    * damage, KO counters, hit stop and knockback are identical so a bottle is a
    * real hit rather than a special case. `facing` lets a projectile keep the
    * direction it was thrown even if the thrower has turned since.
+   *
+   * Teams are filtered here as well as in the hit scans: a teammate is never a
+   * valid target, so friendly fire cannot land even if a scan is changed later.
+   * In wave mode only the scoring team writes score (hit and KO alike), so
+   * enemy hits on players stay scoreless as M13 requires.
    */
+  const wave = rules.wave;
+  const scores = (attacker: Fighter): boolean => !wave || attacker.team === wave.scoringTeam;
   const knockouts: { attacker: PlayerId; target: PlayerId }[] = [];
   const applyHit = (attacker: Fighter, target: Fighter, move: Move, facing: Direction = attacker.facing): void => {
+    if (sameTeam(attacker, target)) return;
     const profile = MOVES[move];
-    if (rules.hitScoring) attacker.score += profile.points;
+    if (rules.hitScoring && scores(attacker)) attacker.score += profile.points;
     if (rules.trackDamage) attacker.damageDealt = (attacker.damageDealt ?? 0) + profile.damage;
     target.hitsReceived++;
     target.health = Math.max(0, target.health - profile.damage);
     event('HitLanded', { attacker: attacker.id, target: target.id, move });
     if (target.health === 0 && !target.koTimer) {
-      if (rules.koScoring) { attacker.score += 500; target.score -= 200; }
+      if (rules.koScoring && scores(attacker)) { attacker.score += 500; target.score -= 200; }
       attacker.koCount++;
       event('Knockout', { attacker: attacker.id, target: target.id });
       knockOut(target);
@@ -348,6 +426,8 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     if (elapsed < m.startup || elapsed >= m.startup+m.active) continue;
     for (const t of fighters) {
       if (a.id === t.id || t.koTimer || t.eliminated || t.protection || a.hitTargets.includes(t.id)) continue;
+      // A teammate is never a target, so no auto-target and no friendly fire.
+      if (sameTeam(a, t)) continue;
       const dx=(t.x-a.x)*a.facing;
       if (dx > 0 && dx <= m.reach && Math.abs(t.y-a.y) <= m.depth && Math.abs(t.z-a.z) <= m.height) hits.push({attacker:a,target:t,move:a.attackMove});
     }
@@ -462,8 +542,9 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     const airborne = objects.filter(object => object.state === 'airborne')
       .sort((a, b) => objectNumber(a.id) - objectNumber(b.id));
     for (const object of airborne) {
+      const thrower = fighters.find(fighter => fighter.id === object.holder);
       const targets = fighters.filter(fighter => fighter.id !== object.holder && canHandleObjects(fighter) &&
-        !fighter.protection &&
+        !fighter.protection && !sameTeam(thrower, fighter) &&
         Math.abs(fighter.x - object.x) <= THROW_HIT_RADIUS &&
         Math.abs(fighter.y - object.y) <= THROW_HIT_RADIUS &&
         Math.abs(fighter.z - object.z) <= THROW_HIT_HEIGHT);
@@ -473,7 +554,6 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
         a.id.localeCompare(b.id));
       const target = targets[0];
       if (target) {
-        const thrower = fighters.find(fighter => fighter.id === object.holder);
         if (thrower) applyHit(thrower, target, 'throw', (object.vx ?? THROW_SPEED_X) < 0 ? -1 : 1);
         object.state = 'broken';
         delete object.holder;
@@ -529,6 +609,48 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
       knockOut(f);
       // A death still reads: extend an active hit stop to the KO length.
       next.hitStopTicks = Math.max(next.hitStopTicks ?? 0, KO_HIT_STOP_TICKS);
+    }
+  }
+  if (wave) {
+    const progress = next.wave;
+    if (!progress) throw new Error('Wave mode state is missing wave progress');
+    const enemySlots = fighters.reduce((count, f) => count + (f.team === wave.enemyTeam ? 1 : 0), 0);
+    // A between-wave countdown is a match timer: it advances with the tick even
+    // during hit stop, like the match clock and KO timers.
+    if (progress.countdownTicks > 0) {
+      progress.countdownTicks--;
+      if (progress.countdownTicks === 0) {
+        // Start the next wave: revive the active enemy slots at their original
+        // spawn points, in stable roster order, with the normal respawn
+        // protection so a wave cannot be spawn-camped.
+        const active = waveEnemyCount(wave, progress.index, enemySlots);
+        let seen = 0;
+        for (const f of fighters) {
+          if (f.team !== wave.enemyTeam) continue;
+          if (seen++ >= active) continue;
+          const point = spawn(fighters.indexOf(f), fighters.length);
+          f.x = point.x; f.y = point.y; f.z = 0; f.vz = 0;
+          f.health = 100; f.protection = 90; f.hitstun = 0; f.koTimer = 0;
+          f.attackMove = null; f.attackFrames = 0;
+          delete f.knockback;
+          delete f.eliminated;
+          event('Respawned', { target: f.id });
+        }
+      }
+    }
+    // `remaining` is derived from the fighter list, never incremented by hand,
+    // so combat knockouts and inactive slots cannot drift from the counter.
+    progress.remaining = fighters.reduce((count, f) =>
+      count + (f.team === wave.enemyTeam && !f.eliminated ? 1 : 0), 0);
+    if (progress.remaining === 0 && progress.countdownTicks === 0) {
+      progress.index++;
+      if (progress.index >= wave.count) {
+        // A clear on the tick the timer would also expire ends the match as
+        // `waves-cleared`: the clear happened in combat before timers advanced.
+        finish('waves-cleared', modeWinner(fighters, rules));
+        return next;
+      }
+      progress.countdownTicks = wave.countdownTicks;
     }
   }
   next.remainingTicks--;
