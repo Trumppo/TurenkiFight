@@ -1628,7 +1628,8 @@ tasks:
   - id: M15-INPUT-COMFORT
     title: Make four-human local play comfortable
     assigned_role: graphics-session
-    status: ready
+    session_id: graphics-session-20261106-inputcomfort
+    status: in_progress
     priority: P1
     specification: docs/LONG_TERM_PLAN.md
     depends_on: []

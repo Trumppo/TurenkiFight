@@ -1,5 +1,32 @@
 import { expect, test } from '@playwright/test';
 
+test('same browser gamepad index and id reclaim their paired slot on reconnect', async ({ page }) => {
+  await page.addInitScript(() => {
+    const pad = {
+      index: 0, connected: true, id: 'Stable QA controller', mapping: 'standard',
+      axes: [0, 0, 0, 0],
+      buttons: Array.from({ length: 16 }, () => ({ pressed: false, touched: false, value: 0 })),
+      timestamp: 0,
+    };
+    Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: () => pad.connected ? [pad] : [] });
+    (window as typeof window & { __stablePad?: typeof pad }).__stablePad = pad;
+  });
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  await page.evaluate(() => { (window as any).__stablePad.buttons[8].pressed = true; });
+  await expect(page.locator('.hud-player[data-player="P2"] .hud-name')).toHaveText('P2 PAD 0');
+  await page.evaluate(() => {
+    const pad = (window as any).__stablePad;
+    pad.buttons[8].pressed = false;
+    pad.connected = false;
+  });
+  await expect.poll(() => page.evaluate(() => [...(window as any).__turenkiGame.scene.getScene('StationScene').gamepadSlots.entries()])).toEqual([]);
+  await expect(page.locator('.hud-player[data-player="P2"] .hud-name')).toHaveText('P2 KEYBOARD');
+  await page.evaluate(() => { (window as any).__stablePad.connected = true; });
+  await expect.poll(() => page.evaluate(() => [...(window as any).__turenkiGame.scene.getScene('StationScene').gamepadSlots.entries()])).toEqual([[0, 'P2']]);
+  await expect(page.locator('.hud-player[data-player="P2"] .hud-name')).toHaveText('P2 PAD 0');
+});
+
 test('disconnected pad releases its slot; replacement joins without a phantom fighter', async ({ page }) => {
   await page.addInitScript(() => {
     type Pad = { index: number; axes: number[]; buttons: { pressed: boolean }[] };
@@ -32,9 +59,11 @@ test('disconnected pad releases its slot; replacement joins without a phantom fi
     };
   });
   await expect.poll(async () => (await snapshot()).players).toEqual(['P1']);
+  await expect(page.locator('#match-status')).toContainText('PAD 0 READY');
   await page.evaluate(() => { (window as any).__pads[0].buttons[8].pressed = true; });
   await expect.poll(async () => (await snapshot()).slots).toEqual([[0, 'P2']]);
   await expect.poll(async () => (await snapshot()).players).toEqual(['P1', 'P2']);
+  await expect(page.locator('#match-status')).toContainText('PAD 0 → P2');
 
   // Disconnect during lobby. The roster is stable, while device bindings are removed.
   await page.evaluate(() => { (window as any).__pads[0] = null; });
@@ -42,6 +71,7 @@ test('disconnected pad releases its slot; replacement joins without a phantom fi
   await expect.poll(async () => (await snapshot()).joinEdges).toEqual([]);
   await expect.poll(async () => (await snapshot()).startEdges).toEqual([]);
   expect((await snapshot()).players).toEqual(['P1', 'P2']);
+  await expect(page.locator('#match-status')).not.toContainText('PAD 0');
 
   // A different device claims the existing P2 slot, even with no free roster growth.
   await page.evaluate(() => {

@@ -65,7 +65,7 @@ test('station SVG loads and four-player HUD is visible after gamepad joins', asy
   expect(state.textures).toBe(true);
   expect(state.station).toBe(true);
   expect(state.hud).toHaveLength(4);
-  expect(state.hud).toEqual(['P1 HOST', 'P2 HUMAN', 'P3 HUMAN', 'P4 HUMAN'].map(id => ({
+  expect(state.hud).toEqual(['P1 HOST / KEY', 'P2 PAD 0', 'P3 PAD 1', 'P4 PAD 2'].map(id => ({
     id, score: '0', health: 'H100', label: `${id.startsWith('P1') ? 'P1' : id.slice(0, 2)}, score 0, health 100`,
   })));
   expect(missing).toEqual([]);
