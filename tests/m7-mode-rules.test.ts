@@ -61,6 +61,10 @@ function deathmatchFixture(): { initial: GameState; frames: PlayerInput[][] } {
 // (87be89ee...): the same hits/KOs happen on the same ticks with the same ids.
 const LMS_FINAL_STATE_SHA256 = '89148435de86f36ca8ec24dd42011a84f6735537dfcffd4ef4e0de7f071e5f09';
 const LMS_ORDERED_EVENTS_SHA256 = '87be89ee9228dfab5463a69f3f014f6dea8048a3367f561a58ef1a89ecf872cd';
+// M10 zone note: this Deathmatch fixture ends at tick 186, before the first
+// shrink at tick 1080, so the zone is inert here and its fingerprint is
+// intentionally unchanged. Zone-crossing coverage and its own pins live in
+// `tests/m10-deathmatch-zone.test.ts`.
 const DEATHMATCH_FINAL_STATE_SHA256 = '6e92d22dd779d6a193ffc8d97f8066937a97e643bdedd26257eda20a5b0f03e3';
 const DEATHMATCH_ORDERED_EVENTS_SHA256 = 'eba64c270d28a4ae02d839cb0d45b0fc6c65b878c8fccbc4c39cb614cde164f1';
 

@@ -430,6 +430,10 @@ if (import.meta.env.DEV) {
       const scene = game.scene.getScene('OnlineScene') as OnlineScene | null;
       scene?.debugRenderSnapshot(state);
     },
+    zoneGraphicsVisible(): boolean {
+      const scene = game.scene.getScene('OnlineScene') as OnlineScene | null;
+      return scene?.debugZoneVisible() ?? false;
+    },
     hudFontSize(): string {
       const card = document.querySelector<HTMLElement>('.hud-player');
       return card ? window.getComputedStyle(card).fontSize : '';

@@ -22,6 +22,12 @@ export type ModeRules = {
   fragScoring: boolean;
   trackDamage: boolean;
   trackDeaths: boolean;
+  /**
+   * Enables the shrinking safe platform from `zone.ts`: outside damage and
+   * spawn clamping. Only Deathmatch sets this, so Score Brawl and Last Man
+   * Standing keep their byte-identical historical behaviour.
+   */
+  shrinkingZone: boolean;
 };
 export type PlayerInput = { playerId: PlayerId; moveX: -1 | 0 | 1; moveY: -1 | 0 | 1; jump: boolean; punch?: boolean; kick?: boolean; jumpkick?: boolean; attack?: boolean };
 /**

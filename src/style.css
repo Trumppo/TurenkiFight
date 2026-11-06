@@ -24,6 +24,12 @@ p { color: #c2cbd2; }
   pointer-events: none;
 }
 .hud-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 6px; min-height: 17px; }
+.zone-status { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; min-width: 0; padding: 1px 2px; color: #fff1b7; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
+.zone-status[hidden] { display: none; }
+.zone-summary { color: #f4d38d; font-weight: 800; letter-spacing: .025em; }
+.zone-status.is-warning .zone-summary { color: #ffcf86; }
+.zone-status.is-warning.is-warning-flash .zone-summary { color: #ff765b; text-shadow: 0 0 4px rgba(255, 118, 91, .65); }
+.zone-danger { color: #ff9f90; font-size: 14px; font-weight: 900; }
 #match-timer { font-size: clamp(16px, 2vw, 28px); line-height: 1.1; letter-spacing: .04em; white-space: nowrap; }
 #match-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #match-status.is-results { overflow: visible; text-overflow: clip; white-space: normal; font-size: 14px; line-height: 1.15; }
@@ -37,6 +43,8 @@ p { color: #c2cbd2; }
 .hud-reset:disabled { opacity: .45; cursor: default; }
 .hud-player.is-eliminated { border-left-color: #ed786c; background: #382932; color: #ffd2c7; }
 .hud-player.is-eliminated .hud-health { color: #ff9f90; font-weight: 700; }
+.hud-player.is-zone-danger { border-left-color: #ff765b; background: #4a3329; }
+.hud-player.is-zone-danger .hud-health { color: #ffb28e; font-weight: 800; }
 .hud-player.is-bot { border-left-color: #77cfdf; background: #203644; }
 #player-hud.mode-specific .hud-player { font-size: 14px; }
 .online-mode { white-space: nowrap; }
