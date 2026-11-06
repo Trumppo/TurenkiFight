@@ -1579,7 +1579,8 @@ tasks:
   - id: M14-RATE-LIMITS
     title: Enforce per-connection message rate and size limits
     assigned_role: gameplay-session
-    status: blocked
+    session_id: gameplay-session-20261106-ratelimit
+    status: in_progress
     priority: P1
     specification: docs/M14_ONLINE_SECURITY.md
     depends_on: [M14-TLS-ROOMCODES]
