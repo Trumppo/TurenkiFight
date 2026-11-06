@@ -1481,7 +1481,8 @@ tasks:
   - id: M12-ITEM-CORE
     title: Add a deterministic throwable object to the simulation
     assigned_role: gameplay-session
-    status: blocked
+    session_id: gameplay-session-20261106-items
+    status: in_progress
     priority: P1
     specification: docs/M12_OBJECTS.md
     depends_on: [M11-HITSTOP-KNOCKBACK]
