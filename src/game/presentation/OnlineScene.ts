@@ -10,6 +10,7 @@ import { createRetroExtraTextures } from './retroExtras';
 import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
 import { CueBridge } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
+import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePresentation';
 
 const MODE_NAMES: Record<ModeId, string> = {
   'score-brawl': 'Score Brawl',
@@ -31,6 +32,7 @@ export class OnlineScene extends Phaser.Scene {
   private readonly onFrame?: (now: number) => void;
   private fighterSprites = new Map<string, Phaser.GameObjects.Image>();
   private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
+  private zoneGraphics?: Phaser.GameObjects.Graphics;
   private poses = new Map<string, FighterPose>();
   private previous = new Map<string, { x: number; y: number; z: number }>();
   private lastHealth = new Map<string, number>();
@@ -39,6 +41,9 @@ export class OnlineScene extends Phaser.Scene {
     timer: HTMLElement;
     status: HTMLElement;
     mode: HTMLElement;
+    zoneStatus?: HTMLElement;
+    zoneSummary?: HTMLElement;
+    zoneDanger?: HTMLElement;
     playerList: HTMLElement;
     players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>;
   };
@@ -91,6 +96,7 @@ export class OnlineScene extends Phaser.Scene {
         color: '#fff1b7', backgroundColor: '#172536', fontFamily: 'monospace', fontSize: '14px', padding: { x: 8, y: 6 },
       }).setDepth(1000);
     }
+    this.zoneGraphics = this.add.graphics().setDepth(122).setVisible(false);
     this.initDomHud();
     this.audio = createAudioPresentation(audioControlsHost());
     this.audioBridge = new CueBridge(cue => this.audio?.director.playCue(cue), true);
@@ -113,6 +119,7 @@ export class OnlineScene extends Phaser.Scene {
     this.drawFighters(state, now);
     const connectionState = this.controller.connectionState;
     const modeState = connectionState === 'closed' || connectionState === 'error' ? null : state;
+    this.drawZone(modeState);
     this.renderHud(state, modeState);
     this.onFrame?.(now);
   }
@@ -125,7 +132,13 @@ export class OnlineScene extends Phaser.Scene {
 
   /** Development harness hook for rendering a supplied authoritative snapshot without stepping it. */
   debugRenderSnapshot(state: GameState | null): void {
+    this.drawZone(state);
     this.renderHud(state);
+  }
+
+  /** Read-only dev diagnostic used by the browser zone parity test. */
+  debugZoneVisible(): boolean {
+    return this.zoneGraphics?.visible ?? false;
   }
 
   /** Test/debug hook; returns the interpolated positions and pose actually drawn. */
@@ -204,6 +217,11 @@ export class OnlineScene extends Phaser.Scene {
     }
   }
 
+  private drawZone(state: GameState | null): void {
+    if (!this.zoneGraphics) return;
+    drawZoneGraphics(this.zoneGraphics, zonePresentation(state), state?.tick ?? 0);
+  }
+
   private pose(fighter: Fighter, previous?: { x: number; y: number; z: number }, tick = 0): FighterPose {
     if (fighter.eliminated) return 'ko';
     if (fighter.koTimer) return 'ko';
@@ -220,6 +238,9 @@ export class OnlineScene extends Phaser.Scene {
     const timer = document.getElementById('match-timer');
     const status = document.getElementById('match-status');
     const mode = document.getElementById('match-mode');
+    const zoneStatus = document.getElementById('zone-status');
+    const zoneSummary = document.getElementById('zone-summary');
+    const zoneDanger = document.getElementById('zone-danger');
     const playerList = document.getElementById('player-hud');
     if (!timer || !status || !mode || !playerList) return;
     const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>();
@@ -230,7 +251,10 @@ export class OnlineScene extends Phaser.Scene {
       const health = root.querySelector('.hud-health') as HTMLElement | null;
       if (id && score && health) players.set(id, { root, score, health });
     }
-    this.domHud = { timer, status, mode, playerList, players };
+    this.domHud = {
+      timer, status, mode, zoneStatus: zoneStatus ?? undefined, zoneSummary: zoneSummary ?? undefined,
+      zoneDanger: zoneDanger ?? undefined, playerList, players,
+    };
   }
 
   private renderHud(state: GameState | null, modeState: GameState | null = state): void {
@@ -242,6 +266,18 @@ export class OnlineScene extends Phaser.Scene {
       : 'ONLINE MODE · SCORE BRAWL (SERVER DEFAULT)';
     if (hud.mode.textContent !== modeText) hud.mode.textContent = modeText;
     hud.playerList.classList.toggle('mode-specific', modeId === 'last-man-standing' || modeId === 'deathmatch');
+    const zone = zonePresentation(modeState);
+    if (hud.zoneStatus) {
+      hud.zoneStatus.hidden = !zone.active;
+      hud.zoneStatus.classList.toggle('is-warning', zone.warning);
+    }
+    if (hud.zoneSummary) hud.zoneSummary.textContent = zoneSummaryText(zone);
+    if (hud.zoneDanger) {
+      hud.zoneDanger.hidden = zone.dangerIds.length === 0;
+      hud.zoneDanger.textContent = zone.dangerIds.length
+        ? `DANGER OUTSIDE SAFE AREA · ${zone.dangerIds.join(' · ')}`
+        : '';
+    }
     if (state) {
       const seconds = Math.ceil(state.remainingTicks / 60);
       const timerText = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:` +
@@ -254,6 +290,8 @@ export class OnlineScene extends Phaser.Scene {
       const fighter = state?.fighters.find(f => f.id === id);
       nodes.root.classList.toggle('is-empty', !fighter);
       nodes.root.classList.toggle('is-eliminated', !!fighter?.eliminated);
+      const outsideZone = !!fighter && zone.dangerIds.includes(id);
+      nodes.root.classList.toggle('is-zone-danger', outsideZone);
       let scoreText: string;
       let healthText: string;
       let label: string;
@@ -285,7 +323,8 @@ export class OnlineScene extends Phaser.Scene {
       }
       if (nodes.score.textContent !== scoreText) nodes.score.textContent = scoreText;
       if (nodes.health.textContent !== healthText) nodes.health.textContent = healthText;
-      if (nodes.root.getAttribute('aria-label') !== label) nodes.root.setAttribute('aria-label', label);
+      const accessibleLabel = outsideZone ? `${label}, outside the safe zone` : label;
+      if (nodes.root.getAttribute('aria-label') !== accessibleLabel) nodes.root.setAttribute('aria-label', accessibleLabel);
     }
     const status = this.controller.status;
     const text = status.detail ? `${status.message} · ${status.detail}` : status.message;

@@ -17,6 +17,7 @@ import { audioControlsHost, createAudioPresentation, type AudioPresentation } fr
 import { CueBridge, type AudioCue } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
 import { MAX_PLAYERS } from '../protocol/players';
+import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePresentation';
 
 const PLAYER_IDS = Array.from({ length: MAX_PLAYERS }, (_, index) => `P${index + 1}`);
 
@@ -59,11 +60,15 @@ export class StationScene extends Phaser.Scene {
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private fighterSprites = new Map<string, Phaser.GameObjects.Image>();
   private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
+  private zoneGraphics?: Phaser.GameObjects.Graphics;
   private koMarkers = new Map<string, Phaser.GameObjects.Text>();
   private domHud?: {
     timer: HTMLElement;
     status: HTMLElement;
     modeSelect: HTMLSelectElement;
+    zoneStatus?: HTMLElement;
+    zoneSummary?: HTMLElement;
+    zoneDanger?: HTMLElement;
     resetButton?: HTMLButtonElement;
     allBotsPanel?: HTMLElement;
     playerList: HTMLElement;
@@ -141,6 +146,7 @@ export class StationScene extends Phaser.Scene {
         color: '#fff1b7', backgroundColor: '#172536', fontFamily: 'monospace', fontSize: '14px', padding: { x: 8, y: 6 },
       }).setDepth(1000);
     }
+    this.zoneGraphics = this.add.graphics().setDepth(122).setVisible(false);
     // Scores, player labels and match status are rendered in the responsive
     // DOM HUD. It occupies the reserved scoreboard band on desktop and moves
     // above the playfield on narrow screens.
@@ -464,6 +470,7 @@ export class StationScene extends Phaser.Scene {
   }
 
   private drawFighters(): void {
+    drawZoneGraphics(this.zoneGraphics!, zonePresentation(this.state), this.state.tick);
     const liveIds = new Set(this.state.fighters.map(fighter => fighter.id));
     for (const [id, sprite] of this.fighterSprites) {
       if (liveIds.has(id)) continue;
@@ -530,6 +537,9 @@ export class StationScene extends Phaser.Scene {
     const timer = document.getElementById('match-timer');
     const status = document.getElementById('match-status');
     const modeSelect = document.getElementById('game-mode') as HTMLSelectElement | null;
+    const zoneStatus = document.getElementById('zone-status');
+    const zoneSummary = document.getElementById('zone-summary');
+    const zoneDanger = document.getElementById('zone-danger');
     const resetButton = document.getElementById('reset-match') as HTMLButtonElement | null;
     const allBotsButton = document.getElementById('all-bots-match') as HTMLButtonElement | null;
     const allBotsPanel = document.getElementById('lobby-actions');
@@ -574,7 +584,11 @@ export class StationScene extends Phaser.Scene {
       this.startAllBotMatch();
       allBotsButton.blur();
     });
-    this.domHud = { timer, status, modeSelect, resetButton: resetButton ?? undefined, allBotsPanel: allBotsPanel ?? undefined, playerList, players };
+    this.domHud = {
+      timer, status, modeSelect, zoneStatus: zoneStatus ?? undefined, zoneSummary: zoneSummary ?? undefined,
+      zoneDanger: zoneDanger ?? undefined, resetButton: resetButton ?? undefined,
+      allBotsPanel: allBotsPanel ?? undefined, playerList, players,
+    };
     this.renderDomHud();
   }
 
@@ -587,6 +601,18 @@ export class StationScene extends Phaser.Scene {
     if (hud.timer.textContent !== timerText) hud.timer.textContent = timerText;
     hud.modeSelect.value = this.selectedMode;
     hud.modeSelect.disabled = this.state.phase !== 'lobby';
+    const zone = zonePresentation(this.state);
+    if (hud.zoneStatus) {
+      hud.zoneStatus.hidden = !zone.active;
+      hud.zoneStatus.classList.toggle('is-warning', zone.warning);
+    }
+    if (hud.zoneSummary) hud.zoneSummary.textContent = zoneSummaryText(zone);
+    if (hud.zoneDanger) {
+      hud.zoneDanger.hidden = zone.dangerIds.length === 0;
+      hud.zoneDanger.textContent = zone.dangerIds.length
+        ? `DANGER OUTSIDE SAFE AREA · ${zone.dangerIds.join(' · ')}`
+        : '';
+    }
     if (hud.resetButton) {
       const resetEnabled = this.canResetLocal();
       if (hud.resetButton.disabled !== !resetEnabled) hud.resetButton.disabled = !resetEnabled;
@@ -601,6 +627,8 @@ export class StationScene extends Phaser.Scene {
       const isBot = this.botSlots.has(id) && !!fighter;
       nodes.root.classList.toggle('is-empty', !fighter);
       nodes.root.classList.toggle('is-eliminated', !!fighter?.eliminated);
+      const outsideZone = !!fighter && zone.dangerIds.includes(id);
+      nodes.root.classList.toggle('is-zone-danger', outsideZone);
       nodes.root.classList.toggle('is-bot', isBot);
       nodes.root.classList.toggle('is-lobby-slot', this.state.phase === 'lobby');
       const slotNumber = Number(id.slice(1));
@@ -651,7 +679,8 @@ export class StationScene extends Phaser.Scene {
       if (nodes.health.textContent !== healthText) nodes.health.textContent = healthText;
       nodes.score.title = scoreTitle;
       nodes.health.title = healthTitle;
-      if (nodes.root.getAttribute('aria-label') !== label) nodes.root.setAttribute('aria-label', label);
+      const accessibleLabel = outsideZone ? `${label}, outside the safe zone` : label;
+      if (nodes.root.getAttribute('aria-label') !== accessibleLabel) nodes.root.setAttribute('aria-label', accessibleLabel);
     }
     let statusText: string;
     let fullStatusText: string;
