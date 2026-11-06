@@ -1705,7 +1705,8 @@ tasks:
   - id: M13-WAVE-UI
     title: Show wave state and the wave mode in the HUD and selector
     assigned_role: graphics-session
-    status: blocked
+    session_id: graphics-session-20261106-waveui
+    status: in_progress
     priority: P1
     specification: docs/M13_WAVE_MODE.md
     depends_on: [M13-WAVE-RULES]

@@ -30,11 +30,40 @@ p { color: #c2cbd2; }
 .zone-status.is-warning .zone-summary { color: #ffcf86; }
 .zone-status.is-warning.is-warning-flash .zone-summary { color: #ff765b; text-shadow: 0 0 4px rgba(255, 118, 91, .65); }
 .zone-danger { color: #ff9f90; font-size: 14px; font-weight: 900; }
+.wave-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 14px;
+  min-width: 0;
+  padding: 2px 4px;
+  border-top: 1px solid #526071;
+  border-bottom: 1px solid #526071;
+  background: rgba(32, 42, 54, .96);
+  color: #d9f3e9;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: .035em;
+}
+.wave-status[hidden] { display: none; }
+.wave-status strong { color: #f4d38d; }
+#wave-countdown { color: #ffcf86; }
+#wave-countdown[hidden] { display: none; }
 .object-hint { padding: 1px 2px; color: #b9eee0; font-size: 12px; font-weight: 800; line-height: 1.15; letter-spacing: .04em; }
 .object-hint[hidden] { display: none; }
 #match-timer { font-size: clamp(16px, 2vw, 28px); line-height: 1.1; letter-spacing: .04em; white-space: nowrap; }
 #match-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #match-status.is-results { overflow: visible; text-overflow: clip; white-space: normal; font-size: 14px; line-height: 1.15; }
+#match-status.is-wave-lobby {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  font-size: 14px;
+  line-height: 1.2;
+}
 .mode-control { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .mode-control select { pointer-events: auto; min-height: 24px; max-width: 190px; padding: 1px 4px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-size: clamp(14px, 1vw, 16px); }
 .mode-control select:disabled { opacity: 1; color: #fff1b7; }
@@ -203,6 +232,9 @@ p { color: #c2cbd2; }
   cursor: pointer;
 }
 .lobby-actions button:hover { background: #2b5260; }
+.lobby-actions .lobby-start { border-color: #e3b85e; background: #3c3425; }
+.lobby-actions .lobby-start:hover:not(:disabled) { background: #5a4729; }
+.lobby-actions button:disabled { opacity: .5; cursor: not-allowed; }
 .lobby-actions p { margin: 0; color: #d7e6e4; font-size: 14px; line-height: 1.35; }
 .lobby-actions strong { color: #ffe39a; }
 .lobby-actions kbd { padding: 1px 5px; border: 1px solid #c7a76a; background: #293849; color: #fff1b7; font: inherit; font-weight: 800; }

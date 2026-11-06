@@ -26,6 +26,7 @@
                   <option value="score-brawl">Score Brawl</option>
                   <option value="last-man-standing">Last Man Standing</option>
                   <option value="deathmatch">Deathmatch</option>
+                  <option value="wave">Wave (Asemahalli)</option>
                 </select>
               </label>
               <button id="reset-match" class="hud-reset" type="button">RESET</button>
@@ -40,6 +41,11 @@
           <div id="zone-status" class="zone-status" aria-live="polite" aria-atomic="true" hidden>
             <span id="zone-summary" class="zone-summary"></span>
             <strong id="zone-danger" class="zone-danger" hidden></strong>
+          </div>
+          <div id="wave-status" class="wave-status" aria-live="polite" aria-atomic="true" hidden>
+            <strong id="wave-number">WAVE 1/3</strong>
+            <span id="wave-enemies">ENEMIES 1</span>
+            <span id="wave-countdown" hidden></span>
           </div>
           <div id="object-hint" class="object-hint" aria-live="polite" hidden>T · PICK UP / THROW</div>
           <div id="player-hud" aria-label="Players and scores">
@@ -64,8 +70,10 @@
         </section>
       </div>
       <section id="lobby-actions" class="lobby-actions" aria-label="Local match actions">
+        <button id="start-match" class="lobby-start" type="button">START MATCH</button>
         <button id="all-bots-match" type="button" aria-label="Start an all-bot match. P1 is bot-driven. Keyboard shortcut O.">ALL BOTS · P1 BOT <kbd>O</kbd></button>
         <p>Fill all 8 slots with bots and start. <strong>P1 is bot-driven</strong>. Shortcut: <kbd>O</kbd>.</p>
+        <p id="wave-lobby-help" hidden>Wave requires at least one human and one bot. Humans are allies; bots are enemies.</p>
       </section>
       <details class="controls">
         <summary>Näppäimistö P1–P2 · gamepad P2–P8 · P5–P8: gamepad tai botti</summary>
