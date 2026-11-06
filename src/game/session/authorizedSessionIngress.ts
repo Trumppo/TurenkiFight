@@ -69,6 +69,33 @@ export class AuthorizedSessionIngress {
     return revoked;
   }
 
+  /**
+   * Detaches an active connection but keeps its player slots claimed for the
+   * rejoin window. Queued controls and the connection's sequence domain are
+   * revoked immediately, so the dropped peer cannot steer the fighter or send
+   * a stale frame while its slot is reserved.
+   */
+  reserve(connectionId: string): string[] {
+    const reserved = this.roster.reserve(connectionId);
+    for (const playerId of reserved) this.buffer.revokePlayer(playerId);
+    this.buffer.revokeConnection(connectionId);
+    return reserved;
+  }
+
+  /** Reattaches a complete reservation to a new trusted connection. */
+  reclaim(connectionId: string, playerIds: readonly string[]): void {
+    this.roster.reclaim(connectionId, playerIds);
+    this.buffer.revokeConnection(connectionId);
+  }
+
+  /** Releases an expired reservation; its slots are no longer claimed. */
+  releaseReserved(connectionId: string): string[] {
+    const revoked = this.roster.releaseReserved(connectionId);
+    for (const playerId of revoked) this.buffer.revokePlayer(playerId);
+    this.buffer.revokeConnection(connectionId);
+    return revoked;
+  }
+
   /** Drops queued frames without revoking slots or sequence domains. */
   discardPending(): void {
     this.buffer.discardPending();

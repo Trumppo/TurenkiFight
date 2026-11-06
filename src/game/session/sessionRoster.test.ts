@@ -77,4 +77,50 @@ describe('M2 session roster authorization', () => {
     }
     expect(roster.playerCount).toBe(0);
   });
+
+  it('reserves a detached connection and reclaims the complete slot set atomically', () => {
+    const roster = new SessionRoster();
+    roster.join('host', 'P1');
+    roster.join('guest', 'P2');
+    expect(roster.reserve('guest')).toEqual(['P2']);
+    expect(roster.playerCount).toBe(2);
+    expect(roster.reservedCount).toBe(1);
+    expect(roster.hasConnection('guest')).toBe(false);
+    expect(roster.owns('guest', 'P2')).toBe(false);
+    expect(roster.isHost('guest')).toBe(false);
+    expect(roster.isHost('host')).toBe(true);
+
+    // A partial or mixed claim is rejected before any ownership changes.
+    expect(() => roster.reclaim('new', ['P1'])).toThrow(/not reserved/);
+    expect(() => roster.reclaim('new', ['P2', 'P1'])).toThrow(/not reserved/);
+    expect(roster.reservedCount).toBe(1);
+
+    roster.reclaim('new', ['P2']);
+    expect(roster.reservedCount).toBe(0);
+    expect(roster.owns('new', 'P2')).toBe(true);
+    expect(roster.playerCount).toBe(2);
+    // Rejoin never transfers host authority.
+    expect(roster.isHost('new')).toBe(false);
+    expect(roster.isHost('host')).toBe(true);
+  });
+
+  it('reclaims a multi-slot reservation only in full and releases it on expiry', () => {
+    const roster = new SessionRoster();
+    roster.join('pair', 'P1');
+    roster.join('pair', 'P2');
+    expect(roster.reserve('pair')).toEqual(['P1', 'P2']);
+    expect(roster.playerCount).toBe(2);
+
+    expect(() => roster.reclaim('half', ['P1'])).toThrow(/full/);
+    expect(roster.reservedCount).toBe(1);
+    roster.reclaim('full', ['P1', 'P2']);
+    expect(roster.owns('full', 'P1')).toBe(true);
+    expect(roster.owns('full', 'P2')).toBe(true);
+
+    expect(roster.reserve('full')).toEqual(['P1', 'P2']);
+    expect(roster.releaseReserved('full')).toEqual(['P1', 'P2']);
+    expect(roster.playerCount).toBe(0);
+    expect(roster.reservedCount).toBe(0);
+    expect(roster.releaseReserved('full')).toEqual([]);
+  });
 });

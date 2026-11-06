@@ -114,6 +114,7 @@ const VALIDATION_FAILURE_CODES: ReadonlySet<string> = new Set([
   'tick-exhausted',
   'unauthorized-player',
   'player-owned',
+  'reservation-mismatch',
   'duplicate-input',
   'invalid-state',
   // Room-level roster denial (the claim names a slot outside the roster).

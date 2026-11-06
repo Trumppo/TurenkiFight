@@ -126,6 +126,9 @@ describe('M7 real-match server mode', () => {
         // The historical exact-roster cap is still available and keeps this
         // one-shot runbook's fifth-connection expectation unchanged.
         connectionMargin: 0,
+        // This runbook predates rejoin; keep its immediate-revoke assertion
+        // explicit. Rejoin behaviour has dedicated M14 coverage.
+        rejoinWindowMs: 0,
         log: line => statusLines.push(line),
       });
       openServers.push(server);
@@ -385,6 +388,7 @@ describe('M7 serve:match command surface', () => {
       messageRateWindowMs: 1000,
       maxMessagesPerWindow: 240,
       maxValidationFailures: 5,
+      rejoinWindowMs: 30000,
       playerIds: PLAYERS,
       snapshotHz: 20,
       startMode: 'auto',
@@ -395,8 +399,8 @@ describe('M7 serve:match command surface', () => {
     const parsed = JSON.parse(line) as Record<string, unknown>;
     expect(Object.keys(parsed).sort()).toEqual([
       'host', 'kind', 'maxConnections', 'maxMessageBytes', 'maxMessagesPerWindow',
-      'maxValidationFailures', 'messageRateWindowMs', 'mode', 'players', 'port', 'roomCode', 'roomId',
-      'secure', 'snapshotHz', 'startMode', 'tickRate', 'url',
+      'maxValidationFailures', 'messageRateWindowMs', 'mode', 'players', 'port', 'rejoinWindowMs',
+      'roomCode', 'roomId', 'secure', 'snapshotHz', 'startMode', 'tickRate', 'url',
     ]);
     expect(parsed.kind).toBe('match-server-ready');
     expect(parsed.mode).toBe('deathmatch');

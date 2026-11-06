@@ -39,6 +39,7 @@ export type SessionEnvelopeDenialCode =
   | 'unauthorized-player'
   | 'duplicate-input'
   | 'player-owned'
+  | 'reservation-mismatch'
   | 'session-full'
   | 'tick-roster-full'
   | 'invalid-state';
@@ -55,6 +56,15 @@ export type SessionEnvelopeDenied = {
 };
 
 export type SessionEnvelopeResult = SessionEnvelopeAccepted | SessionEnvelopeDenied;
+
+/**
+ * Optional handling intent. A rejoin reattaches an already reserved slot set
+ * instead of claiming free slots; it is chosen by the authoritative session
+ * from its own reservation state, never by client payload.
+ */
+export type SessionEnvelopeHandleOptions = {
+  readonly rejoinPlayerIds?: readonly string[];
+};
 
 export type SessionEnvelopeGatewayOptions = {
   /** Room/session binding for this gateway; client payloads cannot select it. */
@@ -77,6 +87,7 @@ function classifyStateError(message: string): SessionEnvelopeDenialCode {
   if (/Session full/.test(message)) return 'session-full';
   if (/Tick roster full/.test(message)) return 'tick-roster-full';
   if (/Player slot already owned/.test(message)) return 'player-owned';
+  if (/not reserved|Reservation/.test(message)) return 'reservation-mismatch';
   if (/Unauthorized player input/.test(message)) return 'unauthorized-player';
   if (/Duplicate player input/.test(message)) return 'duplicate-input';
   if (/Replayed input sequence/.test(message)) return 'replayed-sequence';
@@ -120,9 +131,13 @@ export class SessionEnvelopeGateway {
     this.ingress = new AuthorizedSessionIngress(options.startTick, options.maxLead, options.maxPlayers);
   }
 
-  handle(binding: TrustedSessionBinding, message: string | Uint8Array): SessionEnvelopeResult {
+  handle(
+    binding: TrustedSessionBinding,
+    message: string | Uint8Array,
+    options: SessionEnvelopeHandleOptions = {},
+  ): SessionEnvelopeResult {
     try {
-      return this.handleTrusted(binding, message);
+      return this.handleTrusted(binding, message, options);
     } catch (error) {
       if (error instanceof SessionEnvelopeError) return denied(error.code, error.message);
       if (error instanceof Error) return denied(classifyStateError(error.message), error.message);
@@ -133,6 +148,24 @@ export class SessionEnvelopeGateway {
   /** Trusted disconnect revokes slots, queued input and the sequence domain. */
   disconnect(connectionId: string): string[] {
     const revoked = this.ingress.disconnect(connectionId);
+    this.sequences.delete(connectionId);
+    return revoked;
+  }
+
+  /**
+   * Detaches a connection but keeps its slots claimed for the rejoin window.
+   * The old sequence domain is deleted, so a later rejoin starts at a fresh
+   * sequence and the dropped connection can never be replayed onto it.
+   */
+  reserve(connectionId: string): string[] {
+    const reserved = this.ingress.reserve(connectionId);
+    this.sequences.delete(connectionId);
+    return reserved;
+  }
+
+  /** Releases a reservation after its window; its slots are free again. */
+  releaseReserved(connectionId: string): string[] {
+    const revoked = this.ingress.releaseReserved(connectionId);
     this.sequences.delete(connectionId);
     return revoked;
   }
@@ -178,7 +211,11 @@ export class SessionEnvelopeGateway {
     return this.ingress.playerCapacity;
   }
 
-  private handleTrusted(binding: TrustedSessionBinding, message: string | Uint8Array): SessionEnvelopeResult {
+  private handleTrusted(
+    binding: TrustedSessionBinding,
+    message: string | Uint8Array,
+    options: SessionEnvelopeHandleOptions,
+  ): SessionEnvelopeResult {
     if (!binding || !isSessionIdentifier(binding.connectionId) || !isSessionIdentifier(binding.roomId)) {
       return denied('invalid-binding', 'Trusted connection binding required');
     }
@@ -192,7 +229,9 @@ export class SessionEnvelopeGateway {
       return denied('room-mismatch', 'Envelope room does not match the connection binding');
     }
 
-    if (header.kind === 'join-request') return this.handleJoin(connectionId, message, header);
+    if (header.kind === 'join-request') {
+      return this.handleJoin(connectionId, message, header, options.rejoinPlayerIds);
+    }
     if (!this.ingress.hasConnection(connectionId)) return denied('not-joined', 'Connection has no authorized slots');
 
     const sequenceDenial = this.checkSequence(connectionId, header.sequence);
@@ -226,6 +265,7 @@ export class SessionEnvelopeGateway {
     connectionId: string,
     message: string | Uint8Array,
     header: ClientEnvelopeHeader,
+    rejoinPlayerIds?: readonly string[],
   ): SessionEnvelopeResult {
     if (this.ingress.hasConnection(connectionId)) return denied('already-joined', 'Connection already joined');
     const sequenceDenial = this.checkSequence(connectionId, header.sequence);
@@ -233,7 +273,7 @@ export class SessionEnvelopeGateway {
     const envelope = decodeClientEnvelope(message, header);
     if (envelope.kind !== 'join-request') return denied('invalid-state', 'Join envelope expected');
     if (this.requiredRoomCode !== null) {
-      // Admission happens before `joinMany`, so a rejected join allocates no slot.
+      // Admission happens before any slot allocation, including a rejoin.
       if (envelope.roomCode === undefined) {
         return denied('room-code-required', 'Join requires the server room code');
       }
@@ -241,7 +281,20 @@ export class SessionEnvelopeGateway {
         return denied('room-code-mismatch', 'Join room code does not match this server');
       }
     }
-    this.ingress.joinMany(connectionId, envelope.playerIds);
+    if (rejoinPlayerIds !== undefined) {
+      const claimed = [...envelope.playerIds].sort();
+      const reserved = [...rejoinPlayerIds].sort();
+      if (claimed.length !== reserved.length || claimed.some((id, index) => id !== reserved[index])) {
+        return denied('reservation-mismatch', 'Join does not match the complete reserved slot set');
+      }
+      // Reattaching transfers the reservation; it never allocates a second slot.
+      this.ingress.reclaim(connectionId, envelope.playerIds);
+      // The new connection starts a fresh sequence domain even if its trusted
+      // connection ID was somehow reused; the old counter is never resurrected.
+      this.sequences.delete(connectionId);
+    } else {
+      this.ingress.joinMany(connectionId, envelope.playerIds);
+    }
     this.sequences.set(connectionId, header.sequence);
     return accepted(envelope);
   }

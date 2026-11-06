@@ -187,7 +187,9 @@ describe('M2 WebSocket prototype authoritative session', () => {
   });
 
   it('revokes a non-host disconnect but keeps the match running without implicit authority', () => {
-    const { room, messages } = captureRoom();
+    // This historical revocation test disables the M14 rejoin window; the
+    // reserved-slot behaviour has dedicated coverage.
+    const { room, messages } = captureRoom({ rejoinWindowMs: 0 });
     joinAll(room);
     room.beginMatch();
     for (let tick = 0; tick < 3; tick++) room.stepOnce();
