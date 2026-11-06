@@ -37,7 +37,7 @@ test('VIS-04 retro HUD preserves readable timer and eight-slot layout', async ({
   expect(data.players).toHaveLength(8);
   expect(data.players.map(player => player.id)).toEqual(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8']);
   expect(data.players.every(player => player.visible && player.name && player.score !== null && player.health !== null)).toBe(true);
-  expect(data.players[0]).toMatchObject({ name: 'P1 HOST', score: '0', health: 'H100', ariaLabel: 'P1, score 0, health 100' });
+  expect(data.players[0]).toMatchObject({ name: 'P1 HOST / KEY', score: '0', health: 'H100', ariaLabel: 'P1, score 0, health 100' });
   expect(data.players.slice(4).every(player => player.name?.includes('PAD/BOT'))).toBe(true);
   expect(data.hudBottom).toBeLessThanOrEqual(data.scoreboardBottom + 1);
 });
