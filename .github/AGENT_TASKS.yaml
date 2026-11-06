@@ -1423,7 +1423,7 @@ tasks:
     title: Make bots jump more and use jump-in attacks
     assigned_role: gameplay-session
     session_id: gameplay-session-20261106-botmob
-    status: in_progress
+    status: review
     priority: P1
     specification: docs/BOT_MOBILITY_AND_THROWS.md
     depends_on: [M8-BOT-OPPONENT]
@@ -1435,6 +1435,7 @@ tasks:
       - "Inputs remain a pure function of state, tick and seed; the same seed reproduces the same match"
       - "Bot fixture pins are updated deliberately with old and new values reported"
       - npm test, npm run build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/160
     last_updated: "2026-11-06"
     notes: "Owner report 2026-11-06: bots barely jump. Root cause: jump is allowed only while farther than kick reach at 2 percent per tick, and the +20 percent speed shortened that window. Throwing does not exist yet; see the design note."
 
