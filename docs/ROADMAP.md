@@ -82,7 +82,7 @@
 
 ## Milestone 5 – Architecture decision (literature + single-machine evidence)
 
-**Status: DECIDED — ARCHITECTURE A (owner approved 2026-11-02).** The owner changed the gate on 2026-11-02: no LAN, internet or TURN runs were required. The decision rests on documented sources plus single-machine measurements, weighted toward low latency and smooth motion. Milestone acceptance as a whole remains a separate owner action.
+**Status: ACCEPTED — ARCHITECTURE A (decision 2026-11-02, milestone accepted by the owner 2026-11-06).** The owner changed the gate on 2026-11-02: no LAN, internet or TURN runs were required. The decision rests on documented sources plus single-machine measurements, weighted toward low latency and smooth motion. Acceptance covers the decision and its evidence record; it does not claim measured network performance, and every network field stays `NOT_MEASURED`.
 
 - [x] Measure what does not need a network: bytes per input and snapshot per player, snapshot size at 10/20/30 Hz, tick duration p50/p95/p99 over 7200 ticks, snapshot encode cost, process CPU and memory (PR #107)
 - [x] Review sources for transport behaviour (TCP head-of-line blocking, SCTP/UDP DataChannels), NAT/CGNAT and TURN cost, browser support and backgrounding (PR #106)

@@ -2,9 +2,22 @@
 
 Tämä on projektin päivitettävä tavoitedokumentti harness- ja agenttityölle. Aktiivinen tavoite on rajattu itsenäiseksi kokonaisuudeksi, jolla on todennettavat hyväksymisehdot. Päivitä tavoite omistajan päätöksen ja uuden näytön perusteella; älä merkitse suunnitelmaa toteutetuksi, hyväksytyksi tai yhdistetyksi ilman näyttöä ja omistajan lupaa.
 
-## Tila 2026-11-05
+## Tila 2026-11-06
 
-Ei avointa koodityötä. Kaikki dokumentoidut tavoitteet on viety loppuun agentin osalta tai ne odottavat omistajan päätöstä. `main` = `4153156` (PR #152 yhdistetty), 68 validoitua tehtävää, 395 yksikkötestiä, täysi selainsarja vihreä sekä oletus- että retro-buildissa, ja etärepossa on vain `main`. Koodi on MIT, taide ja ääni CC0.
+Playtest-kierros on käyty ja omistaja on antanut tuomionsa. `main` = `8896e33`, 68 validoitua tehtävää, 395
+yksikkötestiä, täysi selainsarja vihreä sekä oletus- että retro-buildissa, etärepossa vain `main`. Koodi on MIT,
+taide ja ääni CC0. **M5 on hyväksytty** (2026-11-06); M7, M8 ja M9 käydään läpi yksitellen.
+
+**Omistajan päätökset 2026-11-06:**
+
+1. **Playtest OK** — kolme muotoa, kahdeksan pelaajaa botteja vastaan ja ALL BOTS -tila toimivat käytännössä.
+2. **Deathmatch saa oman identiteetin:** kutistuva laiturialue (C2). Deathmatch poistetaan vain, jos tätä ei toteuteta;
+   omistaja valitsi toteutuksen. Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md). Poimittavat esineet ovat
+   erillinen tuleva objektijärjestelmä kaikille muodoille, eivät Deathmatchin identiteetti.
+3. **Äänet hyväksytty tällä erää** placeholder-tasolla; oikeat samplet ja miksaus jäävät myöhemmäksi.
+4. **Kahdeksan pelaajaa viedään verkkoon**, mutta toteutus voidaan lykätä. Mittaus (kaksi konetta) on yhä edellytys
+   verkkoluvuille, jotka pysyvät `NOT_MEASURED`.
+5. **M5 hyväksytty.** M7, M8 ja M9 käsitellään yksitellen.
 
 | Alue | Tila |
 | --- | --- |
