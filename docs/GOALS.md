@@ -2,24 +2,39 @@
 
 Tämä on projektin päivitettävä tavoitedokumentti harness- ja agenttityölle. Aktiivinen tavoite on rajattu itsenäiseksi kokonaisuudeksi, jolla on todennettavat hyväksymisehdot. Päivitä tavoite omistajan päätöksen ja uuden näytön perusteella; älä merkitse suunnitelmaa toteutetuksi, hyväksytyksi tai yhdistetyksi ilman näyttöä ja omistajan lupaa.
 
-## Tila 2026-11-05
+## Tila 2026-11-06
 
-Ei avointa koodityötä. Kaikki dokumentoidut tavoitteet on viety loppuun agentin osalta tai ne odottavat omistajan päätöstä. `main` = `4153156` (PR #152 yhdistetty), 68 validoitua tehtävää, 395 yksikkötestiä, täysi selainsarja vihreä sekä oletus- että retro-buildissa, ja etärepossa on vain `main`. Koodi on MIT, taide ja ääni CC0.
+Playtest-kierros on käyty ja **milestonet M5, M7, M8 ja M9 on hyväksytty yksitellen 2026-11-06.** `main` = `8896e33`, 68 validoitua tehtävää, 395 yksikkötestiä, täysi selainsarja vihreä sekä oletus- että retro-buildissa, etärepossa vain `main`. Koodi on MIT, taide ja ääni CC0.
+
+**Omistajan päätökset 2026-11-06:**
+
+1. **M5 hyväksytty** — keskitetty WebSocket-auktoriteetti on hyväksytty kuljetusperusta. Verkkoluvut pysyvät `NOT_MEASURED`.
+2. **M7 hyväksytty** — paikallinen polish, Mesku, placeholder-äänet ja muotorakenne hyväksytty.
+3. **M8 hyväksytty** — kahdeksan pelaajaa, botit ja ALL BOTS hyväksytty; ruuhkan luettavuus on kirjattu raja.
+4. **M9 hyväksytty** — tulossivu, hahmot, luettavuusparannukset ja verkkotuloskerros hyväksytty.
+5. **Playtest OK** kolmelle muodolle, kahdeksalle pelaajalle botteja vastaan ja ALL BOTS -tilalle.
+6. **Äänet hyväksytty placeholder-tasolla**; oikeat samplet ja miksaus jäävät myöhemmäksi.
+7. **Kahdeksan pelaajaa viedään verkkoon**, mutta toteutus lykätään; mittaus (kaksi konetta) on edellytys luvuille.
+8. **Deathmatch saa oman identiteetin:** kutistuva laiturialue. Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md). Poimittavat esineet ovat erillinen objektijärjestelmä kaikille muodoille.
 
 | Alue | Tila |
 | --- | --- |
 | M1 ja M1.5 | hyväksytty rajoituksin (2026-10-30 / 2026-11-01) |
-| M2 kuljetuspäätös | päätetty: keskitetty WebSocket-auktoriteetti ([ADR 0001](adr/0001-network-topology.md)); verkkoa ei mitattu |
-| Pelimuodot | Score Brawl, Last Man Standing, Deathmatch — säännöt, UI, online-kentät ja QA valmiit; tasapeli vahvistettu |
-| Botit ja kahdeksan pelaajaa | toteutettu ja QA:ttu; kahdeksan pelaajaa tuettu, mutta tiivis 8 hahmon ruuhka ei ole täysin luettava |
-| Areena ja visuaalit | Mesku hyväksytty, VIS05-02/03 hyväksytty, 2×-tila ja ulkoinen HUD |
-| Tulossivu | sijoitusjärjestys, voittajan paljastus, pronssikolmikko, 4.–8. sija, tasapeli, ohitus, reduced motion, RESET |
+| M5 kuljetuspäätös | **hyväksytty 2026-11-06**: keskitetty WebSocket-auktoriteetti ([ADR 0001](adr/0001-network-topology.md)); verkkoa ei mitattu |
+| M7 pelimuodot ja polish | **hyväksytty 2026-11-06**; äänet placeholder-tasolla |
+| M8 botit ja kahdeksan pelaajaa | **hyväksytty 2026-11-06**; ruuhkan luettavuus kirjattu raja |
+| M9 tulossivu ja esitys | **hyväksytty 2026-11-06** |
+| M10 Deathmatchin identiteetti | suunniteltu 2026-11-06, toteutus käynnissä (kutistuva laiturialue) |
+| Areena ja visuaalit | Mesku hyväksytty, VIS05-02/03 hyväksytty, 2x-tila ja ulkoinen HUD |
+| Pelimuodot | Score Brawl, Last Man Standing ja Deathmatch; Deathmatchin identiteetti uudistuu M10:ssä |
+| Tulossivu | sijoitusjärjestys, voittajan paljastus, pronssikolmikko, 4.-8. sija, tasapeli, ohitus, reduced motion, RESET |
 | Luettavuus | KO säilyttää siluetin ja saa pelaajatunnuksen; retro-osumapalautteessa 1 täyttöframe / 6 |
-| Ääni | placeholder-moottori ja 12 cue'ta (ml. voittoääni); oikeat samplet ja miksaus deferoitu |
-| Hahmot | P1–P4 ennallaan, P5–P8 omat siluetit (asemapäällikkö, kioskimyyjä, opiskelija, työmatkalainen); retro-grafiikat kattavat nyt P1–P8 |
-| Verkkopeli | serveri, botit ja selainclient toimivat LAN/VPN-prototypyypinä; tuloskentät ja rematch samassa prosessissa (`--rematch`), ei TLS/auth/rate limitiä |
+| Ääni | placeholder-moottori ja 12 cue'ta (ml. voittoääni); hyväksytty tällä tasolla, samplet myöhemmin |
+| Hahmot | P1-P4 ennallaan, P5-P8 omat siluetit; retro-grafiikat kattavat P1-P8 |
+| Verkkopeli | serveri, botit ja selainclient LAN/VPN-prototypyppinä; tuloskentät ja --rematch, ei TLS/auth/rate limitiä |
+| Lisenssit | koodi MIT, taide ja ääni CC0 |
 
-**Avoimet omistajapäätökset:** (1) kolmen muodon playtest-tuomio, (2) kahdeksan pelaajan playtest ja käytännön maksimi, (3) viedäänkö kahdeksan verkkoon (vaatii kaksikoneisen mittauksen), (4) äänen samplet/miksaus ja voittoäänen kuuntelu, (5) milestone-hyväksynnät (M5, M7, M8, M9).
+**Avoimena 2026-11-06:** (1) oikeat äänisamplet ja miksaus, kun pyydät; (2) kahdeksan pelaajan verkkototeutus on päätetty mutta lykätty, ja mittaus (kaksi konetta) puuttuu; (3) Deathmatchin kutistuvan laiturin säätö oman playtestin jälkeen; (4) Deathmatch poistetaan, jos uusi identiteetti ei toimi.
 
 ## Lähitulevaisuus: mitä seuraavaksi kehitetään
 
@@ -27,10 +42,10 @@ Tämä osio on **designerin ehdotus**, ei omistajan hyväksymä suunnitelma. Jok
 
 ### A. Odottaa omistajan näyttöä (ei agentin tehtävissä)
 
-1. **Playtest: kolme muotoa.** Score Brawl, Deathmatch ja Last Man Standing samalla kokoonpanolla. Päätös: ovatko säännöt ja kierron pituus kohdallaan.
-2. **Playtest: kahdeksan pelaajaa botteja vastaan.** Päätös: onko kahdeksan luettava ja hauska, vai pitäisikö käytännön maksimin laskea. QA on jo todennut, että tiivis ruuhka ei ole täysin luettava.
-3. **Kuuntelu: äänet.** Voittoääni ja `match-end` menevät hetken päällekkäin. Kuuntelupäätös ratkaisee, tarvitaanko duckaus tai viive, ja tulevatko oikeat samplet myöhemmin.
-4. **Kahden koneen mittaus.** Ainoa tapa saada verkkopelille oikeat luvut (kaista, RTT, palvelinkuorma, TURN). Agentit eivät voi tehdä tätä; kaikki verkkoluvut pysyvät `NOT_MEASURED`, kunnes mitataan.
+1. **Playtest: kolme muotoa.** ✅ Tehty 2026-11-06: omistaja hyväksyi muodot, mutta totesi Deathmatchin liian lähelle Score Brawlia. Deathmatch saa uuden identiteetin M10:ssä.
+2. **Playtest: kahdeksan pelaajaa botteja vastaan.** ✅ Tehty 2026-11-06: hyväksytty. Ruuhkan luettavuus jää kirjatuksi rajaksi.
+3. **Kuuntelu: äänet.** ✅ Tehty 2026-11-06: hyväksytty placeholder-tasolla. Oikeat samplet ja miksaus odottavat erillistä pyyntöä.
+4. **Kahden koneen mittaus.** ⏳ Avoin, ja ainoa tapa saada verkkopelille oikeat luvut (kaista, RTT, palvelinkuorma, TURN). Agentit eivät voi tehdä tätä; kaikki verkkoluvut pysyvät `NOT_MEASURED`, kunnes mitataan. Kahdeksan pelaajan verkkototeutus on päätetty mutta lykätty tämän taakse.
 
 ### B. Valmiina aloitettavaksi, jos sanot "jatka"
 

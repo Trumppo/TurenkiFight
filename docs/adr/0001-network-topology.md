@@ -1,6 +1,7 @@
 # ADR 0001: Network topology for online play
 
-- **Status:** Accepted — owner approved architecture A on 2026-11-02. Architecture B stays in the repository as an evaluated alternative.
+- **Status:** Accepted - owner approved architecture A on 2026-11-02. Architecture B stays in the repository as an evaluated alternative.
+- **Milestone 5 acceptance:** the owner accepted the milestone as a whole on 2026-11-06. Acceptance covers this decision and its evidence record; it does not claim measured network performance.
 - **Date:** 2026-11-02
 - **Decision basis (owner-approved 2026-11-02):** documented sources plus single-machine measurements, weighted toward low latency and smooth motion. **No LAN, internet or TURN measurement was performed.**
 - **Supersedes:** nothing. **Related:** [M2 transport evidence review](../M2_TRANSPORT_EVIDENCE_REVIEW.md), [local measurement results](../../benchmarks/results/README.md), [session envelope](../M2_SESSION_ENVELOPE_V1.md).
