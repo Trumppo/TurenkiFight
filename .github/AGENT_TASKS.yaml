@@ -1423,7 +1423,7 @@ tasks:
     title: Add deterministic hit stop and knockback to combat
     assigned_role: gameplay-session
     session_id: gameplay-session-20261106-feel
-    status: in_progress
+    status: review
     priority: P1
     specification: docs/M11_ARCADE_FEEL.md
     depends_on: [M11-SPEED-20]
@@ -1435,6 +1435,7 @@ tasks:
       - "Timers still expire, hits during hit stop refresh but never stack, and nothing applies outside fighting"
       - "Every pinned fingerprint is updated deliberately and reported with old and new values"
       - npm test, npm run build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/161
     last_updated: "2026-11-06"
     notes: "Active long-term goal: execute the plan in docs/LONG_TERM_PLAN.md. Owner approved the direction in the plan; this slice is the arcade feel after the speed change."
 
@@ -1442,7 +1443,7 @@ tasks:
     title: Add camera shake and sharper hit audio without touching the simulation
     assigned_role: graphics-session
     session_id: graphics-session-20261106-feel
-    status: in_progress
+    status: review
     priority: P2
     specification: docs/M11_ARCADE_FEEL.md
     depends_on: [M11-SPEED-20]
@@ -1452,6 +1453,7 @@ tasks:
       - "prefers-reduced-motion disables the shake"
       - "Hit audio is sharper but still procedural and respects mute"
       - "No simulation, protocol or snapshot change; existing visual suites stay green"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/161
     last_updated: "2026-11-06"
     notes: "Presentation only, driven by the existing HitLanded and Knockout events."
 
