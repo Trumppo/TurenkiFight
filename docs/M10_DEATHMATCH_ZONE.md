@@ -12,9 +12,10 @@ are not a Deathmatch identity.
 
 - **Safe platform.** The arena has a safe x-range. It starts as the full arena and shrinks in fixed steps toward the
   centre. Fighters outside it take damage over time.
-- **Stage schedule.** Stage 0 is the full arena. Stages 1-5 begin at ticks 900, 1800, 2700, 3600, 4500 (15 s apart).
-  Widths as a fraction of the full range: 100 %, 88 %, 76 %, 64 %, 52 %, 42 %. After tick 4500 the zone stays at
-  42 % for the rest of the match.
+- **Stage schedule.** Stage 0 is the full arena. Stages 1-5 begin **900 ticks after FIGHT** and every 900 ticks after
+  that. Because the countdown is 180 ticks and the stage function is a pure function of the global tick, those are
+  global ticks **1080, 1980, 2880, 3780 and 4680**. Widths as a fraction of the full range: 100 %, 88 %, 76 %, 64 %,
+  52 %, 42 %. After tick 4680 the zone stays at 42 % for the rest of the match.
 - **Damage.** Outside the zone a fighter loses 1 HP every 6 ticks (10 HP/s), applied deterministically after normal
   combat damage. No damage inside. A fighter who reaches 0 outside the zone is knocked out by the zone.
 - **Respawn.** A respawn must land inside the current safe range, otherwise a fresh fighter would die instantly.
