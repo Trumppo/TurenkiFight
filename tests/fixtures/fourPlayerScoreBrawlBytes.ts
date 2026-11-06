@@ -2,7 +2,8 @@
  * Canonical four-player Score Brawl snapshot bytes captured from main@a6a26eb
  * before the roster cap rose from four to eight. Raising a cap must not change
  * the encoding of a smaller roster; these strings are the regression fixture
- * for that requirement.
+ * for that requirement. M11's optional hit-stop/knockback counters are absent
+ * when zero, so these idle snapshots stay byte-identical too.
  */
 export const FOUR_PLAYER_SCORE_BRAWL_FIGHTING_BYTES = "{\"state\":{\"countdownTicks\":180,\"events\":[],\"fighters\":[{\"attackCooldown\":0,\"attackFrames\":0,\"attackMove\":null,\"facing\":1,\"health\":100,\"hitTargets\":[],\"hitsReceived\":0,\"hitstun\":0,\"id\":\"P1\",\"koCount\":0,\"koTimer\":0,\"previousButtons\":[],\"protection\":0,\"score\":0,\"vz\":0,\"x\":70,\"y\":148,\"z\":0},{\"attackCooldown\":0,\"attackFrames\":0,\"attackMove\":null,\"facing\":-1,\"health\":100,\"hitTargets\":[],\"hitsReceived\":0,\"hitstun\":0,\"id\":\"P2\",\"koCount\":0,\"koTimer\":0,\"previousButtons\":[],\"protection\":0,\"score\":0,\"vz\":0,\"x\":151.33333333333331,\"y\":183,\"z\":0},{\"attackCooldown\":0,\"attackFrames\":0,\"attackMove\":null,\"facing\":1,\"health\":100,\"hitTargets\":[],\"hitsReceived\":0,\"hitstun\":0,\"id\":\"P3\",\"koCount\":0,\"koTimer\":0,\"previousButtons\":[],\"protection\":0,\"score\":0,\"vz\":0,\"x\":232.66666666666666,\"y\":148,\"z\":0},{\"attackCooldown\":0,\"attackFrames\":0,\"attackMove\":null,\"facing\":-1,\"health\":100,\"hitTargets\":[],\"hitsReceived\":0,\"hitstun\":0,\"id\":\"P4\",\"koCount\":0,\"koTimer\":0,\"previousButtons\":[],\"protection\":0,\"score\":0,\"vz\":0,\"x\":314,\"y\":183,\"z\":0}],\"phase\":\"fighting\",\"remainingTicks\":7200,\"tick\":0},\"version\":1}";
 export const FOUR_PLAYER_SCORE_BRAWL_FIGHTING_SHA256 = '1d23bad2d6686a6196d3267a608c6b9c12ebd0ec84af2dbc7b5691538fc603f7';

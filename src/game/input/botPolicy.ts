@@ -13,8 +13,9 @@ import type { Fighter, GameState, PlayerInput } from '../simulation/types';
  * still in the match, attack when in reach and jump. Jumps serve three
  * purposes:
  *
- * - `jump-in`: the target is inside the jump-in band (up to 1.5x kick reach),
- *   so the bot can jump and land the existing `jumpkick` on the way down;
+ * - `jump-in`: the target is outside punch reach but inside the jump-in band
+ *   (up to 1.5x kick reach), so the bot can jump and land the existing
+ *   `jumpkick` on the way down without skipping a point-blank kill;
  * - `approach`: the target is farther away and a hop breaks up the walk;
  * - `evasive`: the bot is hurt or cornered and hops instead of attacking, so
  *   its movement is not purely linear.
@@ -51,13 +52,15 @@ export const BOT_TUNING = {
    * than the jump-in band, so this is the long walk back into the fight.
    */
   jumpChance: 0.6,
-  /** Jump-in band as a multiple of kick reach (about 1.5x kick reach). */
+  /** Jump-in band ends at this multiple of kick reach (about 1.5x kick reach). */
   jumpInReachFactor: 1.5,
   /**
-   * Chance per idle tick of a jump-in while the target is inside the band.
-   * A jump-in replaces one ground attack and uses the airborne `jumpkick`.
-   * This is evaluated every tick rather than on the decision cadence because
-   * the band is transient (about 15 ticks) and a 40-tick cadence would usually
+   * Chance per idle tick of a jump-in while the target is inside the band and
+   * strictly outside punch reach. A jump-in replaces one ground attack and uses
+   * the airborne `jumpkick`. The lower bound matters: at point-blank range the
+   * bot must punch/kick rather than spend a 31-tick jump arc on a kill it could
+   * already land. This is evaluated every tick rather than on the decision
+   * cadence because the band is transient and a 40-tick cadence would usually
    * miss it. The attack cycle itself spaces the jumps out: the bot can only
    * consider a jump-in when it is grounded and idle.
    */
@@ -174,7 +177,10 @@ function jumpReason(state: GameState, self: Fighter, target: Fighter, seed: numb
   const jumpInRange = BOT_TUNING.maxAttackDistance * BOT_TUNING.jumpInReachFactor;
   const decisionTick = isJumpDecisionTick(seed, self.id, tick);
 
-  if (distance > BOT_TUNING.minHorizontalDistance && distance <= jumpInRange && inDepth && inFront) {
+  // A jump-in must not preempt a point-blank attack: inside punch reach the
+  // bot can land a punch/kick now instead of spending a 31-tick jump arc. The
+  // band therefore starts just outside punch reach and ends at 1.5x kick reach.
+  if (distance > MOVES.punch.reach && distance <= jumpInRange && inDepth && inFront) {
     if (noise(seed, self.id, tick, 6) < BOT_TUNING.jumpInChance) return 'jump-in';
   } else if (distance > jumpInRange && decisionTick && noise(seed, self.id, tick, 2) < BOT_TUNING.jumpChance) {
     return 'approach';

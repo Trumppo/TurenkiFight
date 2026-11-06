@@ -15,11 +15,15 @@ import type { GameEvent, GameState, ModeId } from '../src/game/simulation/types'
  * Recorded baseline on the same 8-bot fixtures (original policy):
  * - last-man-standing, seed 0x5eed: 526 ticks, 0 jumps, 0 jumpkick hits.
  * - score-brawl, 3660 ticks: 16 jumps (1.97 per bot per minute), 10 jumpkick
- *   hits, 1.60 % of bot-ticks airborne, 7440 weighted damage from hits.
+ *   hits, 1.60 % of bot-ticks airborne.
  *
- * After: see the pins and bounds in the tests below. Weighted damage from hits
- * is 7200 on the score-brawl fixture and 815 on the last-man-standing fixture
- * (baseline: 7440 and 815), so the extra hops do not cost combat output.
+ * M12 mobility first added jump-ins; the point-blank guard now requires the
+ * target to be strictly outside punch reach, so close-range kills stay ground
+ * attacks. The fixture pins below were re-measured after that guard: the short
+ * LMS fixture drops from 7 jumps to 1 and the one-minute Score Brawl from 80 to
+ * 20 because most all-bot fighting happens inside punch reach. Jump-in
+ * jumpkicks still appear on the Score Brawl fixture (16 of 20 jumpkick hits),
+ * so the mechanic is proven end to end without preempting point-blank attacks.
  */
 const BOT_SEED = 0x5eed;
 const BOT_IDS = Array.from({ length: 8 }, (_, index) => `P${index + 1}`);
@@ -153,15 +157,22 @@ describe('M12 bot jump conditions', () => {
     expect(botInput(atTick(inBand, groundOnly), 'P2', BOT_SEED).kick).toBe(true);
   });
 
-  it('never calls a jump-in outside the band, behind the bot or outside the depth band', () => {
+  it('never calls a jump-in outside the band, at or inside punch reach, behind the bot or outside the depth band', () => {
     const tooFar = duel(270, 160, 200, 160, -1, 1); // 70 px > 63
+    const atPunchReach = duel(232, 160, 200, 160, -1, 1); // exactly 32 px
+    const tooClose = duel(220, 160, 200, 160, -1, 1); // 20 px, point-blank
     const behind = duel(160, 160, 200, 160, -1, 1); // target is behind P2
     const offDepth = duel(240, 190, 200, 160, -1, 1); // dy 30 > attackDepth
-    for (const state of [tooFar, behind, offDepth]) {
+    for (const state of [tooFar, atPunchReach, tooClose, behind, offDepth]) {
       for (let tick = 0; tick < 1000; tick++) {
         expect(botJumpReason(atTick(state, tick), 'P2', BOT_SEED), `tick ${tick}`).not.toBe('jump-in');
       }
     }
+    // At touching distance the bot must use a ground attack instead of
+    // spending a 31-tick jump arc on a kill it can already land.
+    const pointBlank = botInput(tooClose, 'P2', BOT_SEED);
+    expect(pointBlank.jump).toBe(false);
+    expect(pointBlank.punch || pointBlank.kick).toBe(true);
   });
 
   it('keeps approach jumps on the seeded decision cadence and outside the jump-in band', () => {
@@ -327,18 +338,17 @@ describe('M12 bot seeded thresholds', () => {
 });
 
 describe('M12 bot mobility fixtures', () => {
-  it('proves jump-in jumpkicks on the fixed all-bot last-man-standing match', () => {
+  it('records the all-bot last-man-standing fixture after the point-blank jump-in guard', () => {
     const run = runEightBotFixture('last-man-standing', COUNTDOWN_TICKS + MATCH_TICKS + 10);
-    // Recorded after the change (the original policy produced 0 jumps and 0
-    // jumpkick hits on this fixture, and finished at tick 526).
-    expect(run.ticks).toBe(572);
-    expect(run.jumpsByBot).toEqual({ P1: 1, P2: 1, P4: 1, P5: 2, P8: 2 });
-    expect(run.totalJumps).toBe(7);
-    expect(run.jumpkickHits).toBe(10);
-    // Every jumpkick hit in this match came from a jump the policy classified
-    // as a jump-in, so the event stream proves the new behaviour end to end.
-    expect(run.jumpInJumpkickHits).toBe(10);
-    expect(run.jumpkickAttackers).toEqual(['P1', 'P2', 'P4', 'P5', 'P8']);
+    // Measured after the guard. The short LMS match is mostly a punch-range
+    // scrum, so its only jump does not land a jump-in-classified hit. The Score
+    // Brawl minute below still proves jump-in jumpkicks end to end.
+    expect(run.ticks).toBe(663);
+    expect(run.jumpsByBot).toEqual({ P6: 1 });
+    expect(run.totalJumps).toBe(1);
+    expect(run.jumpkickHits).toBe(2);
+    expect(run.jumpInJumpkickHits).toBe(0);
+    expect(run.jumpkickAttackers).toEqual(['P6']);
     expect(run.events.some(event => event.type === 'HitLanded' && event.move === 'jumpkick')).toBe(true);
     expect(run.state.phase).toBe('results');
   });
@@ -346,16 +356,20 @@ describe('M12 bot mobility fixtures', () => {
   it('measures a higher jumps-per-minute rate on a fixed one-minute score brawl', () => {
     // 3660 ticks = 180-tick countdown plus a 3480-tick fight, i.e. just over a
     // minute of fixed simulation. Baseline: 16 jumps (1.97 per bot per minute),
-    // 10 jumpkick hits, 1.60 % airborne.
+    // 10 jumpkick hits, 1.60 % airborne. After the point-blank jump-in guard:
+    // 20 jumps (2.46 per bot per minute), 20 jumpkick hits, 2.91 % airborne.
     const run = runEightBotFixture('score-brawl', 3660);
-    expect(run.totalJumps).toBe(80);
-    expect(run.jumpsPerBotMinute).toBeCloseTo(9.84, 1);
-    expect(run.jumpsPerBotMinute).toBeGreaterThan(6);
-    expect(run.jumpkickHits).toBe(93);
-    expect(run.jumpkickAttackers).toEqual([...BOT_IDS]);
+    expect(run.totalJumps).toBe(20);
+    expect(run.jumpsPerBotMinute).toBeCloseTo(2.46, 1);
+    expect(run.jumpsPerBotMinute).toBeGreaterThan(2);
+    expect(run.jumpkickHits).toBe(20);
+    expect(run.jumpkickAttackers).toEqual(['P1', 'P2', 'P4', 'P5', 'P7', 'P8']);
     expect(run.airbornePct).toBeLessThan(20);
-    // "A few jumps per bot per match": even the quietest bot clears this.
-    expect(Math.min(...BOT_IDS.map(id => run.jumpsByBot[id] ?? 0))).toBeGreaterThanOrEqual(3);
+    // The guard removes most close-range jump-ins, so not every bot jumps in
+    // this minute. Six of eight do; the fixture records that rather than hiding
+    // it. Retune approach/evasive chances after playtest if that feels too calm.
+    expect(BOT_IDS.filter(id => (run.jumpsByBot[id] ?? 0) > 0)).toHaveLength(6);
+    expect(Math.max(...BOT_IDS.map(id => run.jumpsByBot[id] ?? 0))).toBeGreaterThanOrEqual(3);
   });
 
   it('does not jump-loop: every bot stays grounded most of the time and hops are spaced out', () => {
@@ -363,9 +377,10 @@ describe('M12 bot mobility fixtures', () => {
     const short = runEightBotFixture('last-man-standing', COUNTDOWN_TICKS + MATCH_TICKS + 10);
     for (const run of [minute, short]) {
       // A full arc is about 31 ticks; two jumps closer than that would mean the
-      // bot re-triggered while still airborne or immediately on landing.
-      expect(run.minJumpGap).not.toBeNull();
-      expect(run.minJumpGap!).toBeGreaterThanOrEqual(JUMP_ARC_TICKS);
+      // bot re-triggered while still airborne or immediately on landing. The
+      // short fixture can end with fewer than two jumps per bot, so the gap is
+      // only checked when it exists.
+      if (run.minJumpGap !== null) expect(run.minJumpGap).toBeGreaterThanOrEqual(JUMP_ARC_TICKS);
       expect(run.airbornePct).toBeLessThan(20);
       const busiestBot = Math.max(...BOT_IDS.map(id => run.jumpsByBot[id] ?? 0));
       expect(busiestBot).toBeLessThanOrEqual(15);

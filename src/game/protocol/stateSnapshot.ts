@@ -1,5 +1,5 @@
 import type { Fighter, GameEvent, GameState, ModeId, Move, Phase } from '../simulation/types';
-import { COUNTDOWN_TICKS, MATCH_TICKS, MOVES } from '../simulation/step';
+import { COUNTDOWN_TICKS, KO_HIT_STOP_TICKS, MATCH_TICKS, MOVES } from '../simulation/step';
 import { COMBAT_MOVES, END_REASONS, parseGameEvent } from './gameEvent';
 import { MAX_PLAYERS } from './players';
 
@@ -7,11 +7,12 @@ import { MAX_PLAYERS } from './players';
 export const SNAPSHOT_VERSION = 1 as const;
 /**
  * Pre-parse UTF-8 cap. The schema-maximal eight-fighter snapshot measures
- * 83,373 bytes (eight escaped IDs, full hit-target lists and 64 events), so the
- * old 65,536-byte cap would reject a state the parser accepts. Doubling it keeps
- * the cap defensive: every schema-valid snapshot is encodable, while real
- * eight-player snapshots are far smaller (see `stateSnapshot.test.ts`).
- * Raising this cap does not change the bytes emitted for any roster.
+ * 83,686 bytes with the optional M11 hit-stop/knockback counters present
+ * (83,373 bytes when both are absent, which is the common idle case). The old
+ * 65,536-byte cap would reject a state the parser accepts. Doubling the cap
+ * keeps it defensive: every schema-valid snapshot is encodable, while real
+ * eight-player snapshots are far smaller (see `stateSnapshot.test.ts`). Raising
+ * this cap does not change the bytes emitted for any roster.
  */
 export const MAX_SNAPSHOT_BYTES = 131072;
 /** Derived from the single roster bound; a snapshot carries a full match roster. */
@@ -53,9 +54,13 @@ const phases: Phase[] = ['lobby', 'countdown', 'fighting', 'results'];
 const requiredFighterKeys = ['id', 'x', 'y', 'z', 'vz', 'facing', 'health', 'score', 'koCount', 'hitsReceived',
   'attackCooldown', 'attackFrames', 'attackMove', 'hitTargets', 'hitstun', 'koTimer', 'protection', 'previousButtons'];
 const modeFighterKeys = ['eliminated', 'frags', 'deaths', 'damageDealt'];
-const fighterKeys = [...requiredFighterKeys, ...modeFighterKeys];
+/** Optional and canonically omitted when zero; absent means 0. */
+const optionalFighterKeys = ['knockback'];
+const fighterKeys = [...requiredFighterKeys, ...modeFighterKeys, ...optionalFighterKeys];
 const requiredStateKeys = ['tick', 'fighters', 'phase', 'countdownTicks', 'remainingTicks', 'events'];
-const stateKeys = [...requiredStateKeys, 'mode'];
+/** Optional and canonically omitted when zero; absent means 0. */
+const optionalStateKeys = ['hitStopTicks'];
+const stateKeys = [...requiredStateKeys, 'mode', ...optionalStateKeys];
 /**
  * Score Brawl is the historical default and omits `mode`, so an explicit
  * `score-brawl` value is not canonical and is rejected by the decoder.
@@ -123,6 +128,13 @@ function parseFighter(value: unknown, mode: ModeId | undefined): Fighter | null 
   if (x.facing !== -1 && x.facing !== 1) return null;
   if (!counter(x.hitsReceived) || !counter(x.koCount)) return null;
   if (!['attackFrames', 'hitstun', 'koTimer', 'protection'].every(k => nonnegative(x[k]))) return null;
+  // Knockback is an optional signed, fractional px remainder. Absent means 0.
+  // A nonzero slide without hitstun is unreachable state, and an explicit zero
+  // is accepted but canonicalised away before encoding.
+  if (has(x, 'knockback')) {
+    if (!finite(x.knockback)) return null;
+    if ((x.knockback as number) !== 0 && (x.hitstun as number) === 0) return null;
+  }
   if (!nonnegative(x.attackCooldown) || x.attackCooldown > MAX_ATTACK_TICKS) return null;
   if (!coherentAttack(x.attackMove, x.attackFrames)) return null;
   if (!strings(x.hitTargets) || x.hitTargets.length > MAX_SNAPSHOT_FIGHTERS || !buttons(x.previousButtons)) return null;
@@ -164,6 +176,7 @@ function parseFighter(value: unknown, mode: ModeId | undefined): Fighter | null 
     attackMove: x.attackMove as Move | null,
     hitTargets: [...(x.hitTargets as string[])],
     hitstun: x.hitstun as number,
+    ...(has(x, 'knockback') && x.knockback !== 0 ? { knockback: x.knockback as number } : {}),
     koTimer: x.koTimer as number,
     protection: x.protection as number,
     previousButtons: [...(x.previousButtons as string[])],
@@ -192,6 +205,8 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
   const state = value.state;
   if (!keys(state, stateKeys) || !requiredStateKeys.every(key => has(state, key)) ||
       !nonnegative(state.tick) || state.tick > MAX_SNAPSHOT_TICK ||
+      (has(state, 'hitStopTicks') &&
+        (!nonnegative(state.hitStopTicks) || (state.hitStopTicks as number) > KO_HIT_STOP_TICKS)) ||
       !phases.includes(state.phase as Phase) || !timersValid(state) ||
       !Array.isArray(state.fighters) || state.fighters.length < 1 ||
       state.fighters.length > MAX_SNAPSHOT_FIGHTERS) {
@@ -241,6 +256,9 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
       phase: state.phase as Phase,
       countdownTicks: state.countdownTicks as number,
       remainingTicks: state.remainingTicks as number,
+      ...(has(state, 'hitStopTicks') && state.hitStopTicks !== 0
+        ? { hitStopTicks: state.hitStopTicks as number }
+        : {}),
       events,
       ...(mode === undefined ? {} : { mode: mode as ModeId }),
     },
@@ -254,24 +272,39 @@ function canonical(value: unknown): unknown {
   return value;
 }
 
+function withoutKey(source: Record<string, unknown>, key: string): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(source).filter(([name]) => name !== key));
+}
+
 /**
- * `createState` writes `eliminated: false` on every living Last Man Standing
- * fighter, but `false` carries no information and the canonical wire form omits
- * it. Encoding therefore normalises the marker away before validation; the
- * decoder still rejects an explicit `false` on the wire.
+ * Canonical wire-form normalisations applied before strict validation:
+ * - a zero `hitStopTicks` or `knockback` is omitted; absent means zero, so an
+ *   idle snapshot keeps its pre-M11 bytes even though the in-memory object may
+ *   carry explicit zeros.
+ * - Last Man Standing `eliminated: false` is omitted as before.
+ * The decoder still rejects unknown keys and out-of-range values. An explicit
+ * zero on the wire is accepted and normalised away by the decoder.
  */
 function canonicalEncodeInput(value: unknown): unknown {
-  if (!obj(value) || !obj(value.state) || value.state.mode !== 'last-man-standing' ||
-      !Array.isArray(value.state.fighters)) {
-    return value;
+  if (!obj(value) || !obj(value.state)) return value;
+  const state = value.state;
+  let nextState: Record<string, unknown> = state;
+  if (has(nextState, 'hitStopTicks') && nextState.hitStopTicks === 0) {
+    nextState = withoutKey(nextState, 'hitStopTicks');
   }
+  if (!Array.isArray(nextState.fighters)) return { ...value, state: nextState };
+  const mode = nextState.mode;
   return {
     ...value,
     state: {
-      ...value.state,
-      fighters: value.state.fighters.map(fighter => obj(fighter) && fighter.eliminated === false
-        ? Object.fromEntries(Object.entries(fighter).filter(([key]) => key !== 'eliminated'))
-        : fighter),
+      ...nextState,
+      fighters: nextState.fighters.map(fighter => {
+        if (!obj(fighter)) return fighter;
+        let next = fighter;
+        if (has(next, 'knockback') && next.knockback === 0) next = withoutKey(next, 'knockback');
+        if (mode === 'last-man-standing' && next.eliminated === false) next = withoutKey(next, 'eliminated');
+        return next;
+      }),
     },
   };
 }

@@ -103,6 +103,10 @@ export class StationScene extends Phaser.Scene {
   private audioBridge?: CueBridge;
   private readonly audioCueCounts: Partial<Record<AudioCue, number>> = {};
   private victoryCueEndKey?: string;
+  private reducedMotionQuery?: MediaQueryList;
+  private reducedMotionListener?: (event: MediaQueryListEvent) => void;
+  private cameraShakeCount = 0;
+  private lastCameraShake?: { reason: 'hit' | 'knockout'; duration: number; intensity: number };
 
   constructor(arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic'), mode: ModeId = 'score-brawl') {
     super('StationScene');
@@ -154,10 +158,20 @@ export class StationScene extends Phaser.Scene {
     this.audio = createAudioPresentation(audioControlsHost());
     this.audioBridge = new CueBridge(cue => this.playAudioCue(cue));
     this.audioBridge.observe(this.state);
+    this.reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.reducedMotionListener = event => {
+      if (event.matches) this.cameras.main.shakeEffect.reset();
+    };
+    this.reducedMotionQuery.addEventListener('change', this.reducedMotionListener);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.clearRevealState();
       if (this.revealKeyHandler) document.removeEventListener('keydown', this.revealKeyHandler);
       if (this.revealClickHandler) document.removeEventListener('click', this.revealClickHandler);
+      if (this.reducedMotionQuery && this.reducedMotionListener) {
+        this.reducedMotionQuery.removeEventListener('change', this.reducedMotionListener);
+      }
+      this.reducedMotionQuery = undefined;
+      this.reducedMotionListener = undefined;
       this.audioBridge?.reset();
       this.audio?.dispose();
       this.audioBridge = undefined;
@@ -269,6 +283,7 @@ export class StationScene extends Phaser.Scene {
       while (this.elapsedMs >= interval) {
         const previousPhase = this.state.phase;
         this.state = step(this.state, this.readInputs(pads));
+        this.observeCameraPunch(this.state);
         if (previousPhase === 'fighting' || this.state.phase === 'fighting' || this.state.phase === 'results') {
           this.matchEvents.push(...this.state.events);
         }
@@ -410,6 +425,39 @@ export class StationScene extends Phaser.Scene {
       volume: settings?.volume ?? 0.55,
       cueCounts: { ...this.audioCueCounts },
     };
+  }
+
+  /** Minimal presentation-only camera diagnostics for browser QA. */
+  cameraPunchDiagnostics(): {
+    shakeCount: number;
+    lastShake: { reason: 'hit' | 'knockout'; duration: number; intensity: number } | null;
+    isShaking: boolean;
+    reducedMotion: boolean;
+  } {
+    return {
+      shakeCount: this.cameraShakeCount,
+      lastShake: this.lastCameraShake ?? null,
+      isShaking: this.cameras.main.shakeEffect.isRunning,
+      reducedMotion: this.reducedMotionQuery?.matches ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    };
+  }
+
+  private observeCameraPunch(state: GameState): void {
+    if (this.reducedMotionQuery?.matches ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const knockout = state.events.some(event => event.type === 'Knockout');
+    if (knockout) {
+      this.triggerCameraShake('knockout', 140, 0.007);
+    } else if (state.events.some(event => event.type === 'HitLanded')) {
+      // A barely perceptible one-pixel nudge; the KO impact takes precedence
+      // when HitLanded and Knockout are emitted together.
+      this.triggerCameraShake('hit', 32, 0.0015);
+    }
+  }
+
+  private triggerCameraShake(reason: 'hit' | 'knockout', duration: number, intensity: number): void {
+    this.cameraShakeCount++;
+    this.lastCameraShake = { reason, duration, intensity };
+    this.cameras.main.shake(duration, intensity, true);
   }
 
   private playAudioCue(cue: AudioCue): void {

@@ -21,14 +21,56 @@ export const MOVES: Record<Move, { startup: number; active: number; recovery: nu
   kick: { startup: 7, active: 6, recovery: 16, damage: 15, points: 150, reach: 42, depth: 17, height: 20 },
   jumpkick: { startup: 6, active: 7, recovery: 18, damage: 20, points: 200, reach: 45, depth: 19, height: 30 },
 };
+/**
+ * Arcade-feel constants (M11). All of them advance with the fixed tick; none
+ * reads wall time or randomness.
+ *
+ * - `HIT_STOP_TICKS`: movement and attack progress freeze for this many ticks
+ *   after a clean hit. A knockout uses the longer `KO_HIT_STOP_TICKS` so the
+ *   knockout reads.
+ * - `HITSTUN_TICKS`: unchanged helplessness window. It freezes with the fight
+ *   rather than expiring during hit stop, so the knockback is always spread
+ *   over the full hitstun window and a long freeze cannot strand a pending
+ *   slide.
+ * - `KNOCKBACK_PX`: deterministic push per move, spread over the hitstun frames
+ *   in the attacker's facing direction.
+ */
+export const HIT_STOP_TICKS = 3;
+export const KO_HIT_STOP_TICKS = 5;
+export const HITSTUN_TICKS = 8;
+export const KNOCKBACK_PX: Readonly<Record<Move, number>> = { punch: 2, kick: 4, jumpkick: 6 };
+/**
+ * Playable arena bounds. Fighters may not leave them through movement,
+ * knockback or a respawn. `y` is the ground-plane depth.
+ */
+export const ARENA_BOUNDS = { minX: 16, maxX: 368, minY: 124, maxY: 204 } as const;
+const clampX = (x: number): number => Math.max(ARENA_BOUNDS.minX, Math.min(ARENA_BOUNDS.maxX, x));
+const clampY = (y: number): number => Math.max(ARENA_BOUNDS.minY, Math.min(ARENA_BOUNDS.maxY, y));
+
+/**
+ * Slide a hitstun target toward the last hit by an equal share of the
+ * remaining push. The share divides by the hitstun frames that are still
+ * going to run after this tick, so the total displacement equals the move's
+ * `KNOCKBACK_PX` exactly and the clamp at a wall cannot leak movement later.
+ */
+function applyKnockback(f: Fighter): void {
+  const remaining = f.knockback ?? 0;
+  if (f.hitstun <= 0 || remaining === 0) return;
+  const share = remaining / f.hitstun;
+  f.x = clampX(f.x + share);
+  const rest = f.hitstun === 1 ? 0 : remaining - share;
+  if (rest === 0) delete f.knockback;
+  else f.knockback = rest;
+}
 function spawn(index: number, count: number): { x: number; y: number } {
   return { x: 70 + (244 * index) / Math.max(1, count - 1), y: 148 + (index % 2) * 35 };
 }
 /**
  * Match creation accepts either the historical positional form
  * (`createState(ids, phase)`) or a setup object (`createState({ mode })`).
- * Score Brawl is the default and omits `mode` from the state so existing
- * snapshots and pinned fingerprints remain byte-identical.
+ * Score Brawl is the default and omits `mode` so the state keeps its canonical
+ * shape. The M11 `hitStopTicks`/`knockback` fields are optional and absent when
+ * zero, so an idle state keeps its pre-M11 bytes.
  */
 export function createState(setup?: MatchSetup): GameState;
 export function createState(ids?: string[], phase?: GameState['phase'], setup?: MatchSetup): GameState;
@@ -61,11 +103,21 @@ export function standings(state: GameState): { id: string; rank: number; score: 
 }
 export function step(state: GameState, inputs: PlayerInput[]): GameState {
   const rules = modeRules(state.mode);
-  const fighters = state.fighters.map(f => ({ ...f, hitTargets: [...f.hitTargets], previousButtons: [...f.previousButtons] }));
+  const fighters = state.fighters.map(f => {
+    const copy = { ...f, hitTargets: [...f.hitTargets], previousButtons: [...f.previousButtons] };
+    // Canonical in-memory form: a zero remainder is absent, so JSON.stringify
+    // and the wire encoder agree and idle snapshots keep their old bytes.
+    if (copy.knockback === 0) delete copy.knockback;
+    return copy;
+  });
   const next: GameState = { ...state, tick: state.tick + 1, fighters, events: [] };
+  if (next.hitStopTicks === 0) delete next.hitStopTicks;
   const event = (type: GameEvent['type'], extra: Partial<GameEvent> = {}) => next.events.push({ tick: next.tick, type, ...extra });
   const finish = (reason: EndReason, winner: PlayerId | null) => {
     next.phase = 'results';
+    // A freeze cannot run in `results`; do not carry a stale counter into the
+    // final snapshot.
+    delete next.hitStopTicks;
     switch (rules.id) {
       case 'score-brawl':
         // Historical lifecycle event shape: no reason/winner for Score Brawl.
@@ -87,6 +139,7 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     target.attackMove = null;
     target.attackFrames = 0;
     target.hitstun = 0;
+    delete target.knockback;
     if (rules.respawn === 'eliminate') {
       target.eliminated = true;
     } else {
@@ -101,14 +154,29 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     return next;
   }
   const byId = new Map(inputs.map(i => [i.playerId, i]));
+  // Hit stop is a simulation counter, not wall time: one decrement per tick in
+  // the fighting phase. While it is active the hitbox pass below still runs, so
+  // a hit can refresh the counter (never past the KO maximum); movement, attack
+  // frames, hitstun, jump physics and input edge detection are frozen. Match
+  // timers (match clock, KO respawn, protection, zone) keep counting down.
+  const frozen = (next.hitStopTicks ?? 0) > 0;
+  if (frozen) {
+    const remaining = (next.hitStopTicks ?? 0) - 1;
+    if (remaining > 0) next.hitStopTicks = remaining;
+    else delete next.hitStopTicks;
+  }
   for (const f of fighters) {
     // An eliminated fighter is out: no movement, attacks, edge detection or respawn.
     if (f.eliminated) continue;
     const i = byId.get(f.id);
-    const buttons: string[] = i ? [...(['punch','kick','jumpkick'] as Move[]).filter(m => i[m] || (m === 'punch' && i.attack)), ...(i.jump ? ['jump'] : [])] : [];
-    const pressed = buttons.filter(b => !f.previousButtons.includes(b));
-    const jumpPressed = buttons.includes('jump') && !f.previousButtons.includes('jump');
-    f.previousButtons = buttons;
+    let pressed: string[] = [];
+    let jumpPressed = false;
+    if (!frozen) {
+      const buttons: string[] = i ? [...(['punch','kick','jumpkick'] as Move[]).filter(m => i[m] || (m === 'punch' && i.attack)), ...(i.jump ? ['jump'] : [])] : [];
+      pressed = buttons.filter(b => !f.previousButtons.includes(b));
+      jumpPressed = buttons.includes('jump') && !f.previousButtons.includes('jump');
+      f.previousButtons = buttons;
+    }
     if (f.koTimer > 0) {
       f.koTimer--;
       if (!f.koTimer) {
@@ -123,22 +191,30 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
             y: origin.y,
           }))].map(point => ({ x: clampX(point.x), y: point.y }));
           const s = options.find(p => fighters.every(other => other.id === f.id || other.koTimer > 0 || Math.hypot(other.x - p.x, other.y - p.y) >= 24)) ?? options[0];
-          f.x = s.x; f.y = s.y; f.z = 0; f.vz = 0; f.health = 100; f.protection = 90; event('Respawned', { target: f.id });
+          f.x = s.x; f.y = s.y; f.z = 0; f.vz = 0; f.health = 100; f.protection = 90; f.hitstun = 0; delete f.knockback;
+          event('Respawned', { target: f.id });
         } else {
-          f.eliminated = true; f.health = 0; f.attackMove = null; f.attackFrames = 0; f.hitstun = 0;
+          f.eliminated = true; f.health = 0; f.attackMove = null; f.attackFrames = 0; f.hitstun = 0; delete f.knockback;
         }
       }
       continue;
     }
     if (f.protection > 0) f.protection--;
+    if (frozen) {
+      // Attack frames and hitstun are combat state: they freeze with the
+      // fight, so the queued knockback is still spread over the full hitstun
+      // window after the pause. Match timers (match clock, KO respawn,
+      // protection, zone) already advanced above.
+      continue;
+    }
     const stunned = f.hitstun > 0;
-    if (f.hitstun > 0) f.hitstun--;
+    if (f.hitstun > 0) { applyKnockback(f); f.hitstun--; }
     if (f.attackFrames > 0) { f.attackFrames--; if (!f.attackFrames) f.attackMove=null; }
     f.attackCooldown = f.attackFrames;
     if (i && !stunned) {
       const scale = i.moveX && i.moveY ? Math.SQRT1_2 : 1;
-      f.x = Math.max(16,Math.min(368,f.x + i.moveX * FIGHTER_SPEED * scale));
-      f.y = Math.max(124,Math.min(204,f.y + i.moveY * FIGHTER_SPEED * scale));
+      f.x = clampX(f.x + i.moveX * FIGHTER_SPEED * scale);
+      f.y = clampY(f.y + i.moveY * FIGHTER_SPEED * scale);
       if (i.moveX) f.facing = i.moveX;
       if (jumpPressed && f.z === 0 && !f.attackMove) f.vz = 5.2;
       if (!f.attackMove) {
@@ -180,9 +256,20 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
       a.koCount++;
       event('Knockout',{attacker:a.id,target:t.id});
       knockOut(t);
+      // A knockout reads longer than an ordinary hit. `max` keeps an existing
+      // KO freeze at 5 and lets a later clean hit refresh but never shrink it.
+      next.hitStopTicks = Math.max(next.hitStopTicks ?? 0, KO_HIT_STOP_TICKS);
       if (rules.fragScoring) knockouts.push({ attacker: a.id, target: t.id });
     }
-    else if (!t.koTimer) t.hitstun=Math.max(t.hitstun,8);
+    else if (!t.koTimer) {
+      // Ordinary hit: refresh hitstun, queue the deterministic push and start
+      // (or refresh) the 3-tick freeze. Hits in the same tick or during an
+      // active freeze refresh the counter; they never exceed the KO maximum.
+      t.hitstun = Math.max(t.hitstun, HITSTUN_TICKS);
+      const pending = (t.knockback ?? 0) + KNOCKBACK_PX[move] * a.facing;
+      if (pending === 0) delete t.knockback; else t.knockback = pending;
+      next.hitStopTicks = Math.max(next.hitStopTicks ?? 0, HIT_STOP_TICKS);
+    }
   }
   if (rules.fragScoring) {
     // A fighter knocked out on the same tick credits no frag: mutual and
@@ -210,6 +297,8 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
       // wire `Knockout` event requires a roster attacker and the zone must not
       // borrow a player id, so a zone death is carried by `deaths`/`koTimer`.
       knockOut(f);
+      // A death still reads: extend an active hit stop to the KO length.
+      next.hitStopTicks = Math.max(next.hitStopTicks ?? 0, KO_HIT_STOP_TICKS);
     }
   }
   next.remainingTicks--;

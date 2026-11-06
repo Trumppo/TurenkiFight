@@ -67,12 +67,25 @@ describe('M2 codec ingress and egress limits', () => {
       events: Array.from({ length: 64 }, (_, index) => event(index)),
     };
     expect(() => parseStateSnapshot({ version: 1, state })).not.toThrow();
-    // Measured maximum: 83373 bytes at eight fighters. The snapshot byte cap is
-    // doubled to 131072 so every schema-valid snapshot remains encodable; the
-    // cap stays defensive rather than binding on real eight-player states.
+    // Measured maximum: 83373 bytes at eight fighters in the baseline schema.
+    // M11's optional counters are omitted when zero, so an idle snapshot keeps
+    // the old size. With `hitStopTicks` and a worst-case finite `knockback`
+    // present the same roster measures 83686 bytes; the 131072-byte cap still
+    // covers every schema-valid snapshot, so it stays defensive rather than
+    // binding on real eight-player states.
     expect(byteLength(JSON.stringify({ version: 1, state }))).toBe(83373);
     expect(byteLength(JSON.stringify({ version: 1, state }))).toBeLessThan(MAX_SNAPSHOT_BYTES);
     expect(byteLength(encodeStateSnapshot({ version: 1, state }))).toBe(83373);
+
+    const withOptionalCounters = {
+      ...state,
+      hitStopTicks: 5,
+      fighters: state.fighters.map(fighter => ({ ...fighter, knockback: -Number.MAX_VALUE })),
+    };
+    expect(() => parseStateSnapshot({ version: 1, state: withOptionalCounters })).not.toThrow();
+    expect(byteLength(JSON.stringify({ version: 1, state: withOptionalCounters }))).toBe(83686);
+    expect(byteLength(encodeStateSnapshot({ version: 1, state: withOptionalCounters }))).toBe(83686);
+    expect(byteLength(encodeStateSnapshot({ version: 1, state: withOptionalCounters }))).toBeLessThan(MAX_SNAPSHOT_BYTES);
 
     const batch = { version: 1 as const, tick, events: Array.from({ length: MAX_EVENTS_PER_BATCH }, (_, index) => event(index)) };
     expect(() => parseEventBatch(batch)).not.toThrow();

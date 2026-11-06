@@ -99,15 +99,13 @@ describe('M8 bot policy', () => {
   it('attacks when the opponent is inside reach and depth, and not while facing away', () => {
     const base = createState({ ids: ['P1', 'P2'], phase: 'fighting' });
     const inRange = fighterPosition(fighterPosition(base, 'P1', 120, 160, -1), 'P2', 100, 160, 1);
-    // A jump-in may replace a ground attack inside the band, so sample a short
-    // window: the bot must still choose punch/kick when it stays grounded.
-    const decisions = Array.from({ length: 12 }, (_, tick) => botInput({ ...inRange, tick }, 'P2', BOT_SEED));
-    expect(decisions.some(input => input.punch || input.kick)).toBe(true);
-    expect(decisions.every(input => input.jumpkick === false)).toBe(true);
+    const attack = botInput(inRange, 'P2', BOT_SEED);
+    expect(attack.punch || attack.kick).toBe(true);
+    expect(attack.jumpkick).toBe(false);
 
     const behind = fighterPosition(fighterPosition(base, 'P1', 40, 160, -1), 'P2', 60, 160, 1);
-    const noAttacks = Array.from({ length: 12 }, (_, tick) => botInput({ ...behind, tick }, 'P2', BOT_SEED));
-    expect(noAttacks.every(input => !input.punch && !input.kick && !input.jumpkick)).toBe(true);
+    const noAttack = botInput(behind, 'P2', BOT_SEED);
+    expect(noAttack.punch || noAttack.kick || noAttack.jumpkick).toBe(false);
   });
 
   it('returns neutral input for eliminated, knocked-out, orphaned and non-fighting bots', () => {
@@ -149,9 +147,7 @@ describe('M8 bots fight in the simulation', () => {
     state = fighterPosition(state, 'P2', 100, 160, 1);
     state = fighterPosition(state, 'P1', 125, 160, -1);
     state = { ...state, fighters: state.fighters.map(f => f.id === 'P1' ? { ...f, health: 10 } : f) };
-    // A jump-in can replace the first attack and delay the KO by one jump arc,
-    // so allow a few hundred ticks while still failing on a non-fighting bot.
-    for (let tick = 0; tick < 240 && !state.fighters.find(f => f.id === 'P2')!.koCount; tick++) {
+    for (let tick = 0; tick < 30 && !state.fighters.find(f => f.id === 'P2')!.koCount; tick++) {
       state = step(state, [neutral('P1'), botInput(state, 'P2', BOT_SEED)]);
     }
     const bot = state.fighters.find(f => f.id === 'P2')!;
@@ -168,9 +164,7 @@ describe('M8 bots fight in the simulation', () => {
     let state = createState({ ids: ['P1', 'P2'], phase: 'fighting', mode: 'last-man-standing' });
     state = fighterPosition(state, 'P1', 100, 160, 1);
     state = fighterPosition(state, 'P2', 125, 160, -1);
-    // P2 is in hit recovery, so it cannot jump over P1's punch. This keeps the
-    // test about elimination and respawn rules rather than about jump timing.
-    state = { ...state, fighters: state.fighters.map(f => f.id === 'P2' ? { ...f, health: 10, hitstun: 6 } : f) };
+    state = { ...state, fighters: state.fighters.map(f => f.id === 'P2' ? { ...f, health: 10 } : f) };
     for (let tick = 0; tick < 20 && state.phase !== 'results'; tick++) {
       state = step(state, [tick === 0 ? { ...neutral('P1'), punch: true } : neutral('P1'), botInput(state, 'P2', BOT_SEED)]);
     }
@@ -215,11 +209,13 @@ describe('M8 bot match determinism', () => {
 
   it('pins the four-player Score Brawl bot replay hashes', () => {
     const run = runBotMatch('score-brawl');
-    // M12 bot mobility changed both pins: jump-ins and evasive hops alter the
-    // approach timings and the ordered event stream. Old state
-    // f0dd005875e324dfee537229610322a8244d29062d81b4fea357374e68deab8d.
-    // Old events 77c6ec27349433eac34df9d827e0f78ccb1691f27beeb2882c0673c30a3b783c.
-    expect(hash(run.state)).toBe('82bbd3e105d1ce784c69f94dfe2dffd8d76830bbbdbc14a8237e63ab5848925f');
-    expect(hash(run.events)).toBe('36dae47bfe81e2c8b8f8ba377c2c1dafd656acbc749b4eb676f8b36893e6b32e');
+    // M12 bot mobility + the point-blank jump-in guard changed both pins again.
+    // The merge from main added seeded hops; constraining jump-ins to targets
+    // strictly outside punch reach restores ground attacks at touching range.
+    // Previous hit-stop-only pins:
+    // state 27349f211dcf44de2d24454004d9fd9e872caa5213252617caf82e42194643cc,
+    // events 0cc6d12cdde9d33716d7eb3aff0fbd143da17ad9155cd6d8210d183420d12064.
+    expect(hash(run.state)).toBe('8c11ffb1c40ffd06645f8490aa40f6f6c3ec1646d9696a07899492af98cb42ce');
+    expect(hash(run.events)).toBe('3b41dc0584908a2a6aaf41266791528ef996ddb74de6ff2e22418c4b4b9d89b9');
   });
 });

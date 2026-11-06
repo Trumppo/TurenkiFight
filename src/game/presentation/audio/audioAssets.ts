@@ -17,8 +17,8 @@ export type AudioVoiceAsset =
 
 /** Every cue has an explicit, intentionally simple placeholder definition. */
 export const PLACEHOLDER_CUE_ASSETS: Readonly<Record<AudioCue, AudioVoiceAsset>> = {
-  hit: { kind: 'synth', shape: { frequency: 260, duration: 0.075, waveform: 'square', peak: 0.11, noise: 0.035, noiseDuration: 0.035 } },
-  kick: { kind: 'synth', shape: { frequency: 145, duration: 0.12, waveform: 'triangle', peak: 0.14, pitchDrop: 0.7, noise: 0.075, noiseDuration: 0.07 } },
+  hit: { kind: 'synth', shape: { frequency: 300, duration: 0.06, waveform: 'square', peak: 0.12, attack: 0.003, release: 0.025, noise: 0.04, noiseDuration: 0.025 } },
+  kick: { kind: 'synth', shape: { frequency: 165, duration: 0.095, waveform: 'triangle', peak: 0.15, attack: 0.003, release: 0.03, pitchDrop: 0.72, noise: 0.08, noiseDuration: 0.055 } },
   jump: { kind: 'synth', shape: { frequency: 540, duration: 0.09, waveform: 'square', peak: 0.095 } },
   land: { kind: 'synth', shape: { frequency: 112, duration: 0.11, waveform: 'triangle', peak: 0.12, noise: 0.055, noiseDuration: 0.06 } },
   ko: { kind: 'synth', shape: { frequency: 220, duration: 0.18, waveform: 'square', peak: 0.13, pitchDrop: 0.72, noise: 0.04, noiseDuration: 0.08 } },
