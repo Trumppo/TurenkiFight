@@ -1363,12 +1363,14 @@ tasks:
       - "Deathmatch still ends on 20 frags or the timer; ranking and tie-break match rankMatch"
       - "Score Brawl and Last Man Standing bytes and pinned fingerprints are unchanged; the Deathmatch fingerprint is updated with an explicit note"
       - npm test, npm run build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/156
     last_updated: "2026-11-06"
     notes: "Owner chose the shrinking platform (C2) on 2026-11-06 because Deathmatch played almost like Score Brawl. No protocol change: the zone is derived from the tick."
 
   - id: M10-DM-ZONE-UI
     title: Show the shrinking platform, its warning and the HUD stage
     assigned_role: graphics-session
+    session_id: graphics-session-20261106-zone
     status: review
     priority: P1
     specification: docs/M10_DEATHMATCH_ZONE.md
@@ -1379,6 +1381,7 @@ tasks:
       - "The HUD shows the current stage and the next shrink time; a fighter outside the zone has a readable danger state"
       - "The online scene derives the same zone from the tick and shows the same warning"
       - "Existing visual suites stay green; screenshots inspected in classic and retro builds"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/156
     last_updated: "2026-11-06"
     notes: "Presentation only: no simulation or protocol change. Derive the zone from the same shared function as the simulation."
 
