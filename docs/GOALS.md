@@ -36,6 +36,12 @@ Playtest-kierros on käyty ja **milestonet M5, M7, M8 ja M9 on hyväksytty yksit
 
 **Avoimena 2026-11-06:** (1) oikeat äänisamplet ja miksaus, kun pyydät; (2) kahdeksan pelaajan verkkototeutus on päätetty mutta lykätty, ja mittaus (kaksi konetta) puuttuu; (3) Deathmatchin kutistuvan laiturin säätö oman playtestin jälkeen; (4) Deathmatch poistetaan, jos uusi identiteetti ei toimi.
 
+**Toteutus 2026-11-06:** Deathmatchin kutistuva laiturialue on yhdistetty (PR #156, `e9a90e9`) — portaat 15 s
+FIGHTin alusta, 100 → 42 %, ulkopuolella 1 HP / 6 tickiä, KO ilman fragia, respawn turva-alueelle, ei
+protokollamuutosta. Liikenopeus on nostettu 20 % (PR #157, `a1fcf0f`) 1,56 px/tickiin; kaikki kiinnitetyt
+sormenjäljet päivitettiin ja raportoitiin. Molemmat odottavat omistajan playtestiä; M11:n loput (hit stop,
+knockback) ovat ehdotuksia.
+
 ## Pitkän aikavälin suunta (omistajan visio 2026-11-06)
 
 > Turenki-teemainen tappelupeli: **kahdeksan pelaajaa verkossa** ja **enintään neljä ihmistä lokaalisti**, jossa **80 % on kaaosta ja 20 % taitoa**. Henkisinä esi-isinä *Target Renegade* ja *Streets of Rage*.
