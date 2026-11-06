@@ -103,10 +103,16 @@ function nextObjectId(objects: readonly SimObject[]): string {
 }
 const unbrokenCount = (objects: readonly SimObject[]): number =>
   objects.reduce((count, object) => count + (object.state === 'broken' ? 0 : 1), 0);
-/** A dropped bottle lands where its holder stood and loses flight state. */
-function dropObject(object: SimObject): void {
+/** A dropped bottle lands at its holder's current position and loses flight state. */
+function dropObject(object: SimObject, holder?: Fighter): void {
   object.state = 'ground';
   object.z = 0;
+  if (holder) {
+    // Use the holder's post-movement position, not the object's previous
+    // follow position, so a KO'd holder drops the bottle where it stood.
+    object.x = clampX(holder.x);
+    object.y = clampY(holder.y);
+  }
   delete object.holder;
   delete object.vx;
   delete object.vz;
@@ -361,11 +367,15 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
    * M12 object stage. Fixed per-tick order, after movement and combat and
    * before match timers (see `docs/M12_OBJECTS.md` and `tests/m12-items.test.ts`):
    *
-   *   spawn/drop/pickup -> throw -> flight -> impact/break -> cleanup
+   *   spawn -> drop/pickup -> throw -> flight -> impact/break -> cleanup
    *
-   * Spawn and drop are part of the pickup stage so a bottle that appears on
-   * this tick can be grabbed on this tick, and a KO'd holder releases its
-   * bottle before anyone else can pick it up.
+   * Spawn runs first on its tick schedule. Drop and pickup are part of the
+   * interaction stage so a KO'd holder releases its bottle before anyone else
+   * can pick it up, and a bottle that appears can be grabbed on the same tick.
+   * While hit stop is active the whole interaction/physics stage is frozen
+   * exactly like fighter movement (drop, pickup, throw, flight and impact do
+   * not advance); only the tick-scheduled spawn still runs, so the cadence
+   * stays a pure function of the simulation tick.
    */
   const canHandleObjects = (fighter: Fighter): boolean =>
     !fighter.eliminated && fighter.koTimer === 0 && fighter.health > 0;
@@ -374,12 +384,12 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     for (const object of objects) {
       if (object.state !== 'held') continue;
       const holder = fighters.find(fighter => fighter.id === object.holder);
-      if (!holder || !canHandleObjects(holder)) dropObject(object);
+      if (!holder || !canHandleObjects(holder)) dropObject(object, holder);
     }
   };
   // Drop first: an object held by a fighter knocked out in the combat stage
   // must not stay attached or keep a spawn slot occupied.
-  dropInvalidHeld();
+  if (!frozen) dropInvalidHeld();
   // One bottle per 600 fighting ticks, at the next point in the fixed table,
   // while the unbroken cap has room. Both conditions are pure functions of the
   // tick and the state.
@@ -390,99 +400,104 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     objects.push({ id: nextObjectId(objects), kind: 'bottle', x: point.x, y: point.y, z: 0,
       state: 'ground', spawnTick: next.tick });
   }
-  // Held objects follow their holder. A press while already holding is not
-  // consumed by pickup; the throw stage below turns the same edge into a throw.
-  for (const object of objects) {
-    if (object.state !== 'held') continue;
-    const holder = fighters.find(fighter => fighter.id === object.holder);
-    if (!holder || !canHandleObjects(holder)) continue;
-    object.x = holder.x;
-    object.y = holder.y;
-    object.z = HELD_OBJECT_Z;
-  }
-  const grabbedFighters = fighters.filter(fighter => grabPressed.has(fighter.id) && canHandleObjects(fighter))
-    .sort((a, b) => a.id.localeCompare(b.id));
-  const pickedUp = new Set<PlayerId>();
-  for (const fighter of grabbedFighters) {
-    if (objects.some(object => object.state === 'held' && object.holder === fighter.id)) continue;
-    const candidates = objects.filter(object => object.state === 'ground' &&
-      Math.abs(object.x - fighter.x) <= OBJECT_PICKUP_REACH_X &&
-      Math.abs(object.y - fighter.y) <= OBJECT_PICKUP_REACH_Y);
-    candidates.sort((a, b) =>
-      (Math.abs(a.x - fighter.x) + Math.abs(a.y - fighter.y)) -
-      (Math.abs(b.x - fighter.x) + Math.abs(b.y - fighter.y)) ||
-      objectNumber(a.id) - objectNumber(b.id));
-    const target = candidates[0];
-    if (!target) continue;
-    target.state = 'held';
-    target.holder = fighter.id;
-    target.z = HELD_OBJECT_Z;
-    delete target.vx;
-    delete target.vz;
-    pickedUp.add(fighter.id);
-  }
-  // Throw: the same grab edge, but only for a fighter that was already holding
-  // at the start of this stage (not one that just picked a bottle up).
-  for (const fighter of grabbedFighters) {
-    if (pickedUp.has(fighter.id)) continue;
-    const held = objects.find(object => object.state === 'held' && object.holder === fighter.id);
-    if (!held) continue;
-    held.state = 'airborne';
-    held.x = fighter.x;
-    held.y = fighter.y;
-    held.z = THROW_START_Z;
-    held.vx = fighter.facing * THROW_SPEED_X;
-    held.vz = THROW_START_VZ;
-  }
-  // Flight: advance every airborne object exactly once. Held objects already
-  // followed their holder; ground and broken objects do not move.
-  for (const object of objects) {
-    if (object.state !== 'airborne') continue;
-    object.x += object.vx ?? 0;
-    object.z += object.vz ?? 0;
-    object.vz = (object.vz ?? 0) - OBJECT_GRAVITY;
-  }
-  // Impact: a thrown bottle breaks on the first opposing fighter in range, or
-  // on the ground/arena edge. Impacts are resolved in object-id order so the
-  // event stream is replay-stable.
-  const airborne = objects.filter(object => object.state === 'airborne')
-    .sort((a, b) => objectNumber(a.id) - objectNumber(b.id));
-  for (const object of airborne) {
-    const targets = fighters.filter(fighter => fighter.id !== object.holder && canHandleObjects(fighter) &&
-      !fighter.protection &&
-      Math.abs(fighter.x - object.x) <= THROW_HIT_RADIUS &&
-      Math.abs(fighter.y - object.y) <= THROW_HIT_RADIUS &&
-      Math.abs(fighter.z - object.z) <= THROW_HIT_HEIGHT);
-    targets.sort((a, b) =>
-      (Math.abs(a.x - object.x) + Math.abs(a.y - object.y)) -
-      (Math.abs(b.x - object.x) + Math.abs(b.y - object.y)) ||
-      a.id.localeCompare(b.id));
-    const target = targets[0];
-    if (target) {
-      const thrower = fighters.find(fighter => fighter.id === object.holder);
-      if (thrower) applyHit(thrower, target, 'throw', (object.vx ?? THROW_SPEED_X) < 0 ? -1 : 1);
-      object.state = 'broken';
-      delete object.holder;
-      delete object.vx;
-      delete object.vz;
-      continue;
+  if (!frozen) {
+    // Held objects follow their holder. A press while already holding is not
+    // consumed by pickup; the throw stage below turns the same edge into a throw.
+    for (const object of objects) {
+      if (object.state !== 'held') continue;
+      const holder = fighters.find(fighter => fighter.id === object.holder);
+      if (!holder || !canHandleObjects(holder)) continue;
+      object.x = holder.x;
+      object.y = holder.y;
+      object.z = HELD_OBJECT_Z;
     }
-    if (object.z <= 0 || object.x < ARENA_BOUNDS.minX || object.x > ARENA_BOUNDS.maxX) {
-      object.x = clampX(object.x);
-      object.z = 0;
-      object.state = 'broken';
-      delete object.holder;
-      delete object.vx;
-      delete object.vz;
+    const grabbedFighters = fighters.filter(fighter => grabPressed.has(fighter.id) && canHandleObjects(fighter))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const pickedUp = new Set<PlayerId>();
+    for (const fighter of grabbedFighters) {
+      if (objects.some(object => object.state === 'held' && object.holder === fighter.id)) continue;
+      // The bottle must be in front of the fighter: the half-plane along
+      // `facing`. A bottle exactly underfoot is allowed (dx * facing === 0).
+      const candidates = objects.filter(object => object.state === 'ground' &&
+        (object.x - fighter.x) * fighter.facing >= 0 &&
+        Math.abs(object.x - fighter.x) <= OBJECT_PICKUP_REACH_X &&
+        Math.abs(object.y - fighter.y) <= OBJECT_PICKUP_REACH_Y);
+      candidates.sort((a, b) =>
+        (Math.abs(a.x - fighter.x) + Math.abs(a.y - fighter.y)) -
+        (Math.abs(b.x - fighter.x) + Math.abs(b.y - fighter.y)) ||
+        objectNumber(a.id) - objectNumber(b.id));
+      const target = candidates[0];
+      if (!target) continue;
+      target.state = 'held';
+      target.holder = fighter.id;
+      target.z = HELD_OBJECT_Z;
+      delete target.vx;
+      delete target.vz;
+      pickedUp.add(fighter.id);
     }
-  }
-  // An impact can knock out a holder after the pickup pass; release in cleanup
-  // so no snapshot shows a KO'd fighter holding a bottle.
-  dropInvalidHeld();
-  // Cleanup: a broken bottle is gone before the snapshot is taken, so the
-  // unbroken cap and the wire payload are bounded by OBJECT_SPAWN_TABLE.maxUnbroken.
-  for (let index = objects.length - 1; index >= 0; index--) {
-    if (objects[index].state === 'broken') objects.splice(index, 1);
+    // Throw: the same grab edge, but only for a fighter that was already holding
+    // at the start of this stage (not one that just picked a bottle up).
+    for (const fighter of grabbedFighters) {
+      if (pickedUp.has(fighter.id)) continue;
+      const held = objects.find(object => object.state === 'held' && object.holder === fighter.id);
+      if (!held) continue;
+      held.state = 'airborne';
+      held.x = fighter.x;
+      held.y = fighter.y;
+      held.z = THROW_START_Z;
+      held.vx = fighter.facing * THROW_SPEED_X;
+      held.vz = THROW_START_VZ;
+    }
+    // Flight: advance every airborne object exactly once. Held objects already
+    // followed their holder; ground and broken objects do not move.
+    for (const object of objects) {
+      if (object.state !== 'airborne') continue;
+      object.x += object.vx ?? 0;
+      object.z += object.vz ?? 0;
+      object.vz = (object.vz ?? 0) - OBJECT_GRAVITY;
+    }
+    // Impact: a thrown bottle breaks on the first opposing fighter in range, or
+    // on the ground/arena edge. Impacts are resolved in object-id order so the
+    // event stream is replay-stable.
+    const airborne = objects.filter(object => object.state === 'airborne')
+      .sort((a, b) => objectNumber(a.id) - objectNumber(b.id));
+    for (const object of airborne) {
+      const targets = fighters.filter(fighter => fighter.id !== object.holder && canHandleObjects(fighter) &&
+        !fighter.protection &&
+        Math.abs(fighter.x - object.x) <= THROW_HIT_RADIUS &&
+        Math.abs(fighter.y - object.y) <= THROW_HIT_RADIUS &&
+        Math.abs(fighter.z - object.z) <= THROW_HIT_HEIGHT);
+      targets.sort((a, b) =>
+        (Math.abs(a.x - object.x) + Math.abs(a.y - object.y)) -
+        (Math.abs(b.x - object.x) + Math.abs(b.y - object.y)) ||
+        a.id.localeCompare(b.id));
+      const target = targets[0];
+      if (target) {
+        const thrower = fighters.find(fighter => fighter.id === object.holder);
+        if (thrower) applyHit(thrower, target, 'throw', (object.vx ?? THROW_SPEED_X) < 0 ? -1 : 1);
+        object.state = 'broken';
+        delete object.holder;
+        delete object.vx;
+        delete object.vz;
+        continue;
+      }
+      if (object.z <= 0 || object.x < ARENA_BOUNDS.minX || object.x > ARENA_BOUNDS.maxX) {
+        object.x = clampX(object.x);
+        object.z = 0;
+        object.state = 'broken';
+        delete object.holder;
+        delete object.vx;
+        delete object.vz;
+      }
+    }
+    // An impact can knock out a holder after the pickup pass; release in cleanup
+    // so no snapshot shows a KO'd fighter holding a bottle.
+    dropInvalidHeld();
+    // Cleanup: a broken bottle is gone before the snapshot is taken, so the
+    // unbroken cap and the wire payload are bounded by OBJECT_SPAWN_TABLE.maxUnbroken.
+    for (let index = objects.length - 1; index >= 0; index--) {
+      if (objects[index].state === 'broken') objects.splice(index, 1);
+    }
   }
   if (objects.length) next.objects = objects;
   else delete next.objects;

@@ -155,24 +155,90 @@ describe('M12 per-tick order', () => {
     expect(state.fighters[1].health).toBe(80);
     expect(state.objects).toBeUndefined();
   });
+
+  it('freezes object flight, pickup and impact during hit stop', () => {
+    const flying = (targetX: number) => withFighter(
+      withObjects(createState(['P1', 'P2'], 'fighting'), [{
+        id: 'O1', kind: 'bottle', x: 100, y: 150, z: 12, state: 'airborne', holder: 'P1', vx: 3, vz: 2,
+      }]),
+      'P2',
+      { x: targetX, y: 150, health: 100 },
+    );
+
+    // Flight pauses: the bottle would move 3 px and hit P2 at x=104, but a
+    // hit-stop tick leaves both position and health untouched.
+    const frozenImpact = step({ ...flying(104), hitStopTicks: 3 }, []);
+    expect(frozenImpact.hitStopTicks).toBe(2);
+    expect(frozenImpact.objects?.[0]).toEqual({
+      id: 'O1', kind: 'bottle', x: 100, y: 150, z: 12,
+      state: 'airborne', holder: 'P1', vx: 3, vz: 2,
+    });
+    expect(frozenImpact.fighters[1].health).toBe(100);
+    expect(frozenImpact.events).toEqual([]);
+
+    // Pickup also pauses: the grab edge is not consumed and the bottle stays
+    // on the ground while the freeze runs.
+    const ground = withObjects(createState(['P1', 'P2'], 'fighting'), [{
+      id: 'O2', kind: 'bottle', x: 100, y: 150, z: 0, state: 'ground', spawnTick: 5,
+    }]);
+    const frozenPickup = step({
+      ...withFighter(ground, 'P1', { x: 99, y: 150, facing: 1 }),
+      hitStopTicks: 3,
+    }, [grab('P1')]);
+    expect(frozenPickup.objects?.[0].state).toBe('ground');
+    expect(frozenPickup.fighters[0].previousButtons).toEqual([]);
+
+    // After the freeze counter reaches zero, the next tick resumes the flight.
+    let thawed = step({ ...flying(300), hitStopTicks: 1 }, []);
+    expect(thawed.hitStopTicks).toBeUndefined();
+    expect(thawed.objects?.[0].x).toBe(100);
+    thawed = step(thawed, []);
+    expect(thawed.objects?.[0]).toMatchObject({ x: 103, z: 14, vz: 1.65 });
+  });
 });
 
 describe('M12 pickup, hold and drop', () => {
-  it('picks up a ground bottle at the exact reach boundary and refuses one pixel beyond it', () => {
+  it('picks up a ground bottle at the exact reach boundary in front and refuses one pixel beyond it', () => {
     const base = () => withObjects(createState(['P1', 'P2'], 'fighting'), [{
       id: 'O1', kind: 'bottle', x: 100, y: 150, z: 0, state: 'ground', spawnTick: 5,
     }]);
-    const atBoundary = step(withFighter(base(), 'P1', { x: 100 + OBJECT_PICKUP_REACH_X, y: 150 }), [grab('P1')]);
+    const atBoundary = step(withFighter(base(), 'P1', {
+      x: 100 - OBJECT_PICKUP_REACH_X, y: 150, facing: 1,
+    }), [grab('P1')]);
     expect(atBoundary.objects?.[0]).toMatchObject({ state: 'held', holder: 'P1', z: HELD_OBJECT_Z });
 
-    const beyond = step(withFighter(base(), 'P1', { x: 100 + OBJECT_PICKUP_REACH_X + 1, y: 150 }), [grab('P1')]);
+    const beyond = step(withFighter(base(), 'P1', {
+      x: 100 - OBJECT_PICKUP_REACH_X - 1, y: 150, facing: 1,
+    }), [grab('P1')]);
     expect(beyond.objects?.[0].state).toBe('ground');
 
-    const atDepth = step(withFighter(base(), 'P1', { x: 100, y: 150 + OBJECT_PICKUP_REACH_Y }), [grab('P1')]);
+    const atDepth = step(withFighter(base(), 'P1', {
+      x: 99, y: 150 + OBJECT_PICKUP_REACH_Y, facing: 1,
+    }), [grab('P1')]);
     expect(atDepth.objects?.[0]).toMatchObject({ state: 'held', holder: 'P1' });
 
-    const beyondDepth = step(withFighter(base(), 'P1', { x: 100, y: 150 + OBJECT_PICKUP_REACH_Y + 1 }), [grab('P1')]);
+    const beyondDepth = step(withFighter(base(), 'P1', {
+      x: 99, y: 150 + OBJECT_PICKUP_REACH_Y + 1, facing: 1,
+    }), [grab('P1')]);
     expect(beyondDepth.objects?.[0].state).toBe('ground');
+  });
+
+  it('requires the bottle to be in front of the fighter in both directions', () => {
+    const base = () => withObjects(createState(['P1', 'P2'], 'fighting'), [{
+      id: 'O1', kind: 'bottle', x: 100, y: 150, z: 0, state: 'ground', spawnTick: 5,
+    }]);
+    // Facing right: a bottle at 100 is behind a fighter at 105.
+    const behindRight = step(withFighter(base(), 'P1', { x: 105, y: 150, facing: 1 }), [grab('P1')]);
+    expect(behindRight.objects?.[0].state).toBe('ground');
+    // Facing left: the same bottle is in front.
+    const frontLeft = step(withFighter(base(), 'P1', { x: 105, y: 150, facing: -1 }), [grab('P1')]);
+    expect(frontLeft.objects?.[0]).toMatchObject({ state: 'held', holder: 'P1' });
+    // Facing left: a bottle at 100 is behind a fighter at 95.
+    const behindLeft = step(withFighter(base(), 'P1', { x: 95, y: 150, facing: -1 }), [grab('P1')]);
+    expect(behindLeft.objects?.[0].state).toBe('ground');
+    // Facing right: the same bottle is in front.
+    const frontRight = step(withFighter(base(), 'P1', { x: 95, y: 150, facing: 1 }), [grab('P1')]);
+    expect(frontRight.objects?.[0]).toMatchObject({ state: 'held', holder: 'P1' });
   });
 
   it('resolves simultaneous grab inputs deterministically by fighter id', () => {
@@ -221,6 +287,22 @@ describe('M12 pickup, hold and drop', () => {
     expect(next.objects).toEqual([{
       id: 'O2', kind: 'bottle', x: 100, y: 150, z: 0, state: 'ground',
     }]);
+  });
+
+  it('drops at the holder current position after this tick movement', () => {
+    const punchAlreadyActive = MOVES.punch.active + MOVES.punch.recovery;
+    let state = withObjects(createState(['P1', 'P2'], 'fighting'), [heldBy('O1', 'P1', 100, 150)]);
+    state = withFighter(state, 'P1', { x: 100, y: 150, health: 10, facing: 1 });
+    state = withFighter(state, 'P2', {
+      x: 120, y: 150, facing: -1, attackMove: 'punch', attackFrames: punchAlreadyActive,
+      attackCooldown: punchAlreadyActive,
+    });
+    // P1 moves 1.56 px before the punch lands; the drop must use that new x,
+    // not the object's previous follow position (100).
+    const next = step(state, [{ ...neutral('P1'), moveX: 1 }, neutral('P2')]);
+    expect(next.fighters[0].x).toBeCloseTo(101.56, 10);
+    expect(next.fighters[0].koTimer).toBe(180);
+    expect(next.objects?.[0]).toMatchObject({ state: 'ground', x: 101.56, y: 150, z: 0 });
   });
 
   it('drops a held bottle on a knockout and on Last Man Standing elimination', () => {
