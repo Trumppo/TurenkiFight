@@ -1425,7 +1425,7 @@ tasks:
     status: blocked
     priority: P1
     specification: docs/M12_OBJECTS.md
-    depends_on: [M11-HITSTOP-KNOCKBACK]
+    depends_on: []
     scope: [src/game/simulation/, src/game/protocol/, tests/]
     acceptance:
       - "One bottle object spawns on a deterministic schedule and exists in the simulation state"
