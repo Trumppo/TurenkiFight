@@ -133,10 +133,13 @@ describe('M7 mode-aware snapshots on the wire', () => {
       host: '127.0.0.1',
       port: 8787,
       roomId: 'match',
+      roomCode: null,
+      maxConnections: 4,
       playerIds: ['P1', 'P2'],
       snapshotHz: 20,
       startMode: 'auto',
       mode: 'last-man-standing',
+      secure: false,
     })) as Record<string, unknown>;
     expect(parsed.mode).toBe('last-man-standing');
   });

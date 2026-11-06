@@ -1,4 +1,6 @@
 import type { AddressInfo } from 'node:net';
+import { createServer as createHttpsServer } from 'node:https';
+import { createSecureContext } from 'node:tls';
 import { WebSocket, WebSocketServer, type RawData } from 'ws';
 import { TICK_RATE } from '../../src/game/simulation/step';
 import type { ModeId } from '../../src/game/simulation/types';
@@ -50,16 +52,29 @@ export type WsServerEvent =
  * Thin Node WebSocket transport around `AuthoritativeWsSession`.
  *
  * The only trusted identity a socket gets is the ID allocated here; nothing in
- * a client payload can set or influence it. This prototype has no TLS,
- * authentication, origin checks, rate limiting or production hardening.
+ * a client payload can set or influence it. Supplying PEM certificate and key
+ * material switches the listener to HTTPS/WSS. This prototype still has no
+ * authentication, origin checks or rate limiting; the room code is admission
+ * only and is not an account or a secret with cryptographic guarantees.
  */
 export type WsServerConfig = {
   port: number;
   host?: string;
   roomId?: string;
+  /**
+   * Optional admission code. When set, every join must carry the matching
+   * `roomCode` or the gateway denies it before a slot is allocated.
+   */
+  roomCode?: string;
+  /** Simulation roster; the default is the historical P1..P4, up to MAX_PLAYERS. */
   playerIds?: readonly string[];
   /** Match rules chosen at session creation. Defaults to Score Brawl. */
   mode?: ModeId;
+  /**
+   * TLS material (PEM text). When supplied the server listens as HTTPS/WSS;
+   * without it the historical plain `ws://` transport is unchanged.
+   */
+  tls?: { readonly cert: string; readonly key: string };
   snapshotHz?: SnapshotHz;
   maxLead?: number;
   maxTicks?: number;
@@ -138,6 +153,21 @@ function envelopeEvent(connectionId: string, result: SessionEnvelopeResult): WsS
 export async function startWsServer(config: WsServerConfig): Promise<WsServerHandle> {
   if (!Number.isSafeInteger(config?.port) || config.port < 0 || config.port > 65535) {
     throw new Error('Invalid WebSocket port');
+  }
+  const tls = config.tls ?? null;
+  if (tls !== null) {
+    if (typeof tls.cert !== 'string' || tls.cert.trim().length === 0 ||
+        typeof tls.key !== 'string' || tls.key.trim().length === 0) {
+      throw new Error('TLS requires both a certificate and a private key in PEM form');
+    }
+    // Fail during construction, not on the first handshake: an invalid PEM must
+    // stop the operator immediately with a clear message.
+    try {
+      createSecureContext({ cert: tls.cert, key: tls.key });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`Invalid TLS certificate or key: ${detail}`);
+    }
   }
   const host = config.host ?? '127.0.0.1';
   const startDelayMs = config.startDelayMs ?? DEFAULT_START_DELAY_MS;
@@ -259,6 +289,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
 
   const room = new AuthoritativeWsSession({
     ...(config.roomId === undefined ? {} : { roomId: config.roomId }),
+    ...(config.roomCode === undefined ? {} : { roomCode: config.roomCode }),
     ...(config.playerIds === undefined ? {} : { playerIds: config.playerIds }),
     ...(config.mode === undefined ? {} : { mode: config.mode }),
     ...(config.snapshotHz === undefined ? {} : { snapshotHz: config.snapshotHz }),
@@ -301,9 +332,28 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
     },
   });
 
-  const wss = new WebSocketServer({ host, port: config.port, maxPayload: MAX_SESSION_ENVELOPE_BYTES });
+  const httpsServer = tls === null ? null : createHttpsServer({ cert: tls.cert, key: tls.key });
+  const wss = httpsServer === null
+    ? new WebSocketServer({ host, port: config.port, maxPayload: MAX_SESSION_ENVELOPE_BYTES })
+    : new WebSocketServer({ server: httpsServer, maxPayload: MAX_SESSION_ENVELOPE_BYTES });
+  const httpServer = httpsServer;
 
   await new Promise<void>((resolve, reject) => {
+    if (httpServer !== null) {
+      const server = httpServer;
+      const onListening = () => {
+        server.off('error', onError);
+        resolve();
+      };
+      const onError = (error: Error) => {
+        server.off('listening', onListening);
+        reject(error);
+      };
+      server.once('listening', onListening);
+      server.once('error', onError);
+      server.listen(config.port, host);
+      return;
+    }
     const onListening = () => {
       wss.off('error', onError);
       resolve();
@@ -416,6 +466,14 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
       await new Promise<void>(resolve => {
         wss.close(() => resolve());
       });
+      // A WebSocketServer attached to an external HTTPS server does not close
+      // that server; release the port explicitly.
+      if (httpServer !== null && httpServer.listening) {
+        httpServer.closeAllConnections();
+        await new Promise<void>(resolve => {
+          httpServer.close(() => resolve());
+        });
+      }
     },
   };
 }

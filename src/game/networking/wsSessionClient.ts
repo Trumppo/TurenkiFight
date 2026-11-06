@@ -3,6 +3,8 @@ import { MAX_PLAYERS_PER_FRAME } from '../protocol/inputFrame';
 import type { StateSnapshot } from '../protocol/stateSnapshot';
 import {
   encodeClientEnvelope,
+  isRoomCode,
+  normalizeRoomCode,
   type ClientSessionEnvelope,
   type InputEnvelope,
 } from '../session/sessionEnvelope';
@@ -84,15 +86,27 @@ export class SessionClientCore {
   /** Server-authored result of the last finished match, null until `match-end`. */
   get matchResult(): WsMatchResult | null { return this.resultValue; }
 
-  join(playerIds: readonly string[]): number {
+  /**
+   * Joins 1..MAX_PLAYERS_PER_FRAME slots. `roomCode` is optional so legacy
+   * code-less servers and their tests stay valid; when the server enforces a
+   * code, omitting it is denied before a slot is allocated.
+   */
+  join(playerIds: readonly string[], roomCode?: string): number {
     if (!Array.isArray(playerIds) || playerIds.length < 1 || playerIds.length > MAX_PLAYERS_PER_FRAME) {
       throw new Error(`Join requires 1..${MAX_PLAYERS_PER_FRAME} player slots`);
     }
     if (this.state === 'closed') throw new Error('Session is closed');
+    let code: string | undefined;
+    if (roomCode !== undefined && roomCode.trim().length > 0) {
+      const normalized = normalizeRoomCode(roomCode);
+      if (!isRoomCode(normalized)) throw new Error('Room code must be 4-12 letters or digits');
+      code = normalized;
+    }
     return this.send({
       version: 1,
       kind: 'join-request',
       sequence: this.nextSequence(),
+      ...(code === undefined ? {} : { roomCode: code }),
       playerIds: [...playerIds],
     });
   }

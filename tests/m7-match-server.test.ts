@@ -123,6 +123,9 @@ describe('M7 real-match server mode', () => {
         snapshotHz: 20,
         startDelayMs: 0,
         firstTickDelayMs: 0,
+        // The historical exact-roster cap is still available and keeps this
+        // one-shot runbook's fifth-connection expectation unchanged.
+        connectionMargin: 0,
         log: line => statusLines.push(line),
       });
       openServers.push(server);
@@ -320,6 +323,9 @@ describe('M7 serve:match command surface', () => {
       snapshotHz: 20,
       startMode: 'auto',
       mode: 'score-brawl',
+      roomCode: null,
+      cert: null,
+      key: null,
       rematch: false,
       help: false,
     });
@@ -337,6 +343,9 @@ describe('M7 serve:match command surface', () => {
       snapshotHz: 30,
       startMode: 'manual',
       mode: 'last-man-standing',
+      roomCode: null,
+      cert: null,
+      key: null,
       rematch: false,
       help: false,
     });
@@ -370,19 +379,25 @@ describe('M7 serve:match command surface', () => {
       host: '192.168.1.20',
       port: 8787,
       roomId: 'match',
+      roomCode: 'ABCDE',
+      maxConnections: 6,
       playerIds: PLAYERS,
       snapshotHz: 20,
       startMode: 'auto',
       mode: 'deathmatch',
+      secure: false,
     });
     expect(line).not.toContain('\n');
     const parsed = JSON.parse(line) as Record<string, unknown>;
     expect(Object.keys(parsed).sort()).toEqual([
-      'host', 'kind', 'mode', 'players', 'port', 'roomId', 'snapshotHz', 'startMode', 'tickRate', 'url',
+      'host', 'kind', 'maxConnections', 'mode', 'players', 'port', 'roomCode', 'roomId',
+      'secure', 'snapshotHz', 'startMode', 'tickRate', 'url',
     ]);
     expect(parsed.kind).toBe('match-server-ready');
     expect(parsed.mode).toBe('deathmatch');
     expect(parsed.url).toBe('ws://192.168.1.20:8787');
+    expect(parsed.roomCode).toBe('ABCDE');
+    expect(parsed.maxConnections).toBe(6);
     expect(parsed.tickRate).toBe(60);
     // No peer address, manifest path or invented measurement can appear.
     expect(line).not.toMatch(/remoteAddress|manifest|rtt|latency/i);

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import './style.css';
 import { OnlineMatchController, type OnlineConnectionState } from './game/networking/onlineMatchController';
+import { defaultServerUrl, resolveServerUrl } from './game/networking/wsEndpoint';
 import { OnlineScene } from './game/presentation/OnlineScene';
 import type { GameState } from './game/simulation/types';
 import { KEYBOARD_LAYOUTS, keyboardPlayerInput } from './game/input/keyboardMapping';
@@ -37,9 +38,11 @@ if (pageDescription) {
 }
 const serverParam = params.get('server')?.trim() ?? '';
 const playerParam = (params.get('player')?.trim().toUpperCase() ?? '');
+const roomParam = (params.get('room')?.trim().toUpperCase() ?? '');
 const setup = document.getElementById('online-setup') as HTMLElement;
 const form = document.getElementById('online-connect-form') as HTMLFormElement;
 const serverInput = document.getElementById('server-url') as HTMLInputElement;
+const roomInput = document.getElementById('room-code') as HTMLInputElement;
 const playerSelect = document.getElementById('player-slot') as HTMLSelectElement;
 const errorBox = document.getElementById('online-error') as HTMLElement;
 const statusEl = document.getElementById('online-status') as HTMLElement;
@@ -289,23 +292,29 @@ function updatePanel(): void {
   }
 }
 
-function start(url: string, requestedPlayer: string): void {
+function start(url: string, requestedPlayer: string, requestedRoom: string): void {
   showError(null);
   const playerId = requestedPlayer.trim().toUpperCase();
   if (!/^P[1-4]$/.test(playerId)) {
     showError('Choose a slot between P1 and P4.');
     return;
   }
-  const trimmedUrl = url.trim();
-  if (trimmedUrl.length === 0) {
+  const resolvedUrl = resolveServerUrl(url, window.location.protocol);
+  if (resolvedUrl.length === 0) {
     showError('Enter the match server URL, for example ws://127.0.0.1:8787.');
     return;
   }
-  serverInput.value = trimmedUrl;
+  const roomCode = requestedRoom.trim().toUpperCase();
+  serverInput.value = resolvedUrl;
+  roomInput.value = roomCode;
   playerSelect.value = playerId;
   updateKeyHint(playerId);
   try {
-    controller.connect({ url: trimmedUrl, playerId });
+    controller.connect({
+      url: resolvedUrl,
+      playerId,
+      ...(roomCode.length === 0 ? {} : { roomCode }),
+    });
     setup.hidden = true;
   } catch (error) {
     showError(error instanceof Error ? error.message : String(error));
@@ -314,7 +323,7 @@ function start(url: string, requestedPlayer: string): void {
 
 form.addEventListener('submit', event => {
   event.preventDefault();
-  start(serverInput.value, playerSelect.value);
+  start(serverInput.value, playerSelect.value, roomInput.value);
 });
 playerSelect.addEventListener('change', () => updateKeyHint(playerSelect.value));
 
@@ -364,10 +373,12 @@ updatePanel();
 
 if (serverParam && playerParam) {
   serverInput.value = serverParam;
+  roomInput.value = roomParam;
   if (/^P[1-4]$/.test(playerParam)) playerSelect.value = playerParam;
-  start(serverParam, playerParam);
+  start(serverParam, playerParam, roomParam);
 } else {
-  if (serverParam) serverInput.value = serverParam;
+  serverInput.value = serverParam || defaultServerUrl(window.location.protocol);
+  roomInput.value = roomParam;
   if (/^P[1-4]$/.test(playerParam)) {
     playerSelect.value = playerParam;
     updateKeyHint(playerParam);

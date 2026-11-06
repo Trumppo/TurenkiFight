@@ -1,4 +1,5 @@
 import type { StateSnapshot } from '../protocol/stateSnapshot';
+import { isRoomCode, normalizeRoomCode } from '../session/sessionEnvelope';
 import { TICK_RATE } from '../simulation/step';
 import type { GameState, PlayerInput } from '../simulation/types';
 import {
@@ -71,6 +72,11 @@ export type OnlineMatchOptions = {
 export type OnlineJoinOptions = {
   readonly url: string;
   readonly playerId: string;
+  /**
+   * Server admission code. Optional so a code-less server still works; when
+   * present it is normalized to uppercase and sent with the join.
+   */
+  readonly roomCode?: string;
 };
 
 type MatchStartInfo = {
@@ -87,6 +93,15 @@ function neutralInput(playerId: string): PlayerInput {
   return { playerId, moveX: 0, moveY: 0, jump: false, punch: false, kick: false, jumpkick: false };
 }
 
+function validateRoomCode(raw: string | undefined): string | undefined {
+  if (raw === undefined) return undefined;
+  const value = raw.trim();
+  if (value.length === 0) return undefined;
+  const normalized = normalizeRoomCode(value);
+  if (!isRoomCode(normalized)) throw new Error('Room code must be 4-12 letters or digits');
+  return normalized;
+}
+
 function validateJoin(options: OnlineJoinOptions): URL {
   if (typeof options?.url !== 'string' || options.url.trim().length === 0) {
     throw new Error('Server URL is required, for example ws://127.0.0.1:8787');
@@ -98,7 +113,7 @@ function validateJoin(options: OnlineJoinOptions): URL {
     throw new Error('Server URL must look like ws://HOST:PORT');
   }
   if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') {
-    throw new Error('Server URL must use ws:// or wss:// (this prototype server speaks plain ws://)');
+    throw new Error('Server URL must use ws:// or wss://');
   }
   if (parsed.username || parsed.password || parsed.search || parsed.hash) {
     throw new Error('Server URL must not contain credentials, a query or a fragment');
@@ -119,6 +134,7 @@ export class OnlineMatchController {
   private session: BrowserSession | null = null;
   private inputReader: (() => PlayerInput) | null = null;
   private playerIdValue = '';
+  private roomCodeValue = '';
   private urlValue = '';
 
   private statusValue: OnlineStatus = { state: 'idle', message: 'Not connected.' };
@@ -155,6 +171,7 @@ export class OnlineMatchController {
   get status(): OnlineStatus { return this.statusValue; }
   get connectionState(): OnlineConnectionState { return this.statusValue.state; }
   get playerId(): string { return this.playerIdValue; }
+  get roomCode(): string { return this.roomCodeValue; }
   get url(): string { return this.urlValue; }
   get snapshotCount(): number { return this.snapshotCountValue; }
   get latestTick(): number {
@@ -193,8 +210,10 @@ export class OnlineMatchController {
     if (this.session !== null) throw new Error('A session is already open; reload the page to reconnect');
     if (this.statusValue.state === 'connecting') throw new Error('A connection attempt is already in progress');
     const parsed = validateJoin(options);
+    const roomCode = validateRoomCode(options.roomCode);
     this.reset();
     this.playerIdValue = options.playerId;
+    this.roomCodeValue = roomCode ?? '';
     this.urlValue = parsed.href.replace(/\/$/, '');
     this.setStatus('connecting', `Connecting to ${this.urlValue} as ${this.playerIdValue}…`);
 
@@ -373,7 +392,7 @@ export class OnlineMatchController {
       });
       this.session = session;
       // The adapter queues this until the WebSocket handshake completes.
-      session.client.join([this.playerIdValue]);
+      session.client.join([this.playerIdValue], roomCode);
     } catch (error) {
       this.fail(`Could not open the connection: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -458,6 +477,7 @@ export class OnlineMatchController {
     this.matchResultValue = null;
     this.rematchRefusedCodeValue = null;
     this.nextTick = 0;
+    this.roomCodeValue = '';
     if (hadSession && this.statusValue.state !== 'error' && this.statusValue.state !== 'ended') {
       this.setStatus('closed', 'Disconnected from the match server.');
     }
@@ -569,6 +589,7 @@ export class OnlineMatchController {
     this.running = false;
     this.terminal = false;
     this.disconnecting = false;
+    this.roomCodeValue = '';
   }
 
   private fail(message: string): void {
