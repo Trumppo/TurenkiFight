@@ -139,6 +139,7 @@ describe('M7 mode-aware snapshots on the wire', () => {
       messageRateWindowMs: 1000,
       maxMessagesPerWindow: 240,
       maxValidationFailures: 5,
+      rejoinWindowMs: 30000,
       playerIds: ['P1', 'P2'],
       snapshotHz: 20,
       startMode: 'auto',

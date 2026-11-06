@@ -9,6 +9,8 @@ import { MAX_SESSION_ENVELOPE_BYTES } from '../../src/game/session/sessionEnvelo
 import type { SessionEnvelopeResult } from '../../src/game/session/sessionEnvelopeGateway';
 import {
   AuthoritativeWsSession,
+  DEFAULT_REJOIN_WINDOW_MS,
+  MAX_REJOIN_WINDOW_MS,
   type WsSessionPhase,
   type WsStepResult,
 } from './authoritativeWsSession';
@@ -102,6 +104,11 @@ export type WsServerConfig = {
   maxTicks?: number;
   /** Opt-in repeatable session; see `AuthoritativeWsSession`. Default false. */
   allowRematch?: boolean;
+  /**
+   * How long a non-host player's slot stays reserved after a mid-match drop.
+   * Defaults to `DEFAULT_REJOIN_WINDOW_MS`; `0` restores immediate revocation.
+   */
+  rejoinWindowMs?: number;
   /** Delay after the roster fills before the match enters `running`. */
   startDelayMs?: number;
   /** Delay after `match-start` before the first authoritative tick. */
@@ -214,6 +221,10 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
     // per connection yet.
     new ClientMessageGuard(messagePolicy);
   }
+  const rejoinWindowMs = config.rejoinWindowMs ?? DEFAULT_REJOIN_WINDOW_MS;
+  if (!nonnegativeInteger(rejoinWindowMs) || rejoinWindowMs > MAX_REJOIN_WINDOW_MS) {
+    throw new Error('Invalid rejoin window');
+  }
   const onClientEnvelope = config.onClientEnvelope ?? null;
   if (onClientEnvelope !== null && typeof onClientEnvelope !== 'function') {
     throw new Error('Invalid envelope observer');
@@ -253,6 +264,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
   let nextConnectionId = 1;
   let startTimer: ReturnType<typeof setTimeout> | null = null;
   let tickTimer: ReturnType<typeof setTimeout> | null = null;
+  let rejoinTimer: ReturnType<typeof setTimeout> | null = null;
   let closed = false;
   let nextTickAt = 0;
 
@@ -286,8 +298,9 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
     sockets.delete(connectionId);
     guards.delete(connectionId);
     // `disconnect` is what frees player slots and queued input; if this peer
-    // was the host the existing host-lost lifecycle still applies.
-    room.disconnect(connectionId);
+    // was the host the existing host-lost lifecycle still applies. A policy
+    // closure is not a recoverable drop, so it never leaves a rejoin slot.
+    room.disconnect(connectionId, { reserve: false });
     notifyServerEvent({
       kind: 'connection-closed',
       connectionId,
@@ -310,8 +323,27 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
   const clearTimers = (): void => {
     if (startTimer) clearTimeout(startTimer);
     if (tickTimer) clearTimeout(tickTimer);
+    if (rejoinTimer) clearTimeout(rejoinTimer);
     startTimer = null;
     tickTimer = null;
+    rejoinTimer = null;
+  };
+
+  /**
+   * A reservation may outlive the tick loop (for example the match ends while a
+   * slot is held). One bounded timer per pending reservation releases it even
+   * when no message or tick arrives; the interval loop usually expires it first.
+   */
+  const scheduleRejoinExpiry = (): void => {
+    if (closed || rejoinTimer !== null || room.reservationCount === 0) return;
+    rejoinTimer = setTimeout(() => {
+      rejoinTimer = null;
+      if (closed) return;
+      room.expireReservations();
+      scheduleRejoinExpiry();
+    }, Math.max(25, Math.min(1000, room.rejoinWindowMsValue)));
+    // Never keep a process alive solely for an expiry check.
+    (rejoinTimer as { unref?: () => void }).unref?.();
   };
 
   function tick(): void {
@@ -366,6 +398,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
     ...(config.maxLead === undefined ? {} : { maxLead: config.maxLead }),
     ...(config.maxTicks === undefined ? {} : { maxTicks: config.maxTicks }),
     ...(config.allowRematch === undefined ? {} : { allowRematch: config.allowRematch }),
+    rejoinWindowMs,
     onOutgoing: (targetConnectionId, message) => {
       let encoded: string;
       try {
@@ -505,6 +538,7 @@ export async function startWsServer(config: WsServerConfig): Promise<WsServerHan
       if (!sockets.delete(connectionId)) return;
       guards.delete(connectionId);
       room.disconnect(connectionId);
+      scheduleRejoinExpiry();
       notifyServerEvent({ kind: 'connection-closed', connectionId, connections: sockets.size });
     });
     socket.on('error', () => {

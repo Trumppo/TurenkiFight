@@ -10,6 +10,12 @@ export type SessionPlayerId = string;
 export class SessionRoster {
   private readonly connections = new Map<SessionConnectionId, Set<SessionPlayerId>>();
   private readonly owners = new Map<SessionPlayerId, SessionConnectionId>();
+  /**
+   * Slots kept for a disconnected connection during the rejoin window. The
+   * player still counts as claimed, but the connection is no longer active:
+   * `owns`, `hasConnection` and `isHost` all return false for it.
+   */
+  private readonly reservations = new Map<SessionConnectionId, Set<SessionPlayerId>>();
   private host: SessionConnectionId | null = null;
   private hostAssigned = false;
 
@@ -78,14 +84,78 @@ export class SessionRoster {
     if (!this.isHost(connectionId)) throw new Error('Host authorization required');
   }
 
-  /** Disconnect revokes all slots immediately; no implicit host migration. */
+  /** Disconnect revokes all active slots immediately; no implicit host migration. */
   disconnect(connectionId: SessionConnectionId): SessionPlayerId[] {
     const slots = this.connections.get(connectionId);
+    if (slots) {
+      const revoked = [...slots].sort();
+      for (const id of revoked) this.owners.delete(id);
+      this.connections.delete(connectionId);
+      if (this.host === connectionId) this.host = null;
+      return revoked;
+    }
+    // A reservation is a detached connection; releasing it is explicit and
+    // still removes the claimed slots. Never leave dangling ownership behind.
+    return this.releaseReserved(connectionId);
+  }
+
+  /**
+   * Detaches an active connection while keeping its slots claimed for a later
+   * rejoin. The player count is unchanged and the host is not migrated: a
+   * reserved host leaves `hasHost()` false, exactly like a departed host.
+   */
+  reserve(connectionId: SessionConnectionId): SessionPlayerId[] {
+    this.assertId(connectionId);
+    if (this.reservations.has(connectionId)) return [];
+    const slots = this.connections.get(connectionId);
     if (!slots) return [];
-    const revoked = [...slots].sort();
-    for (const id of revoked) this.owners.delete(id);
+    const reserved = [...slots].sort();
     this.connections.delete(connectionId);
     if (this.host === connectionId) this.host = null;
+    this.reservations.set(connectionId, new Set(reserved));
+    return reserved;
+  }
+
+  /**
+   * Transfers one complete reservation to a new trusted connection. The whole
+   * reserved slot set must be reclaimed at once so a peer cannot take a subset
+   * and leave a second, partially authorized connection behind.
+   */
+  reclaim(connectionId: SessionConnectionId, playerIds: readonly SessionPlayerId[]): void {
+    this.assertId(connectionId);
+    if (this.connections.has(connectionId)) throw new Error('Connection already joined');
+    if (!Array.isArray(playerIds) || playerIds.length < 1) throw new Error('Invalid player slots');
+    const claimed = new Set<SessionPlayerId>();
+    let owner: SessionConnectionId | null = null;
+    for (const playerId of playerIds) {
+      this.assertId(playerId);
+      if (claimed.has(playerId)) throw new Error('Duplicate player slot');
+      claimed.add(playerId);
+      const reservationOwner = this.reservationOwner(playerId);
+      if (reservationOwner === null) throw new Error('Player slot is not reserved');
+      if (owner !== null && reservationOwner !== owner) {
+        throw new Error('Player slots belong to different reservations');
+      }
+      owner = reservationOwner;
+    }
+    const slots = this.reservations.get(owner as SessionConnectionId) as Set<SessionPlayerId>;
+    if (slots.size !== claimed.size) throw new Error('Reservation must be reclaimed in full');
+    this.reservations.delete(owner as SessionConnectionId);
+    for (const playerId of claimed) this.owners.set(playerId, connectionId);
+    this.connections.set(connectionId, claimed);
+    if (!this.hostAssigned) {
+      this.host = connectionId;
+      this.hostAssigned = true;
+    }
+  }
+
+  /** Releases a reservation after its window: the slots become free again. */
+  releaseReserved(connectionId: SessionConnectionId): SessionPlayerId[] {
+    const slots = this.reservations.get(connectionId);
+    if (!slots) return [];
+    this.reservations.delete(connectionId);
+    const revoked = [...slots].sort();
+    for (const playerId of revoked) this.owners.delete(playerId);
     return revoked;
   }
 
@@ -96,6 +166,18 @@ export class SessionRoster {
 
   get playerCount(): number {
     return this.owners.size;
+  }
+
+  /** Slots currently held open for a rejoin, not owned by an active connection. */
+  get reservedCount(): number {
+    return this.reservations.size;
+  }
+
+  private reservationOwner(playerId: SessionPlayerId): SessionConnectionId | null {
+    for (const [connectionId, slots] of this.reservations) {
+      if (slots.has(playerId)) return connectionId;
+    }
+    return null;
   }
 
   private assertId(id: string): void {

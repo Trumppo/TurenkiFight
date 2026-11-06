@@ -11,7 +11,11 @@ import {
   isSessionIdentifier,
   normalizeRoomCode,
 } from '../../src/game/session/sessionEnvelope';
-import type { AuthoritativeWsSession } from './authoritativeWsSession';
+import {
+  DEFAULT_REJOIN_WINDOW_MS,
+  MAX_REJOIN_WINDOW_MS,
+  type AuthoritativeWsSession,
+} from './authoritativeWsSession';
 import {
   CLIENT_MESSAGE_POLICY,
   CLIENT_MESSAGE_WINDOW_MS,
@@ -98,6 +102,8 @@ export type MatchReadyInfo = {
   readonly maxMessagesPerWindow: number;
   /** Consecutive invalid messages before that connection is closed. */
   readonly maxValidationFailures: number;
+  /** Mid-match rejoin window per dropped non-host player, in milliseconds. */
+  readonly rejoinWindowMs: number;
   readonly playerIds: readonly string[];
   readonly snapshotHz: SnapshotHz;
   readonly startMode: MatchStartMode;
@@ -143,6 +149,12 @@ export type MatchServerOptions = {
    * historical one-match lifecycle and every existing runbook unchanged.
    */
   allowRematch?: boolean;
+  /**
+   * Mid-match rejoin window in milliseconds; defaults to 30 s. `0` restores
+   * immediate slot revocation. Rejoin uses the room code plus player id only;
+   * it is not authentication and not host migration.
+   */
+  rejoinWindowMs?: number;
   /** Human-readable lifecycle status. Never contains a client's remote address. */
   log?: (line: string) => void;
   /** Called once after the socket binds, with the advertised connection info. */
@@ -412,6 +424,11 @@ export function serveMatchUsage(): string {
     `  and ${MAX_CLIENT_VALIDATION_FAILURES} consecutive invalid messages. Exceeding`,
     '  any limit closes that connection and frees its room slot immediately.',
     '',
+    'Rejoin policy:',
+    `  a non-host player who drops mid-match keeps their slot for ${DEFAULT_REJOIN_WINDOW_MS / 1000} s.`,
+    '  Rejoining needs the same room code and player id; it is not',
+    '  authentication and it is never host migration.',
+    '',
     'Flags also accept a separate value: --cert cert.pem --key key.pem',
     '',
     'stdin controls:',
@@ -438,6 +455,7 @@ export function formatMatchReadyLine(info: MatchReadyInfo): string {
     messageRateWindowMs: info.messageRateWindowMs,
     maxMessagesPerWindow: info.maxMessagesPerWindow,
     maxValidationFailures: info.maxValidationFailures,
+    rejoinWindowMs: info.rejoinWindowMs,
     players: [...info.playerIds],
     snapshotHz: info.snapshotHz,
     tickRate: TICK_RATE,
@@ -511,6 +529,10 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
     throw new Error(`Invalid connection margin: ${String(connectionMargin)} (expected 0..16)`);
   }
   const maxConnections = playerIds.length + connectionMargin;
+  const rejoinWindowMs = options.rejoinWindowMs ?? DEFAULT_REJOIN_WINDOW_MS;
+  if (!Number.isSafeInteger(rejoinWindowMs) || rejoinWindowMs < 0 || rejoinWindowMs > MAX_REJOIN_WINDOW_MS) {
+    throw new Error(`Invalid rejoin window: ${String(rejoinWindowMs)} (expected 0..${MAX_REJOIN_WINDOW_MS} ms)`);
+  }
   const tls = options.tls ?? null;
   if (tls !== null && (typeof tls.cert !== 'string' || typeof tls.key !== 'string')) {
     throw new Error('TLS requires both a certificate and a private key in PEM form');
@@ -577,6 +599,7 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
     snapshotHz,
     startMode,
     allowRematch: options.allowRematch === true,
+    rejoinWindowMs,
     startDelayMs: options.startDelayMs,
     firstTickDelayMs: options.firstTickDelayMs,
     // Roster plus the documented margin: surplus sockets are closed before
@@ -601,6 +624,7 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
     messageRateWindowMs: CLIENT_MESSAGE_POLICY.windowMs,
     maxMessagesPerWindow: CLIENT_MESSAGE_POLICY.maxMessagesPerWindow,
     maxValidationFailures: CLIENT_MESSAGE_POLICY.maxValidationFailures,
+    rejoinWindowMs,
     playerIds,
     snapshotHz,
     startMode,

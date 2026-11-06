@@ -38,20 +38,50 @@ import { computeMatchResult } from './matchResult';
  * - the roster is frozen from `starting` onwards;
  * - a host disconnect terminates the session with `session-closed: host-lost`,
  *   never migrating host authority;
+ * - a non-host disconnect during `running` keeps that player's slot reserved
+ *   for the configured rejoin window (the operator-facing WebSocket transport
+ *   defaults to {@link DEFAULT_REJOIN_WINDOW_MS}); a new connection with the
+ *   same room code and player id may reattach, and an expired reservation
+ *   releases the slot without stopping the match;
  * - `maxTicks` is a benchmark-only bound that stops the run explicitly.
+ *
+ * Rejoin is not host migration and not authentication: the server stays
+ * authoritative and any peer that knows the room code and player id can
+ * reclaim a reserved slot.
  *
  * No client prediction, rollback, reconnect token, authentication or
  * production security is implemented here.
  */
 export type WsSessionPhase = 'lobby' | 'starting' | 'running' | 'results' | 'closed';
 
+/** Slots stay reserved this long after a mid-match drop by default. */
+export const DEFAULT_REJOIN_WINDOW_MS = 30_000;
+/** Upper bound so a misconfiguration cannot pin a slot indefinitely. */
+export const MAX_REJOIN_WINDOW_MS = 10 * 60_000;
+
+type RejoinReservation = {
+  /** Trusted connection that dropped; its sequence domain is already revoked. */
+  readonly connectionId: string;
+  readonly playerIds: readonly string[];
+  /** Monotonic clock value at which the slot is released. */
+  readonly expiresAt: number;
+};
+
 export type WsSessionOptions = {
   roomId?: string;
   /**
-   * Optional admission code. When set, a join must carry the matching code or
-   * it is denied before a slot is allocated. Undefined keeps legacy sessions.
+   * Optional admission code. When set, a join (including a rejoin) must carry
+   * the matching code or it is denied before a slot is allocated.
    */
   roomCode?: string;
+  /**
+   * How long a non-host player's slot stays reserved after a mid-match drop.
+   * This low-level session defaults to `0` (immediate revocation); the
+   * operator-facing WebSocket transport supplies `DEFAULT_REJOIN_WINDOW_MS`.
+   */
+  rejoinWindowMs?: number;
+  /** Clock used only for reservation expiry; injectable for deterministic tests. */
+  now?: () => number;
   /** Simulation roster; the default is the historical P1..P4, up to MAX_PLAYERS. */
   playerIds?: readonly string[];
   /** Match rules chosen at creation. Defaults to Score Brawl. */
@@ -116,12 +146,15 @@ export class AuthoritativeWsSession {
   private readonly maxLead: number;
   private readonly maxTicks: number | null;
   private readonly allowRematch: boolean;
+  private readonly rejoinWindowMs: number;
+  private readonly clock: () => number;
   private readonly onOutgoing: (targetConnectionId: string | null, message: WsServerMessage) => void;
   private readonly onPhaseChange: (phase: WsSessionPhase) => void;
   private readonly onRoomDenial: (connectionId: string, code: string) => void;
 
   private readonly connections = new Set<string>();
   private readonly ownership = new Map<string, string[]>();
+  private readonly reservations = new Map<string, RejoinReservation>();
   private readonly eventLog: GameEvent[] = [];
   private state: GameState;
   private phaseValue: WsSessionPhase = 'lobby';
@@ -129,6 +162,8 @@ export class AuthoritativeWsSession {
   private runComplete = false;
   /** Monotonic across matches in this process; echoed by `match-start`. */
   private matchId = 1;
+  /** Start tick of the current match, replayed to a rejoining connection. */
+  private matchStartTick = 0;
   /** True between an accepted rematch and the first tick of the new match. */
   private rematchInProgress = false;
 
@@ -168,6 +203,14 @@ export class AuthoritativeWsSession {
     this.maxLead = options.maxLead ?? DEFAULT_MAX_INPUT_LEAD_TICKS;
     this.maxTicks = options.maxTicks ?? null;
     this.allowRematch = options.allowRematch === true;
+    const rejoinWindowMs = options.rejoinWindowMs ?? 0;
+    if (!Number.isSafeInteger(rejoinWindowMs) || rejoinWindowMs < 0 || rejoinWindowMs > MAX_REJOIN_WINDOW_MS) {
+      throw new Error('Invalid rejoin window');
+    }
+    this.rejoinWindowMs = rejoinWindowMs;
+    const clock = options.now ?? (() => Date.now());
+    if (typeof clock !== 'function') throw new Error('Invalid clock');
+    this.clock = clock;
     this.onOutgoing = options.onOutgoing ?? (() => undefined);
     this.onPhaseChange = options.onPhaseChange ?? (() => undefined);
     this.onRoomDenial = options.onRoomDenial ?? (() => undefined);
@@ -201,6 +244,14 @@ export class AuthoritativeWsSession {
   get matchIdValue(): number { return this.matchId; }
   /** Whether this session accepts `rematch` in `results`. */
   get rematchAllowed(): boolean { return this.allowRematch; }
+  /** Configured rejoin window in milliseconds; `0` disables reservations. */
+  get rejoinWindowMsValue(): number { return this.rejoinWindowMs; }
+  /** Connections whose slots are currently held open for a rejoin. */
+  get reservationCount(): number { return this.reservations.size; }
+  /** Player ids currently reserved for a rejoin, in canonical order. */
+  get reservedPlayerIds(): string[] {
+    return [...this.reservations.values()].flatMap(reservation => [...reservation.playerIds]).sort();
+  }
 
   isJoined(connectionId: string): boolean {
     return this.ownership.has(connectionId);
@@ -211,6 +262,7 @@ export class AuthoritativeWsSession {
     if (!isSessionIdentifier(connectionId)) throw new Error('Invalid trusted connection ID');
     if (this.connections.has(connectionId)) throw new Error('Connection already registered');
     if (this.phaseValue === 'closed') throw new Error('Session is closed');
+    this.expireReservations();
     this.connections.add(connectionId);
     this.emit(connectionId, {
       version: 1,
@@ -223,6 +275,7 @@ export class AuthoritativeWsSession {
   /** Handles one client envelope from a trusted, already-registered socket. */
   handleMessage(connectionId: string, data: string | Uint8Array): SessionEnvelopeResult | null {
     if (!this.connections.has(connectionId)) return null;
+    this.expireReservations();
 
     let header: ClientEnvelopeHeader | null = null;
     try {
@@ -246,7 +299,14 @@ export class AuthoritativeWsSession {
       }
     }
 
-    if (header?.kind === 'join-request') {
+    // A mid-match rejoin is the only join allowed after the lobby. It must
+    // claim the complete reserved slot set; every other claim follows the
+    // ordinary frozen-roster path below.
+    const rejoin = header?.kind === 'join-request'
+      ? this.rejoinReservationFor(header.playerIds ?? [])
+      : null;
+
+    if (header?.kind === 'join-request' && rejoin === null) {
       if (this.phaseValue !== 'lobby') {
         return this.denyRoom(
           connectionId,
@@ -312,7 +372,9 @@ export class AuthoritativeWsSession {
       }
     }
 
-    const result = this.gateway.handle(this.binding(connectionId), data);
+    const result = rejoin === null
+      ? this.gateway.handle(this.binding(connectionId), data)
+      : this.gateway.handle(this.binding(connectionId), data, { rejoinPlayerIds: rejoin.playerIds });
     if (!result.accepted) {
       this.emitError(connectionId, result.code, result.message, header);
       return result;
@@ -320,10 +382,23 @@ export class AuthoritativeWsSession {
 
     if (header?.kind === 'join-request') {
       const slots = result.envelope.kind === 'join-request' ? [...result.envelope.playerIds] : [];
+      if (rejoin !== null) {
+        // The reservation is consumed only after the reattach was accepted.
+        this.reservations.delete(rejoin.connectionId);
+      }
       this.ownership.set(connectionId, slots);
       if (this.host === null) this.host = connectionId;
       this.emit(connectionId, { version: 1, kind: 'join-result', accepted: true, playerIds: slots });
       this.emitRoster();
+      if (rejoin !== null) {
+        // Fresh snapshot stream: the rejoining peer gets the current authority
+        // immediately and then joins the ordinary broadcast cadence. No
+        // duplicate fighter or roster entry exists because the same slots were
+        // transferred, not reallocated.
+        this.emit(connectionId, this.matchStartMessage());
+        this.emit(connectionId, { version: 1, kind: 'snapshot', snapshot: this.snapshot() });
+        return result;
+      }
       if (this.phaseValue === 'lobby' && this.gateway.playerCount === this.playerIds.length) {
         this.setPhase('starting');
       }
@@ -395,18 +470,24 @@ export class AuthoritativeWsSession {
   }
 
   private emitMatchStart(): void {
-    this.emit(null, {
+    this.matchStartTick = this.gateway.nextTick;
+    this.emit(null, this.matchStartMessage());
+  }
+
+  private matchStartMessage(): WsServerMessage {
+    return {
       version: 1,
       kind: 'match-start',
-      startTick: this.gateway.nextTick,
+      startTick: this.matchStartTick,
       tickRate: TICK_RATE,
       snapshotHz: this.snapshotHz,
       matchId: this.matchId,
-    });
+    };
   }
 
   /** Advances exactly one authoritative tick; no-op outside `running`. */
   stepOnce(): WsStepResult {
+    this.expireReservations();
     if (this.phaseValue !== 'running' || this.runComplete) {
       return { stepped: false, tick: this.state.tick, snapshotSent: false, complete: this.runComplete };
     }
@@ -448,15 +529,39 @@ export class AuthoritativeWsSession {
     return { stepped: true, tick: this.state.tick, snapshotSent, complete: this.runComplete };
   }
 
-  /** Trusted socket close. Revokes slots, queued input and the sequence domain. */
-  disconnect(connectionId: string): string[] {
+  /**
+   * Trusted socket close. A non-host mid-match drop keeps its slots reserved for
+   * the rejoin window; every other disconnection revokes immediately.
+   *
+   * `reserve: false` is used for policy closures (rate limit, oversized
+   * message, bad room code) so an abusive peer cannot come back to a held slot.
+   */
+  disconnect(connectionId: string, options: { reserve?: boolean } = {}): string[] {
+    this.expireReservations();
     if (!this.connections.delete(connectionId)) return [];
-    const revoked = this.gateway.disconnect(connectionId);
-    this.ownership.delete(connectionId);
     if (connectionId === this.host) {
+      const revoked = this.gateway.disconnect(connectionId);
+      this.ownership.delete(connectionId);
       this.close('host-lost');
       return revoked;
     }
+    if (options.reserve !== false && this.rejoinWindowMs > 0 &&
+        this.phaseValue === 'running' && this.ownership.has(connectionId)) {
+      const reserved = this.gateway.reserve(connectionId);
+      this.ownership.delete(connectionId);
+      if (reserved.length > 0) {
+        this.reservations.set(connectionId, {
+          connectionId,
+          playerIds: reserved,
+          expiresAt: this.clock() + this.rejoinWindowMs,
+        });
+        // The roster is unchanged: the player is still claimed, just idle.
+        this.emitRoster();
+        return reserved;
+      }
+    }
+    const revoked = this.gateway.disconnect(connectionId);
+    this.ownership.delete(connectionId);
     // An incomplete frozen roster cannot start; return to lobby rather than
     // leaving the session stuck in `starting`.
     if (this.phaseValue === 'starting' && this.gateway.playerCount < this.playerIds.length) {
@@ -466,10 +571,29 @@ export class AuthoritativeWsSession {
     return revoked;
   }
 
+  /**
+   * Releases every reservation whose window has elapsed. Called from message,
+   * connection, disconnect and tick paths, and directly by the transport's
+   * expiry timer. Returns the player ids released by this call.
+   */
+  expireReservations(now: number = this.clock()): string[] {
+    if (this.reservations.size === 0) return [];
+    const released: string[] = [];
+    for (const [connectionId, reservation] of [...this.reservations]) {
+      if (reservation.expiresAt > now) continue;
+      this.reservations.delete(connectionId);
+      released.push(...this.gateway.releaseReserved(connectionId));
+    }
+    if (released.length > 0) this.emitRoster();
+    return released;
+  }
+
   /** Terminates the session and revokes every remaining slot. No host migration. */
   close(reason: SessionClosedReason): void {
     if (this.phaseValue === 'closed') return;
     for (const connectionId of [...this.connections]) this.gateway.disconnect(connectionId);
+    for (const connectionId of [...this.reservations.keys()]) this.gateway.releaseReserved(connectionId);
+    this.reservations.clear();
     this.connections.clear();
     this.ownership.clear();
     this.phaseValue = 'closed';
@@ -489,6 +613,22 @@ export class AuthoritativeWsSession {
     return { connectionId, roomId: this.roomId };
   }
 
+  /**
+   * The reservation a join claim may reattach, or null when this is an ordinary
+   * join. Rejoin is allowed only while the match is running and only for the
+   * complete reserved slot set; the claim itself is never trusted as identity.
+   */
+  private rejoinReservationFor(playerIds: readonly string[]): RejoinReservation | null {
+    if (this.rejoinWindowMs === 0 || this.phaseValue !== 'running') return null;
+    const claim = [...playerIds].sort();
+    for (const reservation of this.reservations.values()) {
+      const reserved = [...reservation.playerIds].sort();
+      if (reserved.length !== claim.length) continue;
+      if (reserved.every((playerId, index) => playerId === claim[index])) return reservation;
+    }
+    return null;
+  }
+
   /** A rematch keeps the original roster; every configured slot must be held. */
   private hasFullRoster(): boolean {
     const owned = new Set([...this.ownership.values()].flat());
@@ -500,7 +640,12 @@ export class AuthoritativeWsSession {
   }
 
   private emitRoster(): void {
+    // A reserved player is still claimed, so the roster keeps its entry and a
+    // rejoin never creates a duplicate.
     const owned = new Set([...this.ownership.values()].flat());
+    for (const reservation of this.reservations.values()) {
+      for (const playerId of reservation.playerIds) owned.add(playerId);
+    }
     this.emit(null, {
       version: 1,
       kind: 'roster',

@@ -188,6 +188,34 @@ describe('M2 session envelope gateway', () => {
     expect(gateway.consume()).toEqual({ version: 1, tick: 0, inputs: [controls('P1', -1)] });
   });
 
+  it('reattaches a reserved slot with a fresh sequence domain and an atomic claim', () => {
+    const gateway = new SessionEnvelopeGateway({ roomId: ROOM });
+    expectAccepted(send(gateway, join(1, ['P1'])));
+    expectAccepted(send(gateway, input(2, 0, [controls('P1')])));
+    expect(gateway.reserve('conn-1')).toEqual(['P1']);
+    expect(gateway.playerCount).toBe(1);
+    expect(gateway.isJoined('conn-1')).toBe(false);
+    // The dropped connection's domain and queued frame are gone.
+    expectDenied(send(gateway, input(3, 0, [controls('P1')])), 'not-joined');
+    expect(gateway.sequenceOf('conn-1')).toBeUndefined();
+    expect(gateway.consume().inputs).toEqual([]);
+
+    const rejoinBinding = binding('conn-2');
+    const rejoin = (sequence: number, playerIds: string[]): ReturnType<SessionEnvelopeGateway['handle']> =>
+      gateway.handle(rejoinBinding, encodeClientEnvelope(join(sequence, playerIds)), { rejoinPlayerIds: ['P1'] });
+
+    // A different slot set is refused without touching the reservation.
+    expectDenied(rejoin(1, ['P1', 'P2']), 'reservation-mismatch');
+    expect(gateway.playerCount).toBe(1);
+
+    // The old connection used sequence 2; the new domain starts at 1.
+    expectAccepted(rejoin(1, ['P1']));
+    expect(gateway.isJoined('conn-2')).toBe(true);
+    expect(gateway.playerCount).toBe(1);
+    expectAccepted(gateway.handle(rejoinBinding, encodeClientEnvelope(input(2, 1, [controls('P1', -1)]))));
+    expect(gateway.consume()).toEqual({ version: 1, tick: 1, inputs: [controls('P1', -1)] });
+  });
+
   it('rejects sequence exhaustion and requires a session reset', () => {
     const gateway = new SessionEnvelopeGateway({ roomId: ROOM });
     expectAccepted(send(gateway, join(Number.MAX_SAFE_INTEGER - 2, ['P1'])));

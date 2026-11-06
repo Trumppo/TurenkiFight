@@ -21,7 +21,8 @@ import {
  * One match per process by default. With `--rematch`, an accepted client
  * `rematch` starts another match in the same process with the same roster and
  * mode; without it, a `rematch` is denied and the historical lifecycle stands.
- * Reconnect, rejoin and host migration remain out of scope.
+ * A non-host player who drops mid-match keeps a 30 s rejoin window; host
+ * migration remains out of scope.
  *
  * A short room code is always printed in the ready line and required on join.
  * `--room` fixes it; otherwise one is generated. `--cert`/`--key` switch the
