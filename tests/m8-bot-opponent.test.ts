@@ -99,13 +99,15 @@ describe('M8 bot policy', () => {
   it('attacks when the opponent is inside reach and depth, and not while facing away', () => {
     const base = createState({ ids: ['P1', 'P2'], phase: 'fighting' });
     const inRange = fighterPosition(fighterPosition(base, 'P1', 120, 160, -1), 'P2', 100, 160, 1);
-    const attack = botInput(inRange, 'P2', BOT_SEED);
-    expect(attack.punch || attack.kick).toBe(true);
-    expect(attack.jumpkick).toBe(false);
+    // A jump-in may replace a ground attack inside the band, so sample a short
+    // window: the bot must still choose punch/kick when it stays grounded.
+    const decisions = Array.from({ length: 12 }, (_, tick) => botInput({ ...inRange, tick }, 'P2', BOT_SEED));
+    expect(decisions.some(input => input.punch || input.kick)).toBe(true);
+    expect(decisions.every(input => input.jumpkick === false)).toBe(true);
 
     const behind = fighterPosition(fighterPosition(base, 'P1', 40, 160, -1), 'P2', 60, 160, 1);
-    const noAttack = botInput(behind, 'P2', BOT_SEED);
-    expect(noAttack.punch || noAttack.kick || noAttack.jumpkick).toBe(false);
+    const noAttacks = Array.from({ length: 12 }, (_, tick) => botInput({ ...behind, tick }, 'P2', BOT_SEED));
+    expect(noAttacks.every(input => !input.punch && !input.kick && !input.jumpkick)).toBe(true);
   });
 
   it('returns neutral input for eliminated, knocked-out, orphaned and non-fighting bots', () => {
@@ -147,7 +149,9 @@ describe('M8 bots fight in the simulation', () => {
     state = fighterPosition(state, 'P2', 100, 160, 1);
     state = fighterPosition(state, 'P1', 125, 160, -1);
     state = { ...state, fighters: state.fighters.map(f => f.id === 'P1' ? { ...f, health: 10 } : f) };
-    for (let tick = 0; tick < 30 && !state.fighters.find(f => f.id === 'P2')!.koCount; tick++) {
+    // A jump-in can replace the first attack and delay the KO by one jump arc,
+    // so allow a few hundred ticks while still failing on a non-fighting bot.
+    for (let tick = 0; tick < 240 && !state.fighters.find(f => f.id === 'P2')!.koCount; tick++) {
       state = step(state, [neutral('P1'), botInput(state, 'P2', BOT_SEED)]);
     }
     const bot = state.fighters.find(f => f.id === 'P2')!;
@@ -164,7 +168,9 @@ describe('M8 bots fight in the simulation', () => {
     let state = createState({ ids: ['P1', 'P2'], phase: 'fighting', mode: 'last-man-standing' });
     state = fighterPosition(state, 'P1', 100, 160, 1);
     state = fighterPosition(state, 'P2', 125, 160, -1);
-    state = { ...state, fighters: state.fighters.map(f => f.id === 'P2' ? { ...f, health: 10 } : f) };
+    // P2 is in hit recovery, so it cannot jump over P1's punch. This keeps the
+    // test about elimination and respawn rules rather than about jump timing.
+    state = { ...state, fighters: state.fighters.map(f => f.id === 'P2' ? { ...f, health: 10, hitstun: 6 } : f) };
     for (let tick = 0; tick < 20 && state.phase !== 'results'; tick++) {
       state = step(state, [tick === 0 ? { ...neutral('P1'), punch: true } : neutral('P1'), botInput(state, 'P2', BOT_SEED)]);
     }
@@ -209,11 +215,11 @@ describe('M8 bot match determinism', () => {
 
   it('pins the four-player Score Brawl bot replay hashes', () => {
     const run = runBotMatch('score-brawl');
-    // M11 (+20 % movement) changed both pins; bots share the simulation's
-    // movement code, so their approach timings and hit ticks shifted too.
-    // Old state e209681f72b61f23601071d68e991959260fd0041cd0b275aba39b7716dbe802.
-    // Old events 2b725035034a9a65923a4cff07308fe82b62f70d9423e22e12ceaf8cabef31f9.
-    expect(hash(run.state)).toBe('f0dd005875e324dfee537229610322a8244d29062d81b4fea357374e68deab8d');
-    expect(hash(run.events)).toBe('77c6ec27349433eac34df9d827e0f78ccb1691f27beeb2882c0673c30a3b783c');
+    // M12 bot mobility changed both pins: jump-ins and evasive hops alter the
+    // approach timings and the ordered event stream. Old state
+    // f0dd005875e324dfee537229610322a8244d29062d81b4fea357374e68deab8d.
+    // Old events 77c6ec27349433eac34df9d827e0f78ccb1691f27beeb2882c0673c30a3b783c.
+    expect(hash(run.state)).toBe('82bbd3e105d1ce784c69f94dfe2dffd8d76830bbbdbc14a8237e63ab5848925f');
+    expect(hash(run.events)).toBe('36dae47bfe81e2c8b8f8ba377c2c1dafd656acbc749b4eb676f8b36893e6b32e');
   });
 });

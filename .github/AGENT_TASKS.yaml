@@ -1419,6 +1419,26 @@ tasks:
     last_updated: "2026-11-06"
     notes: "PR #156 merged as e9a90e9. Independent gate found two real test-quality defects: the clamp fixture was insensitive (proved by mutation) and the final-tick zone knockout was untested. Both were fixed and re-checked with mutations."
 
+  - id: M12-BOT-MOBILITY
+    title: Make bots jump more and use jump-in attacks
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261106-botmob
+    status: review
+    priority: P1
+    specification: docs/BOT_MOBILITY_AND_THROWS.md
+    depends_on: [M8-BOT-OPPONENT]
+    scope: [src/game/input/, tests/]
+    acceptance:
+      - "Bots jump several times per match instead of almost never, measured on a fixed fixture before and after"
+      - "Bots jump into range and land jumpkicks, visible in the event stream"
+      - "Bots occasionally jump after taking damage or when cornered, without becoming erratic"
+      - "Inputs remain a pure function of state, tick and seed; the same seed reproduces the same match"
+      - "Bot fixture pins are updated deliberately with old and new values reported"
+      - npm test, npm run build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/160
+    last_updated: "2026-11-06"
+    notes: "Owner report 2026-11-06: bots barely jump. Root cause: jump is allowed only while farther than kick reach at 2 percent per tick, and the +20 percent speed shortened that window. Throwing does not exist yet; see the design note."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
