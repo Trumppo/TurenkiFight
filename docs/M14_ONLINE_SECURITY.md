@@ -65,7 +65,29 @@ authentication, no rate limiting, no room concept and no rejoin**.
 5. Eight-player single-machine numbers are measured and committed with provenance; network numbers remain absent.
 6. Existing one-shot and rematch runbooks keep working.
 
-## 5. Out of scope
+## 5. Implemented in `M14-TLS-ROOMCODES`
+
+This first hardening slice implements only §2.1 and §2.2 plus the per-room connection cap from §2.3.
+Rate limits, rejoin and eight-player measurement are not part of it.
+
+- `serve:match` always prints `roomCode` and `maxConnections` in the ready line. Without `--room` the
+  code is five characters from an unambiguous alphabet (no `O`, `0`, `I`, `1`); `--room` accepts 4-12
+  letters or digits, normalised to uppercase.
+- A join must carry the matching `roomCode`. A missing code is denied with `room-code-required` and a
+  wrong one with `room-code-mismatch`, both before a player slot is allocated.
+- `--cert=<pem>` and `--key=<pem>` must be supplied together. Unreadable, empty or malformed PEM
+  material fails before the port is bound. Without both flags the server remains plain `ws://`.
+- The room cap is the roster plus `DEFAULT_MATCH_CONNECTION_MARGIN = 2`. A socket beyond the cap is
+  closed with WebSocket code 1008 before registration.
+- `startMatchServer` keeps the code-less behaviour when `roomCode` is omitted, so existing benchmark
+  and harness sessions are unchanged; the CLI always enforces a generated or fixed code.
+- The online page defaults to `wss://` when served over https and `ws://` otherwise; an explicit
+  `ws://`/`wss://` in the field or URL wins. The room code comes from `?room=CODE` or the form field.
+  The headless bot CLI also accepts `--room=CODE` for the same server.
+- No network figure is added by this slice. Two-machine measurement remains owner-blocked and every
+  network field stays `NOT_MEASURED`.
+
+## 6. Out of scope
 
 - Accounts, matchmaking, persistence, leaderboards.
 - Multiple rooms per process, horizontal scaling.

@@ -85,9 +85,13 @@ actually measured are written; everything else stays `NOT_MEASURED`.
 
 ### 3.5 Runbook
 A short procedure for the owner:
+0. `serve:match` prints a short room code. Pass it to the page as `?room=CODE` or type it into the
+   room-code field; `--room=CODE` fixes it instead of generating one. Without `--cert/--key` the
+   server speaks plain `ws://` exactly as before.
 1. Start the server on this machine, bound to the LAN interface; note the port.
 2. Open the online page locally and join P1.
-3. In the VM, run the bot against `ws://<this-machine-lan-ip>:<port>` with P2–P4.
+3. In the VM, run the bot against `ws://<this-machine-lan-ip>:<port>` with P2–P4 and the same
+   `--room=CODE` the operator printed.
 4. Confirm the match starts and runs 120 s; save the metric files and screenshots.
 5. Repeat three times; record the path (`lan`, `vm`, later `internet`).
 
@@ -107,9 +111,10 @@ waiting for matchmaking infrastructure.
 
 ## 5. Non-goals and risks
 
-- **No production security.** `ws://` is unencrypted; there is no authentication or rate limiting.
-  Do not expose the port to the open internet. Use LAN, a VPN (Tailscale/ZeroTier) or an SSH tunnel.
-  TLS and auth are separate hardening work.
+- **No production security.** `ws://` is unencrypted by default; `--cert`/`--key` adds TLS, but there
+  is still no authentication or rate limiting. Do not expose a plain-`ws://` port to the open
+  internet. Use LAN, a VPN (Tailscale/ZeroTier) or an SSH tunnel, or serve `wss://` with an operator
+  certificate.
 - **No client prediction.** The first version will feel laggy over a WAN; that is expected and must be
   labelled in the UI.
 - **Determinism is not affected.** The server remains authoritative; bots send canonical inputs like any
