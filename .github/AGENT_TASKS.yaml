@@ -1641,9 +1641,10 @@ tasks:
   - id: M15-ARENA-2
     title: Add a second arena with its own hazard
     assigned_role: graphics-session
-    status: ready
+    session_id: graphics-session-20261107-arena2
+    status: in_progress
     priority: P1
-    specification: docs/LONG_TERM_PLAN.md
+    specification: docs/M15_ARENA2.md
     depends_on: []
     scope: [src/game/presentation/, public/assets/, tests/browser/]
     acceptance:
