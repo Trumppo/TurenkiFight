@@ -30,6 +30,8 @@ p { color: #c2cbd2; }
 .zone-status.is-warning .zone-summary { color: #ffcf86; }
 .zone-status.is-warning.is-warning-flash .zone-summary { color: #ff765b; text-shadow: 0 0 4px rgba(255, 118, 91, .65); }
 .zone-danger { color: #ff9f90; font-size: 14px; font-weight: 900; }
+.object-hint { padding: 1px 2px; color: #b9eee0; font-size: 12px; font-weight: 800; line-height: 1.15; letter-spacing: .04em; }
+.object-hint[hidden] { display: none; }
 #match-timer { font-size: clamp(16px, 2vw, 28px); line-height: 1.1; letter-spacing: .04em; white-space: nowrap; }
 #match-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #match-status.is-results { overflow: visible; text-overflow: clip; white-space: normal; font-size: 14px; line-height: 1.15; }

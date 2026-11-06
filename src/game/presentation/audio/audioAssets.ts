@@ -38,4 +38,7 @@ export const PLACEHOLDER_CUE_ASSETS: Readonly<Record<AudioCue, AudioVoiceAsset>>
     ],
   },
   confirm: { kind: 'synth', shape: { frequency: 620, duration: 0.06, waveform: 'square', peak: 0.075 } },
+  'item-pickup': { kind: 'synth', shape: { frequency: 740, duration: 0.055, waveform: 'triangle', peak: 0.075, attack: 0.002, release: 0.02 } },
+  'item-throw': { kind: 'synth', shape: { frequency: 430, duration: 0.085, waveform: 'square', peak: 0.09, pitchDrop: 0.68, noise: 0.025, noiseDuration: 0.035 } },
+  'item-break': { kind: 'synth', shape: { frequency: 185, duration: 0.12, waveform: 'triangle', peak: 0.105, pitchDrop: 0.52, noise: 0.08, noiseDuration: 0.07 } },
 };
