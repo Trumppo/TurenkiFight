@@ -18,6 +18,7 @@ import { CueBridge, type AudioCue } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
 import { MAX_PLAYERS } from '../protocol/players';
 import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePresentation';
+import { ObjectPresentation } from './objectPresentation';
 
 const PLAYER_IDS = Array.from({ length: MAX_PLAYERS }, (_, index) => `P${index + 1}`);
 
@@ -61,6 +62,7 @@ export class StationScene extends Phaser.Scene {
   private fighterSprites = new Map<string, Phaser.GameObjects.Image>();
   private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
   private zoneGraphics?: Phaser.GameObjects.Graphics;
+  private itemPresentation?: ObjectPresentation;
   private koMarkers = new Map<string, Phaser.GameObjects.Text>();
   private domHud?: {
     timer: HTMLElement;
@@ -151,6 +153,7 @@ export class StationScene extends Phaser.Scene {
       }).setDepth(1000);
     }
     this.zoneGraphics = this.add.graphics().setDepth(122).setVisible(false);
+    this.itemPresentation = new ObjectPresentation(this, RETRO_PREVIEW);
     // Scores, player labels and match status are rendered in the responsive
     // DOM HUD. It occupies the reserved scoreboard band on desktop and moves
     // above the playfield on narrow screens.
@@ -174,6 +177,8 @@ export class StationScene extends Phaser.Scene {
       this.reducedMotionListener = undefined;
       this.audioBridge?.reset();
       this.audio?.dispose();
+      this.itemPresentation?.destroy();
+      this.itemPresentation = undefined;
       this.audioBridge = undefined;
       this.audio = undefined;
     });
@@ -578,7 +583,13 @@ export class StationScene extends Phaser.Scene {
       }
       this.previous.set(f.id, { x: f.x, y: f.y, health: f.health });
     }
+    this.itemPresentation?.draw(this.state);
     this.renderDomHud();
+  }
+
+  /** Read-only item draw diagnostics for browser visual QA. */
+  debugObjects(): ReturnType<ObjectPresentation['diagnostics']> {
+    return this.itemPresentation?.diagnostics(this.state) ?? [];
   }
 
   private initDomHud(): void {

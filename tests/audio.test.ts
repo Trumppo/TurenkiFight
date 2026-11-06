@@ -86,6 +86,7 @@ describe('audio cue bridge', () => {
   it('defines every cue as a non-silent generic placeholder', () => {
     expect(Object.keys(PLACEHOLDER_CUE_ASSETS).sort()).toEqual([
       'confirm', 'hit', 'jump', 'kick', 'ko', 'land', 'join', 'match-end', 'match-start', 'respawn', 'time-warning', 'victory',
+      'item-break', 'item-pickup', 'item-throw',
     ].sort());
     for (const asset of Object.values(PLACEHOLDER_CUE_ASSETS)) {
       expect(asset.kind).toBe('synth');
@@ -132,6 +133,19 @@ describe('audio cue bridge', () => {
     const landed = { ...airborne, tick: 3, fighters: airborne.fighters.map(f => f.id === 'P1' ? { ...f, z: 0 } : f) };
     bridge.observe(landed);
     expect(cues).toEqual(['join', 'jump', 'time-warning', 'land']);
+  });
+
+  it('emits pickup, throw and break cues from observed object snapshot transitions', () => {
+    const cues: AudioCue[] = [];
+    const bridge = new CueBridge(cue => cues.push(cue));
+    const base = makeState();
+    const ground = { id: 'O1', kind: 'bottle' as const, x: 320, y: 180, z: 0, state: 'ground' as const };
+    bridge.observe({ ...base, objects: [ground] });
+    bridge.observe({ ...base, tick: 1, objects: [{ ...ground, state: 'held', holder: 'P1', z: 18 }] });
+    bridge.observe({ ...base, tick: 2, objects: [{ ...ground, state: 'airborne', holder: 'P1', z: 24, vx: 4, vz: 3 }] });
+    bridge.observe({ ...base, tick: 3 });
+    bridge.observe({ ...base, tick: 3 }); // repeated render frames do not repeat a cue
+    expect(cues).toEqual(['item-pickup', 'item-throw', 'item-break']);
   });
 
   it('announces the initial roster only when enabled for online entry', () => {

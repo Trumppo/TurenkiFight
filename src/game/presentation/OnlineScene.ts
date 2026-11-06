@@ -11,6 +11,7 @@ import { audioControlsHost, createAudioPresentation, type AudioPresentation } fr
 import { CueBridge } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
 import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePresentation';
+import { ObjectPresentation } from './objectPresentation';
 
 const MODE_NAMES: Record<ModeId, string> = {
   'score-brawl': 'Score Brawl',
@@ -33,6 +34,7 @@ export class OnlineScene extends Phaser.Scene {
   private fighterSprites = new Map<string, Phaser.GameObjects.Image>();
   private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
   private zoneGraphics?: Phaser.GameObjects.Graphics;
+  private itemPresentation?: ObjectPresentation;
   private poses = new Map<string, FighterPose>();
   private previous = new Map<string, { x: number; y: number; z: number }>();
   private lastHealth = new Map<string, number>();
@@ -97,12 +99,15 @@ export class OnlineScene extends Phaser.Scene {
       }).setDepth(1000);
     }
     this.zoneGraphics = this.add.graphics().setDepth(122).setVisible(false);
+    this.itemPresentation = new ObjectPresentation(this, RETRO_PREVIEW);
     this.initDomHud();
     this.audio = createAudioPresentation(audioControlsHost());
     this.audioBridge = new CueBridge(cue => this.audio?.director.playCue(cue), true);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.audioBridge?.reset();
       this.audio?.dispose();
+      this.itemPresentation?.destroy();
+      this.itemPresentation = undefined;
       this.audioBridge = undefined;
       this.audio = undefined;
     });
@@ -133,7 +138,13 @@ export class OnlineScene extends Phaser.Scene {
   /** Development harness hook for rendering a supplied authoritative snapshot without stepping it. */
   debugRenderSnapshot(state: GameState | null): void {
     this.drawZone(state);
+    this.itemPresentation?.draw(state);
     this.renderHud(state);
+  }
+
+  /** Read-only item draw diagnostics for browser visual QA. */
+  debugObjects(state: GameState | null = this.controller.renderState()): ReturnType<ObjectPresentation['diagnostics']> {
+    return this.itemPresentation?.diagnostics(state) ?? [];
   }
 
   /** Read-only dev diagnostic used by the browser zone parity test. */
@@ -215,6 +226,7 @@ export class OnlineScene extends Phaser.Scene {
       this.lastHealth.delete(id);
       this.hitUntil.delete(id);
     }
+    this.itemPresentation?.draw(state);
   }
 
   private drawZone(state: GameState | null): void {

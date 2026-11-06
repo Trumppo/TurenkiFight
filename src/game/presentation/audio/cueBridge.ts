@@ -1,7 +1,8 @@
 import type { GameEvent, GameState } from '../../simulation/types';
 
 export type AudioCue = 'hit' | 'kick' | 'jump' | 'land' | 'ko' | 'respawn' | 'join' |
-  'match-start' | 'time-warning' | 'match-end' | 'victory' | 'confirm';
+  'match-start' | 'time-warning' | 'match-end' | 'victory' | 'confirm' |
+  'item-pickup' | 'item-throw' | 'item-break';
 
 export function cueForGameEvent(event: GameEvent): AudioCue | null {
   switch (event.type) {
@@ -34,6 +35,21 @@ export class CueBridge {
     }
 
     if (previous) {
+      const oldObjects = new Map((previous.objects ?? []).map(object => [object.id, object]));
+      const currentObjects = new Map((state.objects ?? []).map(object => [object.id, object]));
+      for (const object of currentObjects.values()) {
+        const old = oldObjects.get(object.id);
+        if (old?.state === 'ground' && object.state === 'held') this.emit('item-pickup');
+        else if (old?.state === 'held' && object.state === 'airborne') this.emit('item-throw');
+      }
+      // Broken objects are removed during same-tick simulation cleanup. A
+      // missing previously-airborne id is therefore the presentation signal;
+      // only advance-time removals during a match count, not an initial/reset frame.
+      if (state.tick > previous.tick && state.phase !== 'lobby' && previous.phase !== 'results') {
+        for (const object of oldObjects.values()) {
+          if (object.state === 'airborne' && !currentObjects.has(object.id)) this.emit('item-break');
+        }
+      }
       const oldFighters = new Map(previous.fighters.map(fighter => [fighter.id, fighter]));
       for (const fighter of state.fighters) {
         const old = oldFighters.get(fighter.id);
