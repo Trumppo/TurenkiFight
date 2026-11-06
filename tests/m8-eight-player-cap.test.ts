@@ -50,6 +50,8 @@ describe('M8 eight-player cap through the authoritative session', () => {
     const canonical = encodeStateSnapshot(room.snapshot());
     const serverMessage = encodeWsServerMessage({ version: 1, kind: 'snapshot', snapshot: room.snapshot() });
     // Measured, not estimated: authoritative session snapshot at tick 3.
+    // M11's optional counters are absent before the first hit, so the bytes are
+    // unchanged from the pre-M11 pins (2083/2126).
     expect(byteLength(canonical)).toBe(2083);
     expect(byteLength(serverMessage)).toBe(2126);
     expect(byteLength(canonical)).toBeLessThan(MAX_SNAPSHOT_BYTES);

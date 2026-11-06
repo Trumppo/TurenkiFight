@@ -1419,13 +1419,72 @@ tasks:
     last_updated: "2026-11-06"
     notes: "PR #156 merged as e9a90e9. Independent gate found two real test-quality defects: the clamp fixture was insensitive (proved by mutation) and the final-tick zone knockout was untested. Both were fixed and re-checked with mutations."
 
+  - id: M12-BOT-MOBILITY
+    title: Make bots jump more and use jump-in attacks
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261106-botmob
+    status: review
+    priority: P1
+    specification: docs/BOT_MOBILITY_AND_THROWS.md
+    depends_on: [M8-BOT-OPPONENT]
+    scope: [src/game/input/, tests/]
+    acceptance:
+      - "Bots jump several times per match instead of almost never, measured on a fixed fixture before and after"
+      - "Bots jump into range and land jumpkicks, visible in the event stream"
+      - "Bots occasionally jump after taking damage or when cornered, without becoming erratic"
+      - "Inputs remain a pure function of state, tick and seed; the same seed reproduces the same match"
+      - "Bot fixture pins are updated deliberately with old and new values reported"
+      - npm test, npm run build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/160
+    last_updated: "2026-11-06"
+    notes: "Owner report 2026-11-06: bots barely jump. Root cause: jump is allowed only while farther than kick reach at 2 percent per tick, and the +20 percent speed shortened that window. Throwing does not exist yet; see the design note."
+
+  - id: M11-HITSTOP-KNOCKBACK
+    title: Add deterministic hit stop and knockback to combat
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261106-feel
+    status: review
+    priority: P1
+    specification: docs/M11_ARCADE_FEEL.md
+    depends_on: [M11-SPEED-20]
+    scope: [src/game/simulation/, src/game/protocol/, tests/]
+    acceptance:
+      - "A clean hit freezes movement and attack progress for 3 ticks with a counter that advances with the tick"
+      - "A KO uses a longer freeze (5 ticks) and never leaves a fighter stuck"
+      - "Punch, kick and jumpkick push the target deterministically; knockback never leaves the arena or pushes through walls"
+      - "Timers still expire, hits during hit stop refresh but never stack, and nothing applies outside fighting"
+      - "hitStopTicks and knockback are optional and canonically omitted when zero, so idle snapshots keep their old size"
+      - "Every pinned fingerprint is updated deliberately and reported with old and new values"
+      - npm test, npm run build and git diff --check pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/161
+    last_updated: "2026-11-06"
+    notes: "PR #161 merged after independent Tester PASS WITH LIMITATIONS; the online KO helper was fixed to re-approach between kicks because knockback moves the target out of reach."
+
+  - id: M11-CAMERA-PUNCH
+    title: Add camera shake and sharper hit audio without touching the simulation
+    assigned_role: graphics-session
+    session_id: graphics-session-20261106-feel
+    status: review
+    priority: P2
+    specification: docs/M11_ARCADE_FEEL.md
+    depends_on: [M11-SPEED-20]
+    scope: [src/game/presentation/, src/style.css, tests/browser/]
+    acceptance:
+      - "A knockout shakes the camera briefly; ordinary hits only get a small kick"
+      - "prefers-reduced-motion disables the shake"
+      - "Hit audio is sharper but still procedural and respects mute"
+      - "No simulation, protocol or snapshot change; existing visual suites stay green"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/161
+    last_updated: "2026-11-06"
+    notes: "Presentation only, driven by the existing HitLanded and Knockout events."
+
   - id: M12-ITEM-CORE
     title: Add a deterministic throwable object to the simulation
     assigned_role: gameplay-session
     status: blocked
     priority: P1
     specification: docs/M12_OBJECTS.md
-    depends_on: []
+    depends_on: [M11-HITSTOP-KNOCKBACK]
     scope: [src/game/simulation/, src/game/protocol/, tests/]
     acceptance:
       - "One bottle object spawns on a deterministic schedule and exists in the simulation state"

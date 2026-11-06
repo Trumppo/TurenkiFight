@@ -46,6 +46,37 @@ test('online scene uses the same gesture unlock and audio controls', async ({ pa
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('turenkifight.audio.v1') ?? '{}').muted)).toBe(true);
 });
 
+test('procedural punch and kick cues are sharper and still flow through the unlocked audio director', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#game canvas')).toBeVisible();
+  await page.keyboard.press('f');
+  await expect.poll(() => page.evaluate(() => {
+    const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
+    const scene = game?.scene.getScene('StationScene') as { audioDiagnostics?: () => { state: string } } | undefined;
+    return scene?.audioDiagnostics?.().state ?? 'not-ready';
+  })).toBe('running');
+
+  const cues = await page.evaluate(async () => {
+    const moduleUrl = '/src/game/presentation/audio/audioAssets.ts';
+    const { PLACEHOLDER_CUE_ASSETS } = await import(/* @vite-ignore */ moduleUrl);
+    const game = (window as typeof window & { __turenkiGame: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
+    const scene = game.scene.getScene('StationScene') as {
+      playAudioCue: (cue: 'hit' | 'kick') => void;
+      audioDiagnostics: () => { cueCounts: Record<string, number> };
+    };
+    scene.playAudioCue('hit');
+    scene.playAudioCue('kick');
+    return {
+      hit: PLACEHOLDER_CUE_ASSETS.hit,
+      kick: PLACEHOLDER_CUE_ASSETS.kick,
+      counts: scene.audioDiagnostics().cueCounts,
+    };
+  });
+  expect(cues.hit).toMatchObject({ kind: 'synth', shape: { frequency: 300, duration: 0.06, attack: 0.003 } });
+  expect(cues.kick).toMatchObject({ kind: 'synth', shape: { frequency: 165, duration: 0.095, attack: 0.003 } });
+  expect(cues.counts).toMatchObject({ hit: 1, kick: 1 });
+});
+
 test('header audio controls stay outside the HUD and leave status readable on short and mobile views', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
   await page.goto('/');

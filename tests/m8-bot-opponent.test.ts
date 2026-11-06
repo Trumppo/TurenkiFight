@@ -209,11 +209,13 @@ describe('M8 bot match determinism', () => {
 
   it('pins the four-player Score Brawl bot replay hashes', () => {
     const run = runBotMatch('score-brawl');
-    // M11 (+20 % movement) changed both pins; bots share the simulation's
-    // movement code, so their approach timings and hit ticks shifted too.
-    // Old state e209681f72b61f23601071d68e991959260fd0041cd0b275aba39b7716dbe802.
-    // Old events 2b725035034a9a65923a4cff07308fe82b62f70d9423e22e12ceaf8cabef31f9.
-    expect(hash(run.state)).toBe('f0dd005875e324dfee537229610322a8244d29062d81b4fea357374e68deab8d');
-    expect(hash(run.events)).toBe('77c6ec27349433eac34df9d827e0f78ccb1691f27beeb2882c0673c30a3b783c');
+    // M12 bot mobility + the point-blank jump-in guard changed both pins again.
+    // The merge from main added seeded hops; constraining jump-ins to targets
+    // strictly outside punch reach restores ground attacks at touching range.
+    // Previous hit-stop-only pins:
+    // state 27349f211dcf44de2d24454004d9fd9e872caa5213252617caf82e42194643cc,
+    // events 0cc6d12cdde9d33716d7eb3aff0fbd143da17ad9155cd6d8210d183420d12064.
+    expect(hash(run.state)).toBe('8c11ffb1c40ffd06645f8490aa40f6f6c3ec1646d9696a07899492af98cb42ce');
+    expect(hash(run.events)).toBe('3b41dc0584908a2a6aaf41266791528ef996ddb74de6ff2e22418c4b4b9d89b9');
   });
 });

@@ -1,5 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { startMatchServer, type MatchServerHandle } from '../../server/ws/matchServer';
+import { MOVES } from '../../src/game/simulation/step';
 import type { ModeId } from '../../src/game/simulation/types';
 
 /**
@@ -163,6 +164,12 @@ async function approachTarget(page: Page, targetId: string, deadline: number): P
 /**
  * Taps the kick button until `isDone` observes the authoritative result. A tap
  * is long enough for the 60 Hz input sampler to see a fresh press edge.
+ *
+ * Kick knockback slides the target out of reach after a couple of hits, so
+ * before each kick this checks the latest snapshot and, when the target is no
+ * longer inside the kick hitbox (or P1 is facing away), walks back into range
+ * with `approachTarget`. That is what a player does between kicks; the
+ * simulation and its knockback values are untouched.
  */
 async function kickUntil(
   page: Page,
@@ -173,11 +180,17 @@ async function kickUntil(
     const state = await readSnapshot(page);
     if (state && isDone(state)) return;
     const me = state?.fighters.find(fighter => fighter.id === 'P1');
-    if (me && me.facing !== 1) {
-      await holdKeys(page, ['d']);
-      await page.waitForTimeout(40);
-      await holdKeys(page, []);
-      continue;
+    const target = state?.fighters.find(fighter => fighter.id !== 'P1');
+    if (me && target) {
+      // Mirror the simulation's kick hitbox (`dx > 0`, within reach/depth).
+      const dx = target.x - me.x;
+      const dy = target.y - me.y;
+      const inKickReach = me.facing === 1 && dx > 0 && dx <= MOVES.kick.reach &&
+        Math.abs(dy) <= MOVES.kick.depth;
+      if (!inKickReach) {
+        await approachTarget(page, target.id, deadline);
+        continue;
+      }
     }
     await page.keyboard.down('g');
     await page.waitForTimeout(90);
