@@ -7,8 +7,9 @@ is implementable without it.
 ## 1. What exists
 
 An authoritative WebSocket prototype: `serve:match` hosts one match (opt-in rematch), the session envelope validates
-input, snapshots are sent at 10/20/30 Hz, and an online browser client renders them. There is **no TLS, no
-authentication, no rate limiting, no room concept and no rejoin**.
+input, snapshots are sent at 10/20/30 Hz, and an online browser client renders them. The M14 hardening slices add TLS,
+room codes, a per-room connection cap and per-connection rate/size limits (see §5–§6). There is still no
+authentication and no rejoin.
 
 ## 2. What this phase adds, in order
 
@@ -87,7 +88,47 @@ Rate limits, rejoin and eight-player measurement are not part of it.
 - No network figure is added by this slice. Two-machine measurement remains owner-blocked and every
   network field stays `NOT_MEASURED`.
 
-## 6. Out of scope
+## 6. Implemented in `M14-RATE-LIMITS`
+
+This second hardening slice implements §2.3 (the per-room cap already landed in §5) and closes the Tester's finding
+that a peer rejected for a wrong room code kept its socket open.
+
+The limits are **policy constants, not measurements**. No bandwidth, RTT, jitter or server-cost number is added or
+implied by this slice; every network figure remains `NOT_MEASURED` and the two-machine measurement stays owner-blocked.
+
+Exported from `server/ws/clientMessageLimits.ts`:
+
+- `MAX_CLIENT_MESSAGE_BYTES = 5120` (reuses `MAX_SESSION_ENVELOPE_BYTES`, the envelope codec cap). A larger message is
+  closed with WebSocket code **1009** and the reason `client message exceeds 5120 bytes`. The transport's hard payload
+  bound is one KiB above the policy so the server, not the library, supplies the reason; anything above that is still
+  closed with 1009.
+- `MAX_CLIENT_MESSAGES_PER_WINDOW = 240` over `CLIENT_MESSAGE_WINDOW_MS = 1000` (sliding window). An honest browser
+  client sends one input frame per 60 Hz tick plus an occasional ping, so the default leaves roughly four times the
+  steady-state cadence. Exceeding the window closes with WebSocket code **1013** and the reason
+  `client message rate exceeds 240 per 1000 ms`.
+- `MAX_CLIENT_VALIDATION_FAILURES = 5` consecutive protocol/authorization denials (malformed or non-canonical
+  envelopes, replayed sequences, unauthorized or unknown player claims, ...) close with WebSocket code **1008** and the
+  reason `too many consecutive invalid client messages (5)`. Timing-only denials (`late-tick`, `future-tick`,
+  `tick-out-of-window`) and normal lifecycle/capacity refusals do not count, so a stalled honest client is not
+  disconnected. Any accepted message resets the counter.
+- A room-code rejection (`room-code-required` or `room-code-mismatch`) closes the socket at once with code **1008** and
+  the reason `room code rejected (<code>)`.
+
+Behaviour:
+
+- The guard runs before the session parses a message: size is checked first, then the rate window. Both are counted
+  per trusted connection, never per payload field.
+- Closing a peer removes it from the transport map and calls `room.disconnect` before the close handshake finishes, so
+  the room slot and the room connection margin are freed immediately. A subsequent correct join is admitted even at a
+  zero margin.
+- The per-room cap from §5 is unchanged (roster plus `DEFAULT_MATCH_CONNECTION_MARGIN = 2`), and `serve:match` still
+  prints it.
+- The ready line now also prints `maxMessageBytes`, `messageRateWindowMs`, `maxMessagesPerWindow` and
+  `maxValidationFailures`. Without these limits (the synthetic benchmark harness calls `startWsServer` directly) the
+  historical behaviour is unchanged, which keeps fixture bursts deterministic.
+- `serve:match --help` documents the fixed policy.
+
+## 7. Out of scope
 
 - Accounts, matchmaking, persistence, leaderboards.
 - Multiple rooms per process, horizontal scaling.
