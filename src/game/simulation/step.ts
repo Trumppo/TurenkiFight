@@ -7,6 +7,15 @@ export type { EndReason, ModeId, ModeRules, RespawnPolicy, TieBreakCriterion } f
 export type MatchSetup = { ids?: string[]; phase?: GameState['phase']; mode?: ModeId };
 export const TICK_RATE = 60;
 export const COUNTDOWN_TICKS = 180;
+/**
+ * Axis movement speed in px per fixed tick. Owner decision 2026-11-06 (M11):
+ * raise the original 1.3 px/tick baseline by 20 % so fighters feel faster.
+ * 1.56 px/tick * 60 Hz = 93.6 px/s per axis; diagonals are normalised with
+ * `Math.SQRT1_2` so they are not faster than axis movement.
+ */
+export const FIGHTER_SPEED = 1.56;
+/** Derived for tests and documentation; never tune the literal above separately. */
+export const FIGHTER_SPEED_PX_PER_SECOND = FIGHTER_SPEED * TICK_RATE;
 export const MOVES: Record<Move, { startup: number; active: number; recovery: number; damage: number; points: number; reach: number; depth: number; height: number }> = {
   punch: { startup: 4, active: 5, recovery: 12, damage: 10, points: 100, reach: 32, depth: 14, height: 18 },
   kick: { startup: 7, active: 6, recovery: 16, damage: 15, points: 150, reach: 42, depth: 17, height: 20 },
@@ -128,8 +137,8 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     f.attackCooldown = f.attackFrames;
     if (i && !stunned) {
       const scale = i.moveX && i.moveY ? Math.SQRT1_2 : 1;
-      f.x = Math.max(16,Math.min(368,f.x + i.moveX * 1.3 * scale));
-      f.y = Math.max(124,Math.min(204,f.y + i.moveY * 1.3 * scale));
+      f.x = Math.max(16,Math.min(368,f.x + i.moveX * FIGHTER_SPEED * scale));
+      f.y = Math.max(124,Math.min(204,f.y + i.moveY * FIGHTER_SPEED * scale));
       if (i.moveX) f.facing = i.moveX;
       if (jumpPressed && f.z === 0 && !f.attackMove) f.vz = 5.2;
       if (!f.attackMove) {
