@@ -1347,6 +1347,22 @@ tasks:
     last_updated: "2026-11-04"
     notes: "PR #149 merged as eeeb084 after independent Tester PASS: the online card renders only the server payload, draw and refusals are readable, REMATCH works without a reload, and the layout was inspected at 1280x720 and 390x844. Limit: webrtc.spec.ts flaked once at the end of a default suite and passed alone."
 
+  - id: M11-SPEED-20
+    title: Raise fighter movement speed by 20 percent
+    assigned_role: gameplay-session
+    status: ready
+    priority: P1
+    specification: docs/LONG_TERM_PLAN.md
+    depends_on: []
+    scope: [src/game/simulation/, src/game/input/, tests/, benchmarks/]
+    acceptance:
+      - "Axis movement is 1.56 px per tick (93.6 px/s at 60 Hz) instead of 1.3, with diagonal normalisation preserved"
+      - "No fighter can leave the arena bounds, and bots move at the same speed as humans"
+      - "Every pinned fingerprint is updated deliberately with old and new values reported, not silently replaced"
+      - Unit and determinism tests pass; the owner confirms in a playtest that it feels faster
+    last_updated: "2026-11-06"
+    notes: "Owner request 2026-11-06: movement may be about 20 percent faster. Queue after the M10 zone work to avoid conflicting edits in step.ts; depends_on is left empty only because M10 lives on its own branch until merged."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session

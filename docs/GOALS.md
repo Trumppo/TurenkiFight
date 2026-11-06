@@ -36,6 +36,12 @@ Playtest-kierros on käyty ja **milestonet M5, M7, M8 ja M9 on hyväksytty yksit
 
 **Avoimena 2026-11-06:** (1) oikeat äänisamplet ja miksaus, kun pyydät; (2) kahdeksan pelaajan verkkototeutus on päätetty mutta lykätty, ja mittaus (kaksi konetta) puuttuu; (3) Deathmatchin kutistuvan laiturin säätö oman playtestin jälkeen; (4) Deathmatch poistetaan, jos uusi identiteetti ei toimi.
 
+## Pitkän aikavälin suunta (omistajan visio 2026-11-06)
+
+> Turenki-teemainen tappelupeli: **kahdeksan pelaajaa verkossa** ja **enintään neljä ihmistä lokaalisti**, jossa **80 % on kaaosta ja 20 % taitoa**. Henkisinä esi-isinä *Target Renegade* ja *Streets of Rage*.
+
+Suunnitelma: [LONG_TERM_PLAN.md](LONG_TERM_PLAN.md). Vaiheet: M10 Deathmatchin identiteetti (käynnissä), **M11 arcade-tuntu ja +20 % liikenopeus**, M12 kaaoskerros (heittoesineet ja asemavaarat), M13 co-op-aaltomuoto, M14 kahdeksan pelaajan verkkotuotteistus (mittaus ensin), M15 sisältö ja lokaalin pelin mukavuus. Vain liikenopeus on omistajan hyväksymä; muut vaiheet ovat ehdotuksia ja vaativat oman päätöksen. Jokainen vaihe päättyy omistajan playtestiin.
+
 ## Lähitulevaisuus: mitä seuraavaksi kehitetään
 
 Tämä osio on **designerin ehdotus**, ei omistajan hyväksymä suunnitelma. Jokainen rivi tarvitsee erillisen päätöksen ennen kuin siitä tulee tehtävä.
