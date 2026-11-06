@@ -86,7 +86,7 @@ describe('audio cue bridge', () => {
   it('defines every cue as a non-silent generic placeholder', () => {
     expect(Object.keys(PLACEHOLDER_CUE_ASSETS).sort()).toEqual([
       'confirm', 'hit', 'jump', 'kick', 'ko', 'land', 'join', 'match-end', 'match-start', 'respawn', 'time-warning', 'victory',
-      'item-break', 'item-pickup', 'item-throw',
+      'item-break', 'item-pickup', 'item-throw', 'shop-bell',
     ].sort());
     for (const asset of Object.values(PLACEHOLDER_CUE_ASSETS)) {
       expect(asset.kind).toBe('synth');
@@ -344,5 +344,22 @@ describe('audio director', () => {
     unavailable.setMuted(false);
     expect(JSON.parse(storage.getItem(AUDIO_SETTINGS_KEY)!)).toEqual({ muted: false, volume: 0.32 });
     unavailable.dispose();
+  });
+
+  it('defines the shop bell as a quiet two-note presentation cue', async () => {
+    const context = new FakeAudioContext();
+    const director = new AudioDirector({
+      contextFactory: () => context as unknown as AudioContext,
+      storage: null,
+      gestureTarget: null,
+      setIntervalFn: () => 1 as unknown as ReturnType<typeof setInterval>,
+      clearIntervalFn: () => undefined,
+    });
+    await director.unlock();
+    const before = context.sources().length;
+    director.playCue('shop-bell');
+    const notes = context.sources().slice(before).filter(source => source instanceof FakeOscillator) as FakeOscillator[];
+    expect(notes.map(source => source.frequency.values[0])).toEqual([784, 988]);
+    director.dispose();
   });
 });

@@ -53,6 +53,20 @@ export const ARENA_MANIFESTS = {
     layers: [{ id: 'architecture', assetPath: 'assets/mesku/ravintola-mesku-evening.svg', depth: -100, parallax: 1 }],
     hudContrast: 'dark',
   },
+  kkauppa: {
+    id: 'kkauppa',
+    displayName: 'K-kauppa',
+    logicalSize: { width: 640, height: 360 },
+    artSize: { width: 320, height: 180 },
+    variants: {
+      classic: { backdropPath: 'assets/kkauppa/k-kauppa-classic.svg' },
+      retro: { backdropPath: 'assets/kkauppa/k-kauppa-retro.svg' },
+    },
+    // The entire shop is a single calm, composite backdrop; its optional
+    // shelf-rattle telegraph is a separate presentation-only overlay.
+    layers: [],
+    hudContrast: 'dark',
+  },
 } as const satisfies Readonly<Record<string, ArenaVisualManifest>>;
 
 export type ArenaId = keyof typeof ARENA_MANIFESTS;

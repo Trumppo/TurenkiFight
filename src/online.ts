@@ -6,7 +6,7 @@ import { OnlineScene } from './game/presentation/OnlineScene';
 import type { GameState } from './game/simulation/types';
 import { KEYBOARD_LAYOUTS, keyboardPlayerInput } from './game/input/keyboardMapping';
 import { VIEWPORT } from './game/presentation/viewport';
-import { resolveArenaSelection } from './game/presentation/arenaVisuals';
+import { arenaBackdropTextureKey, resolveArenaSelection } from './game/presentation/arenaVisuals';
 import { RETRO_PREVIEW } from './game/presentation/retroPrototype';
 
 /**
@@ -455,7 +455,7 @@ if (import.meta.env.DEV) {
     },
     arenaTextureExists(): boolean {
       const scene = game.scene.getScene('OnlineScene');
-      return !!scene?.textures.exists('arena-mesku-backdrop');
+      return !!scene?.textures.exists(arenaBackdropTextureKey(arenaSelection.manifest.id));
     },
   };
 }

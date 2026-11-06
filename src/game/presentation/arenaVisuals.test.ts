@@ -18,6 +18,15 @@ describe('presentation arena visual manifests', () => {
     expect(() => resolveArenaVisual('mesku', 'classic')).toThrow(/no classic art variant/);
   });
 
+  it('registers K-kauppa with original classic and retro interiors', () => {
+    expect(() => validateArenaManifest(ARENA_MANIFESTS.kkauppa)).not.toThrow();
+    expect(ARENA_MANIFESTS.kkauppa.displayName).toBe('K-kauppa');
+    expect(resolveArenaSelection('?arena=kkauppa', 'classic').manifest.id).toBe('kkauppa');
+    expect(resolveArenaSelection('?arena=kkauppa', 'retro').manifest.id).toBe('kkauppa');
+    expect(resolveArenaVisual('kkauppa', 'classic').backdropPath).toBe('assets/kkauppa/k-kauppa-classic.svg');
+    expect(resolveArenaVisual('kkauppa', 'retro').backdropPath).toBe('assets/kkauppa/k-kauppa-retro.svg');
+  });
+
   it('points every declared variant and layer at a shipped public asset', () => {
     for (const manifest of Object.values(ARENA_MANIFESTS) as ArenaVisualManifest[]) {
       const paths = [
@@ -56,7 +65,7 @@ describe('presentation arena visual manifests', () => {
 
   it('fails with an explicit list when an arena ID is unknown', () => {
     expect(() => resolveArenaVisual('missing', 'retro'))
-      .toThrow('Unknown arena "missing". Available arenas: station, mesku');
+      .toThrow('Unknown arena "missing". Available arenas: station, mesku, kkauppa');
   });
 
   it('keeps station as the default and reports a clear station fallback for unknown URLs', () => {

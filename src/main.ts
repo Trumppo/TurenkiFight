@@ -9,6 +9,7 @@ const arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVI
 const pageDescription = document.querySelector('.page-header p');
 if (pageDescription) {
   if (arenaSelection.notice) pageDescription.textContent = arenaSelection.notice;
+  else if (arenaSelection.manifest.id === 'kkauppa') pageDescription.textContent = 'K-kauppa · interior 2.5D arena prototype';
   else if (arenaSelection.manifest.id !== 'station') pageDescription.textContent = `${arenaSelection.manifest.displayName} · evening 2.5D arena prototype`;
 }
 
