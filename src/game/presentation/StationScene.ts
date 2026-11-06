@@ -9,6 +9,7 @@ import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
 import { createRetroP5P8Textures } from './retroP5P8';
 import { keyboardPlayerInput } from '../input/keyboardMapping';
+import { GAMEPAD_BUTTONS, gamepadPlayerInput } from '../input/gamepadMapping';
 import { botInput } from '../input/botPolicy';
 import { rankMatch } from '../simulation/ranking';
 import type { MatchRanking, RankedEntry } from '../simulation/ranking';
@@ -178,7 +179,7 @@ export class StationScene extends Phaser.Scene {
       this.audio = undefined;
     });
     this.cursors = this.input.keyboard!.createCursorKeys();
-    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,L,K,J,U,B,V,O,SPACE,ENTER,SHIFT,ESC') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,T,L,K,J,U,I,B,V,O,SPACE,ENTER,SHIFT,ESC') as Record<string, Phaser.Input.Keyboard.Key>;
     this.revealKeyHandler = event => {
       if (event.key === 'Escape') {
         // Handle Esc on keydown as well as through Phaser's polled key state.
@@ -237,7 +238,7 @@ export class StationScene extends Phaser.Scene {
     // Gamepad button 9 is Start; button 8 is the dedicated Join button.
     if (this.state.phase === 'lobby') {
       for (const pad of pads) {
-        const join = !!pad.buttons[8]?.pressed;
+        const join = !!pad.buttons[GAMEPAD_BUTTONS.join]?.pressed;
         if (join && !this.lastJoinButtons.get(pad.index) && !this.gamepadSlots.has(pad.index)) {
           const assigned = new Set(this.gamepadSlots.values());
           const joinableSlots = PLAYER_IDS.slice(1);
@@ -250,19 +251,19 @@ export class StationScene extends Phaser.Scene {
         }
       }
     }
-    for (const pad of pads) this.lastJoinButtons.set(pad.index, !!pad.buttons[8]?.pressed);
+    for (const pad of pads) this.lastJoinButtons.set(pad.index, !!pad.buttons[GAMEPAD_BUTTONS.join]?.pressed);
     // P1 is initially keyboard-hosted. An unassigned controller may explicitly
     // claim P1 with Start; controllers assigned to another slot cannot start.
     // Never auto-claim merely because a controller is connected.
     const padHostStart = pads.some(p => {
-      const pressed = !!p.buttons[9]?.pressed;
+      const pressed = !!p.buttons[GAMEPAD_BUTTONS.start]?.pressed;
       const fresh = pressed && !this.lastPadStart.get(p.index);
       if (fresh && this.state.fighters.length >= 2 && !this.gamepadSlots.has(p.index) && ![...this.gamepadSlots.values()].includes('P1')) {
         this.gamepadSlots.set(p.index, 'P1');
       }
       return fresh && this.gamepadSlots.get(p.index) === 'P1';
     });
-    for (const pad of pads) this.lastPadStart.set(pad.index, !!pad.buttons[9]?.pressed);
+    for (const pad of pads) this.lastPadStart.set(pad.index, !!pad.buttons[GAMEPAD_BUTTONS.start]?.pressed);
     const start = this.keys.ENTER.isDown;
     if (((start && !this.lastStart) || padHostStart) && (this.state.phase === 'results' || (this.state.phase === 'lobby' && this.state.fighters.length >= 2))) this.startLocalMatch();
     this.lastStart = start;
@@ -484,9 +485,7 @@ export class StationScene extends Phaser.Scene {
       if (this.botSlots.has(id)) continue;
       const pad = pads.find(p => p.index === index);
       if (!pad) continue;
-      const x = pad.axes[0] ?? 0, y = pad.axes[1] ?? 0;
-      const input: PlayerInput = { playerId: id, moveX: x < -0.3 ? -1 : x > 0.3 ? 1 : 0, moveY: y < -0.3 ? -1 : y > 0.3 ? 1 : 0,
-        jump: !!pad.buttons[0]?.pressed, punch: !!pad.buttons[2]?.pressed, kick: !!pad.buttons[1]?.pressed, jumpkick: !!pad.buttons[3]?.pressed };
+      const input = gamepadPlayerInput(id, pad);
       const existing = inputs.findIndex(i => i.playerId === id);
       if (existing >= 0) inputs[existing] = input;
       else inputs.push(input);

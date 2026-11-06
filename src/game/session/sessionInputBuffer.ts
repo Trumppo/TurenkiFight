@@ -71,9 +71,9 @@ export class SessionInputBuffer {
     if (!input || typeof input.playerId !== 'string' || !CONNECTION_ID.test(input.playerId) ||
       ![-1, 0, 1].includes(input.moveX) || ![-1, 0, 1].includes(input.moveY) ||
       typeof input.jump !== 'boolean' ||
-      !['punch', 'kick', 'jumpkick', 'attack'].every(k =>
+      !['punch', 'kick', 'jumpkick', 'attack', 'grab'].every(k =>
         input[k as keyof PlayerInput] === undefined || typeof input[k as keyof PlayerInput] === 'boolean') ||
-      Object.keys(input).some(k => !['playerId', 'moveX', 'moveY', 'jump', 'punch', 'kick', 'jumpkick', 'attack'].includes(k))) {
+      Object.keys(input).some(k => !['playerId', 'moveX', 'moveY', 'jump', 'punch', 'kick', 'jumpkick', 'attack', 'grab'].includes(k))) {
       throw new Error('Malformed player controls');
     }
   }

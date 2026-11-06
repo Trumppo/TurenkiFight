@@ -70,6 +70,22 @@ describe('M2 bounded input buffer', () => {
     expect(b.consume().inputs).toEqual([input('P1')]);
   });
 
+  it('accepts the optional M12 grab action through the authoritative ingress', () => {
+    const b = new SessionInputBuffer();
+    b.submit('a', 1, 0, { ...input('P1'), grab: true });
+    b.submit('b', 1, 0, { ...input('P2'), grab: false });
+    expect(b.consume().inputs).toEqual([
+      { ...input('P1'), grab: true },
+      { ...input('P2'), grab: false },
+    ]);
+
+    const c = new SessionInputBuffer();
+    expect(() => c.submit('a', 1, 0, { ...input('P1'), grab: 1 as unknown as boolean })).toThrow(/Malformed/);
+    // A rejected frame does not consume the sequence domain.
+    c.submit('a', 1, 0, { ...input('P1'), grab: true });
+    expect(c.consume().inputs).toEqual([{ ...input('P1'), grab: true }]);
+  });
+
   it('rejects unsafe tick windows before accepting a match', () => {
     expect(() => new SessionInputBuffer(Number.MAX_SAFE_INTEGER, 1)).toThrow(/configuration/);
     expect(() => new SessionInputBuffer(Number.MAX_SAFE_INTEGER - 1, 1)).toThrow(/configuration/);

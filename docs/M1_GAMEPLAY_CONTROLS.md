@@ -9,10 +9,11 @@ The game opens in the lobby with keyboard host P1. Keyboard P2 explicitly joins 
 | Punch | F | L | X / button 2 |
 | Kick | G | J | B / button 1 |
 | Jump kick (airborne) | H | U | Y / button 3 |
+| Pick up / throw (grab) | T | I | LB / button 4 |
 | Join | host already joined | Shift | Select / button 8 |
 | Start / rematch | Enter | host only | host only |
 
-Gamepad buttons follow the standard browser Gamepad API mapping; physical labels vary by controller. Jump kicks require pressing the attack button after takeoff. Each attack uses an edge-triggered button press.
+Gamepad buttons follow the standard browser Gamepad API mapping; physical labels vary by controller. Jump kicks require pressing the attack button after takeoff. Each attack uses an edge-triggered button press. `grab` picks up a bottle within reach in front of the fighter, and throws a held bottle on the next press; the same edge is never both a pickup and a throw. Button 4 (LB) is the grab button because buttons 0–3 already carry jump and the three attacks and 8–9 handle join/start; the left shoulder is unused and reachable without moving the thumb off the attack buttons.
 
 The match clock runs for exactly 7,200 active simulation ticks at 60 Hz (120 seconds), preceded by 180 countdown ticks. Results rank by score, KOs and then fewer hits received. Exact ties share rank.
 
