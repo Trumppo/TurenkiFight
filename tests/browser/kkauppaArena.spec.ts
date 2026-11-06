@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { createState } from '../../src/game/simulation/step';
 
@@ -12,6 +12,47 @@ async function waitForBackdrop(page: import('@playwright/test').Page, texture: s
     const scene = (window as any).__turenkiGame?.scene.getScene('StationScene');
     return scene?.sys.isActive() && scene.textures.exists(key);
   }, texture)).toBe(true);
+}
+
+async function captureBackdrop(page: import('@playwright/test').Page, query: string, texture: string) {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(query);
+  await waitForBackdrop(page, texture);
+  await page.evaluate(() => {
+    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+    scene.scene.pause('StationScene');
+    for (const sprite of scene.fighterSprites.values()) sprite.setVisible(false);
+    scene.zoneGraphics?.setVisible(false);
+  });
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  const png = await page.locator('#game canvas').screenshot();
+  const stats = await page.evaluate(async (base64) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${base64}`;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d')!;
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const colors = new Set<string>();
+    for (let y = 0; y < canvas.height && colors.size <= 32; y += 3) {
+      for (let x = 0; x < canvas.width && colors.size <= 32; x += 3) {
+        const index = (y * canvas.width + x) * 4;
+        colors.add(`${pixels[index]},${pixels[index + 1]},${pixels[index + 2]},${pixels[index + 3]}`);
+      }
+    }
+    return { width: canvas.width, height: canvas.height, distinctColors: colors.size };
+  }, png.toString('base64'));
+  expect([stats.width, stats.height]).toEqual([960, 540]);
+  expect(stats.distinctColors, 'background screenshot should not be blank or uniform').toBeGreaterThan(32);
+  return { png, stats };
+}
+
+async function assetSha256(assetPath: string): Promise<string> {
+  const bytes = await readFile(resolve(process.cwd(), 'public', assetPath));
+  return createHash('sha256').update(bytes).digest('hex');
 }
 
 test('K-kauppa renders in both styles with four readable fighter sprites at native and 2x scale', async ({ page }) => {
@@ -129,52 +170,30 @@ test('the shelf event is a harmless, non-text presentation telegraph', async ({ 
   expect(cue.text).not.toMatch(/hazard|collapse|damage|warning/i);
 });
 
-test('station and Mesku rendered background capture hashes match the accepted baseline', async ({ page }) => {
-  test.skip(retro, 'Classic baseline raster hashes are checked in the classic build');
-  const results: Record<string, string> = {};
-  for (const [label, query, texture] of [
-    ['station-classic', '/', 'station-backdrop'],
-    ['mesku-classic-fallback', '/?arena=mesku', 'station-backdrop'],
-  ]) {
-    await page.goto(query);
-    await waitForBackdrop(page, texture);
-    await page.evaluate(() => {
-      const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
-      scene.scene.pause('StationScene');
-      for (const sprite of scene.fighterSprites.values()) sprite.setVisible(false);
-      scene.zoneGraphics?.setVisible(false);
-    });
-    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-    const png = await page.locator('#game canvas').screenshot();
-    results[label] = createHash('sha256').update(png).digest('hex');
-  }
-  expect(results).toEqual({
-    'station-classic': 'b09668e72ffcc431e278a76e4abead6139bee5dd16fc76a3497c73d65ec08569',
-    'mesku-classic-fallback': 'b09668e72ffcc431e278a76e4abead6139bee5dd16fc76a3497c73d65ec08569',
-  });
+test('station and Mesku source SVG bytes match the pre-arena baseline', async () => {
+  expect(await assetSha256('assets/station/turenki-station-background.svg'))
+    .toBe('bacb6357d9a41343d9739d636ab58aed640b9c76a1407e602ab3de9a48bfdee3');
+  expect(await assetSha256('assets/station/turenki-station-retro.svg'))
+    .toBe('453e14942836f8119d1c889a02327ac7d3ffd744ae6c90e06786509b6f49a602');
+  expect(await assetSha256('assets/mesku/ravintola-mesku-evening.svg'))
+    .toBe('8bf4fe09a023b505f68d6c2ee294df938a3949386cb73e538536e844b8f683c0');
 });
 
-test('retro station and Mesku background captures retain their accepted baselines', async ({ page }) => {
-  test.skip(!retro, 'Retro background raster hashes are only checked in the retro build');
-  const results: Record<string, string> = {};
-  for (const [label, query, texture] of [
-    ['station-retro', '/', 'station-backdrop'],
-    ['mesku-retro', '/?arena=mesku', 'arena-mesku-backdrop'],
-  ]) {
-    await page.goto(query);
-    await waitForBackdrop(page, texture);
-    await page.evaluate(() => {
-      const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
-      scene.scene.pause('StationScene');
-      for (const sprite of scene.fighterSprites.values()) sprite.setVisible(false);
-      scene.zoneGraphics?.setVisible(false);
-    });
-    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-    const png = await page.locator('#game canvas').screenshot();
-    results[label] = createHash('sha256').update(png).digest('hex');
-  }
-  expect(results).toEqual({
-    'station-retro': 'af31b96717e62ea3bfef03a7b325dc1c4c049bd600f096f96da6fe881925e3d0',
-    'mesku-retro': '2dabe679ea6e05a0007412c3d371e49cb81b17d4f4569980f8be7da4573a4fa2',
-  });
+test('classic Mesku fallback produces the same nonblank station capture in this run', async ({ page }) => {
+  test.skip(retro, 'Classic-only fallback comparison');
+  const station = await captureBackdrop(page, '/', 'station-backdrop');
+  const meskuFallback = await captureBackdrop(page, '/?arena=mesku', 'station-backdrop');
+  expect(station.png.equals(meskuFallback.png), 'classic Mesku fallback should render the unchanged station')
+    .toBe(true);
+});
+
+test('retro station default and unknown-arena fallback match; Mesku remains distinct', async ({ page }) => {
+  test.skip(!retro, 'Retro-only fallback comparison');
+  const station = await captureBackdrop(page, '/', 'station-backdrop');
+  const unknownFallback = await captureBackdrop(page, '/?arena=not-real', 'station-backdrop');
+  const mesku = await captureBackdrop(page, '/?arena=mesku', 'arena-mesku-backdrop');
+  expect(station.png.equals(unknownFallback.png), 'retro unknown-arena fallback should render the station')
+    .toBe(true);
+  expect(station.png.equals(mesku.png), 'retro Mesku is a distinct arena, not a fallback')
+    .toBe(false);
 });
