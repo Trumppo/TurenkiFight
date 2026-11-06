@@ -1,5 +1,6 @@
 import type { Fighter, GameState, PlayerInput, Move, GameEvent, ModeId, EndReason, PlayerId } from './types';
 import { aliveCount, modeRules, modeWinner } from './modes';
+import { isZoneDamageTick, zoneRangeAt, ZONE_DAMAGE_HP } from './zone';
 export { MATCH_TICKS } from './modes';
 export { MODE_RULES, aliveCount, compareTieBreak, modeMetric, modeRules, modeWinner } from './modes';
 export type { EndReason, ModeId, ModeRules, RespawnPolicy, TieBreakCriterion } from './types';
@@ -67,6 +68,23 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
         break;
     }
   };
+  /**
+   * Shared knockout state transition. A combat knockout also credits score,
+   * KO count and (in frag modes) a frag before calling this; a zone knockout
+   * passes no attacker and therefore only records the death.
+   */
+  const knockOut = (target: Fighter) => {
+    target.health = 0;
+    target.attackMove = null;
+    target.attackFrames = 0;
+    target.hitstun = 0;
+    if (rules.respawn === 'eliminate') {
+      target.eliminated = true;
+    } else {
+      target.koTimer = 180;
+      if (rules.trackDeaths) target.deaths = (target.deaths ?? 0) + 1;
+    }
+  };
   if (state.phase === 'results' || state.phase === 'lobby') return next;
   if (state.phase === 'countdown') {
     next.countdownTicks = Math.max(0, state.countdownTicks - 1);
@@ -86,7 +104,17 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
       f.koTimer--;
       if (!f.koTimer) {
         if (rules.respawn === 'respawn') {
-          const origin = spawn(fighters.indexOf(f), fighters.length); const options = [origin, ...Array.from({length:8},(_,i)=>({x:Math.max(16,Math.min(368,origin.x+(i%2?1:-1)*(Math.floor(i/2)+1)*32)),y:origin.y}))]; const s = options.find(p=>fighters.every(other=>other.id===f.id || other.koTimer>0 || Math.hypot(other.x-p.x,other.y-p.y)>=24)) ?? origin; f.x=s.x; f.y=s.y; f.z=0; f.vz=0; f.health=100; f.protection=90; event('Respawned',{target:f.id});
+          // A fresh fighter must not reappear outside the current safe range.
+          // Combat modes without a zone keep their exact historical spawn.
+          const safe = rules.shrinkingZone ? zoneRangeAt(next.tick) : null;
+          const clampX = (x: number): number => safe ? Math.max(safe.minX, Math.min(safe.maxX, x)) : x;
+          const origin = spawn(fighters.indexOf(f), fighters.length);
+          const options = [origin, ...Array.from({ length: 8 }, (_, i) => ({
+            x: Math.max(16, Math.min(368, origin.x + (i % 2 ? 1 : -1) * (Math.floor(i / 2) + 1) * 32)),
+            y: origin.y,
+          }))].map(point => ({ x: clampX(point.x), y: point.y }));
+          const s = options.find(p => fighters.every(other => other.id === f.id || other.koTimer > 0 || Math.hypot(other.x - p.x, other.y - p.y) >= 24)) ?? options[0];
+          f.x = s.x; f.y = s.y; f.z = 0; f.vz = 0; f.health = 100; f.protection = 90; event('Respawned', { target: f.id });
         } else {
           f.eliminated = true; f.health = 0; f.attackMove = null; f.attackFrames = 0; f.hitstun = 0;
         }
@@ -141,14 +169,8 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
     if (t.health === 0 && !t.koTimer) {
       if (rules.koScoring) { a.score+=500; t.score-=200; }
       a.koCount++;
-      t.attackMove=null; t.attackFrames=0; t.hitstun=0;
       event('Knockout',{attacker:a.id,target:t.id});
-      if (rules.respawn === 'eliminate') {
-        t.eliminated = true;
-      } else {
-        t.koTimer=180;
-        if (rules.trackDeaths) t.deaths = (t.deaths ?? 0) + 1;
-      }
+      knockOut(t);
       if (rules.fragScoring) knockouts.push({ attacker: a.id, target: t.id });
     }
     else if (!t.koTimer) t.hitstun=Math.max(t.hitstun,8);
@@ -162,6 +184,23 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
       if (ko.attacker === ko.target || knockedOut.has(ko.attacker)) continue;
       const attacker = byFighterId.get(ko.attacker);
       if (attacker) attacker.frags = (attacker.frags ?? 0) + 1;
+    }
+  }
+  if (rules.shrinkingZone && isZoneDamageTick(next.tick)) {
+    // Ordering is deliberate: all combat damage, knockouts and frag credit above
+    // resolve first. A fighter knocked out by combat this tick has a `koTimer`
+    // and is skipped here, so a knockout shared by combat and the zone belongs
+    // to the attacker. The zone cannot revoke a frag credited on this tick.
+    const { minX, maxX } = zoneRangeAt(next.tick);
+    for (const f of fighters) {
+      if (f.eliminated || f.koTimer > 0) continue;
+      if (f.x >= minX && f.x <= maxX) continue;
+      f.health = Math.max(0, f.health - ZONE_DAMAGE_HP);
+      if (f.health > 0) continue;
+      // The zone is not a player: no attacker, no KO count and no frag. The
+      // wire `Knockout` event requires a roster attacker and the zone must not
+      // borrow a player id, so a zone death is carried by `deaths`/`koTimer`.
+      knockOut(f);
     }
   }
   next.remainingTicks--;
