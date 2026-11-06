@@ -1419,6 +1419,85 @@ tasks:
     last_updated: "2026-11-06"
     notes: "PR #156 merged as e9a90e9. Independent gate found two real test-quality defects: the clamp fixture was insensitive (proved by mutation) and the final-tick zone knockout was untested. Both were fixed and re-checked with mutations."
 
+  - id: M12-ITEM-CORE
+    title: Add a deterministic throwable object to the simulation
+    assigned_role: gameplay-session
+    status: blocked
+    priority: P1
+    specification: docs/M12_OBJECTS.md
+    depends_on: [M11-HITSTOP-KNOCKBACK]
+    scope: [src/game/simulation/, src/game/protocol/, tests/]
+    acceptance:
+      - "One bottle object spawns on a deterministic schedule and exists in the simulation state"
+      - "Pickup, hold, throw, flight, impact and break are processed in one documented order"
+      - "Snapshots carry objects optionally with canonical omission; fixtures without objects stay byte-identical"
+      - "Object ids, spawn positions and outcomes are deterministic and replay identically"
+      - "Bandwidth impact is measured on a maximum-object fixture and reported as measured bytes"
+      - "npm test, npm run build and git diff --check pass"
+    last_updated: "2026-11-06"
+    notes: "ADR 0004 decision. Owner chose the object system for throwing; first slice is one object type. Do not add chairs or signs before this works."
+
+  - id: M12-ITEM-INPUT
+    title: Add the grab and throw action to input and the wire
+    assigned_role: gameplay-session
+    status: blocked
+    priority: P1
+    specification: docs/M12_OBJECTS.md
+    depends_on: [M12-ITEM-CORE]
+    scope: [src/game/protocol/, src/game/input/, tests/]
+    acceptance:
+      - "PlayerInput carries an optional grab action; the input codec round-trips it and rejects malformed frames"
+      - "Existing recordings and fixtures without the button remain valid"
+      - "Keyboard and gamepad mappings are documented in the in-game guide"
+    last_updated: "2026-11-06"
+    notes: "One new button bit, canonical omission. ADR 0004."
+
+  - id: M12-ITEM-UI
+    title: Render bottles, held objects and throw arcs
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/M12_OBJECTS.md
+    depends_on: [M12-ITEM-CORE]
+    scope: [src/game/presentation/, src/style.css, tests/browser/]
+    acceptance:
+      - "A bottle on the floor is distinguishable from fighters at 640x360 and 1280x720"
+      - "A held bottle is visible in the holder silhouette and a thrown bottle has a readable arc"
+      - "Pickup, throw and break have placeholder audio cues that respect mute"
+      - "No simulation or protocol change; classic and retro both look correct"
+    last_updated: "2026-11-06"
+    notes: "Presentation only, driven by the object state in snapshots."
+
+  - id: M12-BOT-ITEMS
+    title: Teach bots to pick up and throw objects
+    assigned_role: gameplay-session
+    status: blocked
+    priority: P1
+    specification: docs/M12_OBJECTS.md
+    depends_on: [M12-ITEM-INPUT]
+    scope: [src/game/input/, tests/]
+    acceptance:
+      - "Bots pick up a nearby object and throw it at the nearest opponent using the seeded policy"
+      - "Throw rate is bounded and measured; bots do not ignore combat entirely"
+      - "Determinism holds and bot fixture pins are updated with old and new values reported"
+    last_updated: "2026-11-06"
+    notes: "Bots and humans share the same rules; no special-case combat for bots."
+
+  - id: M12-STATION-EVENTS
+    title: Make the station hazard a shared, telegraphed event in more modes
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/M12_OBJECTS.md
+    depends_on: [M10-DM-ZONE-RULES]
+    scope: [src/game/presentation/, tests/browser/]
+    acceptance:
+      - "The train warning becomes visible and audible in the modes that enable it"
+      - "Every hazard is telegraphed before it can hurt anyone"
+      - "No new damage source outside the existing mode rules"
+    last_updated: "2026-11-06"
+    notes: "Presentation only; simulation damage stays in the mode rules."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
