@@ -146,15 +146,24 @@
 
 **Known limits:** eight fighters remain hard to tell apart in a tight crowd; the local celebration panel covers the middle of the frozen arena; the online client has its own result card but no celebration animation; audio stays at placeholder level. See [results celebration](M9_RESULTS_CELEBRATION.md).
 
-## Milestone 10 - Deathmatch identity (in progress)
+## Milestone 10 - Deathmatch identity
 
-**Status: IN PROGRESS (2026-11-06).** The owner reported that Deathmatch plays almost like Score Brawl and chose a shrinking safe platform as its identity instead of removing the mode.
+**Status: IMPLEMENTED (2026-11-06), awaiting owner playtest.** The owner reported that Deathmatch plays almost like Score Brawl and chose a shrinking safe platform as its identity instead of removing the mode.
 
-- [ ] Simulation: zone stage as a pure function of tick, outside damage, zone knockout attribution, respawn clamped into the safe range
-- [ ] Presentation: visible moving edge, shrink warning, HUD stage and danger state, online client derives the same zone
-- [ ] Independent gate: damage cadence, attribution, unchanged Score Brawl and Last Man Standing fingerprints
+- [x] Simulation: zone stage as a pure function of tick, outside damage, zone knockout attribution, respawn clamped into the safe range (#156, `e9a90e9`)
+- [x] Presentation: visible moving edge, shrink warning, HUD stage and danger state, online client derives the same zone (#156)
+- [x] Independent gate: damage cadence, attribution, unchanged Score Brawl and Last Man Standing fingerprints; the clamp and final-tick tests were strengthened after the gate
+- [ ] Owner playtest: is the shrinking platform fun, and is the 42 % final width right for eight fighters?
 
 Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md).
+
+## Milestone 11 - Arcade feel (in progress)
+
+**Status: SPEED IMPLEMENTED (2026-11-06), the rest is a proposal.** Owner-approved part: movement **+20 %**, from 1.3 to **1.56 px/tick (93.6 px/s)**, diagonal normalisation kept (PR #157, `a1fcf0f`). Every pinned simulation fingerprint moved and was updated deliberately.
+
+- [x] Movement speed +20 % (PR #157)
+- [ ] Owner playtest: does it feel 20 % faster?
+- [ ] Proposed, not approved: hit stop on clean hits, knockback/hitstun tuning, camera punch, round pacing re-tune
 
 ## Long-term phases (designer proposal, 2026-11-06)
 
