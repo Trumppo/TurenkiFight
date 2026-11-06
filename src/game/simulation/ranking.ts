@@ -103,7 +103,7 @@ function groupEntries(groups: readonly Fighter[][], metricOf: (fighter: Fighter)
   return entries;
 }
 
-/** Score Brawl and Deathmatch: the mode's own ordered tie-break decides. */
+/** Score Brawl, Deathmatch and Wave: the mode's own ordered tie-break decides. */
 function rankByRules(fighters: readonly Fighter[], rules: ModeRules): RankedEntry[] {
   const primary = rules.tieBreak[0];
   return groupEntries(ruleGroups(fighters, rules), fighter => modeMetric(fighter, primary));
@@ -181,6 +181,8 @@ export function rankMatch(state: GameState, events: readonly GameEvent[] = state
   switch (mode) {
     case 'score-brawl':
     case 'deathmatch':
+    case 'wave':
+      // Wave ranks purely by score (M13): an equal score is a draw.
       order = rankByRules(state.fighters, modeRules(mode));
       break;
     case 'last-man-standing':

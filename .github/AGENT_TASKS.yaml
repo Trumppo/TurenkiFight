@@ -1682,6 +1682,41 @@ tasks:
     last_updated: "2026-11-06"
     notes: "Owner-blocked: real samples and mixing wait for an explicit request and a listening decision."
 
+  - id: M13-WAVE-RULES
+    title: Add teams and the co-op wave mode to the simulation
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261106-wave
+    status: in_progress
+    priority: P1
+    specification: docs/M13_WAVE_MODE.md
+    depends_on: [M12-ITEM-CORE]
+    scope: [src/game/simulation/, src/game/protocol/, tests/]
+    acceptance:
+      - "Fighters carry an optional team; teammates cannot damage or auto-target each other, and absent team keeps existing modes byte-identical"
+      - "ModeId wave and EndReason waves-cleared exist; wave state (index, countdown, remaining) is optional and omitted outside wave"
+      - "A wave starts after its countdown, clears when remaining reaches zero, and the match ends with waves-cleared after the last wave; the timer still ends it with time"
+      - "Players respawn and are never eliminated in wave mode; enemies respawn per wave"
+      - "Strict decoding rejects wave fields outside wave mode and invalid team values"
+      - npm test, npm run build and git diff --check pass
+    last_updated: "2026-11-06"
+    notes: "ADR 0005. Existing modes stay byte-identical; the team filter is the only combat change."
+
+  - id: M13-WAVE-UI
+    title: Show wave state and the wave mode in the HUD and selector
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/M13_WAVE_MODE.md
+    depends_on: [M13-WAVE-RULES]
+    scope: [src/game/presentation/, index.html, src/style.css, src/online.ts, tests/browser/]
+    acceptance:
+      - "Wave mode is selectable and labelled locally and online"
+      - "HUD shows the wave number, enemies remaining and the next-wave countdown"
+      - "Results screen ranks wave matches by score like Score Brawl"
+      - "Screenshots at 640x360 and 1280x720 inspected in classic and retro"
+    last_updated: "2026-11-06"
+    notes: "Presentation only; wave state comes from the snapshot/state."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session

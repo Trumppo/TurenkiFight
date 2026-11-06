@@ -31,7 +31,7 @@ export const COMBAT_MOVES: readonly Move[] = ['punch', 'kick', 'jumpkick'];
  */
 export const HIT_MOVES: readonly Move[] = ['punch', 'kick', 'jumpkick', 'throw'];
 /** End reasons the simulation can attach to `MatchEnded`. */
-export const END_REASONS: readonly EndReason[] = ['elimination', 'frag-limit', 'time'];
+export const END_REASONS: readonly EndReason[] = ['elimination', 'frag-limit', 'time', 'waves-cleared'];
 
 const fields = ['tick', 'type', 'attacker', 'target', 'move', 'reason', 'winner'];
 const obj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);

@@ -1,5 +1,5 @@
-import type { Fighter, GameEvent, GameState, ModeId, Move, ObjectKind, ObjectState, Phase, SimObject } from '../simulation/types';
-import { ARENA_BOUNDS, COUNTDOWN_TICKS, KO_HIT_STOP_TICKS, MATCH_TICKS, MOVES } from '../simulation/step';
+import type { Fighter, GameEvent, GameState, ModeId, Move, ObjectKind, ObjectState, Phase, SimObject, Team, WaveState } from '../simulation/types';
+import { ARENA_BOUNDS, COUNTDOWN_TICKS, KO_HIT_STOP_TICKS, MATCH_TICKS, MOVES, WAVE_RULES } from '../simulation/step';
 import { COMBAT_MOVES, END_REASONS, parseGameEvent } from './gameEvent';
 import { MAX_PLAYERS } from './players';
 
@@ -61,12 +61,12 @@ const phases: Phase[] = ['lobby', 'countdown', 'fighting', 'results'];
 const requiredFighterKeys = ['id', 'x', 'y', 'z', 'vz', 'facing', 'health', 'score', 'koCount', 'hitsReceived',
   'attackCooldown', 'attackFrames', 'attackMove', 'hitTargets', 'hitstun', 'koTimer', 'protection', 'previousButtons'];
 const modeFighterKeys = ['eliminated', 'frags', 'deaths', 'damageDealt'];
-/** Optional and canonically omitted when zero; absent means 0. */
-const optionalFighterKeys = ['knockback'];
+/** Optional fighter fields: `knockback` is omitted at zero, `team` outside team modes. */
+const optionalFighterKeys = ['knockback', 'team'];
 const fighterKeys = [...requiredFighterKeys, ...modeFighterKeys, ...optionalFighterKeys];
 const requiredStateKeys = ['tick', 'fighters', 'phase', 'countdownTicks', 'remainingTicks', 'events'];
-/** Optional and canonically omitted when zero/empty; absent means 0 or none. */
-const optionalStateKeys = ['hitStopTicks', 'objects'];
+/** Optional state fields: omitted when zero/empty, or outside wave mode for `wave`. */
+const optionalStateKeys = ['hitStopTicks', 'objects', 'wave'];
 const stateKeys = [...requiredStateKeys, 'mode', ...optionalStateKeys];
 /** Object fields emitted by the simulation; unknown keys are rejected. */
 const objectKeys = ['id', 'kind', 'x', 'y', 'z', 'state', 'holder', 'spawnTick', 'vx', 'vz'];
@@ -78,7 +78,8 @@ const objectIdPattern = /^O[1-9][0-9]*$/;
  * Score Brawl is the historical default and omits `mode`, so an explicit
  * `score-brawl` value is not canonical and is rejected by the decoder.
  */
-const snapshotModes: readonly ModeId[] = ['last-man-standing', 'deathmatch'];
+const snapshotModes: readonly ModeId[] = ['last-man-standing', 'deathmatch', 'wave'];
+const teams: readonly Team[] = ['players', 'enemies'];
 const obj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 const has = (x: Record<string, unknown>, key: string): boolean => Object.prototype.hasOwnProperty.call(x, key);
 const keys = (x: Record<string, unknown>, expected: string[]) => Object.keys(x).every(k => expected.includes(k));
@@ -157,7 +158,7 @@ function parseFighter(value: unknown, mode: ModeId | undefined): Fighter | null 
   // `eliminated` is a true-only marker: an absent field means "alive", so the
   // canonical form omits `false` and the decoder rejects it as non-canonical.
   if (has(x, 'eliminated')) {
-    if (mode !== 'last-man-standing' || x.eliminated !== true) return null;
+    if ((mode !== 'last-man-standing' && mode !== 'wave') || x.eliminated !== true) return null;
   }
   if (has(x, 'frags')) {
     if (mode !== 'deathmatch' || !counter(x.frags)) return null;
@@ -166,12 +167,24 @@ function parseFighter(value: unknown, mode: ModeId | undefined): Fighter | null 
     if (mode !== 'deathmatch' || !counter(x.deaths)) return null;
   }
   if (has(x, 'damageDealt') && !counter(x.damageDealt)) return null;
+  // A team is optional, but when present it must be one of the two sides. Wave
+  // states require it on every fighter (checked in `parseStateSnapshot`).
+  if (has(x, 'team') && !teams.includes(x.team as Team)) return null;
   // Deathmatch always spawns and steps the frag table together.
   if (mode === 'deathmatch' && (!has(x, 'frags') || !has(x, 'deaths'))) return null;
   // Last Man Standing eliminates on the knockout that reaches zero health, so
   // every zero-health fighter is eliminated and every eliminated fighter has
-  // zero health. Damage never leaves one of the two without the other.
+  // zero health. Wave uses the marker only for enemies that are out of the
+  // current wave: a player at zero health is merely waiting to respawn.
   if (mode === 'last-man-standing' && ((x.health === 0) !== (x.eliminated === true))) return null;
+  if (mode === 'wave') {
+    if (x.team === 'enemies') {
+      if ((x.health === 0) !== (x.eliminated === true)) return null;
+    } else if (x.eliminated === true) {
+      return null;
+    }
+  }
+  if (mode === 'wave' && !has(x, 'team')) return null;
 
   return {
     id,
@@ -197,6 +210,7 @@ function parseFighter(value: unknown, mode: ModeId | undefined): Fighter | null 
     ...(has(x, 'frags') ? { frags: x.frags as number } : {}),
     ...(has(x, 'deaths') ? { deaths: x.deaths as number } : {}),
     ...(has(x, 'damageDealt') ? { damageDealt: x.damageDealt as number } : {}),
+    ...(has(x, 'team') ? { team: x.team as Team } : {}),
   };
 }
 
@@ -262,6 +276,21 @@ function timersValid(state: Record<string, unknown>): boolean {
   return (phase !== 'fighting' && phase !== 'countdown') || state.remainingTicks >= 1;
 }
 
+const waveKeys = ['index', 'countdownTicks', 'remaining'];
+/**
+ * Wave progress is valid only with `mode: 'wave'`. The ranges mirror the
+ * simulation constants: `index` counts cleared waves (0..wave count), the
+ * between-wave countdown is bounded by the configured pause, and `remaining`
+ * is bounded by the roster.
+ */
+function parseWaveState(value: unknown): WaveState | null {
+  if (!obj(value) || Object.keys(value).length !== waveKeys.length || !keys(value, waveKeys)) return null;
+  if (!nonnegative(value.index) || value.index > WAVE_RULES.count) return null;
+  if (!nonnegative(value.countdownTicks) || value.countdownTicks > WAVE_RULES.countdownTicks) return null;
+  if (!nonnegative(value.remaining) || value.remaining > MAX_SNAPSHOT_FIGHTERS) return null;
+  return { index: value.index, countdownTicks: value.countdownTicks, remaining: value.remaining };
+}
+
 export function parseStateSnapshot(value: unknown): StateSnapshot {
   if (!obj(value) || !keys(value, ['version', 'state']) || Object.keys(value).length !== 2 ||
       value.version !== SNAPSHOT_VERSION || !obj(value.state)) throw new Error('Invalid snapshot envelope');
@@ -281,6 +310,14 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
   if (mode !== undefined && !snapshotModes.includes(mode as ModeId)) {
     throw new Error('Malformed simulation state');
   }
+  // Wave progress belongs to wave mode only: it is required there (a wave
+  // state without it cannot be simulated) and rejected everywhere else, so
+  // every other mode keeps its historical canonical shape.
+  const wave = has(state, 'wave') ? parseWaveState(state.wave) : undefined;
+  if (has(state, 'wave') && wave === null) throw new Error('Malformed simulation state');
+  if (mode === 'wave' ? !wave : wave !== undefined) {
+    throw new Error('Malformed simulation state');
+  }
   const fighters: Fighter[] = [];
   for (const raw of state.fighters) {
     const parsed = parseFighter(raw, mode as ModeId | undefined);
@@ -296,6 +333,16 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
       fighters.some(f => f.hitTargets.some(id => id === f.id || !roster.has(id))) ||
       !Array.isArray(state.events) || state.events.length > MAX_SNAPSHOT_EVENTS) {
     throw new Error('Malformed simulation state');
+  }
+  if (wave) {
+    const liveEnemies = fighters.filter(f => f.team === 'enemies' && !f.eliminated).length;
+    // `step()` derives `remaining` from the fighter list every fighting tick,
+    // so a mismatch is unreachable state rather than a stale HUD counter.
+    if (!fighters.some(f => f.team === 'players') ||
+        !fighters.some(f => f.team === 'enemies') ||
+        wave.remaining !== liveEnemies) {
+      throw new Error('Malformed simulation state');
+    }
   }
   const objects: SimObject[] = [];
   if (has(state, 'objects')) {
@@ -338,6 +385,7 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
       ...(objects.length ? { objects } : {}),
       events,
       ...(mode === undefined ? {} : { mode: mode as ModeId }),
+      ...(wave ? { wave } : {}),
     },
   };
 }
@@ -360,7 +408,7 @@ function withoutKey(source: Record<string, unknown>, key: string): Record<string
  *   carry explicit zeros.
  * - an empty `objects` array is omitted; absent means no objects, so a state
  *   without objects keeps its pre-M12 bytes.
- * - Last Man Standing `eliminated: false` is omitted as before.
+ * - Last Man Standing and wave `eliminated: false` is omitted as before.
  * The decoder still rejects unknown keys and out-of-range values. An explicit
  * zero or empty list on the wire is accepted and normalised away by the decoder.
  */
@@ -384,7 +432,9 @@ function canonicalEncodeInput(value: unknown): unknown {
         if (!obj(fighter)) return fighter;
         let next = fighter;
         if (has(next, 'knockback') && next.knockback === 0) next = withoutKey(next, 'knockback');
-        if (mode === 'last-man-standing' && next.eliminated === false) next = withoutKey(next, 'eliminated');
+        if ((mode === 'last-man-standing' || mode === 'wave') && next.eliminated === false) {
+          next = withoutKey(next, 'eliminated');
+        }
         return next;
       }),
     },

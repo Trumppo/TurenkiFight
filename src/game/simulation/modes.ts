@@ -1,14 +1,28 @@
-import type { Fighter, ModeId, ModeRules, PlayerId, TieBreakCriterion } from './types';
+import type { Fighter, ModeId, ModeRules, PlayerId, TieBreakCriterion, WaveRules } from './types';
 
 /** Active match length in ticks. Unchanged from Score Brawl and shared by every mode. */
 export const MATCH_TICKS = 7200;
 
 /**
- * Every selectable mode, in a stable order. This is a runtime view of the
- * `ModeId` union for argument parsing and protocol validation; `MODE_RULES`
- * remains the single source of mode behaviour.
+ * The modes the current UI and server mode switch offer, in a stable order.
+ * `wave` is implemented in the simulation (ADR 0005) but is not selectable yet;
+ * its selector and HUD arrive in M13-WAVE-UI, so it is deliberately absent here
+ * until then. `MODE_RULES` remains the single source of mode behaviour.
  */
-export const MODE_IDS = ['score-brawl', 'last-man-standing', 'deathmatch'] as const satisfies readonly ModeId[];
+export const MODE_IDS: readonly ModeId[] = ['score-brawl', 'last-man-standing', 'deathmatch'];
+
+/**
+ * First-slice wave settings, exported so tests and the codec share the bounds.
+ * Timing: 3 waves, a 2 s (120-tick) pause between them, and one enemy in wave
+ * 1 with one more slot activated per wave up to the roster.
+ */
+export const WAVE_RULES: WaveRules = {
+  count: 3,
+  countdownTicks: 120,
+  firstWaveEnemies: 1,
+  enemyTeam: 'enemies',
+  scoringTeam: 'players',
+};
 
 /**
  * Single source of truth for mode behaviour. The simulation reads these fields
@@ -28,6 +42,7 @@ export const MODE_RULES: Readonly<Record<ModeId, ModeRules>> = {
     trackDamage: false,
     trackDeaths: false,
     shrinkingZone: false,
+    wave: null,
   },
   'last-man-standing': {
     id: 'last-man-standing',
@@ -42,6 +57,7 @@ export const MODE_RULES: Readonly<Record<ModeId, ModeRules>> = {
     trackDamage: true,
     trackDeaths: false,
     shrinkingZone: false,
+    wave: null,
   },
   deathmatch: {
     id: 'deathmatch',
@@ -56,6 +72,25 @@ export const MODE_RULES: Readonly<Record<ModeId, ModeRules>> = {
     trackDamage: true,
     trackDeaths: true,
     shrinkingZone: true,
+    wave: null,
+  },
+  wave: {
+    id: 'wave',
+    // Players use Score Brawl respawns; enemies are eliminated by the wave
+    // lifecycle below instead of the generic respawn policy.
+    stocks: null,
+    respawn: 'respawn',
+    fragLimit: null,
+    timerTicks: MATCH_TICKS,
+    // Rank purely by score, so an equal score is a draw (M13 acceptance).
+    tieBreak: ['score'],
+    hitScoring: true,
+    koScoring: true,
+    fragScoring: false,
+    trackDamage: false,
+    trackDeaths: false,
+    shrinkingZone: false,
+    wave: { ...WAVE_RULES },
   },
 };
 
