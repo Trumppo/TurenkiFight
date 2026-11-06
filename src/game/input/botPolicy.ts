@@ -1,8 +1,12 @@
-import { MOVES } from '../simulation/step';
-import type { Fighter, GameState, PlayerInput } from '../simulation/types';
+import {
+  MOVES,
+  OBJECT_PICKUP_REACH_X,
+  OBJECT_PICKUP_REACH_Y,
+} from '../simulation/step';
+import type { Fighter, GameState, PlayerInput, SimObject } from '../simulation/types';
 
 /**
- * Deterministic local bot policy (M8 slice A, mobility in M12).
+ * Deterministic local bot policy (M8 slice A, mobility and items in M12).
  *
  * `botInput` is a pure function of the current state, the bot's player id and a
  * seed: it never reads the wall clock, never calls `Math.random` and never
@@ -10,8 +14,27 @@ import type { Fighter, GameState, PlayerInput } from '../simulation/types';
  * player id and tick, so replaying the same match produces the same inputs.
  *
  * Behaviour is intentionally small: walk toward the nearest opponent that is
- * still in the match, attack when in reach and jump. Jumps serve three
- * purposes:
+ * still in the match, attack when in reach, jump, and use the M12 object layer
+ * with the same `grab` action as a human. Items are opportunistic, never a
+ * chase:
+ *
+ * - **Pickup** only when the bot is already within the simulation's pickup
+ *   reach of a ground bottle and that bottle is close to the bot's current
+ *   target. A short detour is allowed for a bottle within `pickupInterestRadius`
+ *   while the target is not in an attackable position; farther bottles are
+ *   ignored so a bot never abandons a fight to fetch one across the arena.
+ * - **Throw** only at the nearest targetable opponent when it is roughly in
+ *   front and inside the bottle's actual flight range. Otherwise the bot keeps
+ *   fighting or closes distance while holding.
+ * - **Bounds without bot memory:** pickup and throw each have a seeded decision
+ *   cadence derived from one phase. The pickup cadence bounds hoarding, the
+ *   throw cadence bounds throw rate, and the throw phase is aligned with the
+ *   pickup residue so the next pickup after a throw is at least one throw
+ *   period away. The simulation itself allows one holder per object and one
+ *   object per holder. Together that caps the item behaviour without adding any
+ *   field to the simulation state.
+ *
+ * Jumps serve three purposes:
  *
  * - `jump-in`: the target is outside punch reach but inside the jump-in band
  *   (up to 1.5x kick reach), so the bot can jump and land the existing
@@ -84,6 +107,45 @@ export const BOT_TUNING = {
   arenaMaxX: 368,
   /** Horizontal gaps at or below this are treated as exactly overlapping. */
   minHorizontalDistance: 1,
+  /**
+   * Pickup decisions run on a per-bot seeded cadence. This is the
+   * deterministic equivalent of a pickup cooldown without storing bot memory in
+   * the simulation state: the next pickup attempt is at least this many ticks
+   * after the previous one, which bounds hoarding. At 60 Hz this is one attempt
+   * per 0.8 s.
+   */
+  itemDecisionPeriod: 48,
+  /**
+   * Throws get their own, shorter cadence. A bottle is consumed by the throw,
+   * so supply (not this cooldown) usually limits the real throw count; the
+   * cadence bounds the maximum rate to one per 0.4 s. It divides
+   * `itemDecisionPeriod` and shares its phase, so every throw tick lies on the
+   * pickup residue class modulo this period: after a throw the next pickup
+   * opportunity is at least this many ticks away. That is what makes "no
+   * re-pickup right after a throw" a property of the cadence rather than bot
+   * memory.
+   */
+  throwDecisionPeriod: 24,
+  /**
+   * A ground bottle is only worth a short detour while the bot's target is not
+   * in an attackable position. Bottles farther than this from the bot are
+   * ignored, so a bot never abandons a fight to fetch one across the arena.
+   */
+  pickupInterestRadius: 56,
+  /**
+   * The bottle must also be near the bot's current target. This is what makes a
+   * pickup "on the way" rather than a detour to an unrelated corner.
+   */
+  pickupTargetRadius: 110,
+  /**
+   * Throw only inside the bottle's real flight range. The fixed arc from
+   * `step.ts` lands after about 17 ticks and 51 px, so a farther throw would
+   * always hit the floor first. Keeping a little margin also makes the throw
+   * readable rather than a guaranteed miss.
+   */
+  throwMaxDistance: 48,
+  /** Throw only when the target is roughly on the same depth line. */
+  throwDepth: 10,
 } as const;
 
 /**
@@ -91,6 +153,15 @@ export const BOT_TUNING = {
  * tests can assert the conditions instead of inferring them from a noisy match.
  */
 export type BotJumpReason = 'jump-in' | 'approach' | 'evasive';
+
+/**
+ * The item action a bot would take on this tick, if any. Exposed for the same
+ * reason as `BotJumpReason`: tests assert the conditions directly instead of
+ * reconstructing them from a noisy match.
+ */
+export type BotItemIntent =
+  | { readonly action: 'pickup'; readonly objectId: string }
+  | { readonly action: 'throw'; readonly objectId: string };
 
 /** Input used whenever a bot has nothing to do (not fighting, KO, eliminated). */
 export function botNeutralInput(playerId: string): PlayerInput {
@@ -205,6 +276,163 @@ export function botJumpReason(state: GameState, playerId: string, seed: number):
 }
 
 /**
+ * The per-bot pickup phase. All item cadences derive from this one seeded
+ * offset so their phases stay aligned as described in `BOT_TUNING`.
+ */
+function itemOffset(seed: number, playerId: string): number {
+  return Math.floor(noise(seed, playerId, 0, 8) * BOT_TUNING.itemDecisionPeriod);
+}
+
+/**
+ * True on the ticks where this bot is allowed to start a pickup. Like
+ * `isJumpDecisionTick`, the phase offset spreads bots out so a whole roster
+ * does not grab in lockstep. This cadence is the memory-free bound that stops a
+ * re-pickup right after a throw.
+ */
+export function isItemDecisionTick(seed: number, playerId: string, tick: number): boolean {
+  const period = BOT_TUNING.itemDecisionPeriod;
+  return (tick + itemOffset(seed, playerId)) % period === 0;
+}
+
+/**
+ * Throw-only cadence. It reuses the pickup phase modulo the shorter throw
+ * period, so throw ticks always lie on the pickup residue class: the next
+ * pickup after a throw is at least `throwDecisionPeriod` ticks away even though
+ * the bot stores no memory. The bottle supply is the real throw rate limit.
+ */
+export function isThrowDecisionTick(seed: number, playerId: string, tick: number): boolean {
+  const period = BOT_TUNING.throwDecisionPeriod;
+  const offset = itemOffset(seed, playerId) % period;
+  return (tick + offset) % period === 0;
+}
+
+/** The bottle this bot is holding, if any. */
+function heldObject(state: GameState, playerId: string): SimObject | undefined {
+  return (state.objects ?? []).find(object => object.state === 'held' && object.holder === playerId);
+}
+
+/** The bot is able to take an item action this tick. */
+function canAct(self: Fighter): boolean {
+  return !self.eliminated && self.koTimer === 0 && self.health > 0 && self.z === 0
+    && self.attackMove === null && self.hitstun === 0;
+}
+
+const manhattan = (a: { x: number; y: number }, b: { x: number; y: number }): number =>
+  Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+
+/**
+ * Mirrors the simulation's pickup geometry: a ground bottle in front of the
+ * fighter and inside the fixed reach. Keeping the rule here means a bot never
+ * presses `grab` for a pickup the simulation would reject, so the press edge is
+ * not wasted.
+ */
+function canPickUp(object: SimObject, self: Fighter): boolean {
+  return object.state === 'ground'
+    && (object.x - self.x) * self.facing >= 0
+    && Math.abs(object.x - self.x) <= OBJECT_PICKUP_REACH_X
+    && Math.abs(object.y - self.y) <= OBJECT_PICKUP_REACH_Y;
+}
+
+/** Nearest candidate by Manhattan distance; ties break by stable object id. */
+function closestObject(objects: readonly SimObject[], from: Fighter): SimObject | undefined {
+  let best: SimObject | undefined;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const object of objects) {
+    const distance = manhattan(object, from);
+    if (distance < bestDistance
+      || (distance === bestDistance && best !== undefined && object.id.localeCompare(best.id) < 0)) {
+      best = object;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
+/**
+ * A bottle the bot can pick up now. Besides the simulation's reach the bottle
+ * must be near the bot's current target, so a pickup never pulls the bot out of
+ * the fight it is already in.
+ */
+function pickupCandidate(state: GameState, self: Fighter, target: Fighter): SimObject | undefined {
+  const bottles = (state.objects ?? []).filter(object =>
+    canPickUp(object, self) && manhattan(object, target) <= BOT_TUNING.pickupTargetRadius);
+  return closestObject(bottles, self);
+}
+
+/**
+ * A nearby bottle worth a short detour while the target is not attackable. The
+ * bottle must be near both the bot and the target; this is deliberately a
+ * detour, not a fetch across the arena.
+ */
+function detourCandidate(state: GameState, self: Fighter, target: Fighter): SimObject | undefined {
+  const bottles = (state.objects ?? []).filter(object =>
+    object.state === 'ground'
+    && manhattan(object, self) <= BOT_TUNING.pickupInterestRadius
+    && manhattan(object, target) <= BOT_TUNING.pickupTargetRadius);
+  return closestObject(bottles, self);
+}
+
+/** The nearest opponent is close enough and aligned enough for a throw. */
+function canThrow(self: Fighter, target: Fighter): boolean {
+  const dx = target.x - self.x;
+  return dx * self.facing >= 0
+    && Math.abs(dx) <= BOT_TUNING.throwMaxDistance
+    && Math.abs(target.y - self.y) <= BOT_TUNING.throwDepth;
+}
+
+/**
+ * True when the fighter is past the active frames of its current attack. A
+ * throw is allowed in this window so a holding bot can replace the recovery of
+ * a melee attack with the throw instead of waiting for a fully idle tick. That
+ * keeps the throw rate useful without punching and throwing on the same active
+ * frame.
+ */
+function inAttackRecovery(self: Fighter): boolean {
+  if (!self.attackMove || self.attackMove === 'throw') return true;
+  const move = MOVES[self.attackMove];
+  const elapsed = move.startup + move.active + move.recovery - self.attackFrames;
+  return elapsed >= move.startup + move.active;
+}
+
+/** A throw needs a grounded, unstunned holder but tolerates attack recovery. */
+function canThrowNow(self: Fighter): boolean {
+  return !self.eliminated && self.koTimer === 0 && self.health > 0 && self.z === 0
+    && self.hitstun === 0 && inAttackRecovery(self);
+}
+
+/**
+ * Resolve the item action behind the pickup/throw cadences. The simulation
+ * still owns the actual pickup/throw; this only decides whether to press
+ * `grab` on this tick.
+ */
+function itemIntent(state: GameState, self: Fighter, target: Fighter, seed: number): BotItemIntent | null {
+  const held = heldObject(state, self.id);
+  if (held) {
+    if (!isThrowDecisionTick(seed, self.id, state.tick)) return null;
+    return canThrowNow(self) && canThrow(self, target)
+      ? { action: 'throw', objectId: held.id }
+      : null;
+  }
+  if (!isItemDecisionTick(seed, self.id, state.tick)) return null;
+  if (!canAct(self)) return null;
+  const bottle = pickupCandidate(state, self, target);
+  return bottle ? { action: 'pickup', objectId: bottle.id } : null;
+}
+
+/**
+ * Public wrapper around `itemIntent` for unit tests and future presentation
+ * debugging. Resolves the same self/target pair as `botInput`.
+ */
+export function botItemIntent(state: GameState, playerId: string, seed: number): BotItemIntent | null {
+  if (state.phase !== 'fighting') return null;
+  const self = state.fighters.find(fighter => fighter.id === playerId);
+  if (!self || self.eliminated || self.koTimer > 0 || self.health <= 0) return null;
+  const target = nearestOpponent(state, playerId);
+  if (!target) return null;
+  return itemIntent(state, self, target, seed);
+}
+
+/**
  * One tick of bot input. The caller passes the same seed for the whole match;
  * using the state tick keeps the result reproducible from a replay.
  */
@@ -222,6 +450,17 @@ export function botInput(state: GameState, playerId: string, seed: number): Play
   const distance = Math.abs(dx);
   const inDepth = Math.abs(dy) <= BOT_TUNING.attackDepth;
   const inFront = dx * self.facing > 0;
+  const attackable = inDepth && inFront && distance <= BOT_TUNING.maxAttackDistance;
+  const canAttackNow = self.attackMove === null && self.hitstun === 0;
+  const item = itemIntent(state, self, target, seed);
+  const holding = heldObject(state, playerId) !== undefined;
+
+  // Only detour to a bottle when the target is not in an attackable position.
+  // A nearby bottle then reads as "on the way", not as abandoning a fight.
+  const detour = !item && !holding && canAct(self) && !attackable
+    ? detourCandidate(state, self, target)
+    : undefined;
+
   let moveX: -1 | 0 | 1 = 0;
   if (distance > BOT_TUNING.standoffDistance || (!inFront && distance > BOT_TUNING.minHorizontalDistance)) {
     moveX = dx > 0 ? 1 : -1;
@@ -234,9 +473,26 @@ export function botInput(state: GameState, playerId: string, seed: number): Play
   let moveY: -1 | 0 | 1 = 0;
   if (Math.abs(dy) > BOT_TUNING.depthTolerance) moveY = dy > 0 ? 1 : -1;
 
+  if (item) {
+    // Stand still on the action tick. The simulation resolves movement before
+    // pickup/throw, so a stable facing makes the grab press reliable.
+    moveX = 0;
+    moveY = 0;
+  } else if (detour) {
+    // Walk to the nearby bottle, turning toward it if it is behind. The target
+    // is outside attack reach, so this is not abandoning an active exchange.
+    const bottleDx = detour.x - self.x;
+    const bottleDy = detour.y - self.y;
+    if (bottleDx * self.facing < 0 || Math.abs(bottleDx) > BOT_TUNING.minHorizontalDistance) {
+      moveX = bottleDx > 0 ? 1 : -1;
+    } else {
+      moveX = 0;
+    }
+    moveY = Math.abs(bottleDy) > BOT_TUNING.minHorizontalDistance ? (bottleDy > 0 ? 1 : -1) : 0;
+  }
+
   const attack = { punch: false, kick: false, jumpkick: false };
-  const canAct = self.attackMove === null && self.hitstun === 0;
-  if (canAct && inDepth && inFront && distance <= BOT_TUNING.maxAttackDistance) {
+  if (!item && canAttackNow && attackable) {
     if (self.z > 0) {
       // Jump variants can only start while airborne. Press on the way down so
       // the jumpkick active frames line up with the landing, not the ascent.
@@ -251,7 +507,10 @@ export function botInput(state: GameState, playerId: string, seed: number): Play
     }
   }
 
-  const reason = jumpReason(state, self, target, seed);
+  // An item action owns the tick: a pickup or throw must never be preempted by
+  // a jump. A detour does not suppress jumps, so a bot that is merely walking
+  // toward a nearby bottle keeps its normal mobility and combat timing.
+  const reason = item ? null : jumpReason(state, self, target, seed);
   // A jump-in or evasive hop replaces the ground attack that tick: that is what
   // makes the jumpkick part of a jump-in instead of a cosmetic hop. Approach
   // jumps only happen outside attack reach, so they never compete with an attack.
@@ -263,7 +522,9 @@ export function botInput(state: GameState, playerId: string, seed: number): Play
   }
   const jump = reason !== null && (preemptsAttack || (!attack.punch && !attack.kick && !attack.jumpkick));
 
-  return { playerId, moveX, moveY, jump, ...attack };
+  const input: PlayerInput = { playerId, moveX, moveY, jump, ...attack };
+  if (item) input.grab = true;
+  return input;
 }
 
 /** Convenience wrapper: one input per requested bot, in the given order. */

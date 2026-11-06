@@ -1532,7 +1532,8 @@ tasks:
   - id: M12-BOT-ITEMS
     title: Teach bots to pick up and throw objects
     assigned_role: gameplay-session
-    status: blocked
+    session_id: gameplay-session-20261106-botitems
+    status: in_progress
     priority: P1
     specification: docs/M12_OBJECTS.md
     depends_on: [M12-ITEM-INPUT]

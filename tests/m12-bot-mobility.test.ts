@@ -358,17 +358,20 @@ describe('M12 bot mobility fixtures', () => {
     // minute of fixed simulation. Baseline: 16 jumps (1.97 per bot per minute),
     // 10 jumpkick hits, 1.60 % airborne. After the point-blank jump-in guard:
     // 20 jumps (2.46 per bot per minute), 20 jumpkick hits, 2.91 % airborne.
+    // After M12 bot items: 17 jumps (2.09 per bot per minute), 21 jumpkick hits,
+    // 2.45 % airborne. Item detours and grab ticks own some movement/jump
+    // ticks, so the rate is slightly below the pre-item mobility pin but still
+    // above the original 1.97 baseline and the jumpkick output did not fall.
     const run = runEightBotFixture('score-brawl', 3660);
-    expect(run.totalJumps).toBe(20);
-    expect(run.jumpsPerBotMinute).toBeCloseTo(2.46, 1);
+    expect(run.totalJumps).toBe(17);
+    expect(run.jumpsPerBotMinute).toBeCloseTo(2.09, 1);
     expect(run.jumpsPerBotMinute).toBeGreaterThan(2);
-    expect(run.jumpkickHits).toBe(20);
-    expect(run.jumpkickAttackers).toEqual(['P1', 'P2', 'P4', 'P5', 'P7', 'P8']);
+    expect(run.jumpkickHits).toBe(21);
+    expect(run.jumpkickAttackers).toEqual(['P1', 'P2', 'P3', 'P4', 'P6', 'P7', 'P8']);
     expect(run.airbornePct).toBeLessThan(20);
-    // The guard removes most close-range jump-ins, so not every bot jumps in
-    // this minute. Six of eight do; the fixture records that rather than hiding
-    // it. Retune approach/evasive chances after playtest if that feels too calm.
-    expect(BOT_IDS.filter(id => (run.jumpsByBot[id] ?? 0) > 0)).toHaveLength(6);
+    // Item actions take some ticks, but seven of eight bots still jump in this
+    // minute. Retune approach/evasive chances after playtest if that feels calm.
+    expect(BOT_IDS.filter(id => (run.jumpsByBot[id] ?? 0) > 0)).toHaveLength(7);
     expect(Math.max(...BOT_IDS.map(id => run.jumpsByBot[id] ?? 0))).toBeGreaterThanOrEqual(3);
   });
 
