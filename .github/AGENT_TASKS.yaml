@@ -1515,7 +1515,8 @@ tasks:
   - id: M12-ITEM-UI
     title: Render bottles, held objects and throw arcs
     assigned_role: graphics-session
-    status: blocked
+    session_id: graphics-session-20261106-itemui
+    status: in_progress
     priority: P1
     specification: docs/M12_OBJECTS.md
     depends_on: [M12-ITEM-CORE]
