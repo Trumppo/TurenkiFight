@@ -1351,7 +1351,7 @@ tasks:
     title: Give Deathmatch a shrinking safe platform in the simulation
     assigned_role: gameplay-session
     session_id: gameplay-session-20261106-zone
-    status: in_progress
+    status: review
     priority: P1
     specification: docs/M10_DEATHMATCH_ZONE.md
     depends_on: [M7-MODE-RULES]
@@ -1369,7 +1369,7 @@ tasks:
   - id: M10-DM-ZONE-UI
     title: Show the shrinking platform, its warning and the HUD stage
     assigned_role: graphics-session
-    status: blocked
+    status: review
     priority: P1
     specification: docs/M10_DEATHMATCH_ZONE.md
     depends_on: [M10-DM-ZONE-RULES]
