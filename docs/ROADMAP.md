@@ -107,7 +107,7 @@
 
 ## Milestone 7 – Polish and future modes
 
-**Status: COMPLETE on the agent side (2026-11-03), awaiting owner playtest of the modes.** VIS-05 work, the arena, placeholder audio and the three game modes are delivered; the online test harness exists except for measured network runs, which need two machines.
+**Status: ACCEPTED by the owner 2026-11-06 (decision 2026-11-02).** VIS-05 work, the arena, placeholder audio and the three game modes are delivered; the online test harness exists except for measured network runs, which need two machines. The owner playtested the modes and accepted them. Deathmatch keeps its current rules until the M10 shrinking-platform identity lands; that is an identity change, not a defect of this milestone. Audio is accepted at placeholder level; real samples and mixing stay deferred.
 
 - [x] VIS05-02 / VIS05-03: measured (`docs/visual/M1_5_VIS_05_REVIEW_2026-11-02.md`), fixed with an integer 2× option and a responsive external HUD (PR #112), Tester re-checked, **owner accepted visually on 2026-11-02**
 - [x] Arena: **Ravintola Mesku accepted visually by the owner on 2026-11-02** (PR #118); typed presentation-only manifests with the station as default and Mesku via `?arena=mesku`, station screenshots byte-identical
@@ -118,7 +118,7 @@
 
 ## Milestone 8 - Bots and eight-player matches
 
-**Status: COMPLETE on the agent side (2026-11-03), awaiting the owner's playtest verdict.** Bots, the eight-player cap and the eight-slot UI are merged and independently QA'd; eight fighters are supported but **not reliably readable during combat**, which is recorded rather than hidden.
+**Status: ACCEPTED by the owner 2026-11-06.** Bots, the eight-player cap and the eight-slot UI are merged and independently QA'd; the owner playtested eight players against bots and the ALL BOTS match and accepted them. Eight fighters are supported but **not reliably readable during combat**, which is recorded rather than hidden. Eight-player networked play is approved in principle but its implementation is deferred and unmeasured.
 
 - [x] Local bot opponents with a deterministic, seeded policy and lobby selection (#127)
 - [x] Raise the roster cap to eight across codecs, session and server without changing four-player bytes (#128)
@@ -130,7 +130,7 @@
 
 ## Milestone 9 - Results celebration and presentation polish
 
-**Status: IMPLEMENTED, AWAITING INDEPENDENT GATE AND OWNER REVIEW (2026-11-03).** The owner asked for a victory celebration when a match ends: the winner's name large, then the next two places when more than three players took part.
+**Status: ACCEPTED by the owner 2026-11-06.** The owner asked for a victory celebration when a match ends: the winner's name large, then the next two places when more than three players took part. Everything below is merged and independently gated; the owner playtested the result screen and accepted it. Acceptance covers the local results/presentation layer and the online result card with an opt-in rematch; it does not claim production-ready networking or real audio.
 
 - [x] Pure per-mode ranking for the results screen, including draw detection and Last Man Standing elimination order derived from `Knockout` events without touching simulation state (#140)
 - [x] Ranked podium reveal on the local results screen: winner name large in the player colour, 2nd/3rd with their metric, 4th-8th compactly, skippable, reduced-motion aware, RESET still works (#143)
@@ -142,9 +142,33 @@
 - [x] Further polish: procedural victory cue (once per match end, mute-safe) and a compact short-viewport podium that leaves 65% of the canvas visible at 640x360 (#146, `67348f8`)
 - [x] Retro art covers P5-P8 and an ALL BOTS match runs unattended for testing (#148, `e431cff`)
 - [x] Online result payload, rematch in one process and the online result card (#149, `eeeb084`)
-- [ ] Milestone acceptance as a whole (owner decision; merge is not acceptance)
+- [x] Milestone accepted by the owner 2026-11-06, with the limits below recorded
 
-**Known limits:** eight fighters remain hard to tell apart in a tight crowd; the celebration is local-only, because online snapshots carry no elimination order; the celebration panel covers the middle of the frozen arena. See [results celebration](M9_RESULTS_CELEBRATION.md).
+**Known limits:** eight fighters remain hard to tell apart in a tight crowd; the local celebration panel covers the middle of the frozen arena; the online client has its own result card but no celebration animation; audio stays at placeholder level. See [results celebration](M9_RESULTS_CELEBRATION.md).
+
+## Milestone 10 - Deathmatch identity (in progress)
+
+**Status: IN PROGRESS (2026-11-06).** The owner reported that Deathmatch plays almost like Score Brawl and chose a shrinking safe platform as its identity instead of removing the mode.
+
+- [ ] Simulation: zone stage as a pure function of tick, outside damage, zone knockout attribution, respawn clamped into the safe range
+- [ ] Presentation: visible moving edge, shrink warning, HUD stage and danger state, online client derives the same zone
+- [ ] Independent gate: damage cadence, attribution, unchanged Score Brawl and Last Man Standing fingerprints
+
+Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md).
+
+## Long-term phases (designer proposal, 2026-11-06)
+
+The owner set the product direction: **eight players online, up to four locally**, **80 % chaos and 20 % skill**, with *Target Renegade* and *Streets of Rage* as spiritual ancestors. The full plan, including what each phase deliberately excludes, is in [LONG_TERM_PLAN.md](LONG_TERM_PLAN.md).
+
+| Phase | Theme | Gate |
+| --- | --- | --- |
+| M11 | Arcade feel: movement **+20 %**, hit stop, knockback, camera punch | speed approved; the rest proposed |
+| M12 | Chaos layer: throwable objects, station hazards | proposal; needs an object-system ADR |
+| M13 | Co-op wave mode "Asemahalli" | proposal |
+| M14 | Eight-player online productisation: measurement first, then TLS, room codes, rate limits, rejoin | proposal; blocked on a two-machine measurement |
+| M15 | Content and local comfort: more arenas, characters, four-human input, real audio | proposal |
+
+No phase in this table is accepted; each ends with an owner playtest.
 
 ## Definition of done
 
