@@ -142,9 +142,33 @@
 - [x] Further polish: procedural victory cue (once per match end, mute-safe) and a compact short-viewport podium that leaves 65% of the canvas visible at 640x360 (#146, `67348f8`)
 - [x] Retro art covers P5-P8 and an ALL BOTS match runs unattended for testing (#148, `e431cff`)
 - [x] Online result payload, rematch in one process and the online result card (#149, `eeeb084`)
-- [ ] Milestone acceptance as a whole (owner decision; merge is not acceptance)
+- [x] Milestone accepted by the owner 2026-11-06, with the limits below recorded
 
-**Known limits:** eight fighters remain hard to tell apart in a tight crowd; the celebration is local-only, because online snapshots carry no elimination order; the celebration panel covers the middle of the frozen arena. See [results celebration](M9_RESULTS_CELEBRATION.md).
+**Known limits:** eight fighters remain hard to tell apart in a tight crowd; the local celebration panel covers the middle of the frozen arena; the online client has its own result card but no celebration animation; audio stays at placeholder level. See [results celebration](M9_RESULTS_CELEBRATION.md).
+
+## Milestone 10 - Deathmatch identity (in progress)
+
+**Status: IN PROGRESS (2026-11-06).** The owner reported that Deathmatch plays almost like Score Brawl and chose a shrinking safe platform as its identity instead of removing the mode.
+
+- [ ] Simulation: zone stage as a pure function of tick, outside damage, zone knockout attribution, respawn clamped into the safe range
+- [ ] Presentation: visible moving edge, shrink warning, HUD stage and danger state, online client derives the same zone
+- [ ] Independent gate: damage cadence, attribution, unchanged Score Brawl and Last Man Standing fingerprints
+
+Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md).
+
+## Long-term phases (designer proposal, 2026-11-06)
+
+The owner set the product direction: **eight players online, up to four locally**, **80 % chaos and 20 % skill**, with *Target Renegade* and *Streets of Rage* as spiritual ancestors. The full plan, including what each phase deliberately excludes, is in [LONG_TERM_PLAN.md](LONG_TERM_PLAN.md).
+
+| Phase | Theme | Gate |
+| --- | --- | --- |
+| M11 | Arcade feel: movement **+20 %**, hit stop, knockback, camera punch | speed approved; the rest proposed |
+| M12 | Chaos layer: throwable objects, station hazards | proposal; needs an object-system ADR |
+| M13 | Co-op wave mode "Asemahalli" | proposal |
+| M14 | Eight-player online productisation: measurement first, then TLS, room codes, rate limits, rejoin | proposal; blocked on a two-machine measurement |
+| M15 | Content and local comfort: more arenas, characters, four-human input, real audio | proposal |
+
+No phase in this table is accepted; each ends with an owner playtest.
 
 ## Definition of done
 

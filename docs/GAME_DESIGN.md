@@ -53,13 +53,26 @@ Keep stage visuals, gameplay geometry and combat rules decoupled as specified in
 
 A chaotic, accessible browser-based 2.5D party fighting game set in stylized Turenki locations. The first map is Turengin rautatieasema (Turenki railway station). Visual direction: 8-bit-inspired pixel art, readable silhouettes and lively arcade feedback. Inspired by the energy of IK+, but original in content and mechanics.
 
+## Vision and tone (owner, 2026-11-06)
+
+A Turenki-themed fighting game for **up to four players locally** and **eight players online**, where **80 % is
+chaos and 20 % is skill**. Spiritual ancestors: *Target Renegade* and *Streets of Rage*.
+
+- Chaos is designed, not accidental: many fighters, moving hazards, throwables and station events. Every hazard is
+  telegraphed and nothing kills without warning.
+- Skill lives in spacing, reach, timing and reads. A skilled player must win consistently over several rounds even
+  when a scramble goes the other way.
+- Rounds are short and the rematch is immediate; the beat-em-up feel comes from speed, impact and readable feedback.
+- See [LONG_TERM_PLAN.md](LONG_TERM_PLAN.md) for the phase plan.
+
 ## Core decisions
 
 - **Fixed arena camera**: same entire arena visible to all players; no camera tracking or in-match zoom.
 - **2.5D**: characters move on the X/Y ground plane and jump along Z. Draw sprites in foot-Y order, subtracting Z from the on-screen vertical position.
-- **Configurable player count**: no permanent hard-coded maximum. Four local players are the first milestone; test eight players and beyond before setting supported limits.
-- **LAN and internet multiplayer**; multiple local controllers on one computer should be possible.
-- **First mode: Score Brawl**. Future modes may include Last Man Standing and Deathmatch.
+- **Player counts (owner decisions)**: **up to four humans locally** (keyboard and gamepads), **eight players online** as one `MAX_PLAYERS` constant; bots fill empty slots and an ALL BOTS match exists for testing and spectating.
+- **LAN and internet multiplayer**; multiple local controllers on one computer must work.
+- **Modes**: Score Brawl, Last Man Standing and Deathmatch. A full tie ends as a draw (owner decision 2026-11-03). Deathmatch is being given its own identity as a shrinking-platform mode (M10).
+- **Movement speed**: 1.3 px/tick per axis is the current baseline. The owner asked for roughly **+20 %** (target 1.56 px/tick, 93.6 px/s at 60 Hz); see M11 in the long-term plan.
 
 ## Camera and visual baseline
 
