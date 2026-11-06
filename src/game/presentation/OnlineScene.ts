@@ -17,7 +17,7 @@ const MODE_NAMES: Record<ModeId, string> = {
   'score-brawl': 'Score Brawl',
   'last-man-standing': 'Last Man Standing',
   deathmatch: 'Deathmatch',
-  // Placeholder label; M13-WAVE-UI owns the selector and final naming.
+  // Can label an externally supplied wave snapshot; server mode validation still excludes wave.
   wave: 'Wave',
 };
 
