@@ -270,6 +270,7 @@ export class OnlineScene extends Phaser.Scene {
     if (hud.zoneStatus) {
       hud.zoneStatus.hidden = !zone.active;
       hud.zoneStatus.classList.toggle('is-warning', zone.warning);
+      hud.zoneStatus.classList.toggle('is-warning-flash', zone.warningFlash);
     }
     if (hud.zoneSummary) hud.zoneSummary.textContent = zoneSummaryText(zone);
     if (hud.zoneDanger) {

@@ -3,8 +3,8 @@ import { isInsideZone, nextZoneShrinkTick, zoneRangeAt, zoneStageAt } from '../s
 import type { GameState } from '../simulation/types';
 import { VIEWPORT } from './viewport';
 
-/** Two seconds at 60 Hz; presentation warning only. */
-export const ZONE_WARNING_TICKS = 120;
+/** Two and a half seconds at 60 Hz; presentation warning only. */
+export const ZONE_WARNING_TICKS = 150;
 
 export type ZonePresentation = {
   readonly active: boolean;
@@ -13,6 +13,7 @@ export type ZonePresentation = {
   readonly maxX: number;
   readonly ticksUntilShrink: number | null;
   readonly warning: boolean;
+  readonly warningFlash: boolean;
   readonly dangerIds: readonly string[];
 };
 
@@ -24,13 +25,15 @@ export function zonePresentation(state: GameState | null): ZonePresentation {
   const range = zoneRangeAt(tick);
   const next = nextZoneShrinkTick(tick);
   const ticksUntilShrink = next === null ? null : next - tick;
+  const warning = active && ticksUntilShrink !== null && ticksUntilShrink <= ZONE_WARNING_TICKS;
   return {
     active,
     stage: zoneStageAt(tick),
     minX: range.minX,
     maxX: range.maxX,
     ticksUntilShrink,
-    warning: active && ticksUntilShrink !== null && ticksUntilShrink <= ZONE_WARNING_TICKS,
+    warning,
+    warningFlash: warning && Math.floor(tick / 15) % 2 === 0,
     dangerIds: active && state
       ? state.fighters.filter(fighter => !fighter.eliminated && fighter.health > 0 && !isInsideZone(fighter.x, tick))
         .map(fighter => fighter.id)
@@ -45,20 +48,23 @@ export function drawZoneGraphics(
   tick: number,
 ): void {
   graphics.clear();
-  graphics.setVisible(zone.active);
-  if (!zone.active) return;
+  graphics.setVisible(zone.active && zone.stage > 0);
+  // Stage 0 already ends at the visible arena walls. Keep its floor clean and
+  // let the tick-flashing HUD carry the first-shrink warning without drawing a
+  // second set of posts on top of those walls.
+  if (!zone.active || zone.stage === 0) return;
 
   const floorTop = 124;
   const floorBottom = 210;
   // Subtle danger tint leaves outside fighters visible and all combatants remain
   // depth-sorted in front of this floor-level overlay.
-  graphics.fillStyle(0x9a4036, 0.2);
+  graphics.fillStyle(0x9a4036, 0.25);
   if (zone.minX > 0) graphics.fillRect(0, floorTop, zone.minX, floorBottom - floorTop);
   if (zone.maxX < VIEWPORT.logicalWidth) {
     graphics.fillRect(zone.maxX, floorTop, VIEWPORT.logicalWidth - zone.maxX, floorBottom - floorTop);
   }
 
-  const warningFlash = zone.warning && Math.floor(tick / 15) % 2 === 0;
+  const warningFlash = zone.warningFlash;
   const edgeColor = warningFlash ? 0xff765b : 0xe3b85e;
   for (const x of [zone.minX, zone.maxX]) {
     const edgeX = Math.round(x);
@@ -84,7 +90,8 @@ export function drawZoneGraphics(
 export function zoneSummaryText(zone: ZonePresentation): string {
   if (!zone.active) return '';
   if (zone.warning && zone.ticksUntilShrink !== null) {
-    const seconds = Math.ceil(zone.ticksUntilShrink / 60);
+    const tenths = Math.ceil(zone.ticksUntilShrink / 6);
+    const seconds = tenths % 10 === 0 ? `${tenths / 10}` : `${Math.floor(tenths / 10)}.${tenths % 10}`;
     return `WARNING · STAGE ${zone.stage} · SHRINK IN ${seconds}s · MOVE INSIDE`;
   }
   if (zone.ticksUntilShrink === null) return `STAGE ${zone.stage} · FINAL SAFE PLATFORM`;

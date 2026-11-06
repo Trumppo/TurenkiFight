@@ -149,6 +149,29 @@ describe('M10 Deathmatch zone knockout', () => {
     expect(next.fighters[0].x).toBeGreaterThanOrEqual(range.minX);
     expect(next.fighters[0].x).toBeLessThanOrEqual(range.maxX);
   });
+
+  it('applies a zone knockout on the final timer tick and still ends by time', () => {
+    // Tick 7199 is the last fighting tick: tick 7200 both deals zone damage and
+    // expires the two-minute timer. The death must be recorded before the end
+    // check, and the survivor still wins on the tie-break.
+    const state = place(deathmatch(['P1', 'P2'], 7199), {
+      P1: { x: ARENA_MIN_X, y: 150, health: 1 },
+      P2: { x: 192, y: 148 },
+    });
+    state.remainingTicks = 1;
+    const next = step(state, []);
+
+    expect(next.tick).toBe(7200);
+    expect(next.remainingTicks).toBe(0);
+    expect(next.fighters[0].health).toBe(0);
+    expect(next.fighters[0].koTimer).toBe(180);
+    expect(next.fighters[0].deaths).toBe(1);
+    expect(next.fighters[0].frags).toBe(0);
+    expect(next.fighters[1].frags).toBe(0);
+    expect(next.fighters[1].deaths).toBe(0);
+    expect(next.phase).toBe('results');
+    expect(next.events).toEqual([{ tick: 7200, type: 'MatchEnded', reason: 'time', winner: 'P2' }]);
+  });
 });
 
 describe('M10 combat and zone knockout ordering', () => {
@@ -197,22 +220,24 @@ describe('M10 combat and zone knockout ordering', () => {
 });
 
 function zoneFixture(): { initial: GameState; inputs: PlayerInput[][] } {
-  const initial = place(deathmatch(['P1', 'P2', 'P3'], 0), {
-    P1: { x: 192, y: 148 },
-    // Inside the full arena at stage 0, outside from tick 1080; five damage
-    // ticks later it is knocked out by the zone and respawns at tick 1284.
-    P2: { x: ARENA_MIN_X, y: 150, health: 5 },
-    // Outside from tick 1080 and survives the remaining run.
+  // Starts just before the stage-3 shrink. P1 is the first roster slot, so its
+  // natural spawn x is 70, which is *outside* the stage-3 safe range
+  // [79.36, 304.64]. The respawn therefore needs the clamp; without it the
+  // fixture ends with P1 at 70 and outside the zone.
+  const initial = place(deathmatch(['P1', 'P2', 'P3'], 2879), {
+    P1: { x: ARENA_MIN_X, y: 150, health: 5 },
+    P2: { x: 192, y: 148 },
+    // Outside every stage from tick 2880 and survives the run.
     P3: { x: 350, y: 183 },
   });
   initial.remainingTicks = MATCH_TICKS;
-  const inputs = Array.from({ length: 1400 }, () => [neutral('P1'), neutral('P2'), neutral('P3')]);
+  const inputs = Array.from({ length: 300 }, () => [neutral('P1'), neutral('P2'), neutral('P3')]);
   return { initial, inputs };
 }
 
 // Independently recorded SHA-256 fingerprints for the zone fixture below.
-const ZONE_FINAL_STATE_SHA256 = 'a4e86adcfc278fa61599d99b056b118ecedb0d54fe891380e1d44c533b6dcd4b';
-const ZONE_ORDERED_EVENTS_SHA256 = '847a1ca645e6d2bc8f1ba32a12b96b716e89994ad4abbd666673072c5b3d79aa';
+const ZONE_FINAL_STATE_SHA256 = 'a319d1d23937207e625dcc9f7e5c539a4bd286cc8f408370bf526ac481684098';
+const ZONE_ORDERED_EVENTS_SHA256 = 'c6b4da098c34788d3a9e18a5694f990b244d7b6cbeffb48bcd976158a6eb9594';
 
 describe('M10 Deathmatch zone determinism and ranking', () => {
   it('replays identically, stays encodable and still ranks with rankMatch', () => {
@@ -226,15 +251,22 @@ describe('M10 Deathmatch zone determinism and ranking', () => {
     expect(hash(first.state)).toBe(hash(second.state));
     expect(hash(first.events)).toBe(hash(second.events));
 
-    // The fixture crosses the first shrink, the zone KO and the clamped respawn.
-    expect(first.state.tick).toBe(1400);
+    // The fixture crosses the stage-3 shrink, a zone KO and a clamped respawn.
+    expect(first.state.tick).toBe(3179);
     expect(first.events.map(event => [event.tick, event.type, event.target ?? null]))
-      .toEqual([[1284, 'Respawned', 'P2']]);
+      .toEqual([[3084, 'Respawned', 'P1']]);
     expect(first.state.fighters.map(fighter => [fighter.id, fighter.health, fighter.deaths, fighter.koTimer]))
-      .toEqual([['P1', 100, 0, 0], ['P2', 100, 1, 0], ['P3', 46, 0, 0]]);
+      .toEqual([['P1', 100, 1, 0], ['P2', 100, 0, 0], ['P3', 50, 0, 0]]);
     expect(first.state.phase).toBe('fighting');
-    expect(first.state.fighters[1].x).toBeGreaterThanOrEqual(zoneRangeAt(1400).minX);
-    expect(first.state.fighters[1].x).toBeLessThanOrEqual(zoneRangeAt(1400).maxX);
+
+    // Clamp sensitivity: the natural index-0 spawn (x=70) is outside the stage-3
+    // range, so the respawn must land exactly on the lower bound. Removing the
+    // clamp leaves P1 at 70 and fails both assertions.
+    const respawnRange = zoneRangeAt(3084);
+    expect(respawnRange.minX).toBeGreaterThan(70);
+    expect(first.state.fighters[0].x).toBeCloseTo(respawnRange.minX, 10);
+    expect(first.state.fighters[0].x).toBeGreaterThan(70);
+    expect(first.state.fighters[0].x).toBeLessThanOrEqual(respawnRange.maxX);
 
     // No new snapshot field and no malformed event: the zone state round-trips
     // through the unchanged protocol codec.
@@ -246,7 +278,7 @@ describe('M10 Deathmatch zone determinism and ranking', () => {
     const ranking = rankMatch(first.state, first.events);
     const byId = new Map(first.state.fighters.map(fighter => [fighter.id, fighter]));
     expect(ranking.mode).toBe('deathmatch');
-    expect(ranking.order.map(entry => entry.id)).toEqual(['P1', 'P3', 'P2']);
+    expect(ranking.order.map(entry => entry.id)).toEqual(['P2', 'P3', 'P1']);
     for (let index = 1; index < ranking.order.length; index++) {
       const better = byId.get(ranking.order[index - 1].id)!;
       const worse = byId.get(ranking.order[index].id)!;

@@ -27,7 +27,8 @@ p { color: #c2cbd2; }
 .zone-status { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; min-width: 0; padding: 1px 2px; color: #fff1b7; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
 .zone-status[hidden] { display: none; }
 .zone-summary { color: #f4d38d; font-weight: 800; letter-spacing: .025em; }
-.zone-status.is-warning .zone-summary { color: #ffb28d; }
+.zone-status.is-warning .zone-summary { color: #ffcf86; }
+.zone-status.is-warning.is-warning-flash .zone-summary { color: #ff765b; text-shadow: 0 0 4px rgba(255, 118, 91, .65); }
 .zone-danger { color: #ff9f90; font-size: 14px; font-weight: 900; }
 #match-timer { font-size: clamp(16px, 2vw, 28px); line-height: 1.1; letter-spacing: .04em; white-space: nowrap; }
 #match-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

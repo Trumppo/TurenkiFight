@@ -26,20 +26,37 @@ test('local Deathmatch shows the shrinking edge, schedule and outside danger onl
     await page.goto('/');
     await expect(page.locator('#game canvas')).toBeVisible();
 
-    await setLocalZoneState(page, 960);
+    await setLocalZoneState(page, 929);
+    await expect(page.locator('#zone-summary')).toHaveText('DEATHMATCH · STAGE 0 · NEXT SHRINK 3s');
+    await expect(page.locator('#zone-status')).not.toHaveClass(/is-warning/);
+    await expect.poll(() => page.evaluate(() =>
+      (window as any).__turenkiGame.scene.getScene('StationScene').zoneGraphics.visible)).toBe(false);
+
+    await setLocalZoneState(page, 930);
     await expect(page.locator('#zone-status')).toBeVisible();
-    await expect(page.locator('#zone-summary')).toHaveText('WARNING · STAGE 0 · SHRINK IN 2s · MOVE INSIDE');
+    await expect(page.locator('#zone-summary')).toHaveText('WARNING · STAGE 0 · SHRINK IN 2.5s · MOVE INSIDE');
     const before = await page.evaluate(() => {
       const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
-      return { visible: scene.zoneGraphics.visible, depth: scene.zoneGraphics.depth };
+      const status = document.querySelector('#zone-status');
+      return { visible: scene.zoneGraphics.visible, depth: scene.zoneGraphics.depth,
+        warningFlash: status?.classList.contains('is-warning-flash') };
     });
-    expect(before).toEqual({ visible: true, depth: 122 });
+    expect(before).toEqual({ visible: false, depth: 122, warningFlash: true });
     await expect(page.locator('#zone-summary')).toHaveCSS('font-size', '14px');
     await page.locator('#game').screenshot({ path: `artifacts/visual/m10-zone-${visualStyle}-${size.width}-before-shrink.png` });
 
     await setLocalZoneState(page, 1080);
     await expect(page.locator('#zone-summary')).toHaveText('DEATHMATCH · STAGE 1 · NEXT SHRINK 15s');
     await page.locator('#game').screenshot({ path: `artifacts/visual/m10-zone-${visualStyle}-${size.width}-after-shrink.png` });
+
+    await setLocalZoneState(page, 1829);
+    await expect(page.locator('#zone-summary')).toHaveText('DEATHMATCH · STAGE 1 · NEXT SHRINK 3s');
+    await expect(page.locator('#zone-status')).not.toHaveClass(/is-warning/);
+    await setLocalZoneState(page, 1830);
+    await expect(page.locator('#zone-summary')).toHaveText('WARNING · STAGE 1 · SHRINK IN 2.5s · MOVE INSIDE');
+    await expect(page.locator('#zone-status')).toHaveClass(/is-warning/);
+    await expect.poll(() => page.evaluate(() =>
+      (window as any).__turenkiGame.scene.getScene('StationScene').zoneGraphics.visible)).toBe(true);
 
     await setLocalZoneState(page, 1080, 'deathmatch', true);
     await expect(page.locator('#zone-danger')).toHaveText('DANGER OUTSIDE SAFE AREA · P1');
@@ -64,7 +81,7 @@ test('online Deathmatch derives the same zone and warning from the snapshot tick
     const simulation = await import(/* @vite-ignore */ moduleUrl);
     const api = (window as any).__turenkiOnline;
     const state = simulation.createState({ ids: ['P1', 'P2'], phase: 'fighting', mode: 'deathmatch' });
-    state.tick = 960;
+    state.tick = 930;
     state.fighters[0].x = 180;
     state.fighters[1].x = 200;
     api.renderHudSnapshotForTest(state);
@@ -89,7 +106,7 @@ test('online Deathmatch derives the same zone and warning from the snapshot tick
     return { before, after, cleared };
   });
   expect(online).toEqual({
-    before: { summary: 'WARNING · STAGE 0 · SHRINK IN 2s · MOVE INSIDE', visible: true },
+    before: { summary: 'WARNING · STAGE 0 · SHRINK IN 2.5s · MOVE INSIDE', visible: false },
     after: {
       summary: 'DEATHMATCH · STAGE 1 · NEXT SHRINK 15s',
       danger: 'DANGER OUTSIDE SAFE AREA · P1',
