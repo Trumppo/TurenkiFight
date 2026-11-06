@@ -27,9 +27,15 @@ const FULL_TICKS = 7200;
 const SOCKET_TICKS = FULL_TICKS;
 
 // Independently recorded fingerprints for the BASE-4-60-20 fixture, seed 12345.
+// The fixture hash covers inputs only and is unchanged by M11. The two result
+// hashes changed with M11 (+20 % movement), from:
+//   final state de544fcd7fae1bd2c25fd8ccf97ed7fb315014adafd692d45577913a01dff150
+//   events      5bb44bd6fc1173ab0b2a3d45c9662f65ad84b6619acd403a57d269108a11ebd5
+// Faster fighters change positions and, in this 7200-tick fixture, hit/KO ticks
+// (57 events instead of 47). This is a real behaviour change, not a hash reset.
 const FIXTURE_SHA256 = '7fddf007fc1910d9944d409864fad101e70d0956d864f60a700135f6205b1790';
-const FULL_FINAL_STATE_SHA256 = 'de544fcd7fae1bd2c25fd8ccf97ed7fb315014adafd692d45577913a01dff150';
-const FULL_ORDERED_EVENTS_SHA256 = '5bb44bd6fc1173ab0b2a3d45c9662f65ad84b6619acd403a57d269108a11ebd5';
+const FULL_FINAL_STATE_SHA256 = 'e3f6fa8370b5987c14cc0fbee48a6c68079ca73074417bcc21ae8436580c675e';
+const FULL_ORDERED_EVENTS_SHA256 = 'bf516bd8c081a74b120f5dbabf930531e1a767da26fbef7682eeda8857bb75f4';
 const EMPTY_EVENTS_SHA256 = sha256('[]');
 
 type Deferred<T> = {

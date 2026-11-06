@@ -251,7 +251,9 @@ describe('M9 per-mode ranking', () => {
     for (let tick = 0; tick < 160; tick++) {
       const playerOne: PlayerInput = tick === 0 || tick === 141
         ? punch('P1')
-        : tick <= 139 ? { ...neutral('P1'), moveX: 1 } : neutral('P1');
+        // M11: 116 walk ticks at 1.56 px/tick land just inside punch reach of
+        // P3 at x=300; the old 139-tick walk assumed 1.3 px/tick.
+        : tick <= 116 ? { ...neutral('P1'), moveX: 1 } : neutral('P1');
       state = step(state, [playerOne, neutral('P2'), neutral('P3')]);
       events.push(...state.events);
     }

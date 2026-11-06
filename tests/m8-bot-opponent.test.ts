@@ -209,7 +209,11 @@ describe('M8 bot match determinism', () => {
 
   it('pins the four-player Score Brawl bot replay hashes', () => {
     const run = runBotMatch('score-brawl');
-    expect(hash(run.state)).toBe('e209681f72b61f23601071d68e991959260fd0041cd0b275aba39b7716dbe802');
-    expect(hash(run.events)).toBe('2b725035034a9a65923a4cff07308fe82b62f70d9423e22e12ceaf8cabef31f9');
+    // M11 (+20 % movement) changed both pins; bots share the simulation's
+    // movement code, so their approach timings and hit ticks shifted too.
+    // Old state e209681f72b61f23601071d68e991959260fd0041cd0b275aba39b7716dbe802.
+    // Old events 2b725035034a9a65923a4cff07308fe82b62f70d9423e22e12ceaf8cabef31f9.
+    expect(hash(run.state)).toBe('f0dd005875e324dfee537229610322a8244d29062d81b4fea357374e68deab8d');
+    expect(hash(run.events)).toBe('77c6ec27349433eac34df9d827e0f78ccb1691f27beeb2882c0673c30a3b783c');
   });
 });
