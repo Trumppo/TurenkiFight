@@ -44,12 +44,14 @@ const PLAYERS = ['P1', 'P2', 'P3', 'P4'] as const;
 const COMMIT = 'd'.repeat(40);
 
 // Pinned BASE-4-60-20 fingerprints, identical to the full-length WS/WebRTC runs.
-// M11 (+20 % movement) changed both result pins:
-//   old final state de544fcd7fae1bd2c25fd8ccf97ed7fb315014adafd692d45577913a01dff150
-//   old events      5bb44bd6fc1173ab0b2a3d45c9662f65ad84b6619acd403a57d269108a11ebd5
+// M11 (hit stop + knockback) changed both result pins again:
+//   speed-era final state e3f6fa8370b5987c14cc0fbee48a6c68079ca73074417bcc21ae8436580c675e
+//   speed-era events      bf516bd8c081a74b120f5dbabf930531e1a767da26fbef7682eeda8857bb75f4
+// The optional counters are absent at the final tick; the hash reflects the
+// changed positions and event ticks only.
 const FULL_TICKS = 7200;
-const FULL_FINAL_STATE_SHA256 = 'e3f6fa8370b5987c14cc0fbee48a6c68079ca73074417bcc21ae8436580c675e';
-const FULL_ORDERED_EVENTS_SHA256 = 'bf516bd8c081a74b120f5dbabf930531e1a767da26fbef7682eeda8857bb75f4';
+const FULL_FINAL_STATE_SHA256 = '160db4542beeff43e4a44c4ddca9123bfefc9ca7a423b243f6d941b7d8541732';
+const FULL_ORDERED_EVENTS_SHA256 = 'b74691a838f7548b132b9b9eb9e8d418efbef005bf8aaae3268e9f15741232b6';
 
 type Deferred<T> = {
   promise: Promise<T>;

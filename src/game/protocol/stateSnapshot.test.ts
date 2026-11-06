@@ -268,7 +268,7 @@ describe('M2 StateSnapshot v1', () => {
 
   it('keeps the strict event schema consistent with simulation output', () => {
     let state = withFighter(fighting(), { x: 100, y: 148 });
-    state = withFighter(state, { x: 120, y: 148 }, 1);
+    state = withFighter(state, { x: 120, y: 148, health: 10 }, 1);
     const seen = new Set<string>();
     for (let tick = 0; tick < 600; tick++) {
       const inputs = state.fighters.map(f => ({
