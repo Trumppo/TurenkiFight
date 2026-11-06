@@ -107,7 +107,7 @@
 
 ## Milestone 7 – Polish and future modes
 
-**Status: COMPLETE on the agent side (2026-11-03), awaiting owner playtest of the modes.** VIS-05 work, the arena, placeholder audio and the three game modes are delivered; the online test harness exists except for measured network runs, which need two machines.
+**Status: ACCEPTED by the owner 2026-11-06 (decision 2026-11-02).** VIS-05 work, the arena, placeholder audio and the three game modes are delivered; the online test harness exists except for measured network runs, which need two machines. The owner playtested the modes and accepted them. Deathmatch keeps its current rules until the M10 shrinking-platform identity lands; that is an identity change, not a defect of this milestone. Audio is accepted at placeholder level; real samples and mixing stay deferred.
 
 - [x] VIS05-02 / VIS05-03: measured (`docs/visual/M1_5_VIS_05_REVIEW_2026-11-02.md`), fixed with an integer 2× option and a responsive external HUD (PR #112), Tester re-checked, **owner accepted visually on 2026-11-02**
 - [x] Arena: **Ravintola Mesku accepted visually by the owner on 2026-11-02** (PR #118); typed presentation-only manifests with the station as default and Mesku via `?arena=mesku`, station screenshots byte-identical
@@ -118,7 +118,7 @@
 
 ## Milestone 8 - Bots and eight-player matches
 
-**Status: COMPLETE on the agent side (2026-11-03), awaiting the owner's playtest verdict.** Bots, the eight-player cap and the eight-slot UI are merged and independently QA'd; eight fighters are supported but **not reliably readable during combat**, which is recorded rather than hidden.
+**Status: ACCEPTED by the owner 2026-11-06.** Bots, the eight-player cap and the eight-slot UI are merged and independently QA'd; the owner playtested eight players against bots and the ALL BOTS match and accepted them. Eight fighters are supported but **not reliably readable during combat**, which is recorded rather than hidden. Eight-player networked play is approved in principle but its implementation is deferred and unmeasured.
 
 - [x] Local bot opponents with a deterministic, seeded policy and lobby selection (#127)
 - [x] Raise the roster cap to eight across codecs, session and server without changing four-player bytes (#128)
@@ -130,7 +130,7 @@
 
 ## Milestone 9 - Results celebration and presentation polish
 
-**Status: IMPLEMENTED, AWAITING INDEPENDENT GATE AND OWNER REVIEW (2026-11-03).** The owner asked for a victory celebration when a match ends: the winner's name large, then the next two places when more than three players took part.
+**Status: ACCEPTED by the owner 2026-11-06.** The owner asked for a victory celebration when a match ends: the winner's name large, then the next two places when more than three players took part. Everything below is merged and independently gated; the owner playtested the result screen and accepted it. Acceptance covers the local results/presentation layer and the online result card with an opt-in rematch; it does not claim production-ready networking or real audio.
 
 - [x] Pure per-mode ranking for the results screen, including draw detection and Last Man Standing elimination order derived from `Knockout` events without touching simulation state (#140)
 - [x] Ranked podium reveal on the local results screen: winner name large in the player colour, 2nd/3rd with their metric, 4th-8th compactly, skippable, reduced-motion aware, RESET still works (#143)
