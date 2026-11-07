@@ -13,6 +13,7 @@ import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } f
 import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePresentation';
 import { ObjectPresentation } from './objectPresentation';
 import { ArenaTelegraphPresentation } from './arenaTelegraph';
+import { StationEventPresentation } from './stationEvent';
 
 const MODE_NAMES: Record<ModeId, string> = {
   'score-brawl': 'Score Brawl',
@@ -39,6 +40,7 @@ export class OnlineScene extends Phaser.Scene {
   private zoneGraphics?: Phaser.GameObjects.Graphics;
   private itemPresentation?: ObjectPresentation;
   private arenaTelegraph?: ArenaTelegraphPresentation;
+  private stationEvent?: StationEventPresentation;
   private poses = new Map<string, FighterPose>();
   private previous = new Map<string, { x: number; y: number; z: number }>();
   private lastHealth = new Map<string, number>();
@@ -107,6 +109,10 @@ export class OnlineScene extends Phaser.Scene {
     this.initDomHud();
     this.audio = createAudioPresentation(audioControlsHost());
     this.audioBridge = new CueBridge(cue => this.audio?.director.playCue(cue), true);
+    if (this.arenaSelection.manifest.id === 'station') {
+      const status = document.getElementById('station-event-status');
+      if (status) this.stationEvent = new StationEventPresentation(this, status, cue => this.audio?.director.playCue(cue), RETRO_PREVIEW);
+    }
     if (this.arenaSelection.manifest.id === 'kkauppa') {
       this.arenaTelegraph = new ArenaTelegraphPresentation(this, cue => this.audio?.director.playCue(cue));
     }
@@ -117,6 +123,8 @@ export class OnlineScene extends Phaser.Scene {
       this.itemPresentation = undefined;
       this.arenaTelegraph?.destroy();
       this.arenaTelegraph = undefined;
+      this.stationEvent?.destroy();
+      this.stationEvent = undefined;
       this.audioBridge = undefined;
       this.audio = undefined;
     });
@@ -127,6 +135,7 @@ export class OnlineScene extends Phaser.Scene {
     const now = this.controller.now();
     const state = this.controller.renderState(now);
     this.arenaTelegraph?.update(state?.tick ?? 0, state?.phase === 'fighting');
+    this.stationEvent?.update(state?.tick ?? 0, state?.phase === 'fighting');
     if (state) {
       this.audioBridge?.observe(state);
       this.audio?.director.setMusicDucked(state.phase === 'results');
@@ -147,6 +156,7 @@ export class OnlineScene extends Phaser.Scene {
 
   /** Development harness hook for rendering a supplied authoritative snapshot without stepping it. */
   debugRenderSnapshot(state: GameState | null): void {
+    this.stationEvent?.update(state?.tick ?? 0, state?.phase === 'fighting');
     this.drawZone(state);
     this.itemPresentation?.draw(state);
     this.renderHud(state);
@@ -160,6 +170,11 @@ export class OnlineScene extends Phaser.Scene {
   /** Read-only dev diagnostic used by the browser zone parity test. */
   debugZoneVisible(): boolean {
     return this.zoneGraphics?.visible ?? false;
+  }
+
+  /** Read-only event diagnostics for browser parity tests. */
+  debugStationEvent(): ReturnType<StationEventPresentation['diagnostics']> {
+    return this.stationEvent?.diagnostics() ?? { active: false, phase: null, cycle: null, cueCount: 0 };
   }
 
   /** Test/debug hook; returns the interpolated positions and pose actually drawn. */

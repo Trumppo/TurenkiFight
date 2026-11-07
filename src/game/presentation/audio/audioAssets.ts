@@ -46,4 +46,9 @@ export const PLACEHOLDER_CUE_ASSETS: Readonly<Record<AudioCue, AudioVoiceAsset>>
     shape: { frequency: 784, duration: 0.15, waveform: 'triangle', peak: 0.07, attack: 0.004, release: 0.07 },
     notes: [{ frequency: 784, offset: 0 }, { frequency: 988, offset: 0.09 }],
   },
+  'station-train': {
+    kind: 'synth',
+    shape: { frequency: 392, duration: 0.24, waveform: 'triangle', peak: 0.055, attack: 0.012, release: 0.12 },
+    notes: [{ frequency: 392, offset: 0 }, { frequency: 523.25, offset: 0.15 }],
+  },
 };

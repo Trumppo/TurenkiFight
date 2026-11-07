@@ -21,6 +21,7 @@ import { MAX_PLAYERS } from '../protocol/players';
 import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePresentation';
 import { ObjectPresentation } from './objectPresentation';
 import { ArenaTelegraphPresentation } from './arenaTelegraph';
+import { StationEventPresentation } from './stationEvent';
 
 const PLAYER_IDS = Array.from({ length: MAX_PLAYERS }, (_, index) => `P${index + 1}`);
 
@@ -69,6 +70,7 @@ export class StationScene extends Phaser.Scene {
   private zoneGraphics?: Phaser.GameObjects.Graphics;
   private itemPresentation?: ObjectPresentation;
   private arenaTelegraph?: ArenaTelegraphPresentation;
+  private stationEvent?: StationEventPresentation;
   private koMarkers = new Map<string, Phaser.GameObjects.Text>();
   private domHud?: {
     timer: HTMLElement;
@@ -178,6 +180,10 @@ export class StationScene extends Phaser.Scene {
     this.initDomHud();
     this.audio = createAudioPresentation(audioControlsHost());
     this.audioBridge = new CueBridge(cue => this.playAudioCue(cue));
+    if (this.arenaSelection.manifest.id === 'station') {
+      const status = document.getElementById('station-event-status');
+      if (status) this.stationEvent = new StationEventPresentation(this, status, cue => this.playAudioCue(cue), RETRO_PREVIEW);
+    }
     if (this.arenaSelection.manifest.id === 'kkauppa') {
       this.arenaTelegraph = new ArenaTelegraphPresentation(this, cue => this.playAudioCue(cue));
     }
@@ -202,6 +208,8 @@ export class StationScene extends Phaser.Scene {
       this.itemPresentation = undefined;
       this.arenaTelegraph?.destroy();
       this.arenaTelegraph = undefined;
+      this.stationEvent?.destroy();
+      this.stationEvent = undefined;
       this.audioBridge = undefined;
       this.audio = undefined;
     });
@@ -618,6 +626,7 @@ export class StationScene extends Phaser.Scene {
 
   private drawFighters(): void {
     this.arenaTelegraph?.update(this.state.tick, this.state.phase === 'fighting');
+    this.stationEvent?.update(this.state.tick, this.state.phase === 'fighting');
     drawZoneGraphics(this.zoneGraphics!, zonePresentation(this.state), this.state.tick);
     const liveIds = new Set(this.state.fighters.map(fighter => fighter.id));
     for (const [id, sprite] of this.fighterSprites) {
