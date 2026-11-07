@@ -8,7 +8,10 @@ import { createRetroP1Textures, RETRO_PREVIEW } from './retroPrototype';
 import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
 import { createRetroP5P8Textures } from './retroP5P8';
-import { keyboardPlayerInput } from '../input/keyboardMapping';
+import {
+  KEYBOARD_BINDINGS, KEYBOARD_SLOTS, KeyboardMappingStore, bindingLabel, displayKey,
+  keyboardPlayerInput, type KeyboardBinding, type KeyboardSlot,
+} from '../input/keyboardMapping';
 import { GAMEPAD_BUTTONS, gamepadPlayerInput } from '../input/gamepadMapping';
 import { botInput } from '../input/botPolicy';
 import { rankMatch } from '../simulation/ranking';
@@ -65,6 +68,13 @@ export class StationScene extends Phaser.Scene {
   private elapsedMs = 0;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
+  private keyboardStore!: KeyboardMappingStore;
+  private readonly pressedKeyboardCodes = new Set<string>();
+  private keyboardCapture?: { slot: KeyboardSlot; binding: KeyboardBinding };
+  private keyboardCaptureMessage = '';
+  private keyboardKeyDownHandler?: (event: KeyboardEvent) => void;
+  private keyboardKeyUpHandler?: (event: KeyboardEvent) => void;
+  private keyboardBlurHandler?: () => void;
   private fighterSprites = new Map<string, Phaser.GameObjects.Image>();
   private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
   private zoneGraphics?: Phaser.GameObjects.Graphics;
@@ -153,6 +163,10 @@ export class StationScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Keep Phaser's existing host/join shortcuts ready before the DOM editor is
+    // built; the deterministic browser harness also sets these polled keys.
+    this.cursors = this.input.keyboard!.createCursorKeys();
+    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,T,L,K,J,U,I,B,V,O,SPACE,ENTER,SHIFT,ESC') as Record<string, Phaser.Input.Keyboard.Key>;
     this.cameras.main.setZoom(cameraScale(this.scale.width, this.scale.height));
     this.cameras.main.centerOn(VIEWPORT.logicalWidth / 2, VIEWPORT.logicalHeight / 2);
     createFighterTextures(this);
@@ -174,6 +188,13 @@ export class StationScene extends Phaser.Scene {
     }
     this.zoneGraphics = this.add.graphics().setDepth(122).setVisible(false);
     this.itemPresentation = new ObjectPresentation(this, RETRO_PREVIEW);
+    let storage: Storage | undefined;
+    try { storage = window.localStorage; } catch { /* Private browsing may disable storage. */ }
+    this.keyboardStore = new KeyboardMappingStore(storage);
+    const persistedKeyboardSlots = (['P3', 'P4'] as const).filter(slot => this.keyboardStore.hasKeyboardBindings(slot));
+    if (persistedKeyboardSlots.length) {
+      this.state = this.createLobbyState([...this.state.fighters.map(fighter => fighter.id), ...persistedKeyboardSlots]);
+    }
     // Scores, player labels and match status are rendered in the responsive
     // DOM HUD. It occupies the reserved scoreboard band on desktop and moves
     // above the playfield on narrow screens.
@@ -197,6 +218,10 @@ export class StationScene extends Phaser.Scene {
       this.clearRevealState();
       if (this.revealKeyHandler) document.removeEventListener('keydown', this.revealKeyHandler);
       if (this.revealClickHandler) document.removeEventListener('click', this.revealClickHandler);
+      if (this.keyboardKeyDownHandler) window.removeEventListener('keydown', this.keyboardKeyDownHandler, true);
+      if (this.keyboardKeyUpHandler) window.removeEventListener('keyup', this.keyboardKeyUpHandler, true);
+      if (this.keyboardBlurHandler) window.removeEventListener('blur', this.keyboardBlurHandler);
+      this.pressedKeyboardCodes.clear();
       if (this.reducedMotionQuery && this.reducedMotionListener) {
         this.reducedMotionQuery.removeEventListener('change', this.reducedMotionListener);
       }
@@ -213,8 +238,39 @@ export class StationScene extends Phaser.Scene {
       this.audioBridge = undefined;
       this.audio = undefined;
     });
-    this.cursors = this.input.keyboard!.createCursorKeys();
-    this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,T,L,K,J,U,I,B,V,O,SPACE,ENTER,SHIFT,ESC') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keyboardKeyDownHandler = event => {
+      this.pressedKeyboardCodes.add(event.code);
+      if (!this.keyboardCapture) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (event.repeat) return;
+      if (event.code === 'Escape') {
+        this.keyboardCapture = undefined;
+        this.pressedKeyboardCodes.delete(event.code);
+        this.keyboardCaptureMessage = 'Capture cancelled.';
+        this.renderKeyboardEditor();
+        return;
+      }
+      const { slot, binding } = this.keyboardCapture;
+      const result = this.keyboardStore.setBinding(slot, binding, event.code);
+      this.pressedKeyboardCodes.delete(event.code);
+      if (!result.ok) {
+        this.keyboardCaptureMessage = result.conflict;
+        this.renderKeyboardEditor();
+        return;
+      }
+      this.keyboardCapture = undefined;
+      this.keyboardCaptureMessage = `${slot} ${bindingLabel(binding)} set to ${displayKey(event.code)}.`;
+      if (slot === 'P3' || slot === 'P4') this.ensureKeyboardSlotJoined(slot);
+      this.renderKeyboardEditor();
+      this.updateKeyboardGuide();
+      this.drawFighters();
+    };
+    this.keyboardKeyUpHandler = event => { this.pressedKeyboardCodes.delete(event.code); };
+    this.keyboardBlurHandler = () => this.pressedKeyboardCodes.clear();
+    window.addEventListener('keydown', this.keyboardKeyDownHandler, true);
+    window.addEventListener('keyup', this.keyboardKeyUpHandler, true);
+    window.addEventListener('blur', this.keyboardBlurHandler);
     this.revealKeyHandler = event => {
       if (event.code === 'KeyP') {
         if (!event.repeat) {
@@ -580,14 +636,16 @@ export class StationScene extends Phaser.Scene {
   }
 
   private readInputs(pads: Gamepad[]): PlayerInput[] {
-    // Keyboard slots are sampled only when human-controlled. All bots, including
-    // P1 in spectator mode, flow through the same seeded policy below.
+    // Every locally assigned layout is sampled once. The DOM pressed set adds
+    // support for arbitrary codes; Phaser is retained as a compatibility
+    // fallback for the original/default keys and deterministic scene harnesses.
     const inputs: PlayerInput[] = [];
-    if (this.state.fighters.some(fighter => fighter.id === 'P1') && !this.botSlots.has('P1')) {
-      inputs.push(keyboardPlayerInput('P1', code => this.isKeyboardCodeDown(code)));
-    }
-    if (this.state.fighters.some(fighter => fighter.id === 'P2') && !this.botSlots.has('P2')) {
-      inputs.push(keyboardPlayerInput('P2', code => this.isKeyboardCodeDown(code)));
+    for (const id of KEYBOARD_SLOTS) {
+      if (this.state.fighters.some(fighter => fighter.id === id)
+        && !this.botSlots.has(id)
+        && this.keyboardStore.hasKeyboardBindings(id)) {
+        inputs.push(keyboardPlayerInput(id, code => this.isKeyboardCodeDown(code), this.keyboardStore.layoutFor(id)));
+      }
     }
     for (const [index, id] of this.gamepadSlots) {
       if (this.botSlots.has(id)) continue;
@@ -605,22 +663,25 @@ export class StationScene extends Phaser.Scene {
     return inputs;
   }
 
-  /**
-   * Adapter from the canonical DOM-key layout in `src/game/input` to Phaser's
-   * key objects. Arrow keys come from `createCursorKeys()`; letter and Space
-   * keys come from the named `addKeys` list created in `create()`.
-   */
   private isKeyboardCodeDown(code: string): boolean {
-    switch (code) {
-      case 'ArrowLeft': return this.cursors.left.isDown;
-      case 'ArrowRight': return this.cursors.right.isDown;
-      case 'ArrowUp': return this.cursors.up.isDown;
-      case 'ArrowDown': return this.cursors.down.isDown;
-      case 'Space': return this.keys.SPACE.isDown;
-      default: {
-        const phaserKey = code.startsWith('Key') ? code.slice(3) : code;
-        return this.keys[phaserKey]?.isDown ?? false;
-      }
+    if (this.keyboardCapture) return false;
+    if (this.pressedKeyboardCodes.has(code)) return true;
+    // Phaser remains the compatibility source for the original layouts and
+    // deterministic scene harnesses. This is a boolean fallback, not a second
+    // PlayerInput: each slot is emitted exactly once by readInputs().
+    if (code === 'ArrowLeft') return this.cursors?.left.isDown ?? false;
+    if (code === 'ArrowRight') return this.cursors?.right.isDown ?? false;
+    if (code === 'ArrowUp') return this.cursors?.up.isDown ?? false;
+    if (code === 'ArrowDown') return this.cursors?.down.isDown ?? false;
+    const key = code === 'Space' ? 'SPACE' : code.startsWith('Key') ? code.slice(3) : code;
+    return this.keys?.[key]?.isDown ?? false;
+  }
+
+  private ensureKeyboardSlotJoined(slot: KeyboardSlot): void {
+    if (this.state.phase !== 'lobby') return;
+    if (this.botSlots.has(slot)) this.removeBotSlot(slot);
+    if (!this.state.fighters.some(fighter => fighter.id === slot)) {
+      this.state = this.createLobbyState([...this.state.fighters.map(fighter => fighter.id), slot]);
     }
   }
 
@@ -714,6 +775,12 @@ export class StationScene extends Phaser.Scene {
     const allBotsPanel = document.getElementById('lobby-actions');
     const waveHelp = document.getElementById('wave-lobby-help');
     const playerList = document.getElementById('player-hud');
+    const keyboardEditor = document.getElementById('keyboard-editor') as HTMLDetailsElement | null;
+    const keyboardSlotSelect = document.getElementById('keyboard-slot') as HTMLSelectElement | null;
+    const keyboardActions = document.getElementById('keyboard-actions');
+    const keyboardMessage = document.getElementById('keyboard-message');
+    const resetKeyboardSlot = document.getElementById('keyboard-reset-slot') as HTMLButtonElement | null;
+    const resetAllKeyboard = document.getElementById('keyboard-reset-all') as HTMLButtonElement | null;
     if (!timer || !status || !modeSelect || !playerList) return;
     const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; action: HTMLButtonElement }>();
     for (const node of Array.from(document.querySelectorAll('.hud-player[data-player]'))) {
@@ -737,6 +804,44 @@ export class StationScene extends Phaser.Scene {
       if (this.state.phase !== 'lobby') return;
       this.selectedMode = modeSelect.value as ModeId;
       this.state = this.createLobbyState(this.state.fighters.map(f => f.id));
+      this.drawFighters();
+    });
+    keyboardSlotSelect?.addEventListener('change', () => {
+      this.keyboardCapture = undefined;
+      this.keyboardCaptureMessage = '';
+      this.renderKeyboardEditor();
+    });
+    keyboardActions?.addEventListener('click', event => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-key-binding]');
+      const binding = button?.dataset.keyBinding as KeyboardBinding | undefined;
+      if (!button || !binding || !KEYBOARD_BINDINGS.includes(binding)) return;
+      const slot = keyboardSlotSelect?.value as KeyboardSlot | undefined;
+      if (!slot || !KEYBOARD_SLOTS.includes(slot)) return;
+      this.keyboardCapture = { slot, binding };
+      this.keyboardCaptureMessage = `Press a key for ${slot} ${bindingLabel(binding)}. Escape cancels.`;
+      this.renderKeyboardEditor();
+    });
+    resetKeyboardSlot?.addEventListener('click', () => {
+      const slot = (keyboardSlotSelect?.value ?? 'P1') as KeyboardSlot;
+      this.keyboardStore.resetSlot(slot);
+      this.keyboardCapture = undefined;
+      this.keyboardCaptureMessage = `${slot} restored to its defaults.`;
+      if ((slot === 'P3' || slot === 'P4') && this.gamepadSlotFor(slot) === undefined && !this.botSlots.has(slot)) {
+        this.removeKeyboardOnlySlot(slot);
+      }
+      this.renderKeyboardEditor();
+      this.updateKeyboardGuide();
+      this.drawFighters();
+    });
+    resetAllKeyboard?.addEventListener('click', () => {
+      this.keyboardStore.resetAll();
+      this.keyboardCapture = undefined;
+      this.keyboardCaptureMessage = 'All keyboard bindings restored to defaults.';
+      for (const slot of ['P4', 'P3'] as const) {
+        if (this.gamepadSlotFor(slot) === undefined && !this.botSlots.has(slot)) this.removeKeyboardOnlySlot(slot);
+      }
+      this.renderKeyboardEditor();
+      this.updateKeyboardGuide();
       this.drawFighters();
     });
     if (resetButton) {
@@ -773,12 +878,99 @@ export class StationScene extends Phaser.Scene {
       pauseButton: pauseButton ?? undefined,
       allBotsPanel: allBotsPanel ?? undefined, playerList, players,
     };
+    if (keyboardEditor) keyboardEditor.hidden = false;
+    this.renderKeyboardEditor();
+    this.updateKeyboardGuide();
     this.renderDomHud();
+  }
+
+  private renderKeyboardEditor(): void {
+    const editor = document.getElementById('keyboard-editor');
+    const slotSelect = document.getElementById('keyboard-slot') as HTMLSelectElement | null;
+    const actions = document.getElementById('keyboard-actions');
+    const message = document.getElementById('keyboard-message');
+    if (!editor || !slotSelect || !actions || !message || !this.keyboardStore) return;
+    const slot = KEYBOARD_SLOTS.includes(slotSelect.value as KeyboardSlot) ? slotSelect.value as KeyboardSlot : 'P1';
+    const layout = this.keyboardStore.layoutFor(slot);
+    const current = new Map<KeyboardBinding, string>([
+      ['moveXNegative', layout.moveX[0]], ['moveXPositive', layout.moveX[1]],
+      ['moveYNegative', layout.moveY[0]], ['moveYPositive', layout.moveY[1]],
+      ['jump', layout.jump], ['punch', layout.punch], ['kick', layout.kick],
+      ['jumpkick', layout.jumpkick], ['grab', layout.grab],
+    ]);
+    const compactLabel: Record<KeyboardBinding, string> = {
+      moveXNegative: 'LEFT', moveXPositive: 'RIGHT', moveYNegative: 'UP', moveYPositive: 'DOWN',
+      jump: 'JUMP', punch: 'PUNCH', kick: 'KICK', jumpkick: 'J.KICK', grab: 'GRAB',
+    };
+    const fragment = document.createDocumentFragment();
+    for (const binding of KEYBOARD_BINDINGS) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'keyboard-binding';
+      button.dataset.keyBinding = binding;
+      const isCapturing = this.keyboardCapture?.slot === slot && this.keyboardCapture.binding === binding;
+      button.textContent = isCapturing ? 'PRESS KEY · ESC' : `${compactLabel[binding]} ${displayKey(current.get(binding) ?? '') || '—'}`;
+      button.setAttribute('aria-label', `${slot} ${bindingLabel(binding)}: ${current.get(binding) ? displayKey(current.get(binding)!) : 'unassigned'}. Press to change.`);
+      button.title = `Change ${slot} ${bindingLabel(binding)}`;
+      fragment.append(button);
+    }
+    actions.replaceChildren(fragment);
+    message.textContent = this.keyboardCaptureMessage || (slot === 'P3' || slot === 'P4'
+      ? 'P3/P4 use keyboard only after keys are assigned; otherwise use a gamepad.'
+      : 'Select an action, press a key; Escape cancels.');
+    editor.hidden = this.state.phase !== 'lobby';
+  }
+
+  private updateKeyboardGuide(): void {
+    if (!this.keyboardStore) return;
+    const guide = document.querySelector<HTMLDetailsElement>('details.controls');
+    const table = guide?.querySelector('table');
+    const header = table?.tHead?.rows[0];
+    if (guide && table && header && !table.dataset.liveKeyboardColumns) {
+      header.cells[3]!.textContent = 'Gamepad';
+      for (const slot of ['P3', 'P4'] as const) {
+        const cell = document.createElement('th');
+        cell.textContent = slot;
+        header.insertBefore(cell, header.cells[3] ?? null);
+      }
+      const rows = Array.from(table.tBodies[0]?.rows ?? []);
+      for (const row of rows.slice(0, 6)) {
+        row.insertCell(3);
+        row.insertCell(4);
+      }
+      table.dataset.liveKeyboardColumns = 'true';
+      const summary = guide.querySelector('summary');
+      if (summary) summary.textContent = 'Keyboard P1-P4 · P3/P4 keyboard after assignment · gamepad P1-P8';
+      const note = guide.querySelector<HTMLElement>('.controls-note');
+      if (note) note.textContent = 'P3/P4 remain gamepad slots until keys are assigned in the lobby KEYS panel; assigning a key joins that keyboard player. This table updates to current persisted bindings. Gamepad buttons apply to all pad-controlled slots. Pause: P or HUD button. Grab: LB (button 4).';
+    }
+    const rows = Array.from(table?.tBodies[0]?.rows ?? []);
+    for (const slot of KEYBOARD_SLOTS) {
+      const layout = this.keyboardStore.layoutFor(slot);
+      const column = slot === 'P1' ? 1 : slot === 'P2' ? 2 : slot === 'P3' ? 3 : 4;
+      const values = [
+        [layout.moveY[0], layout.moveX[0], layout.moveY[1], layout.moveX[1]].filter(Boolean).map(displayKey).join(' / ') || '—',
+        displayKey(layout.jump) || '—', displayKey(layout.punch) || '—', displayKey(layout.kick) || '—',
+        displayKey(layout.jumpkick) || '—', displayKey(layout.grab) || '—',
+      ];
+      values.forEach((value, index) => {
+        const cell = rows[index]?.cells[column];
+        if (cell) cell.textContent = value;
+      });
+    }
+  }
+
+  private removeKeyboardOnlySlot(slot: 'P3' | 'P4'): void {
+    if (this.state.phase !== 'lobby' || !this.state.fighters.some(fighter => fighter.id === slot)) return;
+    this.state = this.createLobbyState(this.state.fighters.map(fighter => fighter.id).filter(id => id !== slot));
   }
 
   private renderDomHud(): void {
     const hud = this.domHud;
     if (!hud) return;
+    const keyboardEditor = document.getElementById('keyboard-editor');
+    if (keyboardEditor) keyboardEditor.hidden = this.state.phase !== 'lobby';
+    if (this.state.phase !== 'lobby') this.keyboardCapture = undefined;
     if (this.state.phase !== 'results' && !document.getElementById('victory-reveal')?.hidden) this.hideVictoryReveal();
     const seconds = Math.ceil(this.state.remainingTicks / TICK_RATE);
     const timerText = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;

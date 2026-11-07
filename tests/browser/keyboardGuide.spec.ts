@@ -16,13 +16,16 @@ test('keyboard guide labels keyboard, gamepad and bot slots without obscuring th
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await expect(guide).toBeVisible();
-  await expect(guide.locator('summary')).toContainText('P1-P2');
+  await expect(guide.locator('summary')).toContainText('P1-P4');
+  await expect(guide.locator('summary')).toContainText('P3/P4 keyboard after assignment');
   await guide.locator('summary').click();
   await expect(guide).toHaveAttribute('open', '');
   const rows = guide.locator('tbody tr');
   await expect(rows).toHaveCount(10);
-  await expect(rows.nth(1)).toContainText('Välilyönti');
+  await expect(rows.nth(1)).toContainText('Hyppy');
+  await expect(rows.nth(1)).toContainText('SPACE');
   await expect(rows.nth(1)).toContainText('K');
+  await expect(rows.nth(4)).toContainText('Hyppypotku');
   await expect(rows.nth(4)).toContainText('H');
   await expect(rows.nth(4)).toContainText('U');
   // The M12 grab action is documented for both keyboard players.

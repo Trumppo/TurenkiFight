@@ -323,6 +323,8 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   .online-page .page-header { padding-bottom: 28px; }
   .online-page .page-header > .audio-controls { top: auto; bottom: 0; }
   #game { display: flex; flex-direction: column; gap: 8px; max-width: none; margin: 8px auto; border: 0; }
+  #game canvas { order: 1; }
+  .keyboard-editor { position: relative; order: 2; right: auto; bottom: auto; align-self: flex-end; margin: 0 4px 4px 0; }
   .lobby-actions { align-items: stretch; flex-direction: column; gap: 6px; margin: 8px auto; padding: 8px; }
   .lobby-actions button { width: 100%; }
   .victory-reveal { top: 76%; left: 50%; width: calc(100% - 8px); max-height: 49%; gap: 3px; padding: 6px; }
@@ -450,6 +452,70 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
 .controls table { width: 100%; min-width: 560px; border-collapse: collapse; margin-top: 5px; }
 .controls th, .controls td { border-bottom: 1px solid #526071; padding: 6px 8px; text-align: left; }
 .controls thead th { color: #f1d38b; }
+/* The local remapper floats over the quiet lower edge of the arena; it never
+   changes the 640x360 canvas size or pushes the playfield in the page flow. */
+.keyboard-editor {
+  position: absolute;
+  z-index: 5;
+  right: 5px;
+  bottom: 5px;
+  max-width: min(350px, calc(100vw - 24px));
+  color: #fff1b7;
+  text-align: left;
+  font-size: 14px;
+  pointer-events: auto;
+}
+.keyboard-editor[hidden] { display: none; }
+.keyboard-editor > summary {
+  width: max-content;
+  margin-left: auto;
+  padding: 3px 8px;
+  border: 1px solid #e3b85e;
+  background: #172536;
+  color: #fff1b7;
+  cursor: pointer;
+  font-weight: 900;
+  letter-spacing: .08em;
+  list-style: none;
+}
+.keyboard-editor > summary::-webkit-details-marker { display: none; }
+.keyboard-editor > summary::before { content: '+ '; color: #f4d38d; }
+.keyboard-editor[open] > summary::before { content: '− '; }
+.keyboard-editor-panel {
+  display: grid;
+  grid-template-columns: auto minmax(70px, 1fr);
+  align-items: center;
+  gap: 4px 6px;
+  width: min(350px, calc(100vw - 24px));
+  padding: 6px;
+  border: 2px solid #d8b76f;
+  background: rgba(17, 29, 42, .97);
+  box-shadow: 2px 2px #101a27;
+}
+.keyboard-editor-panel > label { color: #f4d38d; font-weight: 900; }
+.keyboard-editor-panel select,
+.keyboard-editor-panel button {
+  min-height: 24px;
+  border: 1px solid #9eb2b7;
+  border-radius: 0;
+  background: #202a36;
+  color: #fff1b7;
+  font: inherit;
+  font-size: 14px;
+}
+.keyboard-editor-panel select { padding: 1px 4px; }
+.keyboard-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; }
+.keyboard-editor-panel .keyboard-binding { min-width: 0; padding: 2px; overflow: hidden; text-overflow: clip; white-space: nowrap; font-weight: 800; }
+.keyboard-editor-panel button:hover { border-color: #e3b85e; background: #2b3a4c; }
+.keyboard-editor-panel button:focus-visible,
+.keyboard-editor > summary:focus-visible { outline: 2px solid #fff1b7; outline-offset: 1px; }
+.keyboard-message { grid-column: 1 / -1; margin: 0; color: #d7e6e4; font-size: 14px; line-height: 1.2; overflow-wrap: anywhere; }
+.keyboard-editor-buttons { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 5px; }
+.keyboard-editor-buttons button { padding: 2px 6px; font-weight: 800; }
+@media (max-width: 600px) {
+  .keyboard-editor { position: relative; order: 2; right: auto; bottom: auto; align-self: flex-end; margin: 0 4px 4px 0; }
+  .keyboard-editor-panel { padding: 5px; gap: 3px 5px; }
+}
 @media (max-height: 540px) {
   .controls { margin: 2px auto; font-size: 14px; }
   .controls summary { padding: 2px 4px; }
