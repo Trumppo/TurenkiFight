@@ -179,7 +179,7 @@ test('classic and retro Wave HUD visual proof at 640x360 and 1280x720', async ({
   }
 });
 
-test('online HUD calls a supplied wave snapshot WAVE without extending server mode support', async ({ page }) => {
+test('online HUD calls a supplied wave snapshot WAVE and the server now accepts wave mode', async ({ page }) => {
   await page.goto('/online.html');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.waitForFunction(() => typeof (window as any).__turenkiOnline?.renderHudSnapshotForTest === 'function');
@@ -191,8 +191,15 @@ test('online HUD calls a supplied wave snapshot WAVE without extending server mo
     const modes = await import(/* @vite-ignore */ modesUrl);
     const state = sim.createState({ ids: ['P1', 'P2'], phase: 'fighting', mode: 'wave', teams: { P1: 'players', P2: 'enemies' } });
     (window as any).__turenkiOnline.renderHudSnapshotForTest(state);
-    return { mode: document.querySelector('#match-mode')?.textContent, validatedModes: modes.MODE_IDS };
+    return {
+      mode: document.querySelector('#match-mode')?.textContent,
+      wave: document.querySelector('#wave-number')?.textContent,
+      enemies: document.querySelector('#wave-enemies')?.textContent,
+      validatedModes: modes.MODE_IDS,
+    };
   });
   expect(onlinePresentation.mode).toBe('ONLINE MODE · WAVE');
-  expect(onlinePresentation.validatedModes).not.toContain('wave');
+  expect(onlinePresentation.wave).toBe('WAVE 1/3');
+  expect(onlinePresentation.enemies).toBe('ENEMIES 1');
+  expect(onlinePresentation.validatedModes).toContain('wave');
 });

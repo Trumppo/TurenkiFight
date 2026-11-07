@@ -1,7 +1,8 @@
 import { createState, step, TICK_RATE } from '../../src/game/simulation/step';
 import { MODE_IDS } from '../../src/game/simulation/modes';
+import { botInput } from '../../src/game/input/botPolicy';
 import { MAX_PLAYERS } from '../../src/game/protocol/players';
-import type { GameEvent, GameState, ModeId } from '../../src/game/simulation/types';
+import type { GameEvent, GameState, ModeId, PlayerInput, Team } from '../../src/game/simulation/types';
 import { DEFAULT_MAX_INPUT_LEAD_TICKS } from '../../src/game/session/sessionInputBuffer';
 import type { StateSnapshot } from '../../src/game/protocol/stateSnapshot';
 import {
@@ -34,8 +35,11 @@ import { computeMatchResult } from './matchResult';
  *
  * Prototype policy, deliberately narrower than the approved M2 contract:
  * - the match starts automatically once every configured slot is claimed
- *   (there is no host-only start envelope in the v1 client schema yet);
- * - the roster is frozen from `starting` onwards;
+ *   (there is no host-only start envelope in the v1 client schema yet; wave:
+ *   as soon as at least one human is present and at least one slot is
+ *   unclaimed, with the unclaimed slots filled by seeded bot enemies);
+ * - the roster is frozen from `starting` onwards (wave: from `running` onwards,
+ *   so additional humans can join the short lobby window);
  * - a host disconnect terminates the session with `session-closed: host-lost`,
  *   never migrating host authority;
  * - a non-host disconnect during `running` keeps that player's slot reserved
@@ -58,6 +62,20 @@ export type WsSessionPhase = 'lobby' | 'starting' | 'running' | 'results' | 'clo
 export const DEFAULT_REJOIN_WINDOW_MS = 30_000;
 /** Upper bound so a misconfiguration cannot pin a slot indefinitely. */
 export const MAX_REJOIN_WINDOW_MS = 10 * 60_000;
+/**
+ * Fixed seed for the deterministic enemy bots in a wave match. The same roster,
+ * seed and accepted human inputs therefore produce the same wave outcomes.
+ */
+export const DEFAULT_WAVE_BOT_SEED = 20261107;
+
+/**
+ * Why a match cannot start. `roster-incomplete` is the historical free-for-all
+ * rule; the wave reasons are eligibility failures specific to the co-op mode.
+ */
+export type MatchStartRefusalReason =
+  | 'roster-incomplete'
+  | 'wave-needs-humans'
+  | 'wave-needs-enemies';
 
 type RejoinReservation = {
   /** Trusted connection that dropped; its sequence domain is already revoked. */
@@ -157,6 +175,8 @@ export class AuthoritativeWsSession {
   private readonly reservations = new Map<string, RejoinReservation>();
   private readonly eventLog: GameEvent[] = [];
   private state: GameState;
+  /** Team split frozen when a wave match starts; null for every other mode. */
+  private waveTeams: Readonly<Record<string, Team>> | null = null;
   private phaseValue: WsSessionPhase = 'lobby';
   private host: string | null = null;
   private runComplete = false;
@@ -223,7 +243,13 @@ export class AuthoritativeWsSession {
     // The prototype begins in `fighting` like the deterministic benchmark
     // adapter; no gameplay rule or timing constant is changed. Score Brawl
     // still omits `mode` from the state, so its wire bytes stay identical.
-    this.state = createState({ ids: [...this.playerIds], phase: 'fighting', mode });
+    //
+    // A wave match cannot exist before its teams are known, so the wave
+    // session starts with a neutral placeholder that is replaced atomically in
+    // `beginMatch` once the human claims are frozen.
+    this.state = mode === 'wave'
+      ? createState({ ids: [...this.playerIds], phase: 'lobby' })
+      : createState({ ids: [...this.playerIds], phase: 'fighting', mode });
   }
 
   get roomIdValue(): string { return this.roomId; }
@@ -307,7 +333,11 @@ export class AuthoritativeWsSession {
       : null;
 
     if (header?.kind === 'join-request' && rejoin === null) {
-      if (this.phaseValue !== 'lobby') {
+      // Wave accepts humans until the first authoritative tick: unclaimed
+      // slots are only classified as enemies when the match starts. Every
+      // other mode keeps the historical freeze at `starting`.
+      const waveStarting = this.mode === 'wave' && this.phaseValue === 'starting';
+      if (this.phaseValue !== 'lobby' && !waveStarting) {
         return this.denyRoom(
           connectionId,
           this.phaseValue === 'results' ? 'match-complete' : 'match-started',
@@ -361,7 +391,7 @@ export class AuthoritativeWsSession {
             header,
           );
         }
-        if (!this.hasFullRoster()) {
+        if (!this.rematchRosterReady()) {
           return this.denyRoom(
             connectionId,
             'roster-incomplete',
@@ -399,7 +429,7 @@ export class AuthoritativeWsSession {
         this.emit(connectionId, { version: 1, kind: 'snapshot', snapshot: this.snapshot() });
         return result;
       }
-      if (this.phaseValue === 'lobby' && this.gateway.playerCount === this.playerIds.length) {
+      if (this.phaseValue === 'lobby' && this.canAutoStart()) {
         this.setPhase('starting');
       }
       return result;
@@ -413,11 +443,13 @@ export class AuthoritativeWsSession {
         this.close('host-lost');
       } else {
         // An incomplete frozen roster cannot start; return to lobby rather than
-        // leaving the session stuck in `starting`.
-        if (this.phaseValue === 'starting' && this.gateway.playerCount < this.playerIds.length) {
+        // leaving the session stuck in `starting`. Wave stays startable while
+        // at least one human and one unclaimed enemy slot remain.
+        if (this.phaseValue === 'starting' && !this.canAutoStart()) {
           this.setPhase('lobby');
         }
         this.emitRoster();
+        if (this.phaseValue === 'lobby' && this.canAutoStart()) this.setPhase('starting');
       }
       return result;
     }
@@ -442,13 +474,48 @@ export class AuthoritativeWsSession {
 
   /**
    * Transport calls this once the start delay has elapsed. Returns false when
-   * the roster is not full or the session is not in `starting`.
+   * the roster is not eligible or the session is not in `starting`.
+   *
+   * Free-for-all modes keep the historical full-roster rule. A wave match
+   * freezes its team split here: every claimed slot is `players`, every
+   * unclaimed slot becomes a bot-driven `enemies` slot.
    */
   beginMatch(): boolean {
-    if (this.phaseValue !== 'starting' || this.gateway.playerCount !== this.playerIds.length) return false;
+    if (this.phaseValue !== 'starting') return false;
+    const refusal = this.matchStartRefusal();
+    if (refusal !== null) {
+      // A wave start that became impossible (for example every slot became a
+      // human) returns to the lobby instead of hanging in `starting`.
+      if (this.mode === 'wave') this.setPhase('lobby');
+      return false;
+    }
+    if (this.mode === 'wave') {
+      const teams = this.waveTeamAssignment();
+      if (teams === null) {
+        this.setPhase('lobby');
+        return false;
+      }
+      this.waveTeams = teams;
+      this.state = createState({ ids: [...this.playerIds], phase: 'fighting', mode: 'wave', teams });
+    }
     this.setPhase('running');
     this.emitMatchStart();
     return true;
+  }
+
+  /**
+   * Typed eligibility check for a start request. It is the single place that
+   * defines "the roster is full" so `serve:match` can report a readable reason
+   * instead of silently refusing an unwinnable wave match.
+   */
+  matchStartRefusal(): MatchStartRefusalReason | null {
+    if (this.mode === 'wave') {
+      const humans = this.claimedPlayerIds().length;
+      if (humans === 0) return 'wave-needs-humans';
+      if (humans >= this.playerIds.length) return 'wave-needs-enemies';
+      return null;
+    }
+    return this.gateway.playerCount === this.playerIds.length ? null : 'roster-incomplete';
   }
 
   /**
@@ -462,7 +529,13 @@ export class AuthoritativeWsSession {
     this.matchId += 1;
     this.eventLog.length = 0;
     this.gateway.discardPendingInputs();
-    this.state = createState({ ids: [...this.playerIds], phase: 'countdown', mode: this.mode });
+    const teams = this.mode === 'wave' ? this.waveTeams : null;
+    this.state = createState({
+      ids: [...this.playerIds],
+      phase: 'countdown',
+      mode: this.mode,
+      ...(teams === null ? {} : { teams }),
+    });
     this.state.tick = startTick;
     this.rematchInProgress = true;
     this.setPhase('running');
@@ -492,7 +565,7 @@ export class AuthoritativeWsSession {
       return { stepped: false, tick: this.state.tick, snapshotSent: false, complete: this.runComplete };
     }
     const frame = this.gateway.consume();
-    this.state = step(this.state, frame.inputs);
+    this.state = step(this.state, this.tickInputs(frame.inputs));
     // The rematch idempotency window closes once the new match actually ticks.
     this.rematchInProgress = false;
     this.eventLog.push(...this.state.events);
@@ -563,11 +636,13 @@ export class AuthoritativeWsSession {
     const revoked = this.gateway.disconnect(connectionId);
     this.ownership.delete(connectionId);
     // An incomplete frozen roster cannot start; return to lobby rather than
-    // leaving the session stuck in `starting`.
-    if (this.phaseValue === 'starting' && this.gateway.playerCount < this.playerIds.length) {
+    // leaving the session stuck in `starting`. Wave stays startable while at
+    // least one human and one unclaimed enemy slot remain.
+    if (this.phaseValue === 'starting' && !this.canAutoStart()) {
       this.setPhase('lobby');
     }
     if (this.phaseValue !== 'closed') this.emitRoster();
+    if (this.phaseValue === 'lobby' && this.canAutoStart()) this.setPhase('starting');
     return revoked;
   }
 
@@ -629,10 +704,79 @@ export class AuthoritativeWsSession {
     return null;
   }
 
-  /** A rematch keeps the original roster; every configured slot must be held. */
-  private hasFullRoster(): boolean {
+  /** Roster slots currently owned by a connected human, in stable order. */
+  private claimedPlayerIds(): string[] {
+    const claimed = new Set<string>();
+    for (const slots of this.ownership.values()) {
+      for (const playerId of slots) claimed.add(playerId);
+    }
+    return this.playerIds.filter(playerId => claimed.has(playerId));
+  }
+
+  /**
+   * Auto-start trigger. Free-for-all modes wait for the full roster. A wave
+   * match starts as soon as at least one human is present, leaving every
+   * unclaimed slot to the enemy bots; joining humans may still claim free slots
+   * until the first tick.
+   */
+  private canAutoStart(): boolean {
+    if (this.mode === 'wave') {
+      const humans = this.claimedPlayerIds().length;
+      return humans >= 1 && humans < this.playerIds.length;
+    }
+    return this.gateway.playerCount === this.playerIds.length;
+  }
+
+  /**
+   * Team split frozen at match start: claimed slots are players, unclaimed
+   * slots are enemies. Returns null when either side would be empty.
+   */
+  private waveTeamAssignment(): Record<string, Team> | null {
+    const humans = new Set(this.claimedPlayerIds());
+    const teams: Record<string, Team> = {};
+    let players = 0;
+    let enemies = 0;
+    for (const playerId of this.playerIds) {
+      if (humans.has(playerId)) {
+        teams[playerId] = 'players';
+        players += 1;
+      } else {
+        teams[playerId] = 'enemies';
+        enemies += 1;
+      }
+    }
+    return players === 0 || enemies === 0 ? null : teams;
+  }
+
+  /**
+   * A rematch keeps the original roster. Wave only requires the human slots to
+   * still be connected; the enemy slots stay bots by design.
+   */
+  private rematchRosterReady(): boolean {
     const owned = new Set([...this.ownership.values()].flat());
+    if (this.mode === 'wave') {
+      if (this.waveTeams === null) return false;
+      return this.playerIds
+        .filter(playerId => this.waveTeams?.[playerId] === 'players')
+        .every(playerId => owned.has(playerId));
+    }
     return this.playerIds.every(playerId => owned.has(playerId));
+  }
+
+  /**
+   * Builds the authoritative input frame for one tick. In wave mode the enemy
+   * slots are always driven here by the seeded bot policy; client input for an
+   * enemy slot is filtered out even if it ever reached this method, so a peer
+   * can never steer an enemy.
+   */
+  private tickInputs(humanInputs: readonly PlayerInput[]): PlayerInput[] {
+    const teams = this.waveTeams;
+    if (this.mode !== 'wave' || teams === null) return [...humanInputs];
+    const enemyIds = this.playerIds.filter(playerId => teams[playerId] === 'enemies');
+    return [
+      ...humanInputs.filter(input => teams[input.playerId] !== 'enemies'),
+      ...enemyIds.map(playerId => botInput(this.state, playerId, DEFAULT_WAVE_BOT_SEED)),
+    ];
   }
 
   private emitSnapshot(): void {

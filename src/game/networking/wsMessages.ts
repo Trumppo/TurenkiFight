@@ -165,7 +165,11 @@ function parseMatchResult(value: unknown, roster?: ReadonlySet<string>): WsMatch
     if (!isRecord(entry) || !keys(entry, ['id', 'rank', 'metric']) ||
         !isSessionIdentifier(entry.id) || seen.has(entry.id) ||
         !Number.isSafeInteger(entry.rank) || (entry.rank as number) < 1 ||
-        !Number.isSafeInteger(entry.metric) || (entry.metric as number) < -1) {
+        // Score metrics are signed: a knockout target penalty makes a fighter's
+        // score negative in Score Brawl and in wave mode's enemy slots. The
+        // historical -1 floor described only Last Man Standing's unplaced
+        // marker and wrongly rejected a real wave result.
+        !Number.isSafeInteger(entry.metric)) {
       throw new Error('Malformed server message');
     }
     seen.add(entry.id);

@@ -137,8 +137,9 @@ describe('M9 online match result computation', () => {
     expect(computeMatchResult(state, events).winner).toBeNull();
   });
 
-  it('emits the payload on every session match-end for all three modes', () => {
+  it('emits the payload on every session match-end for the free-for-all modes', () => {
     for (const mode of MODE_IDS) {
+      if (mode === 'wave') continue;
       const { room, messages } = captureRoom({ playerIds: PLAYERS, mode });
       joinAll(room);
       expect(room.beginMatch()).toBe(true);
@@ -156,6 +157,28 @@ describe('M9 online match result computation', () => {
       expect(end.result?.ranking.every(entry => entry.rank === 1)).toBe(true);
       expect(rankMatch(room.snapshot().state, room.orderedEvents()).draw).toBe(true);
     }
+  });
+
+  it('emits a wave payload when the timer ends a bot-filled match', () => {
+    // Two humans claim players; the two unclaimed slots are server-driven
+    // enemy bots. With no human input no enemy is knocked out, so the timer is
+    // the only end condition and the ranking is a score draw.
+    const { room, messages } = captureRoom({ playerIds: ['P1', 'P2', 'E1', 'E2'], mode: 'wave' });
+    joinAll(room, ['P1', 'P2']);
+    expect(room.beginMatch()).toBe(true);
+    while (room.phase === 'running') room.stepOnce();
+    expect(room.phase).toBe('results');
+    const end = last(messagesOf(messages, 'match-end')).message;
+    if (end.kind !== 'match-end') throw new Error('Unexpected message');
+    const expected = computeMatchResult(room.snapshot().state, room.orderedEvents());
+    expect(end.result).toEqual(expected);
+    expect(end.result?.reason).toBe('time');
+    expect(end.result?.winner).toBeNull();
+    expect(end.result?.ranking).toHaveLength(4);
+    expect(end.result?.ranking.every(entry => entry.rank === 1)).toBe(true);
+    // The wave state is on the wire at the end of the match.
+    expect(room.snapshot().state.mode).toBe('wave');
+    expect(room.snapshot().state.wave).toEqual({ index: 0, countdownTicks: 0, remaining: 1 });
   });
 
   it('decodes a legacy match-end without a result unchanged', () => {
@@ -253,10 +276,16 @@ describe('M9 result payload codec', () => {
       const entry = ((value.result as Record<string, unknown>).ranking as Record<string, unknown>[])[0];
       entry.metric = '3';
     });
-    reject(value => {
-      const entry = ((value.result as Record<string, unknown>).ranking as Record<string, unknown>[])[0];
-      entry.metric = -2;
-    });
+    // Signed score metrics are valid: wave enemy slots accumulate the knockout
+    // target penalty, so a finished wave result can carry a negative metric.
+    const negativeMetric = JSON.parse(JSON.stringify(base)) as Record<string, unknown>;
+    (negativeMetric.result as Record<string, unknown>).ranking = [
+      { id: 'P1', rank: 1, metric: 600 },
+      { id: 'P2', rank: 2, metric: -400 },
+    ];
+    const decodedNegative = decodeWsServerMessage(JSON.stringify(negativeMetric), { roster: PLAYERS });
+    expect(decodedNegative.kind === 'match-end' ? decodedNegative.result?.ranking[1] : undefined)
+      .toEqual({ id: 'P2', rank: 2, metric: -400 });
     reject(value => {
       const entry = ((value.result as Record<string, unknown>).ranking as Record<string, unknown>[])[0];
       entry.id = 'P2';

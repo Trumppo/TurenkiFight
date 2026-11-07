@@ -134,6 +134,7 @@ function resultReasonLabel(reason: string): string {
     case 'elimination': return 'ELIMINATION';
     case 'frag-limit': return 'FRAG LIMIT';
     case 'time': return 'TIME';
+    case 'waves-cleared': return 'WAVES CLEARED';
     default: return reason;
   }
 }
