@@ -12,6 +12,7 @@ import { CueBridge } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
 import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePresentation';
 import { ObjectPresentation } from './objectPresentation';
+import { ArenaTelegraphPresentation } from './arenaTelegraph';
 
 const MODE_NAMES: Record<ModeId, string> = {
   'score-brawl': 'Score Brawl',
@@ -37,6 +38,7 @@ export class OnlineScene extends Phaser.Scene {
   private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
   private zoneGraphics?: Phaser.GameObjects.Graphics;
   private itemPresentation?: ObjectPresentation;
+  private arenaTelegraph?: ArenaTelegraphPresentation;
   private poses = new Map<string, FighterPose>();
   private previous = new Map<string, { x: number; y: number; z: number }>();
   private lastHealth = new Map<string, number>();
@@ -105,11 +107,16 @@ export class OnlineScene extends Phaser.Scene {
     this.initDomHud();
     this.audio = createAudioPresentation(audioControlsHost());
     this.audioBridge = new CueBridge(cue => this.audio?.director.playCue(cue), true);
+    if (this.arenaSelection.manifest.id === 'kkauppa') {
+      this.arenaTelegraph = new ArenaTelegraphPresentation(this, cue => this.audio?.director.playCue(cue));
+    }
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.audioBridge?.reset();
       this.audio?.dispose();
       this.itemPresentation?.destroy();
       this.itemPresentation = undefined;
+      this.arenaTelegraph?.destroy();
+      this.arenaTelegraph = undefined;
       this.audioBridge = undefined;
       this.audio = undefined;
     });
@@ -119,6 +126,7 @@ export class OnlineScene extends Phaser.Scene {
   update(_time: number, _delta: number): void {
     const now = this.controller.now();
     const state = this.controller.renderState(now);
+    this.arenaTelegraph?.update(state?.tick ?? 0, state?.phase === 'fighting');
     if (state) {
       this.audioBridge?.observe(state);
       this.audio?.director.setMusicDucked(state.phase === 'results');

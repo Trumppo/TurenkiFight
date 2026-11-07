@@ -41,4 +41,9 @@ export const PLACEHOLDER_CUE_ASSETS: Readonly<Record<AudioCue, AudioVoiceAsset>>
   'item-pickup': { kind: 'synth', shape: { frequency: 740, duration: 0.055, waveform: 'triangle', peak: 0.075, attack: 0.002, release: 0.02 } },
   'item-throw': { kind: 'synth', shape: { frequency: 430, duration: 0.085, waveform: 'square', peak: 0.09, pitchDrop: 0.68, noise: 0.025, noiseDuration: 0.035 } },
   'item-break': { kind: 'synth', shape: { frequency: 185, duration: 0.12, waveform: 'triangle', peak: 0.105, pitchDrop: 0.52, noise: 0.08, noiseDuration: 0.07 } },
+  'shop-bell': {
+    kind: 'synth',
+    shape: { frequency: 784, duration: 0.15, waveform: 'triangle', peak: 0.07, attack: 0.004, release: 0.07 },
+    notes: [{ frequency: 784, offset: 0 }, { frequency: 988, offset: 0.09 }],
+  },
 };
