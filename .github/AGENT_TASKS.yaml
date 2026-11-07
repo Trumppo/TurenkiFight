@@ -1548,9 +1548,10 @@ tasks:
   - id: M12-STATION-EVENTS
     title: Make the station hazard a shared, telegraphed event in more modes
     assigned_role: graphics-session
-    status: blocked
+    session_id: graphics-session-20261107-stationevents
+    status: in_progress
     priority: P1
-    specification: docs/M12_OBJECTS.md
+    specification: docs/M12_STATION_EVENTS.md
     depends_on: [M10-DM-ZONE-RULES]
     scope: [src/game/presentation/, tests/browser/]
     acceptance:
