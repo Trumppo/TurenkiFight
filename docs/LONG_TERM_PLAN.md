@@ -32,10 +32,10 @@ placeholder audio, movement that the owner considers too slow.
 | --- | --- | --- | --- |
 | **M10** | Deathmatch identity: shrinking platform | ✅ implemented (#156) | awaiting playtest |
 | **M11** | Arcade feel: +20 % movement, hit stop, knockback, camera/audio punch | ✅ implemented (#157, #160, #161) | awaiting playtest |
-| **M12** | Chaos layer: throwable bottles, station ambience | ✅ implemented (#162-#165, #173); damaging arena hazards still need a rules ADR | part implemented |
-| **M13** | Co-op wave mode "Asemahalli" | ✅ implemented (#166, #169) | awaiting playtest |
+| **M12** | Chaos layer: throwable bottles, station ambience, damaging arena hazard | ✅ implemented (#162-#165, #173, #177, #180) | part implemented |
+| **M13** | Co-op wave mode "Asemahalli" | ✅ implemented locally (#166, #169) and online (#179) | awaiting playtest |
 | **M14** | Eight-player online productisation | ✅ TLS, room codes, rate limits, rejoin (#167, #168, #170) and single-machine eight-player numbers (#175); ❌ two-machine measurement owner-blocked | part implemented |
-| **M15** | Content and local comfort | ✅ pad pairing, pause, K-kauppa (#171, #172); ❌ characters not needed; ❌ real audio samples owner-blocked | part implemented |
+| **M15** | Content and local comfort | ✅ pad pairing, pause, remapping (#178), K-kauppa and its hazard (#172, #180); ❌ characters not needed; ❌ real audio samples owner-blocked | part implemented |
 
 Each phase ends with an owner playtest. A phase is not accepted because it merged; it is accepted because the owner
 played it and said so.

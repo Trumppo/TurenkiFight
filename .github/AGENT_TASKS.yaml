@@ -1643,6 +1643,25 @@ tasks:
     last_updated: "2026-11-06"
     notes: "PR #171 merged as 01673ee. Pad pairing shown per slot, local pause/resume with P, four-human coverage. Per-slot keyboard remapping for layouts 2-4 remains undone."
 
+  - id: M15-KEYBOARD-REMAP
+    title: Add per-slot keyboard remapping for P1-P4
+    assigned_role: graphics-session
+    session_id: graphics-session-20261107-remap
+    status: done
+    priority: P1
+    specification: docs/LONG_TERM_PLAN.md
+    depends_on: [M15-INPUT-COMFORT]
+    scope: [src/game/input/, src/game/presentation/, index.html, src/style.css, tests/browser/]
+    acceptance:
+      - "P1/P2 defaults unchanged; P3/P4 keyboard-enabled only after keys are assigned"
+      - "Conflicts are refused with a readable message; reset-one and reset-all work"
+      - "Bindings persist in localStorage; corrupt storage falls back to defaults"
+      - "Remapped keys actually move or attack through one input sample per slot"
+      - Browser tests, guide and layout checks pass
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/178
+    last_updated: "2026-11-07"
+    notes: "PR #178 merged as a3a530f. Closes the reviewer finding that per-slot remapping for layouts 2-4 was missing."
+
   - id: M15-ARENA-2
     title: Add a second arena with its own hazard
     assigned_role: graphics-session
@@ -1729,7 +1748,7 @@ tasks:
     title: Add declarative arena rules and the K-kauppa shelf hazard
     assigned_role: gameplay-session
     session_id: gameplay-session-20261107-hazard
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/adr/0006-arena-hazards.md
     depends_on: [M15-ARENA-2]
@@ -1743,13 +1762,13 @@ tasks:
       - "Determinism: same inputs and arena produce the same outcome; snapshot round-trip with the arena field"
       - npm test, npm run build and git diff --check pass
     last_updated: "2026-11-07"
-    notes: "ADR 0006. First damaging arena hazard; the presentation slice must show the band and warning before this is playable."
+    notes: "PR #177 merged as 7f77512. Declarative arena rules with an optional arena id (station byte-identical, +18 B for K-kauppa) and a 45 s shelf hazard: 3 s warning, 2 s active band, 1 HP per 6 ticks, no attacker credit, protection honoured."
 
   - id: M15-ARENA-HAZARD-UI
     title: Show the K-kauppa shelf danger band and warning
     assigned_role: graphics-session
     session_id: graphics-session-20261107-hazardui
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/adr/0006-arena-hazards.md
     depends_on: [M15-ARENA-HAZARD-RULES]
@@ -1760,13 +1779,13 @@ tasks:
       - "The telegraph works in classic and retro at 640x360 and 1280x720"
       - "No simulation or protocol change; screenshots inspected"
     last_updated: "2026-11-07"
-    notes: "The hazard must not ship without this; an untelegraphed damage band is unfair."
+    notes: "PR #180 merged as cab4cf3. Arena id wired through every createState path, telegraph aligned to the simulation tick (warning 2400, active 2580-2699), persistent band, collapse label, damage feedback with reduced-motion support, online parity, remap labels unclipped at 390x844."
 
   - id: M15-ONLINE-WAVE
     title: Enable the co-op wave mode on the authoritative server
     assigned_role: gameplay-session
     session_id: gameplay-session-20261107-onlinewave
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/M13_WAVE_MODE.md
     depends_on: [M13-WAVE-RULES, M14-REJOIN]
@@ -1778,7 +1797,7 @@ tasks:
       - "Wave transitions and waves-cleared are proven in a real two-client WS run; determinism holds"
       - "Existing modes, rematch, TLS, room-code, rate-limit and rejoin behaviour stay green"
     last_updated: "2026-11-07"
-    notes: "Closes the reviewer finding that online wave mode was disabled. No protocol redesign: reuses ADR 0005 wave fields."
+    notes: "PR #179 merged as 35b095a. Server accepts wave: humans are players, unclaimed slots are deterministic bot enemies, typed wave-needs-humans/enemies refusals, real two-client match reaches waves-cleared with negative enemy scores, wave HUD online."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility

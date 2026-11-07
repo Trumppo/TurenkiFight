@@ -10,17 +10,18 @@ Tämä on projektin päivitettävä tavoitedokumentti harness- ja agenttityölle
 | --- | --- |
 | M10 Deathmatchin identiteetti | ✅ toteutettu (#156): kutistuva laiturialue, ei protokollamuutosta |
 | M11 Arcade-tuntu | ✅ toteutettu (#157, #160, #161): nopeus +20 %, hit stop, knockback, kameratärähdys, bottien hyppyt |
-| M12 Kaaoskerros | ✅ toteutettu (#162–#165, #173): pullot, poiminta/heitto, bottien heitot, jaema-ambienssi; **ei vahinkoa** |
-| M13 Co-op-aallot | ✅ toteutettu (#166, #169): tiimit, aallot, `waves-cleared`, valitsin ja HUD |
+| M12 Kaaoskerros | ✅ toteutettu (#162–#165, #173, #177, #180): pullot, poiminta/heitto, bottien heitot, jaema-ambienssi ja **K-kaupan hyllyvaara** (45 s sykli, varoitus, kaista, vahinko) |
+| M13 Co-op-aallot | ✅ toteutettu (#166, #169, #179): tiimit, aallot, `waves-cleared`, valitsin ja HUD, **myös verkossa** (palvelin ajaa viholliset) |
 | M14 Verkkokovennus | ✅ wss, huonekoodit, viestirajat, rejoin (#167, #168, #170); ✅ kahdeksan pelaajan yhden koneen mittaus (#175: 2,55 kB snapshot 20 Hz:llä, 2,57 % CPU, peak RSS 119,1 MiB); ❌ kahden koneen mittaus omistajalta |
-| M15 Sisältö ja lokaali mukavuus | ✅ pad-paritus, pause, K-kauppa-areena (#171, #172); ❌ hahmoja ei tarvittu; ❌ oikeat äänisamplet omistajalta |
+| M15 Sisältö ja lokaali mukavuus | ✅ pad-paritus, pause, **slottikohtainen näppäinmäppäys** (#178), K-kauppa-areena (#172), **areenavaara** (#177, #180); ❌ hahmoja ei tarvittu; ❌ oikeat äänisamplet omistajalta |
 
 **Rehelliset rajaukset, jotka pysyvät voimassa:**
 - Verkkoluvut (kaista, RTT, jitter, häviö, todellinen kuorma) ovat `NOT_MEASURED`, kunnes omistaja ajaa kahden koneen mittauksen.
-- Areenakohtainen **vahingoittava** vaara (esim. K-kaupan hylly, juna muissa muodoissa) vaatii areenasääntö-ADR:n; nyt on vain varoitus.
-- Wave-muotoa ei voi pelata verkossa, koska palvelimen hyväksytty muotolista ei sisällä waveä.
-- Per-slot-näppäimistöremappaus 2–4:lle ja fyysisten ohjainten testaus ovat tekemättä.
+- K-kaupan hyllyvaara on toteutettu (#177, #180) ja varoitettu, mutta **muiden areenojen vaarat** (esim. juna) vaativat omat datarivinsä; toistaiseksi vain K-kauppa vahingoittaa.
+- Wave toimii nyt myös verkossa (#179): palvelin ajaa täyttämättömät slotit bot-vihollisina. Automaattialoituksen ikkuna on lyhyt; suunniteltuun porukkaan käytetään `--start=manual`.
+- Per-slot-näppäimistöremappaus on toteutettu (#178); **fyysisten ohjainten** testaus on yhä tekemättä.
 - Rejoin-identiteetti on huonekoodi + pelaaja-id, ei autentikointi.
+- Kahdeksan ihmisen luettavuus ruuhkassa on parannettu mutta ei ratkaistu; se vaatii playtestin.
 
 **Jäljellä vain omistajan päätökset:** (1) kahden koneen verkkosegmentin mittaus, (2) oikeat äänisamplet ja miksaus, (3) M10–M15-playtestit ja milestone-hyväksynnät.
 
