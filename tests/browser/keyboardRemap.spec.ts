@@ -54,6 +54,16 @@ test('local P1-P4 keyboard bindings remap, join, persist and reset without movin
   expect(mobileCanvas).not.toBeNull();
   expect(mobileCanvas!.width).toBeLessThan(desktopCanvas!.width);
   await page.screenshot({ path: `artifacts/screenshots/keyboard-remap-${style}-390x844.png` });
+  const mobileKick = page.locator('#keyboard-actions [data-key-binding="kick"]');
+  await expect(mobileKick).toContainText('KICK G');
+  const mobileBindings = await page.locator('#keyboard-actions .keyboard-binding').evaluateAll(buttons => buttons.map(button => ({
+    label: button.textContent,
+    fitsWidth: button.scrollWidth <= button.clientWidth,
+    fitsHeight: button.scrollHeight <= button.clientHeight,
+  })));
+  expect(mobileBindings).toHaveLength(9);
+  expect(mobileBindings.filter(binding => !binding.fitsWidth || !binding.fitsHeight),
+    `all remap labels must fit at 390x844: ${JSON.stringify(mobileBindings)}`).toEqual([]);
 
   await chooseSlot(page, 'P2');
   await page.locator('#keyboard-actions [data-key-binding="punch"]').click();
