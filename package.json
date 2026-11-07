@@ -14,6 +14,7 @@
     "bench:ws": "vite-node benchmarks/ws/runWsBenchmark.ts",
     "bench:webrtc": "vite-node benchmarks/webrtc/runWebrtcBenchmark.ts",
     "measure:local": "vite-node benchmarks/local/runLocalMeasurements.ts",
+    "measure:m14-8p": "vite-node benchmarks/m14/runEightPlayerMeasurement.ts",
     "signaling:dev": "vite-node server/signaling/devSignalingServer.ts",
     "test:browser": "playwright test"
   },

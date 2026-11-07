@@ -110,3 +110,25 @@ requires committed results under this directory to use the full 7200-tick
 default; write shorter exploratory runs elsewhere with `--out=<path>`. Do not
 edit a result file by hand. If a number is not produced by this command on the
 recorded machine, it must not appear in this directory.
+
+## M14 eight-player single-machine measurement
+
+`npm run measure:m14-8p` writes `m14-8p-<UTC timestamp>.json` plus a rendered
+`.md` here. It is a separate harness, not a change to `measure:local` (whose
+four-player default and outputs stay untouched). It records:
+
+- actual canonical and server-message snapshot bytes for eight players at
+  10, 20 and 30 Hz, captured from a real loopback client, including the object
+  contribution when thrown bottles are in the state;
+- manual-pacing tick-duration and snapshot encode/decode percentiles over a
+  7200-tick eight-player run;
+- one dedicated server process's CPU and peak RSS while hosting eight loopback
+  clients for a bounded 7200-tick (120 s simulated) 60 Hz run at 20 Hz
+  snapshots.
+
+It is **single machine, no network**. It measures no latency, jitter, packet
+loss, join success, TURN cost or bandwidth, and it selects no transport. The
+JSON is authoritative; the Markdown is a rendering of it. Generated files are
+never overwritten. Provenance records the command, commit, date, Node/OS/CPU,
+fixture hash and seed, and the working-tree state; an uncommitted harness
+makes the run dirty, which the manifest states explicitly.

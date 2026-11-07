@@ -1,0 +1,422 @@
+{
+  "schemaVersion": 1,
+  "kind": "m14-eight-player-single-machine-measurement",
+  "runId": "m14-8p-20261107T011738309Z",
+  "scope": {
+    "measurement": "single-machine",
+    "label": "single machine, no network",
+    "networkAccess": "loopback-only",
+    "networkImpairment": "none",
+    "networkMeasurement": "none",
+    "transportSelection": "NOT_A_TRANSPORT_DECISION"
+  },
+  "provenance": {
+    "command": "npm run measure:m14-8p",
+    "cliArguments": [],
+    "dateUtc": "2026-11-07T01:17:38.397Z",
+    "nodeVersion": "v26.5.1",
+    "platform": "win32",
+    "osRelease": "10.0.19045",
+    "architecture": "x64",
+    "cpuModel": "Intel(R) Core(TM) i5-7600K CPU @ 3.80GHz",
+    "logicalCores": 4,
+    "gitCommitSha": "70997bfa25045bcdc162391d20676b399d496a86",
+    "workingTreeDirty": true,
+    "dirtyExclusions": [
+      "benchmarks/results/"
+    ],
+    "dirtyPaths": [
+      "benchmarks/m14/",
+      "package.json",
+      "tests/m14-eight-player-measurement.test.ts"
+    ],
+    "productionSourceDirty": false,
+    "fixtureScenarioId": "BASE-8-60-20",
+    "fixtureSha256": "6f6eaf7a04abc44e09ace630f3936cc4254c8fcccf664d827d624fd600cc43f3",
+    "seed": 12345,
+    "players": [
+      "P1",
+      "P2",
+      "P3",
+      "P4",
+      "P5",
+      "P6",
+      "P7",
+      "P8"
+    ],
+    "measuredTicks": 7200,
+    "snapshotRatesHz": [
+      10,
+      20,
+      30
+    ],
+    "tickRateHz": 60
+  },
+  "methodology": {
+    "snapshotBytes": "utf8-byte-length-of-actual-server-message-received-by-a-real-websocket-client",
+    "canonicalBytes": "utf8-byte-length-of-encodeStateSnapshot",
+    "tickDuration": "process.hrtime.bigint-around-server.stepOnce",
+    "tickPacing": "manual-fixture-input-barrier",
+    "codecTiming": "one-timed-encode-and-decode-per-captured-snapshot-after-the-session",
+    "percentiles": "nearest-rank",
+    "serverProcess": "dedicated-node-process-interval-60hz",
+    "serverCpu": "process.cpuUsage-delta-from-running-phase-to-results-detection",
+    "serverRss": "process.resourceUsage.maxRSS-process-lifetime",
+    "transportFraming": "excluded-websocket-frame-headers-not-counted"
+  },
+  "sessions": [
+    {
+      "snapshotHz": 10,
+      "pacing": "manual",
+      "players": 8,
+      "measuredTicks": 7200,
+      "expectedSnapshots": 1200,
+      "receivedSnapshots": 1200,
+      "allClientsReceivedExpectedSnapshots": true,
+      "finalTick": 7200,
+      "finalPhase": "results",
+      "finalStateSha256": "37312107fe11b1bcbc5eeaa2b9320198aa2e0b91256ad8943f78c615da8d7a80",
+      "runComplete": true,
+      "lateTicks": 0,
+      "deniedMessages": 0,
+      "snapshotBytes": {
+        "snapshotHz": 10,
+        "sampleCount": 1200,
+        "canonical": {
+          "unit": "bytes",
+          "sampleCount": 1200,
+          "min": 2244,
+          "mean": 2552.8241666666668,
+          "max": 2820
+        },
+        "serverMessage": {
+          "unit": "bytes",
+          "sampleCount": 1200,
+          "min": 2287,
+          "mean": 2595.8241666666668,
+          "max": 2863
+        },
+        "serverMessageOverhead": {
+          "unit": "bytes",
+          "sampleCount": 1200,
+          "min": 43,
+          "mean": 43,
+          "max": 43
+        },
+        "canonicalBytesPerSimulationTickPerClient": 425.47069444444446,
+        "canonicalBytesPerSecondPerClient": 25528.24166666667,
+        "serverMessageBytesPerSecondPerClient": 25958.24166666667,
+        "serverMessageBytesPerSecondServerAggregate": 207665.93333333335
+      },
+      "objects": {
+        "status": "PRESENT",
+        "snapshotsWithObjects": 1101,
+        "snapshotsWithoutObjects": 99,
+        "objectCount": {
+          "sampleCount": 1101,
+          "min": 1,
+          "mean": 2.7275204359673024,
+          "max": 3
+        },
+        "bytesDeltaWithObjects": {
+          "unit": "bytes",
+          "sampleCount": 1101,
+          "min": 95,
+          "mean": 240.1117166212534,
+          "max": 263
+        },
+        "bytesDeltaPerObject": {
+          "sampleCount": 1101,
+          "min": 87.66666666666667,
+          "mean": 88.49924311232215,
+          "max": 95
+        }
+      },
+      "tickDuration": {
+        "unit": "microseconds",
+        "sampleCount": 7200,
+        "min": 14.3,
+        "mean": 71.23724999999997,
+        "p50": 27.4,
+        "p95": 274.4,
+        "p99": 367.8,
+        "max": 8936.1,
+        "totalStepMicroseconds": 512908.1999999991,
+        "ticksPerSecondStepping": 14037.59971082547
+      },
+      "codecTiming": {
+        "iterationsPerSnapshot": 1,
+        "encode": {
+          "unit": "microseconds",
+          "sampleCount": 1200,
+          "min": 46.1,
+          "mean": 60.28933333333338,
+          "p50": 56.5,
+          "p95": 80.3,
+          "p99": 146.3,
+          "max": 382.3
+        },
+        "decode": {
+          "unit": "microseconds",
+          "sampleCount": 1200,
+          "min": 26.6,
+          "mean": 38.282583333333335,
+          "p50": 35.2,
+          "p95": 52.4,
+          "p99": 90.3,
+          "max": 544.5
+        }
+      }
+    },
+    {
+      "snapshotHz": 20,
+      "pacing": "manual",
+      "players": 8,
+      "measuredTicks": 7200,
+      "expectedSnapshots": 2400,
+      "receivedSnapshots": 2400,
+      "allClientsReceivedExpectedSnapshots": true,
+      "finalTick": 7200,
+      "finalPhase": "results",
+      "finalStateSha256": "37312107fe11b1bcbc5eeaa2b9320198aa2e0b91256ad8943f78c615da8d7a80",
+      "runComplete": true,
+      "lateTicks": 0,
+      "deniedMessages": 0,
+      "snapshotBytes": {
+        "snapshotHz": 20,
+        "sampleCount": 2400,
+        "canonical": {
+          "unit": "bytes",
+          "sampleCount": 2400,
+          "min": 2208,
+          "mean": 2552.2720833333333,
+          "max": 2820
+        },
+        "serverMessage": {
+          "unit": "bytes",
+          "sampleCount": 2400,
+          "min": 2251,
+          "mean": 2595.2720833333333,
+          "max": 2863
+        },
+        "serverMessageOverhead": {
+          "unit": "bytes",
+          "sampleCount": 2400,
+          "min": 43,
+          "mean": 43,
+          "max": 43
+        },
+        "canonicalBytesPerSimulationTickPerClient": 850.7573611111111,
+        "canonicalBytesPerSecondPerClient": 51045.441666666666,
+        "serverMessageBytesPerSecondPerClient": 51905.441666666666,
+        "serverMessageBytesPerSecondServerAggregate": 415243.5333333333
+      },
+      "objects": {
+        "status": "PRESENT",
+        "snapshotsWithObjects": 2201,
+        "snapshotsWithoutObjects": 199,
+        "objectCount": {
+          "sampleCount": 2201,
+          "min": 1,
+          "mean": 2.7273966378918675,
+          "max": 3
+        },
+        "bytesDeltaWithObjects": {
+          "unit": "bytes",
+          "sampleCount": 2201,
+          "min": 95,
+          "mean": 240.10131758291686,
+          "max": 263
+        },
+        "bytesDeltaPerObject": {
+          "sampleCount": 2201,
+          "min": 87.66666666666667,
+          "mean": 88.49962138421927,
+          "max": 95
+        }
+      },
+      "tickDuration": {
+        "unit": "microseconds",
+        "sampleCount": 7200,
+        "min": 15.4,
+        "mean": 99.57251388888898,
+        "p50": 31.2,
+        "p95": 268,
+        "p99": 359,
+        "max": 732.5,
+        "totalStepMicroseconds": 716922.0999999976,
+        "ticksPerSecondStepping": 10042.932140047047
+      },
+      "codecTiming": {
+        "iterationsPerSnapshot": 1,
+        "encode": {
+          "unit": "microseconds",
+          "sampleCount": 2400,
+          "min": 41.1,
+          "mean": 54.98154166666667,
+          "p50": 50,
+          "p95": 65.4,
+          "p99": 141.3,
+          "max": 460.2
+        },
+        "decode": {
+          "unit": "microseconds",
+          "sampleCount": 2400,
+          "min": 24.2,
+          "mean": 33.66070833333328,
+          "p50": 30.8,
+          "p95": 42,
+          "p99": 72.4,
+          "max": 930.8
+        }
+      }
+    },
+    {
+      "snapshotHz": 30,
+      "pacing": "manual",
+      "players": 8,
+      "measuredTicks": 7200,
+      "expectedSnapshots": 3600,
+      "receivedSnapshots": 3600,
+      "allClientsReceivedExpectedSnapshots": true,
+      "finalTick": 7200,
+      "finalPhase": "results",
+      "finalStateSha256": "37312107fe11b1bcbc5eeaa2b9320198aa2e0b91256ad8943f78c615da8d7a80",
+      "runComplete": true,
+      "lateTicks": 0,
+      "deniedMessages": 0,
+      "snapshotBytes": {
+        "snapshotHz": 30,
+        "sampleCount": 3600,
+        "canonical": {
+          "unit": "bytes",
+          "sampleCount": 3600,
+          "min": 2228,
+          "mean": 2552.108333333333,
+          "max": 2976
+        },
+        "serverMessage": {
+          "unit": "bytes",
+          "sampleCount": 3600,
+          "min": 2271,
+          "mean": 2595.108333333333,
+          "max": 3019
+        },
+        "serverMessageOverhead": {
+          "unit": "bytes",
+          "sampleCount": 3600,
+          "min": 43,
+          "mean": 43,
+          "max": 43
+        },
+        "canonicalBytesPerSimulationTickPerClient": 1276.0541666666666,
+        "canonicalBytesPerSecondPerClient": 76563.25,
+        "serverMessageBytesPerSecondPerClient": 77853.25,
+        "serverMessageBytesPerSecondServerAggregate": 622826
+      },
+      "objects": {
+        "status": "PRESENT",
+        "snapshotsWithObjects": 3301,
+        "snapshotsWithoutObjects": 299,
+        "objectCount": {
+          "sampleCount": 3301,
+          "min": 1,
+          "mean": 2.7273553468645866,
+          "max": 3
+        },
+        "bytesDeltaWithObjects": {
+          "unit": "bytes",
+          "sampleCount": 3301,
+          "min": 95,
+          "mean": 240.09784913662526,
+          "max": 263
+        },
+        "bytesDeltaPerObject": {
+          "sampleCount": 3301,
+          "min": 87.66666666666667,
+          "mean": 88.49974755124444,
+          "max": 95
+        }
+      },
+      "tickDuration": {
+        "unit": "microseconds",
+        "sampleCount": 7200,
+        "min": 20.3,
+        "mean": 128.92661111111107,
+        "p50": 144.7,
+        "p95": 254.9,
+        "p99": 344.7,
+        "max": 1318.5,
+        "totalStepMicroseconds": 928271.599999995,
+        "ticksPerSecondStepping": 7756.350619797093
+      },
+      "codecTiming": {
+        "iterationsPerSnapshot": 1,
+        "encode": {
+          "unit": "microseconds",
+          "sampleCount": 3600,
+          "min": 38.7,
+          "mean": 54.52369444444434,
+          "p50": 52.2,
+          "p95": 64.7,
+          "p99": 131.3,
+          "max": 599.6
+        },
+        "decode": {
+          "unit": "microseconds",
+          "sampleCount": 3600,
+          "min": 21.6,
+          "mean": 33.19938888888895,
+          "p50": 31.8,
+          "p95": 41.8,
+          "p99": 59,
+          "max": 439.5
+        }
+      }
+    }
+  ],
+  "serverProcess": {
+    "status": "MEASURED",
+    "mode": "interval",
+    "snapshotHz": 20,
+    "measuredTicks": 7200,
+    "firstTickDelayMs": 250,
+    "players": 8,
+    "clientCount": 8,
+    "wallClockMicroseconds": 120237682.7,
+    "cpuUserMicroseconds": 2922000,
+    "cpuSystemMicroseconds": 172000,
+    "cpuTotalMicroseconds": 3094000,
+    "cpuPercentOfWallClock": 2.573236551572363,
+    "peakRssBytes": 124841984,
+    "rssAfterRunBytes": 99639296,
+    "finalTick": 7200,
+    "finalPhase": "results",
+    "finalStateSha256": "37312107fe11b1bcbc5eeaa2b9320198aa2e0b91256ad8943f78c615da8d7a80",
+    "matchesManual20HzHash": true,
+    "clientFinalSnapshotsMatchServerHash": true,
+    "lateTicks": 0,
+    "deniedMessages": 0,
+    "perTickDuration": {
+      "status": "NOT_MEASURED",
+      "reason": "The production 60 Hz interval tick loop is not instrumented; per-tick duration was measured only in the manual-pacing sessions."
+    }
+  },
+  "correctness": {
+    "expectedTicks": 7200,
+    "allSessionsReachedExpectedTick": true,
+    "finalStateHashesMatchAcrossSnapshotRates": true,
+    "intervalServerMatchesManual20HzHash": true,
+    "snapshotCountsMatchExpected": true,
+    "denialsObserved": 0
+  },
+  "network": {
+    "latency": "NOT_MEASURED",
+    "jitter": "NOT_MEASURED",
+    "packetLoss": "NOT_MEASURED",
+    "joinSuccess": "NOT_MEASURED",
+    "turnCost": "NOT_MEASURED",
+    "bandwidth": "NOT_MEASURED",
+    "measuredNetworks": 0
+  }
+}
