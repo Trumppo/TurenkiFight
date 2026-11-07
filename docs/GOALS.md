@@ -12,7 +12,7 @@ Tämä on projektin päivitettävä tavoitedokumentti harness- ja agenttityölle
 | M11 Arcade-tuntu | ✅ toteutettu (#157, #160, #161): nopeus +20 %, hit stop, knockback, kameratärähdys, bottien hyppyt |
 | M12 Kaaoskerros | ✅ toteutettu (#162–#165, #173): pullot, poiminta/heitto, bottien heitot, jaema-ambienssi; **ei vahinkoa** |
 | M13 Co-op-aallot | ✅ toteutettu (#166, #169): tiimit, aallot, `waves-cleared`, valitsin ja HUD |
-| M14 Verkkokovennus | ✅ wss, huonekoodit, viestirajat, rejoin (#167, #168, #170); ⏳ kahdeksan pelaajan yhden koneen mittaus; ❌ kahden koneen mittaus omistajalta |
+| M14 Verkkokovennus | ✅ wss, huonekoodit, viestirajat, rejoin (#167, #168, #170); ✅ kahdeksan pelaajan yhden koneen mittaus (#175: 2,55 kB snapshot 20 Hz:llä, 2,57 % CPU, peak RSS 119,1 MiB); ❌ kahden koneen mittaus omistajalta |
 | M15 Sisältö ja lokaali mukavuus | ✅ pad-paritus, pause, K-kauppa-areena (#171, #172); ❌ hahmoja ei tarvittu; ❌ oikeat äänisamplet omistajalta |
 
 **Rehelliset rajaukset, jotka pysyvät voimassa:**

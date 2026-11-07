@@ -198,7 +198,7 @@ Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md).
 - [x] Optional `wss` certificates, enforced room codes before slot allocation, connection cap (PR #167, `6684cf3`)
 - [x] Message size, rate and failure-budget limits with typed close codes; rejected peers are closed and slots freed (PR #168, `3547b9c`)
 - [x] Rejoin window: a dropped player keeps the slot for 30 s and can resume (PR #170, `203cf23`)
-- [ ] Single-machine eight-player cost measurement (in progress)
+- [x] Single-machine eight-player cost measurement: 2,552.8/2,552.3/2,552.1 B canonical snapshots at 10/20/30 Hz, 88.5 B per object, 2.57 % CPU over a 120 s real-time run, peak RSS 119.1 MiB, final state `37312107...` (PR #175, `3c07a63`). Byte counts reproduced exactly on a rerun; timing/RSS vary by machine.
 - [ ] **Two-machine network measurement: owner-blocked.** Bandwidth, RTT, jitter, loss and real load stay `NOT_MEASURED` until the owner runs it.
 
 **Known limits:** room code plus player id is the whole rejoin identity, not authentication; no accounts, matchmaking, multi-room hosting or TURN; bots speak plain `ws://` only.
