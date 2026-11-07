@@ -120,47 +120,199 @@ test('station default and Mesku selection still resolve their original backdrops
   })).toEqual(retro
     ? { selectedArena: 'mesku', station: false, mesku: true, shop: false }
     : { selectedArena: 'station', station: true, mesku: false, shop: false });
+  expect(await page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene').createLobbyState(['P1', 'P2']).arena))
+    .toBe(retro ? 'mesku' : undefined);
 
   await page.goto('/online.html?arena=kkauppa');
   await expect(page.locator('.page-header p')).toHaveText('Remote authoritative match · arena: K-kauppa');
   await expect.poll(() => page.evaluate(() => (window as any).__turenkiOnline?.arenaTextureExists())).toBe(true);
 });
 
-test('the shelf event is a harmless, non-text presentation telegraph', async ({ page }) => {
+test('the selected arena wires into normal, reset, ALL BOTS and wave state creation', async ({ page }) => {
   await page.goto('/?arena=kkauppa');
   await waitForBackdrop(page, 'arena-kkauppa-backdrop');
-  const state = createState(['P1', 'P2'], 'fighting');
-  await page.evaluate((fixture) => {
-    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
-    scene.scene.pause('StationScene');
-    scene.state = fixture;
-    scene.drawFighters();
-  }, state);
-  const early = await page.evaluate(() => {
-    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
-    scene.state.tick = 2519;
-    scene.drawFighters();
-    return scene.arenaTelegraph.diagnostics();
-  });
-  expect(early).toEqual({ active: false, cueCount: 0 });
+  await page.keyboard.press('Shift');
+  await expect.poll(() => page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene').state.fighters.map((fighter: any) => fighter.id))).toEqual(['P1', 'P2']);
+  await page.locator('#start-match').click();
+  await expect.poll(() => page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene').state.phase)).toBe('countdown');
+  expect(await page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene').state.arena)).toBe('kkauppa');
 
-  const cue = await page.evaluate(() => {
+  const paths = await page.evaluate(() => {
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
-    scene.state.tick = 2520;
+    scene.resetLocal();
+    const resetArena = scene.state.arena;
+    scene.startAllBotMatch();
+    const allBotsArena = scene.state.arena;
+    scene.resetLocal();
+    scene.selectedMode = 'wave';
+    scene.botSlots.add('P2');
+    scene.state = scene.createLobbyState(['P1', 'P2']);
+    const waveLobby = { arena: scene.state.arena, mode: scene.state.mode };
+    scene.startLocalMatch();
+    return { resetArena, allBotsArena, waveArena: scene.state.arena, waveMode: scene.state.mode, waveLobby };
+  });
+  expect(paths).toEqual({
+    resetArena: 'kkauppa', allBotsArena: 'kkauppa', waveArena: 'kkauppa', waveMode: 'wave',
+    waveLobby: { arena: 'kkauppa', mode: 'wave' },
+  });
+
+  const hazard = await page.evaluate(async () => {
+    const moduleUrl = '/src/game/simulation/step.ts';
+    const simulation = await import(/* @vite-ignore */ moduleUrl);
+    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+    let state = simulation.createState({ ids: ['P1', 'P2'], phase: 'fighting', arena: 'kkauppa' });
+    state.tick = 2399;
+    state.fighters[0].y = 140;
+    state.fighters[1].y = 157;
+    scene.state = state;
+    scene.previous.clear();
+    scene.lastDrawTick = undefined;
     scene.drawFighters();
-    const stateBytes = JSON.stringify(scene.state);
+    const idle = scene.arenaTelegraph.diagnostics();
+    state = simulation.step(state, []);
+    scene.state = state;
+    scene.drawFighters();
+    const warning = scene.arenaTelegraph.diagnostics();
+    const warningLabel = scene.arenaTelegraph.label.text;
+    const warningHealth = state.fighters.map((fighter: any) => fighter.health);
+    const warningState = JSON.stringify(state);
+    const firstCueCount = scene.audioDiagnostics().cueCounts['shop-bell'] ?? 0;
+    scene.drawFighters();
+    const repeatedCueCount = scene.audioDiagnostics().cueCounts['shop-bell'] ?? 0;
+    const warningStateUnchanged = warningState === JSON.stringify(state);
+    state.tick = 2579;
+    scene.state = state;
+    scene.drawFighters();
+    const preCollapseHealth = state.fighters.map((fighter: any) => fighter.health);
+    state = simulation.step(state, []);
+    scene.state = state;
     scene.drawFighters();
     return {
-      visual: scene.arenaTelegraph.diagnostics(),
-      sounds: scene.audioDiagnostics().cueCounts['shop-bell'],
-      unchangedState: stateBytes === JSON.stringify(scene.state),
-      text: `${document.querySelector('#match-status')?.textContent} ${document.querySelector('.page-header p')?.textContent}`,
+      idle, warning, warningLabel, warningHealth, firstCueCount, repeatedCueCount, warningStateUnchanged,
+      active: scene.arenaTelegraph.diagnostics(),
+      health: state.fighters.map((fighter: any) => fighter.health), preCollapseHealth,
+      tick: state.tick, arena: state.arena, cameraShaking: scene.cameras.main.shakeEffect.isRunning,
     };
   });
-  expect(cue.visual).toEqual({ active: true, cueCount: 1 });
-  expect(cue.sounds).toBe(1);
-  expect(cue.unchangedState).toBe(true);
-  expect(cue.text).not.toMatch(/hazard|collapse|damage|warning/i);
+  expect(hazard.idle).toMatchObject({ phase: 'idle', bandVisible: true, warningStart: 2400 });
+  expect(hazard.warning).toMatchObject({ phase: 'warning', active: true, bandVisible: true, cueCount: 1 });
+  expect(hazard.warningLabel).toBe('SHELF WARNING 3S');
+  expect(hazard.warningHealth).toEqual([100, 100]);
+  expect(hazard.firstCueCount).toBe(1);
+  expect(hazard.repeatedCueCount).toBe(1);
+  expect(hazard.warningStateUnchanged).toBe(true);
+  expect(hazard.active).toMatchObject({ phase: 'active', bandVisible: true, damageFeedback: true });
+  expect(hazard).toMatchObject({ tick: 2580, arena: 'kkauppa', preCollapseHealth: [100, 100], health: [99, 100] });
+  expect(hazard.cameraShaking).toBe(true);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const reducedMotion = await page.evaluate(async () => {
+    const moduleUrl = '/src/game/simulation/step.ts';
+    const simulation = await import(/* @vite-ignore */ moduleUrl);
+    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+    let state = simulation.createState({ ids: ['P1'], phase: 'fighting', arena: 'kkauppa' });
+    state.tick = 2579;
+    state.fighters[0].y = 140;
+    scene.previous.clear();
+    scene.lastDrawTick = undefined;
+    scene.lastHazardFeedbackTick = -1;
+    scene.cameras.main.shakeEffect.reset();
+    scene.state = state;
+    scene.drawFighters();
+    state = simulation.step(state, []);
+    scene.state = state;
+    scene.drawFighters();
+    return { shaking: scene.cameras.main.shakeEffect.isRunning, feedback: scene.arenaTelegraph.diagnostics().damageFeedback };
+  });
+  expect(reducedMotion).toEqual({ shaking: false, feedback: true });
+});
+
+test('station keeps default state bytes and has no shelf band', async ({ page }) => {
+  await page.goto('/');
+  await waitForBackdrop(page, 'station-backdrop');
+  const station = await page.evaluate(async () => {
+    const moduleUrl = '/src/game/simulation/step.ts';
+    const simulation = await import(/* @vite-ignore */ moduleUrl);
+    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+    scene.scene.pause('StationScene');
+    scene.state = scene.createLobbyState(['P1', 'P2']);
+    scene.startLocalMatch();
+    const actual = scene.state;
+    const expected = simulation.createState(['P1', 'P2'], 'countdown');
+    scene.arenaTelegraph.update(0, actual.phase === 'fighting', actual.arena);
+    return {
+      arena: actual.arena,
+      sameBytes: JSON.stringify(actual) === JSON.stringify(expected),
+      band: scene.arenaTelegraph.diagnostics(),
+    };
+  });
+  expect(station.arena).toBeUndefined();
+  expect(station.sameBytes).toBe(true);
+  expect(station.band).toMatchObject({ phase: 'idle', bandVisible: false });
+});
+
+test('online hazard follows the snapshot arena and tick; an omitted arena is harmless', async ({ page }) => {
+  await page.goto('/online.html?arena=kkauppa');
+  await expect(page.locator('.page-header p')).toHaveText('Remote authoritative match · arena: K-kauppa');
+  await expect.poll(() => page.evaluate(() => typeof (window as any).__turenkiOnline?.arenaHazardDiagnostics)).toBe('function');
+  const result = await page.evaluate(async () => {
+    const moduleUrl = '/src/game/simulation/step.ts';
+    const simulation = await import(/* @vite-ignore */ moduleUrl);
+    const api = (window as any).__turenkiOnline;
+    const kkauppa = simulation.createState({ ids: ['P1'], phase: 'fighting', arena: 'kkauppa' });
+    kkauppa.tick = 2400;
+    api.renderHudSnapshotForTest(kkauppa);
+    const warning = api.arenaHazardDiagnostics();
+    const station = simulation.createState({ ids: ['P1'], phase: 'fighting' });
+    station.tick = 2580;
+    api.renderHudSnapshotForTest(station);
+    return { warning, station: api.arenaHazardDiagnostics() };
+  });
+  expect(result.warning).toMatchObject({ phase: 'warning', bandVisible: true, warningStart: 2400 });
+  expect(result.station).toMatchObject({ phase: 'idle', bandVisible: false });
+});
+
+test('the danger band, warning and collapse render at 640x360 and 1280x720', async ({ page }) => {
+  await page.goto('/?arena=kkauppa');
+  await waitForBackdrop(page, 'arena-kkauppa-backdrop');
+  await page.addStyleTag({ content: '#game { width: 648px !important; max-width: none !important; margin-left: 0 !important; margin-right: 0 !important; } #game canvas { width: 640px !important; height: 360px !important; max-width: none !important; margin: 0 !important; } main { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }' });
+  for (const size of [
+    { name: '640x360', width: 640, height: 360, scale: 1 },
+    { name: '1280x720', width: 1280, height: 720, scale: 2 },
+  ]) {
+    await page.setViewportSize({ width: size.width, height: size.height });
+    for (const phase of [
+      { name: 'before-warning', tick: 2300 },
+      { name: 'warning', tick: 2500 },
+      { name: 'collapse', tick: 2600 },
+    ]) {
+      await page.evaluate(({ tick }) => {
+        const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+        scene.scene.pause('StationScene');
+        const fighters = [
+          { id: 'P1', x: 120, y: 138, z: 0, vz: 0, facing: 1, health: 100, score: 0, koCount: 0, hitsReceived: 0, attackCooldown: 0, attackFrames: 0, attackMove: null, hitTargets: [], hitstun: 0, koTimer: 0, protection: 0, previousButtons: [] },
+          { id: 'P2', x: 260, y: 180, z: 0, vz: 0, facing: -1, health: 100, score: 0, koCount: 0, hitsReceived: 0, attackCooldown: 0, attackFrames: 0, attackMove: null, hitTargets: [], hitstun: 0, koTimer: 0, protection: 0, previousButtons: [] },
+        ];
+        scene.state = { tick, phase: 'fighting', countdownTicks: 0, remainingTicks: 3600, events: [], arena: 'kkauppa', fighters };
+        scene.previous.clear();
+        scene.lastDrawTick = undefined;
+        scene.drawFighters();
+      }, phase);
+      expect(await page.evaluate(() => {
+        const label = (window as any).__turenkiGame.scene.getScene('StationScene').arenaTelegraph.label;
+        return { visible: label.visible, text: label.text };
+      })).toEqual({ visible: true, text: phase.name === 'warning' ? 'SHELF WARNING 2S' : phase.name === 'collapse' ? 'SHELF DROP' : 'SHELF ZONE' });
+      await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+      const canvas = page.locator('#game canvas');
+      await canvas.evaluate((node, scaleFactor) => {
+        (node as HTMLCanvasElement).style.setProperty('width', `${640 * scaleFactor}px`, 'important');
+        (node as HTMLCanvasElement).style.setProperty('height', `${360 * scaleFactor}px`, 'important');
+        (node as HTMLCanvasElement).style.imageRendering = 'pixelated';
+      }, size.scale);
+      const screenshot = await canvas.screenshot({ path: `artifacts/screenshots/m15-hazard-${style}-${size.name}-${phase.name}.png`, scale: 'css' });
+      expect([screenshot.readUInt32BE(16), screenshot.readUInt32BE(20)]).toEqual([640 * size.scale, 360 * size.scale]);
+    }
+  }
 });
 
 test('station and Mesku SVG content matches the line-ending-independent pre-arena baseline', async () => {

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { createState, step, standings, TICK_RATE, WAVE_RULES } from '../simulation/step';
-import type { EndReason, GameEvent, GameState, ModeId, PlayerInput, Fighter, Team } from '../simulation/types';
+import type { ArenaId, EndReason, GameEvent, GameState, ModeId, PlayerInput, Fighter, Team } from '../simulation/types';
 import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
 import { VIEWPORT, cameraScale } from './viewport';
 import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
@@ -23,7 +23,7 @@ import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } f
 import { MAX_PLAYERS } from '../protocol/players';
 import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePresentation';
 import { ObjectPresentation } from './objectPresentation';
-import { ArenaTelegraphPresentation } from './arenaTelegraph';
+import { ArenaTelegraphPresentation, hazardDamagePreemptedByKnockout, observedHazardDamage } from './arenaTelegraph';
 import { StationEventPresentation } from './stationEvent';
 
 const PLAYER_IDS = Array.from({ length: MAX_PLAYERS }, (_, index) => `P${index + 1}`);
@@ -63,7 +63,7 @@ function resultWinner(state: GameState): string | null {
 
 export class StationScene extends Phaser.Scene {
   private readonly arenaSelection: ArenaSelection;
-  private state: GameState = createState(['P1'], 'lobby');
+  private state!: GameState;
   private selectedMode: ModeId = 'score-brawl';
   private elapsedMs = 0;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -139,6 +139,8 @@ export class StationScene extends Phaser.Scene {
   private reducedMotionListener?: (event: MediaQueryListEvent) => void;
   private cameraShakeCount = 0;
   private lastCameraShake?: { reason: 'hit' | 'knockout'; duration: number; intensity: number };
+  private lastDrawTick?: number;
+  private lastHazardFeedbackTick = -1;
 
   constructor(arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic'), mode: ModeId = 'score-brawl') {
     super('StationScene');
@@ -205,9 +207,7 @@ export class StationScene extends Phaser.Scene {
       const status = document.getElementById('station-event-status');
       if (status) this.stationEvent = new StationEventPresentation(this, status, cue => this.playAudioCue(cue), RETRO_PREVIEW);
     }
-    if (this.arenaSelection.manifest.id === 'kkauppa') {
-      this.arenaTelegraph = new ArenaTelegraphPresentation(this, cue => this.playAudioCue(cue));
-    }
+    this.arenaTelegraph = new ArenaTelegraphPresentation(this, cue => this.playAudioCue(cue));
     this.audioBridge.observe(this.state);
     this.reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     this.reducedMotionListener = event => {
@@ -478,6 +478,8 @@ export class StationScene extends Phaser.Scene {
     this.elapsedMs = 0;
     this.previous.clear();
     this.hitFlash.clear();
+    this.lastDrawTick = undefined;
+    this.lastHazardFeedbackTick = -1;
     // Clear the cue bridge's seen events and previous frame: the results cue
     // and the results music duck must not carry over into the fresh lobby.
     this.audioBridge?.reset();
@@ -499,6 +501,7 @@ export class StationScene extends Phaser.Scene {
     const ids = this.state.fighters.map(f => f.id);
     this.state = createState(ids, 'countdown', {
       mode: this.selectedMode,
+      ...(this.simulationArenaId() ? { arena: this.simulationArenaId() } : {}),
       ...(this.selectedMode === 'wave' ? { teams: this.waveTeams(ids) } : {}),
     });
     this.paused = false;
@@ -512,6 +515,8 @@ export class StationScene extends Phaser.Scene {
     this.audioBridge?.reset();
     this.previous.clear();
     this.hitFlash.clear();
+    this.lastDrawTick = undefined;
+    this.lastHazardFeedbackTick = -1;
   }
 
   /** Fill P1-P8 with bots and immediately begin the countdown. */
@@ -558,9 +563,17 @@ export class StationScene extends Phaser.Scene {
 
   /** Rebuild a lobby using its selected local rules; an incomplete wave roster stays a neutral lobby. */
   private createLobbyState(ids: string[]): GameState {
-    if (this.selectedMode !== 'wave') return createState({ ids, phase: 'lobby', mode: this.selectedMode });
-    if (!this.waveRosterReady(ids)) return createState({ ids, phase: 'lobby' });
-    return createState({ ids, phase: 'lobby', mode: 'wave', teams: this.waveTeams(ids) });
+    const arena = this.simulationArenaId();
+    const arenaSetup = arena ? { arena } : {};
+    if (this.selectedMode !== 'wave') return createState({ ids, phase: 'lobby', mode: this.selectedMode, ...arenaSetup });
+    if (!this.waveRosterReady(ids)) return createState({ ids, phase: 'lobby', ...arenaSetup });
+    return createState({ ids, phase: 'lobby', mode: 'wave', teams: this.waveTeams(ids), ...arenaSetup });
+  }
+
+  /** Presentation arena choice becomes simulation data only when non-station. */
+  private simulationArenaId(): ArenaId | undefined {
+    const id = this.arenaSelection.manifest.id;
+    return id === 'mesku' || id === 'kkauppa' ? id : undefined;
   }
 
   private waveTeams(ids: string[]): Record<string, Team> {
@@ -686,7 +699,8 @@ export class StationScene extends Phaser.Scene {
   }
 
   private drawFighters(): void {
-    this.arenaTelegraph?.update(this.state.tick, this.state.phase === 'fighting');
+    const arena = this.state.arena;
+    this.arenaTelegraph?.update(this.state.tick, this.state.phase === 'fighting', arena);
     this.stationEvent?.update(this.state.tick, this.state.phase === 'fighting');
     drawZoneGraphics(this.zoneGraphics!, zonePresentation(this.state), this.state.tick);
     const liveIds = new Set(this.state.fighters.map(fighter => fighter.id));
@@ -713,6 +727,16 @@ export class StationScene extends Phaser.Scene {
       }
       const prev = this.previous.get(f.id);
       if (prev && f.health < prev.health) this.hitFlash.set(f.id, this.state.tick + 12);
+      if (prev && this.lastHazardFeedbackTick !== this.state.tick && !hazardDamagePreemptedByKnockout(this.state, f) && observedHazardDamage(
+        this.lastDrawTick ?? this.state.tick - 1, this.state.tick, arena, this.state.phase === 'fighting',
+        prev.health, f.health, prev.y, f.y,
+      )) {
+        this.lastHazardFeedbackTick = this.state.tick;
+        this.arenaTelegraph?.notifyDamage(this.state.tick);
+        if (!(this.reducedMotionQuery?.matches ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+          this.cameras.main.shake(70, 0.002, true);
+        }
+      }
       const pose = this.pose(f, prev);
       const frame = Math.floor(this.state.tick / (pose === 'idle' ? 15 : 6)) % 4;
       const x = Math.round(f.x), y = Math.round(f.y);
@@ -748,6 +772,8 @@ export class StationScene extends Phaser.Scene {
       }
       this.previous.set(f.id, { x: f.x, y: f.y, health: f.health });
     }
+    this.lastDrawTick = this.state.tick;
+    this.arenaTelegraph?.update(this.state.tick, this.state.phase === 'fighting', arena);
     this.itemPresentation?.draw(this.state);
     this.renderDomHud();
   }

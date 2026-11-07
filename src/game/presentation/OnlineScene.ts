@@ -12,7 +12,7 @@ import { CueBridge } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
 import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePresentation';
 import { ObjectPresentation } from './objectPresentation';
-import { ArenaTelegraphPresentation } from './arenaTelegraph';
+import { ArenaTelegraphPresentation, hazardDamagePreemptedByKnockout, observedHazardDamage } from './arenaTelegraph';
 import { StationEventPresentation } from './stationEvent';
 
 const MODE_NAMES: Record<ModeId, string> = {
@@ -44,6 +44,8 @@ export class OnlineScene extends Phaser.Scene {
   private poses = new Map<string, FighterPose>();
   private previous = new Map<string, { x: number; y: number; z: number }>();
   private lastHealth = new Map<string, number>();
+  private lastPresentedTick = -1;
+  private lastHazardFeedbackTick = -1;
   private hitUntil = new Map<string, number>();
   private domHud?: {
     timer: HTMLElement;
@@ -113,9 +115,7 @@ export class OnlineScene extends Phaser.Scene {
       const status = document.getElementById('station-event-status');
       if (status) this.stationEvent = new StationEventPresentation(this, status, cue => this.audio?.director.playCue(cue), RETRO_PREVIEW);
     }
-    if (this.arenaSelection.manifest.id === 'kkauppa') {
-      this.arenaTelegraph = new ArenaTelegraphPresentation(this, cue => this.audio?.director.playCue(cue));
-    }
+    this.arenaTelegraph = new ArenaTelegraphPresentation(this, cue => this.audio?.director.playCue(cue));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.audioBridge?.reset();
       this.audio?.dispose();
@@ -134,7 +134,7 @@ export class OnlineScene extends Phaser.Scene {
   update(_time: number, _delta: number): void {
     const now = this.controller.now();
     const state = this.controller.renderState(now);
-    this.arenaTelegraph?.update(state?.tick ?? 0, state?.phase === 'fighting');
+    this.arenaTelegraph?.update(state?.tick ?? 0, state?.phase === 'fighting', state?.arena);
     this.stationEvent?.update(state?.tick ?? 0, state?.phase === 'fighting');
     if (state) {
       this.audioBridge?.observe(state);
@@ -156,6 +156,7 @@ export class OnlineScene extends Phaser.Scene {
 
   /** Development harness hook for rendering a supplied authoritative snapshot without stepping it. */
   debugRenderSnapshot(state: GameState | null): void {
+    this.arenaTelegraph?.update(state?.tick ?? 0, state?.phase === 'fighting', state?.arena);
     this.stationEvent?.update(state?.tick ?? 0, state?.phase === 'fighting');
     this.drawZone(state);
     this.itemPresentation?.draw(state);
@@ -170,6 +171,13 @@ export class OnlineScene extends Phaser.Scene {
   /** Read-only dev diagnostic used by the browser zone parity test. */
   debugZoneVisible(): boolean {
     return this.zoneGraphics?.visible ?? false;
+  }
+
+  /** Read-only tick/arena-derived hazard state for browser parity QA. */
+  debugArenaHazard(): ReturnType<ArenaTelegraphPresentation['diagnostics']> {
+    return this.arenaTelegraph?.diagnostics() ?? {
+      active: false, phase: 'idle', bandVisible: false, warningStart: 0, cueCount: 0, damageFeedback: false,
+    };
   }
 
   /** Read-only event diagnostics for browser parity tests. */
@@ -209,6 +217,15 @@ export class OnlineScene extends Phaser.Scene {
         // itself is always the snapshot's value.
         if (lastHealth !== undefined && fighter.health < lastHealth) {
           this.hitUntil.set(fighter.id, state.tick + 12);
+          const previousPosition = this.previous.get(fighter.id);
+          if (this.lastHazardFeedbackTick !== state.tick && previousPosition && !hazardDamagePreemptedByKnockout(state, fighter) && observedHazardDamage(
+            this.lastPresentedTick, state.tick, state.arena, state.phase === 'fighting',
+            lastHealth, fighter.health, previousPosition.y, fighter.y,
+          )) {
+            this.lastHazardFeedbackTick = state.tick;
+            this.arenaTelegraph?.notifyDamage(state.tick);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) this.cameras.main.shake(70, 0.002, true);
+          }
         }
         if (lastHealth !== undefined && fighter.health > lastHealth) {
           this.hitUntil.delete(fighter.id);
@@ -237,6 +254,10 @@ export class OnlineScene extends Phaser.Scene {
         }
         this.previous.set(fighter.id, { x: fighter.x, y: fighter.y, z: fighter.z });
       }
+    }
+    if (state) {
+      this.lastPresentedTick = state.tick;
+      this.arenaTelegraph?.update(state.tick, state.phase === 'fighting', state.arena);
     }
     // The server roster is fixed for a match; this only removes stale sprites if
     // a new match with a smaller roster ever reuses the scene.

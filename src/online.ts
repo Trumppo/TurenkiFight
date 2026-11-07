@@ -449,6 +449,12 @@ if (import.meta.env.DEV) {
       const scene = game.scene.getScene('OnlineScene') as OnlineScene | null;
       return scene?.debugStationEvent() ?? { active: false, phase: null, cycle: null, cueCount: 0 };
     },
+    arenaHazardDiagnostics() {
+      const scene = game.scene.getScene('OnlineScene') as OnlineScene | null;
+      return scene?.debugArenaHazard() ?? {
+        active: false, phase: 'idle', bandVisible: false, warningStart: 0, cueCount: 0, damageFeedback: false,
+      };
+    },
     hudFontSize(): string {
       const card = document.querySelector<HTMLElement>('.hud-player');
       return card ? window.getComputedStyle(card).fontSize : '';
