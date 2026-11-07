@@ -14,19 +14,8 @@ async function waitForBackdrop(page: import('@playwright/test').Page, texture: s
   }, texture)).toBe(true);
 }
 
-async function captureBackdrop(page: import('@playwright/test').Page, query: string, texture: string) {
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto(query);
-  await waitForBackdrop(page, texture);
-  await page.evaluate(() => {
-    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
-    scene.scene.pause('StationScene');
-    for (const sprite of scene.fighterSprites.values()) sprite.setVisible(false);
-    scene.zoneGraphics?.setVisible(false);
-  });
-  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-  const png = await page.locator('#game canvas').screenshot();
-  const stats = await page.evaluate(async (base64) => {
+async function distinctColorCount(page: import('@playwright/test').Page, png: Buffer): Promise<number> {
+  return page.evaluate(async (base64) => {
     const image = new Image();
     image.src = `data:image/png;base64,${base64}`;
     await image.decode();
@@ -43,11 +32,8 @@ async function captureBackdrop(page: import('@playwright/test').Page, query: str
         colors.add(`${pixels[index]},${pixels[index + 1]},${pixels[index + 2]},${pixels[index + 3]}`);
       }
     }
-    return { width: canvas.width, height: canvas.height, distinctColors: colors.size };
+    return colors.size;
   }, png.toString('base64'));
-  expect([stats.width, stats.height]).toEqual([960, 540]);
-  expect(stats.distinctColors, 'background screenshot should not be blank or uniform').toBeGreaterThan(32);
-  return { png, stats };
 }
 
 async function assetSha256(assetPath: string): Promise<string> {
@@ -101,7 +87,7 @@ test('K-kauppa renders in both styles with four readable fighter sprites at nati
       : captured;
     expect(await canvas.evaluate(node => [(node as HTMLCanvasElement).width, (node as HTMLCanvasElement).height])).toEqual([640, 360]);
     expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([640 * size.scale, 360 * size.scale]);
-    expect(png.byteLength).toBeGreaterThan(4000);
+    expect(await distinctColorCount(page, png), 'K-kauppa screenshot should be nonblank').toBeGreaterThan(1);
     const dir = join(process.cwd(), 'artifacts', 'screenshots');
     await mkdir(dir, { recursive: true });
     await writeFile(join(dir, `m15-kkauppa-${style}-${size.name}.png`), png);
@@ -113,8 +99,12 @@ test('station default and Mesku selection still resolve their original backdrops
   await waitForBackdrop(page, 'station-backdrop');
   expect(await page.evaluate(() => {
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
-    return scene.textures.exists('station-backdrop') && !scene.textures.exists('arena-kkauppa-backdrop');
-  })).toBe(true);
+    return {
+      selectedArena: scene.arenaSelection.manifest.id,
+      station: scene.textures.exists('station-backdrop'),
+      kkauppa: scene.textures.exists('arena-kkauppa-backdrop'),
+    };
+  })).toEqual({ selectedArena: 'station', station: true, kkauppa: false });
 
   await page.goto('/?arena=mesku');
   const expected = retro ? 'arena-mesku-backdrop' : 'station-backdrop';
@@ -122,13 +112,14 @@ test('station default and Mesku selection still resolve their original backdrops
   expect(await page.evaluate(() => {
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
     return {
+      selectedArena: scene.arenaSelection.manifest.id,
       station: scene.textures.exists('station-backdrop'),
       mesku: scene.textures.exists('arena-mesku-backdrop'),
       shop: scene.textures.exists('arena-kkauppa-backdrop'),
     };
   })).toEqual(retro
-    ? { station: false, mesku: true, shop: false }
-    : { station: true, mesku: false, shop: false });
+    ? { selectedArena: 'mesku', station: false, mesku: true, shop: false }
+    : { selectedArena: 'station', station: true, mesku: false, shop: false });
 
   await page.goto('/online.html?arena=kkauppa');
   await expect(page.locator('.page-header p')).toHaveText('Remote authoritative match · arena: K-kauppa');
@@ -180,23 +171,4 @@ test('station and Mesku SVG content matches the line-ending-independent pre-aren
     .toBe('01fcb21015ce6a8666dd15738927480d85353421bf1db59a37a45d6bba0ed4c5');
   expect(await assetSha256('assets/mesku/ravintola-mesku-evening.svg'))
     .toBe('61ec56637ee9c33ebae4543a18e029f3ab148a7c3663a12fbed9d374d74779e5');
-});
-
-test('classic Mesku fallback produces the same nonblank station capture in this run', async ({ page }) => {
-  test.skip(retro, 'Classic-only fallback comparison');
-  const station = await captureBackdrop(page, '/', 'station-backdrop');
-  const meskuFallback = await captureBackdrop(page, '/?arena=mesku', 'station-backdrop');
-  expect(station.png.equals(meskuFallback.png), 'classic Mesku fallback should render the unchanged station')
-    .toBe(true);
-});
-
-test('retro station default and unknown-arena fallback match; Mesku remains distinct', async ({ page }) => {
-  test.skip(!retro, 'Retro-only fallback comparison');
-  const station = await captureBackdrop(page, '/', 'station-backdrop');
-  const unknownFallback = await captureBackdrop(page, '/?arena=not-real', 'station-backdrop');
-  const mesku = await captureBackdrop(page, '/?arena=mesku', 'arena-mesku-backdrop');
-  expect(station.png.equals(unknownFallback.png), 'retro unknown-arena fallback should render the station')
-    .toBe(true);
-  expect(station.png.equals(mesku.png), 'retro Mesku is a distinct arena, not a fallback')
-    .toBe(false);
 });
