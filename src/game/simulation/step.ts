@@ -1,13 +1,19 @@
-import type { Direction, Fighter, GameState, PlayerInput, Move, GameEvent, ModeId, EndReason, PlayerId, SimObject, Team, WaveRules, WaveState } from './types';
+import type { ArenaId, Direction, Fighter, GameState, PlayerInput, Move, GameEvent, ModeId, EndReason, PlayerId, SimObject, Team, WaveRules, WaveState } from './types';
 import { aliveCount, modeRules, modeWinner } from './modes';
+import { arenaRules, isHazardDamageTick, isInsideHazardBand } from './arenas';
 import { isZoneDamageTick, zoneRangeAt, ZONE_DAMAGE_HP } from './zone';
 export { MATCH_TICKS } from './modes';
 export { MODE_RULES, aliveCount, compareTieBreak, modeMetric, modeRules, modeWinner, WAVE_RULES } from './modes';
-export type { EndReason, ModeId, ModeRules, RespawnPolicy, Team, TieBreakCriterion, WaveRules, WaveState } from './types';
+export type { ArenaId, EndReason, ModeId, ModeRules, RespawnPolicy, Team, TieBreakCriterion, WaveRules, WaveState } from './types';
 export type MatchSetup = {
   ids?: string[];
   phase?: GameState['phase'];
   mode?: ModeId;
+  /**
+   * Optional arena gameplay id (ADR 0006). Absent means the station, so every
+   * historical setup keeps its exact canonical state.
+   */
+  arena?: ArenaId;
   /**
    * Explicit combat sides. Required in `wave` mode (both sides non-empty) and
    * optional elsewhere: an omitted team keeps the historical free-for-all.
@@ -186,6 +192,10 @@ export function createState(
   if (ids.length < 1 || new Set(ids).size !== ids.length) throw new Error('Roster must contain unique players');
   const mode = setup.mode && setup.mode !== 'score-brawl' ? setup.mode : undefined;
   const rules = modeRules(mode);
+  // The station is the default and an absent id keeps the state canonical; an
+  // unknown runtime id fails fast instead of silently playing the station.
+  const arena = setup.arena;
+  if (arena !== undefined) arenaRules(arena);
   const teams = setup.teams;
   if (teams) {
     const roster = new Set(ids);
@@ -229,6 +239,7 @@ export function createState(
   return { tick: 0, phase, countdownTicks: COUNTDOWN_TICKS, remainingTicks: rules.timerTicks, events: [],
     ...(mode ? { mode } : {}),
     ...(waveState ? { wave: waveState } : {}),
+    ...(arena === undefined ? {} : { arena }),
     fighters };
 }
 export function standings(state: GameState): { id: string; rank: number; score: number }[] {
@@ -237,6 +248,9 @@ export function standings(state: GameState): { id: string; rank: number; score: 
 }
 export function step(state: GameState, inputs: PlayerInput[]): GameState {
   const rules = modeRules(state.mode);
+  // Arena gameplay data is read once per tick; the stage below applies the
+  // result, so the tick loop never branches on an arena id (ADR 0006).
+  const arena = arenaRules(state.arena);
   const objects = (state.objects ?? []).map(object => ({ ...object }));
   const fighters = state.fighters.map(f => {
     const copy = { ...f, hitTargets: [...f.hitTargets], previousButtons: [...f.previousButtons] };
@@ -606,6 +620,30 @@ export function step(state: GameState, inputs: PlayerInput[]): GameState {
       // The zone is not a player: no attacker, no KO count and no frag. The
       // wire `Knockout` event requires a roster attacker and the zone must not
       // borrow a player id, so a zone death is carried by `deaths`/`koTimer`.
+      knockOut(f);
+      // A death still reads: extend an active hit stop to the KO length.
+      next.hitStopTicks = Math.max(next.hitStopTicks ?? 0, KO_HIT_STOP_TICKS);
+    }
+  }
+  // Arena hazard stage (ADR 0006). It runs after combat and after the mode's
+  // shrinking zone, so:
+  // - a fighter knocked out by combat or the zone earlier in this tick has a
+  //   `koTimer` and is skipped, and the knockout keeps its existing
+  //   attribution/death accounting;
+  // - when combat and the hazard are both lethal, combat owns the knockout;
+  // - when the zone and the hazard would both kill, the zone owns the death and
+  //   the hazard adds no second death;
+  // - otherwise both sources subtract their damage in the same tick.
+  // Respawn protection blocks the hazard exactly as it blocks a combat hit.
+  // Like the zone, a hazard knockout credits no attacker, emits no player
+  // `Knockout` event and records only the death (`deaths`/`koTimer`).
+  const hazard = arena.hazard;
+  if (hazard && isHazardDamageTick(next.tick, hazard)) {
+    for (const f of fighters) {
+      if (f.eliminated || f.koTimer > 0 || f.protection > 0) continue;
+      if (!isInsideHazardBand(f.y, hazard.band)) continue;
+      f.health = Math.max(0, f.health - hazard.damagePerTick);
+      if (f.health > 0) continue;
       knockOut(f);
       // A death still reads: extend an active hit stop to the KO length.
       next.hitStopTicks = Math.max(next.hitStopTicks ?? 0, KO_HIT_STOP_TICKS);

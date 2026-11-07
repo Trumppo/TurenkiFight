@@ -1,5 +1,6 @@
-import type { Fighter, GameEvent, GameState, ModeId, Move, ObjectKind, ObjectState, Phase, SimObject, Team, WaveState } from '../simulation/types';
+import type { ArenaId, Fighter, GameEvent, GameState, ModeId, Move, ObjectKind, ObjectState, Phase, SimObject, Team, WaveState } from '../simulation/types';
 import { ARENA_BOUNDS, COUNTDOWN_TICKS, KO_HIT_STOP_TICKS, MATCH_TICKS, MOVES, WAVE_RULES } from '../simulation/step';
+import { ARENA_RULES, type ArenaRuleId } from '../simulation/arenas';
 import { COMBAT_MOVES, END_REASONS, parseGameEvent } from './gameEvent';
 import { MAX_PLAYERS } from './players';
 
@@ -65,9 +66,16 @@ const modeFighterKeys = ['eliminated', 'frags', 'deaths', 'damageDealt'];
 const optionalFighterKeys = ['knockback', 'team'];
 const fighterKeys = [...requiredFighterKeys, ...modeFighterKeys, ...optionalFighterKeys];
 const requiredStateKeys = ['tick', 'fighters', 'phase', 'countdownTicks', 'remainingTicks', 'events'];
-/** Optional state fields: omitted when zero/empty, or outside wave mode for `wave`. */
-const optionalStateKeys = ['hitStopTicks', 'objects', 'wave'];
+/** Optional state fields: omitted when zero/empty, for the default arena, or outside wave mode for `wave`. */
+const optionalStateKeys = ['hitStopTicks', 'objects', 'wave', 'arena'];
 const stateKeys = [...requiredStateKeys, 'mode', ...optionalStateKeys];
+/**
+ * Non-default arena ids accepted on the wire. Derived from the arena rule
+ * table so the codec cannot drift from it; the station is the absent default
+ * and is never emitted, so station snapshots keep their historical bytes.
+ */
+const snapshotArenas: readonly ArenaId[] =
+  (Object.keys(ARENA_RULES) as ArenaRuleId[]).filter((id): id is ArenaId => id !== 'station');
 /** Object fields emitted by the simulation; unknown keys are rejected. */
 const objectKeys = ['id', 'kind', 'x', 'y', 'z', 'state', 'holder', 'spawnTick', 'vx', 'vz'];
 const objectKinds: readonly ObjectKind[] = ['bottle'];
@@ -310,6 +318,12 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
   if (mode !== undefined && !snapshotModes.includes(mode as ModeId)) {
     throw new Error('Malformed simulation state');
   }
+  // `arena` is the station when absent. Only a known non-default id is
+  // canonical; an explicit `station`, null or an unknown value is rejected.
+  const arena = has(state, 'arena') ? state.arena : undefined;
+  if (arena !== undefined && !snapshotArenas.includes(arena as ArenaId)) {
+    throw new Error('Malformed simulation state');
+  }
   // Wave progress belongs to wave mode only: it is required there (a wave
   // state without it cannot be simulated) and rejected everywhere else, so
   // every other mode keeps its historical canonical shape.
@@ -386,6 +400,7 @@ export function parseStateSnapshot(value: unknown): StateSnapshot {
       events,
       ...(mode === undefined ? {} : { mode: mode as ModeId }),
       ...(wave ? { wave } : {}),
+      ...(arena === undefined ? {} : { arena: arena as ArenaId }),
     },
   };
 }
