@@ -2,6 +2,28 @@
 
 Tämä on projektin päivitettävä tavoitedokumentti harness- ja agenttityölle. Aktiivinen tavoite on rajattu itsenäiseksi kokonaisuudeksi, jolla on todennettavat hyväksymisehdot. Päivitä tavoite omistajan päätöksen ja uuden näytön perusteella; älä merkitse suunnitelmaa toteutetuksi, hyväksytyksi tai yhdistetyksi ilman näyttöä ja omistajan lupaa.
 
+## Tila 2026-11-07
+
+**`docs/LONG_TERM_PLAN.md`:n agentille kuuluva osa on toteutettu.** `main` = `fe4fa08` (PR #173 yhdistetty), 90 validoitua tehtävää, 569 yksikkötestiä, täysi selainsarja vihreä sekä oletus- että retro-buildissa, etärepossa vain `main`.
+
+| Vaihe | Tila |
+| --- | --- |
+| M10 Deathmatchin identiteetti | ✅ toteutettu (#156): kutistuva laiturialue, ei protokollamuutosta |
+| M11 Arcade-tuntu | ✅ toteutettu (#157, #160, #161): nopeus +20 %, hit stop, knockback, kameratärähdys, bottien hyppyt |
+| M12 Kaaoskerros | ✅ toteutettu (#162–#165, #173): pullot, poiminta/heitto, bottien heitot, jaema-ambienssi; **ei vahinkoa** |
+| M13 Co-op-aallot | ✅ toteutettu (#166, #169): tiimit, aallot, `waves-cleared`, valitsin ja HUD |
+| M14 Verkkokovennus | ✅ wss, huonekoodit, viestirajat, rejoin (#167, #168, #170); ⏳ kahdeksan pelaajan yhden koneen mittaus; ❌ kahden koneen mittaus omistajalta |
+| M15 Sisältö ja lokaali mukavuus | ✅ pad-paritus, pause, K-kauppa-areena (#171, #172); ❌ hahmoja ei tarvittu; ❌ oikeat äänisamplet omistajalta |
+
+**Rehelliset rajaukset, jotka pysyvät voimassa:**
+- Verkkoluvut (kaista, RTT, jitter, häviö, todellinen kuorma) ovat `NOT_MEASURED`, kunnes omistaja ajaa kahden koneen mittauksen.
+- Areenakohtainen **vahingoittava** vaara (esim. K-kaupan hylly, juna muissa muodoissa) vaatii areenasääntö-ADR:n; nyt on vain varoitus.
+- Wave-muotoa ei voi pelata verkossa, koska palvelimen hyväksytty muotolista ei sisällä waveä.
+- Per-slot-näppäimistöremappaus 2–4:lle ja fyysisten ohjainten testaus ovat tekemättä.
+- Rejoin-identiteetti on huonekoodi + pelaaja-id, ei autentikointi.
+
+**Jäljellä vain omistajan päätökset:** (1) kahden koneen verkkosegmentin mittaus, (2) oikeat äänisamplet ja miksaus, (3) M10–M15-playtestit ja milestone-hyväksynnät.
+
 ## Tila 2026-11-06
 
 Playtest-kierros on käyty ja **milestonet M5, M7, M8 ja M9 on hyväksytty yksitellen 2026-11-06.** `main` = `8896e33`, 68 validoitua tehtävää, 395 yksikkötestiä, täysi selainsarja vihreä sekä oletus- että retro-buildissa, etärepossa vain `main`. Koodi on MIT, taide ja ääni CC0.
