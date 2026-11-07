@@ -30,7 +30,7 @@ Open the local URL printed by Vite. To check changes, run `npm test`, `npm run b
 
 ## Serve a real authoritative match (LAN or VPN only)
 
-`npm run serve:match` hosts one real match over WebSocket for up to eight players. It reuses the authoritative session and envelope gateway; it is not the benchmark fixture runner and writes no manifest. Add `--mode=score-brawl|last-man-standing|deathmatch` to choose the mode.
+`npm run serve:match` hosts one real match over WebSocket for up to eight players. It reuses the authoritative session and envelope gateway; it is not the benchmark fixture runner and writes no manifest. Add `--mode=score-brawl|last-man-standing|deathmatch|wave` to choose the mode. In `wave`, connected humans are players and every unclaimed slot becomes a deterministic bot enemy; the match needs at least one human and one unclaimed slot.
 
 ```bash
 npm run serve:match -- --host=127.0.0.1 --port=8787 --players=4 --snapshot-hz=20

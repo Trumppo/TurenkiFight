@@ -1,7 +1,7 @@
 # M13: co-op wave mode "Asemahalli"
 
-**Status:** Design spec, 2026-11-06. Part of the active long-term goal. Not implemented.
-**Related:** [LONG_TERM_PLAN.md](LONG_TERM_PLAN.md) M13, [M12_OBJECTS.md](M12_OBJECTS.md).
+**Status:** Implemented locally (2026-11-07); online in the authoritative server as M15-ONLINE-WAVE. Owner playtest still open.
+**Related:** [LONG_TERM_PLAN.md](LONG_TERM_PLAN.md) M13, [M12_OBJECTS.md](M12_OBJECTS.md), [adr/0005-teams-and-waves.md](adr/0005-teams-and-waves.md).
 
 ## 1. Why
 
@@ -30,9 +30,34 @@ camera and the existing simulation.
 
 ## 4. Wire
 
-- `ModeId` gains `'wave'`, and the snapshot carries optional wave state (`wave`, `waveCountdownTicks`) with
-  canonical omission for other modes. This is an additive extension like ADR 0002 and needs its own short ADR.
+- `ModeId` gains `'wave'`, and the snapshot carries optional wave state (`wave: { index, countdownTicks, remaining }`)
+  with canonical omission for other modes. This is an additive extension like ADR 0002 and needs its own short ADR.
 - Existing presets are unchanged; the strict decoder accepts `wave` only with its mode fields.
+
+## 4a. Online authoritative match (M15)
+
+`npm run serve:match -- --mode=wave` is supported. The wire shape is unchanged from ADR 0005: snapshots
+carry `mode: "wave"`, `team` per fighter and `wave: { index, countdownTicks, remaining }`; `match-end`
+carries `reason: "waves-cleared"` when the last wave is cleared. No new message or field was added.
+
+- **Team split rule.** At the moment the match starts, every roster slot claimed by a connected human is
+  `players`; every unclaimed roster slot is `enemies`. The split is frozen for the match and reused by a
+  rematch. Enemy slots never accept client input: the gateway rejects a claim for them, and the server
+  appends one `botInput` per enemy per tick, with the fixed seed
+  `DEFAULT_WAVE_BOT_SEED = 20261107` (`server/ws/authoritativeWsSession.ts`).
+- **Eligibility.** A wave match needs at least one human and at least one unclaimed enemy slot. Refusals are
+  typed: `wave-needs-humans` and `wave-needs-enemies`; `serve:match` prints a readable sentence for each.
+- **Lobby timing.** After the first human joins, an auto-start wave lobby waits the normal start delay and
+  then freezes the split. Humans may still claim free slots during `starting`, which is the only wave-only
+  relaxation of the roster freeze; once the match is `running`, joins are denied with `match-started`.
+  An operator planning a group should use `--start=manual` and type `start` when everyone has joined.
+  A wave roster where humans claim every slot can never start: it has no enemies.
+- **Client.** `online.html` has no mode selector, so the server's `--mode` flag decides the mode and the
+  client only labels what the snapshots say. The online HUD shows `ONLINE MODE · WAVE` plus the wave
+  number, enemies remaining and the next-wave countdown read directly from the snapshot.
+- **Signed result metrics.** A wave clear can leave enemy slots with a negative score (the normal knockout
+  target penalty). The `match-end` decoder now accepts any safe-integer metric instead of rejecting values
+  below `-1`; no field or message kind changed.
 
 ## 5. Accept criteria
 

@@ -1761,6 +1761,24 @@ tasks:
     last_updated: "2026-11-07"
     notes: "The hazard must not ship without this; an untelegraphed damage band is unfair."
 
+  - id: M15-ONLINE-WAVE
+    title: Enable the co-op wave mode on the authoritative server
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261107-onlinewave
+    status: in_progress
+    priority: P1
+    specification: docs/M13_WAVE_MODE.md
+    depends_on: [M13-WAVE-RULES, M14-REJOIN]
+    scope: [src/game/simulation/, server/ws/, src/online.ts, tests/]
+    acceptance:
+      - "The server accepts wave mode and serve:match --mode=wave works"
+      - "Connected humans are players; unclaimed roster slots are bot-driven enemies with a fixed seed"
+      - "A wave match needs at least one human and one enemy slot and refuses to start otherwise with a typed reason"
+      - "Wave transitions and waves-cleared are proven in a real two-client WS run; determinism holds"
+      - "Existing modes, rematch, TLS, room-code, rate-limit and rejoin behaviour stay green"
+    last_updated: "2026-11-07"
+    notes: "Closes the reviewer finding that online wave mode was disabled. No protocol redesign: reuses ADR 0005 wave fields."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session

@@ -4,12 +4,12 @@ import type { Fighter, ModeId, ModeRules, PlayerId, TieBreakCriterion, WaveRules
 export const MATCH_TICKS = 7200;
 
 /**
- * The modes the current UI and server mode switch offer, in a stable order.
- * `wave` is implemented in the simulation (ADR 0005) but is not selectable yet;
- * its selector and HUD arrive in M13-WAVE-UI, so it is deliberately absent here
- * until then. `MODE_RULES` remains the single source of mode behaviour.
+ * The modes the UI and the authoritative server accept, in a stable order.
+ * `wave` is the co-op mode (ADR 0005, M13); the server validates it with the
+ * same list used by `serve:match --mode`. `MODE_RULES` remains the single
+ * source of mode behaviour.
  */
-export const MODE_IDS: readonly ModeId[] = ['score-brawl', 'last-man-standing', 'deathmatch'];
+export const MODE_IDS: readonly ModeId[] = ['score-brawl', 'last-man-standing', 'deathmatch', 'wave'];
 
 /**
  * First-slice wave settings, exported so tests and the codec share the bounds.

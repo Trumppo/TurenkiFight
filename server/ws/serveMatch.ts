@@ -45,6 +45,10 @@ function startFailureMessage(reason: MatchStartFailureReason | undefined): strin
       return 'the session is closed and cannot start';
     case 'not-startable':
       return 'the session cannot start in its current phase';
+    case 'wave-needs-humans':
+      return 'wave mode needs at least one human player';
+    case 'wave-needs-enemies':
+      return 'wave mode needs at least one unclaimed slot to become an enemy bot';
     default:
       return 'unknown reason';
   }

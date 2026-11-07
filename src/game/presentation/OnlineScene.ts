@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { GameState, Fighter, ModeId } from '../simulation/types';
+import { TICK_RATE, WAVE_RULES } from '../simulation/step';
 import type { OnlineMatchController } from '../networking/onlineMatchController';
 import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
 import { VIEWPORT, cameraScale } from './viewport';
@@ -52,6 +53,10 @@ export class OnlineScene extends Phaser.Scene {
     zoneStatus?: HTMLElement;
     zoneSummary?: HTMLElement;
     zoneDanger?: HTMLElement;
+    waveStatus?: HTMLElement;
+    waveNumber?: HTMLElement;
+    waveEnemies?: HTMLElement;
+    waveCountdown?: HTMLElement;
     playerList: HTMLElement;
     players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>;
   };
@@ -278,6 +283,10 @@ export class OnlineScene extends Phaser.Scene {
     const zoneStatus = document.getElementById('zone-status');
     const zoneSummary = document.getElementById('zone-summary');
     const zoneDanger = document.getElementById('zone-danger');
+    const waveStatus = document.getElementById('wave-status');
+    const waveNumber = document.getElementById('wave-number');
+    const waveEnemies = document.getElementById('wave-enemies');
+    const waveCountdown = document.getElementById('wave-countdown');
     const playerList = document.getElementById('player-hud');
     if (!timer || !status || !mode || !playerList) return;
     const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement }>();
@@ -290,7 +299,10 @@ export class OnlineScene extends Phaser.Scene {
     }
     this.domHud = {
       timer, status, mode, zoneStatus: zoneStatus ?? undefined, zoneSummary: zoneSummary ?? undefined,
-      zoneDanger: zoneDanger ?? undefined, playerList, players,
+      zoneDanger: zoneDanger ?? undefined,
+      waveStatus: waveStatus ?? undefined, waveNumber: waveNumber ?? undefined,
+      waveEnemies: waveEnemies ?? undefined, waveCountdown: waveCountdown ?? undefined,
+      playerList, players,
     };
   }
 
@@ -315,6 +327,26 @@ export class OnlineScene extends Phaser.Scene {
       hud.zoneDanger.textContent = zone.dangerIds.length
         ? `DANGER OUTSIDE SAFE AREA · ${zone.dangerIds.join(' · ')}`
         : '';
+    }
+    // Wave HUD is a pure projection of the authoritative snapshot: the wave
+    // number, live enemy count and inter-wave countdown all come from the
+    // server. The online page has no mode selector, so a wave match can only
+    // be chosen by the server's --mode flag.
+    const wave = modeState?.mode === 'wave' ? modeState.wave : undefined;
+    if (hud.waveStatus) hud.waveStatus.hidden = !wave;
+    if (wave) {
+      const waveCount = WAVE_RULES.count;
+      const shownWave = Math.max(1, Math.min(waveCount, wave.index + 1));
+      if (hud.waveNumber) hud.waveNumber.textContent = `WAVE ${shownWave}/${waveCount}`;
+      if (hud.waveEnemies) hud.waveEnemies.textContent = `ENEMIES ${wave.remaining}`;
+      const countdownSeconds = Math.ceil(wave.countdownTicks / TICK_RATE);
+      if (hud.waveCountdown) {
+        hud.waveCountdown.hidden = countdownSeconds <= 0;
+        hud.waveCountdown.textContent = countdownSeconds > 0 ? `NEXT WAVE IN ${countdownSeconds}` : '';
+      }
+      hud.waveStatus?.setAttribute('aria-label',
+        `Wave ${shownWave} of ${waveCount}, ${wave.remaining} enemies remaining` +
+        `${countdownSeconds > 0 ? `, next wave in ${countdownSeconds} seconds` : ''}`);
     }
     if (state) {
       const seconds = Math.ceil(state.remainingTicks / 60);

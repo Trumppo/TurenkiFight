@@ -182,14 +182,15 @@ Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md).
 
 ## Milestone 13 - Co-op wave mode (implemented)
 
-**Status: IMPLEMENTED (2026-11-07), awaiting playtest.** `ModeId wave` with teams, wave state and `waves-cleared` (ADR 0005, PR #166, `f10d471`), plus selector, lobby team rule and HUD (PR #169, `de7acc4`).
+**Status: IMPLEMENTED (2026-11-07), awaiting playtest.** `ModeId wave` with teams, wave state and `waves-cleared` (ADR 0005, PR #166, `f10d471`), plus selector, lobby team rule and HUD (PR #169, `de7acc4`). The authoritative server now accepts `--mode=wave`: connected humans are players, unclaimed slots are seeded bot enemies, and `serve:match` refuses an empty or enemy-less wave roster with a typed reason (M15-ONLINE-WAVE).
 
 - [x] Teams, no friendly fire, no teammate targeting
 - [x] Three waves, countdown, enemy revival at spawn, players never eliminated
 - [x] Wave HUD and results
+- [x] Online wave: server mode, human/bot team split, deterministic enemy inputs, typed start refusals and a real two-client WS run
 - [ ] Owner playtest: is the wave mode fun, and is three waves the right length?
 
-**Known limits:** enemies use the same roster slots with identical stats; no enemy types or bosses; online wave play is not enabled because the server's accepted mode list is unchanged.
+**Known limits:** enemies use the same roster slots with identical stats; no enemy types or bosses. Online wave matches keep the normal 30 s rejoin window for human slots; an expired human slot stays a player fighter with neutral input for the rest of the match. Waves have no dedicated online lobby selector: `online.html` has no mode selector, so the server's `--mode` flag decides.
 
 ## Milestone 14 - Eight-player online productisation (part implemented)
 

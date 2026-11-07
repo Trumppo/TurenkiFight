@@ -15,6 +15,7 @@ import {
   DEFAULT_REJOIN_WINDOW_MS,
   MAX_REJOIN_WINDOW_MS,
   type AuthoritativeWsSession,
+  type MatchStartRefusalReason,
 } from './authoritativeWsSession';
 import {
   CLIENT_MESSAGE_POLICY,
@@ -113,7 +114,11 @@ export type MatchReadyInfo = {
   readonly secure: boolean;
 };
 
-export type MatchStartFailureReason = 'roster-incomplete' | 'already-started' | 'not-startable' | 'closed';
+export type MatchStartFailureReason =
+  | MatchStartRefusalReason
+  | 'already-started'
+  | 'not-startable'
+  | 'closed';
 
 export type MatchStartResult = {
   readonly started: boolean;
@@ -407,10 +412,13 @@ export function serveMatchUsage(): string {
     '  --port=<number>      Bind port 0..65535 (default 8787; 0 = ephemeral)',
     `  --players=<1-${MAX_MATCH_PLAYERS}>      Claimable slots P1..PN (default ${DEFAULT_MATCH_PLAYERS})`,
     '  --snapshot-hz=<hz>   Snapshot rate 10, 20 or 30 (default 20)',
-    '  --start=<mode>       auto starts when the roster is full; manual waits for a',
-    '                       "start" line on stdin (default auto)',
-    '  --mode=<mode>        score-brawl, last-man-standing or deathmatch',
-    '                       (default score-brawl; unknown modes are rejected)',
+    '  --start=<mode>       auto starts when the roster is full (wave: after the first',
+    '                       human joins, with bots filling the rest); manual waits for',
+    '                       a "start" line on stdin (default auto)',
+    '  --mode=<mode>        score-brawl, last-man-standing, deathmatch or wave',
+    '                       (default score-brawl; unknown modes are rejected).',
+    '                       A wave match needs at least one human and leaves every',
+    '                       unclaimed slot to the deterministic enemy bots.',
     '  --room=<code>        Fixed 4-12 character room code (default: generated)',
     '  --cert=<pem>         TLS certificate chain (PEM) for https/wss',
     '  --key=<pem>          TLS private key (PEM); must be paired with --cert',
@@ -465,11 +473,18 @@ export function formatMatchReadyLine(info: MatchReadyInfo): string {
   });
 }
 
-function phaseMessage(phase: string, startMode: MatchStartMode): string {
+function phaseMessage(phase: string, startMode: MatchStartMode, mode: ModeId): string {
   switch (phase) {
     case 'lobby':
       return 'waiting for players';
     case 'starting':
+      // Wave starts with humans and fills every unclaimed slot with bot
+      // enemies, so "roster complete" would be misleading there.
+      if (mode === 'wave') {
+        return startMode === 'manual'
+          ? 'wave lobby ready; type "start" and press Enter to freeze the human/bot split'
+          : 'wave lobby ready; starting with bot enemies for the unclaimed slots';
+      }
       return startMode === 'manual'
         ? 'roster complete; type "start" and press Enter to begin'
         : 'roster complete; starting the match';
@@ -583,7 +598,7 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
           : 'connection rejected before registration: server is closing');
         return;
       case 'phase':
-        log(phaseMessage(event.phase, startMode));
+        log(phaseMessage(event.phase, startMode, mode));
         return;
     }
   };
@@ -644,7 +659,10 @@ export async function startMatchServer(options: MatchServerOptions = {}): Promis
       if (server.room.phase === 'running' || server.room.phase === 'results') {
         return { started: false, reason: 'already-started' };
       }
-      if (server.room.playerCount !== playerIds.length) return { started: false, reason: 'roster-incomplete' };
+      // The session owns the eligibility rule: a free-for-all match needs the
+      // full roster, a wave match needs one human and one unclaimed enemy slot.
+      const refusal = server.room.matchStartRefusal();
+      if (refusal !== null) return { started: false, reason: refusal };
       return server.room.beginMatch() ? { started: true } : { started: false, reason: 'not-startable' };
     },
     close: async () => {

@@ -153,14 +153,14 @@ describe('M7 mode-aware snapshots on the wire', () => {
 describe('M7 serve:match --mode', () => {
   it('parses every supported mode and defaults to Score Brawl', () => {
     expect(parseServeMatchArgs([]).mode).toBe('score-brawl');
-    for (const mode of ['score-brawl', 'last-man-standing', 'deathmatch']) {
+    for (const mode of ['score-brawl', 'last-man-standing', 'deathmatch', 'wave']) {
       expect(parseServeMatchArgs([`--mode=${mode}`]).mode).toBe(mode);
     }
   });
 
   it('fails clearly on an unknown mode instead of falling back', async () => {
     expect(() => parseServeMatchArgs(['--mode=duel']))
-      .toThrow('Invalid mode: duel (expected score-brawl, last-man-standing, deathmatch)');
+      .toThrow('Invalid mode: duel (expected score-brawl, last-man-standing, deathmatch, wave)');
     await expect(startMatchServer({
       host: '127.0.0.1',
       port: 0,
