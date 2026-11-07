@@ -216,6 +216,19 @@ Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md).
 
 **Known limits:** only the K-kauppa arena has a damaging hazard so far; pad pairing verified with simulated pads only; physical controllers unverified; eight-human crowd readability still needs a playtest.
 
+## Graphics track (designer proposal, 2026-11-07)
+
+The owner asked for a graphics improvement evaluable on mobile. Full plan: [GRAPHICS_ROADMAP.md](GRAPHICS_ROADMAP.md).
+
+- [ ] G1 Mobile and multi-size evaluation baseline (first slice, no visual change)
+- [ ] G2 Fighter readability for eight players
+- [ ] G3 Hit and knockout feedback
+- [ ] G4 Arena depth and background contrast (owner approves each changed arena)
+- [ ] G5 Mobile-friendly HUD layout
+- [ ] G6 Hazard and zone visual pass (arena band and mode zone kept distinct)
+
+Touch controls are not part of this track.
+
 ## Long-term phases (designer proposal, 2026-11-06)
 
 The owner set the product direction: **eight players online, up to four locally**, **80 % chaos and 20 % skill**, with *Target Renegade* and *Streets of Rage* as spiritual ancestors. The full plan, including what each phase deliberately excludes, is in [LONG_TERM_PLAN.md](LONG_TERM_PLAN.md).
