@@ -1,0 +1,467 @@
+{
+  "task": "GRAPHICS-G1-EVAL-BASELINE",
+  "commitSha": "20ac5891f8e3435e24f76105a5252358136f4ce1",
+  "date": "2026-11-07T07:34:20.442Z",
+  "logicalCanvas": {
+    "width": 640,
+    "height": 360
+  },
+  "captures": [
+    {
+      "file": "classic-station-640x360.png",
+      "size": "640x360",
+      "width": 640,
+      "height": 360,
+      "style": "classic",
+      "arena": "station",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "station",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 11106
+    },
+    {
+      "file": "classic-station-1280x720.png",
+      "size": "1280x720",
+      "width": 1280,
+      "height": 720,
+      "style": "classic",
+      "arena": "station",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "station",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 25691
+    },
+    {
+      "file": "classic-station-390x844.png",
+      "size": "390x844",
+      "width": 390,
+      "height": 844,
+      "style": "classic",
+      "arena": "station",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "station",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 19824
+    },
+    {
+      "file": "classic-station-844x390.png",
+      "size": "844x390",
+      "width": 844,
+      "height": 390,
+      "style": "classic",
+      "arena": "station",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "station",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 11767
+    },
+    {
+      "file": "classic-kkauppa-640x360.png",
+      "size": "640x360",
+      "width": 640,
+      "height": 360,
+      "style": "classic",
+      "arena": "kkauppa",
+      "selectedArena": {
+        "selected": "kkauppa",
+        "requested": "kkauppa",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 15133
+    },
+    {
+      "file": "classic-kkauppa-1280x720.png",
+      "size": "1280x720",
+      "width": 1280,
+      "height": 720,
+      "style": "classic",
+      "arena": "kkauppa",
+      "selectedArena": {
+        "selected": "kkauppa",
+        "requested": "kkauppa",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 30769
+    },
+    {
+      "file": "classic-kkauppa-390x844.png",
+      "size": "390x844",
+      "width": 390,
+      "height": 844,
+      "style": "classic",
+      "arena": "kkauppa",
+      "selectedArena": {
+        "selected": "kkauppa",
+        "requested": "kkauppa",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 22563
+    },
+    {
+      "file": "classic-kkauppa-844x390.png",
+      "size": "844x390",
+      "width": 844,
+      "height": 390,
+      "style": "classic",
+      "arena": "kkauppa",
+      "selectedArena": {
+        "selected": "kkauppa",
+        "requested": "kkauppa",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 15806
+    },
+    {
+      "file": "classic-mesku-640x360.png",
+      "size": "640x360",
+      "width": 640,
+      "height": 360,
+      "style": "classic",
+      "arena": "mesku",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "mesku",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 11106
+    },
+    {
+      "file": "classic-mesku-1280x720.png",
+      "size": "1280x720",
+      "width": 1280,
+      "height": 720,
+      "style": "classic",
+      "arena": "mesku",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "mesku",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 26965
+    },
+    {
+      "file": "classic-mesku-390x844.png",
+      "size": "390x844",
+      "width": 390,
+      "height": 844,
+      "style": "classic",
+      "arena": "mesku",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "mesku",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 20827
+    },
+    {
+      "file": "classic-mesku-844x390.png",
+      "size": "844x390",
+      "width": 844,
+      "height": 390,
+      "style": "classic",
+      "arena": "mesku",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "mesku",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 11767
+    },
+    {
+      "file": "retro-station-640x360.png",
+      "size": "640x360",
+      "width": 640,
+      "height": 360,
+      "style": "retro",
+      "arena": "station",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "station",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 20402
+    },
+    {
+      "file": "retro-station-1280x720.png",
+      "size": "1280x720",
+      "width": 1280,
+      "height": 720,
+      "style": "retro",
+      "arena": "station",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "station",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 37243
+    },
+    {
+      "file": "retro-station-390x844.png",
+      "size": "390x844",
+      "width": 390,
+      "height": 844,
+      "style": "retro",
+      "arena": "station",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "station",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 26243
+    },
+    {
+      "file": "retro-station-844x390.png",
+      "size": "844x390",
+      "width": 844,
+      "height": 390,
+      "style": "retro",
+      "arena": "station",
+      "selectedArena": {
+        "selected": "station",
+        "requested": "station",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 21166
+    },
+    {
+      "file": "retro-kkauppa-640x360.png",
+      "size": "640x360",
+      "width": 640,
+      "height": 360,
+      "style": "retro",
+      "arena": "kkauppa",
+      "selectedArena": {
+        "selected": "kkauppa",
+        "requested": "kkauppa",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 23127
+    },
+    {
+      "file": "retro-kkauppa-1280x720.png",
+      "size": "1280x720",
+      "width": 1280,
+      "height": 720,
+      "style": "retro",
+      "arena": "kkauppa",
+      "selectedArena": {
+        "selected": "kkauppa",
+        "requested": "kkauppa",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 40686
+    },
+    {
+      "file": "retro-kkauppa-390x844.png",
+      "size": "390x844",
+      "width": 390,
+      "height": 844,
+      "style": "retro",
+      "arena": "kkauppa",
+      "selectedArena": {
+        "selected": "kkauppa",
+        "requested": "kkauppa",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 27781
+    },
+    {
+      "file": "retro-kkauppa-844x390.png",
+      "size": "844x390",
+      "width": 844,
+      "height": 390,
+      "style": "retro",
+      "arena": "kkauppa",
+      "selectedArena": {
+        "selected": "kkauppa",
+        "requested": "kkauppa",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 23973
+    },
+    {
+      "file": "retro-mesku-640x360.png",
+      "size": "640x360",
+      "width": 640,
+      "height": 360,
+      "style": "retro",
+      "arena": "mesku",
+      "selectedArena": {
+        "selected": "mesku",
+        "requested": "mesku",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 20708
+    },
+    {
+      "file": "retro-mesku-1280x720.png",
+      "size": "1280x720",
+      "width": 1280,
+      "height": 720,
+      "style": "retro",
+      "arena": "mesku",
+      "selectedArena": {
+        "selected": "mesku",
+        "requested": "mesku",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 38497
+    },
+    {
+      "file": "retro-mesku-390x844.png",
+      "size": "390x844",
+      "width": 390,
+      "height": 844,
+      "style": "retro",
+      "arena": "mesku",
+      "selectedArena": {
+        "selected": "mesku",
+        "requested": "mesku",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 26250
+    },
+    {
+      "file": "retro-mesku-844x390.png",
+      "size": "844x390",
+      "width": 844,
+      "height": 390,
+      "style": "retro",
+      "arena": "mesku",
+      "selectedArena": {
+        "selected": "mesku",
+        "requested": "mesku",
+        "fighterCount": 4,
+        "canvas": [
+          640,
+          360
+        ]
+      },
+      "fighterCount": 4,
+      "bytes": 21515
+    }
+  ]
+}
