@@ -4,6 +4,8 @@ Tämä on projektin päivitettävä tavoitedokumentti harness- ja agenttityölle
 
 ## Tila 2026-11-07
 
+**Uusi suunta 2026-11-07:** pienenevä kenttä kuuluu Deathmatch-moodiin, ei areenaan. Grafiikkakierros on suunniteltu (`docs/GRAPHICS_ROADMAP.md`, G1-G6). Ensimmäinen siivu G1 on käynnissä: mobiili- ja monikokoarviointi ilman visuaalisia muutoksia.
+
 **`docs/LONG_TERM_PLAN.md`:n agentille kuuluva osa on toteutettu.** `main` = `fe4fa08` (PR #173 yhdistetty), 90 validoitua tehtävää, 569 yksikkötestiä, täysi selainsarja vihreä sekä oletus- että retro-buildissa, etärepossa vain `main`.
 
 | Vaihe | Tila |

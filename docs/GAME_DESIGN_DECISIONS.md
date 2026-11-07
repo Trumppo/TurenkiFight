@@ -70,3 +70,16 @@ Do not bundle all of this into one PR. First define input/state transitions and 
   default.
 - **Audio:** procedural placeholder cues and chiptune only for now; real samples and mixing are deferred by the
   owner.
+
+## Owner direction 2026-11-07: shrinking field belongs to the mode
+
+- The shrinking-field hazard is a **Deathmatch mode rule**, not an arena property. The Deathmatch zone (`zone.ts`, `modes.ts`) stays a mode rule.
+- Arena hazards are fixed, arena-bound data (for example the K-kauppa shelf band, ADR 0006). They do not shrink the playing field.
+- Consequence: a shrinking field in another mode is a mode rule change that needs its own decision; it is not added to arena data.
+- Status: owner-stated direction. Not an implementation claim.
+
+## Owner decision 2026-11-07: retro style default (conditional)
+
+- Owner chose: retro becomes the default visual style **only after** the owner has approved G2 (fighter readability) and G4 (arena depth and contrast) in `docs/GRAPHICS_ROADMAP.md`.
+- Until then: classic is the default, retro stays opt-in.
+- Status: owner decision recorded. The default change itself is not implemented and needs its own PR after the two approvals.
