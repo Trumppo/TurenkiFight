@@ -175,7 +175,7 @@ Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md).
 - [x] Bottle rendering, held object and throw arc plus cues (PR #164, `5d81fd7`)
 - [x] Bots pick up and throw with cadence bounds (PR #163, `d19d4f2`)
 - [x] Shared train ambience derived from the tick, no damage (PR #173, `fe4fa08`)
-- [ ] Damaging arena hazards: needs an arena-rules ADR; not implemented on purpose
+- [x] Damaging arena hazards: typed arena rules and the K-kauppa shelf (ADR 0006, PR #177, 7f77512); telegraph and scene wiring in PR #180, cab4cf3
 - [ ] Owner playtest: is throwing fun, and is the object rate right?
 
 **Known limits:** four throws per minute in an eight-bot match is modest by design; holding a bottle does not disable punches; no bounce on impact.
@@ -210,11 +210,11 @@ Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md).
 
 - [x] Pad pairing shown per slot, local pause/resume with `P`, four-human coverage (PR #171, `01673ee`)
 - [x] K-kauppa arena in both styles with a telegraph-only shelf event; station and Mesku baselines unchanged (PR #172, `324cc56`)
-- [ ] Per-slot keyboard remapping for layouts 2-4 (not done)
+- [x] Per-slot keyboard remapping for P1-P4 with conflicts, persistence and a live guide (PR #178, 3a530f)
 - [ ] More characters (not needed yet)
 - [ ] **Real audio samples and mixing: owner-blocked.**
 
-**Known limits:** the K-kauppa hazard does no damage yet; pad pairing verified with simulated pads only; physical controllers unverified.
+**Known limits:** only the K-kauppa arena has a damaging hazard so far; pad pairing verified with simulated pads only; physical controllers unverified; eight-human crowd readability still needs a playtest.
 
 ## Long-term phases (designer proposal, 2026-11-06)
 
