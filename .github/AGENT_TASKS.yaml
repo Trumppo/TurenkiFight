@@ -1614,7 +1614,7 @@ tasks:
   - id: M14-SINGLE-MACHINE-8P
     title: Measure eight-player server cost on one machine
     assigned_role: gameplay-session
-    status: ready
+    status: done
     priority: P1
     specification: docs/M14_ONLINE_SECURITY.md
     depends_on: []
@@ -1623,8 +1623,9 @@ tasks:
       - "Eight-player snapshot bytes, encode time, tick duration and RSS measured on one machine with provenance"
       - "Results committed under benchmarks/results/ and clearly labelled single-machine, not network"
       - "No network latency, jitter or loss number is claimed"
-    last_updated: "2026-11-06"
-    notes: "Complements M7-NETWORK-MEASUREMENTS, which needs two machines and is owner-blocked."
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/175
+    last_updated: "2026-11-07"
+    notes: "PR #175 merged as 3c07a63. Eight-player single-machine run: 2552.8/2552.3/2552.1 B canonical snapshots at 10/20/30 Hz, 2.57 % CPU over a 120 s real-time run, peak RSS 119.1 MiB, final state 37312107. Byte counts reproduced exactly on a rerun; network fields remain NOT_MEASURED."
 
   - id: M15-INPUT-COMFORT
     title: Make four-human local play comfortable
