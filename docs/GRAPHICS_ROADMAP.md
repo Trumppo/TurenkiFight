@@ -100,4 +100,6 @@ Each phase is one independently reviewable PR where possible.
 1. Is phone **viewing** enough for review, or is a phone **play** target wanted later? (Affects G5 scope and whether
    touch input is planned.)
 2. Should the retro style become the default after G2 and G4, or stay opt-in?
+   **Owner answer 2026-11-07: B.** Retro becomes the default only after the owner has approved G2 and G4.
+   Until then classic stays the default and retro stays opt-in (`VITE_VISUAL_STYLE=retro`). No default change is implemented.
 3. Is the K-kauppa band visual acceptable before the owner playtest, or should G6 wait?
