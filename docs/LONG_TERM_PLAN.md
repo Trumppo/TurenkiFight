@@ -28,14 +28,14 @@ placeholder audio, movement that the owner considers too slow.
 
 ## 3. Phase plan
 
-| Phase | Theme | Why it comes here | Owner gate |
+| Phase | Theme | Status (2026-11-07) | Owner gate |
 | --- | --- | --- | --- |
-| **M10** | Deathmatch identity: shrinking platform | Fixes the "Deathmatch is Score Brawl" finding first, because it changes mode rules | direction approved |
-| **M11** | Arcade feel: +20 % movement and impact | Cheapest change with the largest perceived effect; owner asked for it explicitly | speed approved; the rest proposed |
-| **M12** | Chaos layer: throwable objects and station events | The object system is already specified in `GAME_DESIGN.md` for all modes; it is what makes the game feel like a brawl | proposal |
-| **M13** | Co-op wave mode ("Asemahalli") | The Target Renegade / Streets of Rage heritage needs a mode where the point is surviving a crowd together | proposal |
-| **M14** | Eight-player online productisation | Measurement first, then security and room flow; relies on M11-M13 being stable | proposal |
-| **M15** | Content and local comfort | More arenas and characters once the systems are fun | proposal |
+| **M10** | Deathmatch identity: shrinking platform | ✅ implemented (#156) | awaiting playtest |
+| **M11** | Arcade feel: +20 % movement, hit stop, knockback, camera/audio punch | ✅ implemented (#157, #160, #161) | awaiting playtest |
+| **M12** | Chaos layer: throwable bottles, station ambience | ✅ implemented (#162-#165, #173); damaging arena hazards still need a rules ADR | part implemented |
+| **M13** | Co-op wave mode "Asemahalli" | ✅ implemented (#166, #169) | awaiting playtest |
+| **M14** | Eight-player online productisation | ✅ TLS, room codes, rate limits, rejoin (#167, #168, #170); ⏳ single-machine eight-player numbers in progress; ❌ two-machine measurement owner-blocked | part implemented |
+| **M15** | Content and local comfort | ✅ pad pairing, pause, K-kauppa (#171, #172); ❌ characters not needed; ❌ real audio samples owner-blocked | part implemented |
 
 Each phase ends with an owner playtest. A phase is not accepted because it merged; it is accepted because the owner
 played it and said so.

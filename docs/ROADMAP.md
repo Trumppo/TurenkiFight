@@ -157,13 +157,63 @@
 
 Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md).
 
-## Milestone 11 - Arcade feel (in progress)
+## Milestone 11 - Arcade feel (implemented)
 
-**Status: SPEED IMPLEMENTED (2026-11-06), the rest is a proposal.** Owner-approved part: movement **+20 %**, from 1.3 to **1.56 px/tick (93.6 px/s)**, diagonal normalisation kept (PR #157, `a1fcf0f`). Every pinned simulation fingerprint moved and was updated deliberately.
+**Status: IMPLEMENTED (2026-11-07), awaiting playtest.** Movement **+20 %**, from 1.3 to **1.56 px/tick (93.6 px/s)** with diagonal normalisation (PR #157, `a1fcf0f`); deterministic **hit stop** of 3 ticks (5 on KO) and **knockback** of 2/4/6 px clamped to the arena, with the new state fields optional and canonically omitted (PR #161, `ac81bb5`); KO **camera shake** with reduced-motion suppression and sharper procedural cues (same PR); bots jump, jump-in and occasionally evade (PR #160, `2a902eb`).
 
-- [x] Movement speed +20 % (PR #157)
-- [ ] Owner playtest: does it feel 20 % faster?
-- [ ] Proposed, not approved: hit stop on clean hits, knockback/hitstun tuning, camera punch, round pacing re-tune
+- [x] Movement speed +20 %
+- [x] Hit stop, knockback and camera/audio punch
+- [x] Bot mobility so the new speed does not look static
+- [ ] Owner playtest: does it feel right?
+
+## Milestone 12 - Chaos layer (implemented)
+
+**Status: IMPLEMENTED (2026-11-07), awaiting playtest.** One throwable object type and shared station ambience, all deterministic and independent of wall time.
+
+- [x] Bottle object: deterministic spawn, pickup/hold/throw/impact/break, strict optional snapshot fields, `grab` input bit (PR #162, `444a4eb`)
+- [x] Grab bound to `T`/`I`/gamepad LB; fixed the input buffer that had rejected the new field and broken online input (PR #165, `f346307`)
+- [x] Bottle rendering, held object and throw arc plus cues (PR #164, `5d81fd7`)
+- [x] Bots pick up and throw with cadence bounds (PR #163, `d19d4f2`)
+- [x] Shared train ambience derived from the tick, no damage (PR #173, `fe4fa08`)
+- [ ] Damaging arena hazards: needs an arena-rules ADR; not implemented on purpose
+- [ ] Owner playtest: is throwing fun, and is the object rate right?
+
+**Known limits:** four throws per minute in an eight-bot match is modest by design; holding a bottle does not disable punches; no bounce on impact.
+
+## Milestone 13 - Co-op wave mode (implemented)
+
+**Status: IMPLEMENTED (2026-11-07), awaiting playtest.** `ModeId wave` with teams, wave state and `waves-cleared` (ADR 0005, PR #166, `f10d471`), plus selector, lobby team rule and HUD (PR #169, `de7acc4`).
+
+- [x] Teams, no friendly fire, no teammate targeting
+- [x] Three waves, countdown, enemy revival at spawn, players never eliminated
+- [x] Wave HUD and results
+- [ ] Owner playtest: is the wave mode fun, and is three waves the right length?
+
+**Known limits:** enemies use the same roster slots with identical stats; no enemy types or bosses; online wave play is not enabled because the server's accepted mode list is unchanged.
+
+## Milestone 14 - Eight-player online productisation (part implemented)
+
+**Status: PART IMPLEMENTED (2026-11-07).** Hardening is in; measurement is not.
+
+- [x] Optional `wss` certificates, enforced room codes before slot allocation, connection cap (PR #167, `6684cf3`)
+- [x] Message size, rate and failure-budget limits with typed close codes; rejected peers are closed and slots freed (PR #168, `3547b9c`)
+- [x] Rejoin window: a dropped player keeps the slot for 30 s and can resume (PR #170, `203cf23`)
+- [ ] Single-machine eight-player cost measurement (in progress)
+- [ ] **Two-machine network measurement: owner-blocked.** Bandwidth, RTT, jitter, loss and real load stay `NOT_MEASURED` until the owner runs it.
+
+**Known limits:** room code plus player id is the whole rejoin identity, not authentication; no accounts, matchmaking, multi-room hosting or TURN; bots speak plain `ws://` only.
+
+## Milestone 15 - Content and local comfort (part implemented)
+
+**Status: PART IMPLEMENTED (2026-11-07).**
+
+- [x] Pad pairing shown per slot, local pause/resume with `P`, four-human coverage (PR #171, `01673ee`)
+- [x] K-kauppa arena in both styles with a telegraph-only shelf event; station and Mesku baselines unchanged (PR #172, `324cc56`)
+- [ ] Per-slot keyboard remapping for layouts 2-4 (not done)
+- [ ] More characters (not needed yet)
+- [ ] **Real audio samples and mixing: owner-blocked.**
+
+**Known limits:** the K-kauppa hazard does no damage yet; pad pairing verified with simulated pads only; physical controllers unverified.
 
 ## Long-term phases (designer proposal, 2026-11-06)
 
