@@ -61,6 +61,22 @@
             <div class="hud-player" data-player="P8"><strong class="hud-name">P8</strong><span class="hud-score" aria-label="Score">—</span><span class="hud-health">HP —</span><button class="hud-slot-action" type="button"></button></div>
           </div>
         </section>
+        <details id="keyboard-editor" class="keyboard-editor" aria-label="Local keyboard bindings">
+          <summary>KEYS</summary>
+          <div class="keyboard-editor-panel">
+            <label for="keyboard-slot">SLOT</label>
+            <select id="keyboard-slot" aria-label="Keyboard slot">
+              <option value="P1">P1</option><option value="P2">P2</option>
+              <option value="P3">P3</option><option value="P4">P4</option>
+            </select>
+            <div id="keyboard-actions" class="keyboard-actions" aria-label="Actions to remap"></div>
+            <p id="keyboard-message" class="keyboard-message" aria-live="polite">Select an action, press a key; Escape cancels.</p>
+            <div class="keyboard-editor-buttons">
+              <button id="keyboard-reset-slot" type="button">RESET SLOT</button>
+              <button id="keyboard-reset-all" type="button">RESET ALL</button>
+            </div>
+          </div>
+        </details>
         <section id="victory-reveal" class="victory-reveal" aria-label="Match podium" aria-live="polite" aria-atomic="true" hidden>
           <div class="victory-burst" aria-hidden="true"></div>
           <p class="victory-kicker">FINAL PLACES</p>
