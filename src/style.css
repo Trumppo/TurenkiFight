@@ -30,6 +30,8 @@ p { color: #c2cbd2; }
 .zone-status.is-warning .zone-summary { color: #ffcf86; }
 .zone-status.is-warning.is-warning-flash .zone-summary { color: #ff765b; text-shadow: 0 0 4px rgba(255, 118, 91, .65); }
 .zone-danger { color: #ff9f90; font-size: 14px; font-weight: 900; }
+.station-event-status { min-width: 0; padding: 1px 2px; overflow: hidden; color: #c8eee1; font-size: 14px; font-weight: 800; line-height: 1.2; letter-spacing: .025em; white-space: nowrap; text-overflow: ellipsis; }
+.station-event-status[hidden] { display: none; }
 .wave-status {
   display: flex;
   flex-wrap: wrap;

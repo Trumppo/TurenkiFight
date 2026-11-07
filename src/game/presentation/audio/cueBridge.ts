@@ -2,7 +2,7 @@ import type { GameEvent, GameState } from '../../simulation/types';
 
 export type AudioCue = 'hit' | 'kick' | 'jump' | 'land' | 'ko' | 'respawn' | 'join' |
   'match-start' | 'time-warning' | 'match-end' | 'victory' | 'confirm' |
-  'item-pickup' | 'item-throw' | 'item-break' | 'shop-bell';
+  'item-pickup' | 'item-throw' | 'item-break' | 'shop-bell' | 'station-train';
 
 export function cueForGameEvent(event: GameEvent): AudioCue | null {
   switch (event.type) {
