@@ -35,6 +35,12 @@ export type Phase = 'lobby' | 'countdown' | 'fighting' | 'results';
 export type Team = 'players' | 'enemies';
 /** Match rules are selected once at match creation, never per input frame. */
 export type ModeId = 'score-brawl' | 'last-man-standing' | 'deathmatch' | 'wave';
+/**
+ * Optional arena gameplay id (ADR 0006). Absent means the Turenki station, so
+ * historical states keep their exact canonical shape. `mesku` is part of the
+ * closed union even though its arena rules are still hazard-free.
+ */
+export type ArenaId = 'mesku' | 'kkauppa';
 export type EndReason = 'elimination' | 'frag-limit' | 'time' | 'waves-cleared';
 /**
  * Co-op wave progress (ADR 0005). `index` counts cleared waves, so the wave
@@ -102,5 +108,7 @@ export type GameEvent = { tick: number; type: 'HitLanded' | 'Knockout' | 'Respaw
  * It is optional: absent means 0 and it is omitted from the wire when idle.
  * `mode` is absent for Score Brawl; it is present only for the newer
  * rules-driven modes.
+ * `arena` is absent for the station and present only for arenas with their own
+ * gameplay data, so station snapshots keep their historical bytes.
  */
-export type GameState = { tick: number; fighters: Fighter[]; /** Present only while at least one object exists; canonically omitted when empty. */ objects?: SimObject[]; phase: Phase; countdownTicks: number; remainingTicks: number; hitStopTicks?: number; events: GameEvent[]; mode?: ModeId; /** Present only in wave mode; canonically omitted everywhere else. */ wave?: WaveState };
+export type GameState = { tick: number; fighters: Fighter[]; /** Present only while at least one object exists; canonically omitted when empty. */ objects?: SimObject[]; phase: Phase; countdownTicks: number; remainingTicks: number; hitStopTicks?: number; events: GameEvent[]; mode?: ModeId; /** Present only in wave mode; canonically omitted everywhere else. */ wave?: WaveState; /** Present only outside the station; canonically omitted for the default arena. */ arena?: ArenaId };

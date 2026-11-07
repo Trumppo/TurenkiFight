@@ -28,6 +28,12 @@ This slice therefore delivers:
 
 Saying "the hazard exists" while it does no damage would be dishonest; the spec and the PR say telegraph only.
 
+**Update 2026-11-07:** the damaging hazard is now implemented under [ADR 0006](adr/0006-arena-hazards.md) as
+declarative arena rules: a 2700-tick cycle (45 s) with a 180-tick warning (3 s) and a 120-tick active band (2 s),
+1 damage per 6 ticks (20 HP over a full window) in the back-wall shelf strip `y 124-156`, only while `fighting`.
+This supersedes the earlier "15 damage" sketch in this document. The presentation slice must show the band and the
+warning before the hazard is playable; until scene wiring lands, `?arena=kkauppa` still only selects art.
+
 ## 3. Accept criteria
 
 1. `?arena=kkauppa` renders the new interior in classic and retro at 640x360 and 1280x720; fighters stay visible and

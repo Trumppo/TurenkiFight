@@ -1725,6 +1725,42 @@ tasks:
     last_updated: "2026-11-06"
     notes: "PR #169 merged as de7acc4. Wave selector, lobby team rule (humans players, bots enemies), wave/countdown HUD and results."
 
+  - id: M15-ARENA-HAZARD-RULES
+    title: Add declarative arena rules and the K-kauppa shelf hazard
+    assigned_role: gameplay-session
+    session_id: gameplay-session-20261107-hazard
+    status: in_progress
+    priority: P1
+    specification: docs/adr/0006-arena-hazards.md
+    depends_on: [M15-ARENA-2]
+    scope: [src/game/simulation/, src/game/protocol/, tests/]
+    acceptance:
+      - "GameState carries an optional arena id, canonically omitted for the station, accepted strictly by the snapshot codec"
+      - "A typed arena rules table drives the hazard; the tick loop contains no arena-specific branches"
+      - "K-kauppa shelf: 45 s cycle, 3 s warning, 2 s active band, 1 damage per 6 ticks, only while fighting"
+      - "Hazard knockouts credit no attacker and count as deaths, matching the zone rule"
+      - "Station and Mesku fixtures stay byte-identical; the K-kauppa pin changes and is reported"
+      - "Determinism: same inputs and arena produce the same outcome; snapshot round-trip with the arena field"
+      - npm test, npm run build and git diff --check pass
+    last_updated: "2026-11-07"
+    notes: "ADR 0006. First damaging arena hazard; the presentation slice must show the band and warning before this is playable."
+
+  - id: M15-ARENA-HAZARD-UI
+    title: Show the K-kauppa shelf danger band and warning
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/adr/0006-arena-hazards.md
+    depends_on: [M15-ARENA-HAZARD-RULES]
+    scope: [src/game/presentation/, src/style.css, tests/browser/]
+    acceptance:
+      - "The danger band and a 3 s warning are visible before the shelf collapses"
+      - "Damage and knockouts produce readable feedback and a cue"
+      - "The telegraph works in classic and retro at 640x360 and 1280x720"
+      - "No simulation or protocol change; screenshots inspected"
+    last_updated: "2026-11-07"
+    notes: "The hazard must not ship without this; an untelegraphed damage band is unfair."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
