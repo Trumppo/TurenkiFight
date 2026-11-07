@@ -1748,7 +1748,8 @@ tasks:
   - id: M15-ARENA-HAZARD-UI
     title: Show the K-kauppa shelf danger band and warning
     assigned_role: graphics-session
-    status: blocked
+    session_id: graphics-session-20261107-hazardui
+    status: in_progress
     priority: P1
     specification: docs/adr/0006-arena-hazards.md
     depends_on: [M15-ARENA-HAZARD-RULES]
