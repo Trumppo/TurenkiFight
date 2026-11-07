@@ -1800,7 +1800,7 @@ tasks:
     notes: "PR #179 merged as 35b095a. Server accepts wave: humans are players, unclaimed slots are deterministic bot enemies, typed wave-needs-humans/enemies refusals, real two-client match reaches waves-cleared with negative enemy scores, wave HUD online."
 
   - id: GRAPHICS-G1-EVAL-BASELINE
-    title: Produce a repeatable multi-size visual evaluation matrix
+    title: Produce a repeatable desktop visual evaluation matrix
     assigned_role: graphics-session
     session_id: graphics-session-20261107-g1
     status: in_progress
@@ -1809,12 +1809,12 @@ tasks:
     depends_on: []
     scope: [tests/browser/, scripts/, docs/visual/]
     acceptance:
-      - "One command writes classic and retro captures at 640x360, 1280x720, 390x844 and 844x390 for station, K-kauppa and Mesku with four fighters"
+      - "One command writes classic and retro captures at 640x360 and 1280x720 for station, K-kauppa and Mesku with four fighters"
       - "Each capture has a manifest entry with size, style, arena and fighter count"
       - "Checks are semantic (canvas size, HUD inside viewport, text at least 14 px) and do not pin PNG bytes"
       - "Existing browser suites stay green in both styles"
     last_updated: "2026-11-07"
-    notes: "Owner asked for graphics that can be evaluated on mobile. No visual change in this slice."
+    notes: "Owner asked for a visual evaluation matrix. Mobile is out of scope (owner decision 2026-11-07). No visual change in this slice."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility

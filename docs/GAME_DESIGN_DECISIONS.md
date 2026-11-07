@@ -83,3 +83,9 @@ Do not bundle all of this into one PR. First define input/state transitions and 
 - Owner chose: retro becomes the default visual style **only after** the owner has approved G2 (fighter readability) and G4 (arena depth and contrast) in `docs/GRAPHICS_ROADMAP.md`.
 - Until then: classic is the default, retro stays opt-in.
 - Status: owner decision recorded. The default change itself is not implemented and needs its own PR after the two approvals.
+
+## Owner decision 2026-11-07: desktop only
+
+- The game is not meant to be played on mobile. Touch controls and mobile browser support are out of scope.
+- Visual review uses desktop sizes (640x360 logical canvas, 1280x720). Phone-sized captures are not required.
+- Status: owner-stated decision.
