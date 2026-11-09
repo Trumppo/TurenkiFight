@@ -27,16 +27,18 @@ export class ArenaTelegraphPresentation {
     // shadows and the mode-zone overlay. Integer drawing keeps it pixel crisp.
     this.band = scene.add.graphics().setDepth(123).setVisible(false);
     this.damageEdge = scene.add.graphics().setScrollFactor(0).setDepth(10_000).setVisible(false);
-    this.label = scene.add.text(388, 136, '', {
+    this.label = scene.add.text(270, 160, '', {
       fontFamily: 'monospace', fontSize: '10px', fontStyle: 'bold',
       color: '#e8c786', backgroundColor: '#172536',
       padding: { x: 4, y: 3 }, stroke: '#101820', strokeThickness: 2,
-    }).setScrollFactor(0).setDepth(10_001).setVisible(false);
+    }).setOrigin(0, 0).setScrollFactor(0).setDepth(10_001).setVisible(false);
   }
 
   /** Global simulation tick; an omitted arena is the station and has no band. */
   update(tick: number, fighting: boolean, arena?: ArenaId): void {
     const hazard = arenaRules(arena).hazard;
+    const reducedMotion = typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.phase = fighting ? hazardPhaseAt(tick, hazard) : 'idle';
     this.bandVisible = fighting && !!hazard;
     this.warningStart = hazard ? hazardWarningStart(hazard) : 0;
@@ -49,10 +51,10 @@ export class ArenaTelegraphPresentation {
 
     if (this.bandVisible && hazard) {
       const phaseTick = tick % hazard.periodTicks;
-      const pulse = Math.floor(phaseTick / 8) % 2 === 0;
+      const pulse = reducedMotion || Math.floor(phaseTick / 8) % 2 === 0;
       const active = this.phase === 'active';
       const warning = this.phase === 'warning';
-      const color = active ? 0xf35445 : warning ? 0xffc04d : 0xd5aa61;
+      const color = active ? 0xf35445 : warning ? 0xffb52e : 0xd5aa61;
       const alpha = active ? (pulse ? 0.34 : 0.22) : warning ? (pulse ? 0.3 : 0.15) : 0.095;
       const band = hazard.band;
       const left = 16;
@@ -72,8 +74,22 @@ export class ArenaTelegraphPresentation {
         this.band.strokePath();
       }
 
+      // A small, static shelf pictogram makes the warning read as an arena
+      // prop/location rather than another moving mode boundary.
+      const iconX = left + 5;
+      const iconY = band.minY + 5;
+      this.band.fillStyle(0x172536, 0.94).fillRect(iconX, iconY, 27, 22);
+      this.band.lineStyle(2, 0xffd887, active ? 1 : 0.95);
+      this.band.lineBetween(iconX + 4, iconY + 5, iconX + 23, iconY + 5);
+      this.band.lineBetween(iconX + 6, iconY + 5, iconX + 6, iconY + 18);
+      this.band.lineBetween(iconX + 21, iconY + 5, iconX + 21, iconY + 18);
+      this.band.lineBetween(iconX + 5, iconY + 11, iconX + 22, iconY + 11);
+      this.band.lineBetween(iconX + 5, iconY + 17, iconX + 22, iconY + 17);
+
       const warningSeconds = Math.ceil((hazard.periodTicks - hazard.activeTicks - phaseTick) / TICK_RATE);
-      this.label.setText(warning ? `SHELF WARNING ${warningSeconds}S` : active ? 'SHELF DROP' : 'SHELF ZONE')
+      this.label.setText(warning
+        ? `ARENA: SHELF ZONE · DROP ${warningSeconds}S`
+        : active ? 'ARENA: SHELF ZONE · ACTIVE' : 'ARENA: SHELF ZONE')
         .setColor(active ? '#ff8974' : warning ? (pulse ? '#ffe08a' : '#ffbd55') : '#ddc18b')
         .setBackgroundColor(active ? '#522c32' : warning ? '#493b24' : '#172536');
 

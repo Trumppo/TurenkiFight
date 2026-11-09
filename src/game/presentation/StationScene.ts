@@ -723,7 +723,7 @@ export class StationScene extends Phaser.Scene {
     const arena = this.state.arena;
     this.arenaTelegraph?.update(this.state.tick, this.state.phase === 'fighting', arena);
     this.stationEvent?.update(this.state.tick, this.state.phase === 'fighting');
-    drawZoneGraphics(this.zoneGraphics!, zonePresentation(this.state), this.state.tick);
+    drawZoneGraphics(this.zoneGraphics!, zonePresentation(this.state, reducedMotion), this.state.tick);
     const liveIds = new Set(this.state.fighters.map(fighter => fighter.id));
     for (const [id, sprite] of this.fighterSprites) {
       if (liveIds.has(id)) continue;
@@ -1046,7 +1046,8 @@ export class StationScene extends Phaser.Scene {
       hud.waveCountdown.textContent = countdownSeconds > 0 ? `NEXT WAVE IN ${countdownSeconds}` : '';
       hud.waveStatus?.setAttribute('aria-label', `Wave ${shownWave} of ${waveCount}, ${wave.remaining} enemies remaining${countdownSeconds > 0 ? `, next wave in ${countdownSeconds} seconds` : ''}`);
     }
-    const zone = zonePresentation(this.state);
+    const reducedMotion = this.reducedMotionQuery?.matches ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const zone = zonePresentation(this.state, reducedMotion);
     if (hud.zoneStatus) {
       hud.zoneStatus.hidden = !zone.active;
       hud.zoneStatus.classList.toggle('is-warning', zone.warning);
