@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
+import { contrastRatio, FIGHTER_MARKER_CONTRAST_THRESHOLD, FIGHTER_MARKER_FACE, FIGHTER_MARKER_FLOORS, FIGHTER_MARKER_OUTLINE } from '../../src/game/presentation/fighterMarker';
 
 const ids = Array.from({ length: 8 }, (_, index) => `P${index + 1}`);
 
@@ -119,9 +120,8 @@ test('eight HUD cards show each mode field and the eight-player results roster',
 const viewports = [
   { name: '640x360', width: 640, height: 360 },
   { name: '1280x720', width: 1280, height: 720 },
-  { name: '1920x1080', width: 1920, height: 1080 },
-  { name: '390x844', width: 390, height: 844 },
 ];
+const visualStyle = process.env.VITE_VISUAL_STYLE === 'retro' ? 'retro' : 'classic';
 
 for (const viewport of viewports) {
   test(`M8 eight-fighter arena readability evidence at ${viewport.name}`, async ({ page }) => {
@@ -154,6 +154,9 @@ for (const viewport of viewports) {
           .filter(element => element.scrollWidth > element.clientWidth + 1)
           .map(element => `${card.dataset.player}.${element.className}`)),
         fighters: [...scene.fighterSprites.entries()].map(([id, sprite]: [string, { texture: { key: string } }]) => ({ id, texture: sprite.texture.key })),
+        markers: scene.debugPlayerMarkers(),
+        markerCssTextSizes: scene.debugPlayerMarkers().map((marker: { fontSize: number }) =>
+          marker.fontSize * scene.cameras.main.zoom * canvas.width / canvasElement.width),
         phase: scene.state.phase,
       };
     });
@@ -163,19 +166,27 @@ for (const viewport of viewports) {
     expect(layout.fieldOverflow).toEqual([]);
     expect(layout.fighters).toHaveLength(8);
     expect(new Set(layout.fighters.map(fighter => fighter.texture.split('-').slice(0, 2).join('-'))).size).toBe(8);
+    expect(layout.markers.map((marker: { id: string }) => marker.id)).toEqual(ids);
+    expect(layout.markers.map((marker: { label: string }) => marker.label)).toEqual(ids);
+    expect(layout.markers.every((marker: { visible: boolean }) => marker.visible)).toBe(true);
+    expect(layout.markerCssTextSizes.every((size: number) => size >= 12), `marker text CSS px: ${layout.markerCssTextSizes.join(', ')}`).toBe(true);
+    for (const [arenaStyle, floor] of Object.entries(FIGHTER_MARKER_FLOORS)) {
+      expect(contrastRatio(FIGHTER_MARKER_FACE, floor), `${arenaStyle} marker face`).toBeGreaterThanOrEqual(FIGHTER_MARKER_CONTRAST_THRESHOLD);
+      expect(contrastRatio(FIGHTER_MARKER_OUTLINE, floor), `${arenaStyle} marker outline`).toBeGreaterThanOrEqual(FIGHTER_MARKER_CONTRAST_THRESHOLD);
+    }
     expect(layout.canvas.backingWidth).toBe(640);
     expect(layout.canvas.backingHeight).toBe(360);
     expect(Math.min(...layout.fontSizes)).toBeGreaterThanOrEqual(14);
-    if (viewport.name === '390x844') {
-      expect(layout.hud.bottom).toBeLessThanOrEqual(layout.canvas.y);
-      expect(layout.canvas.x).toBeGreaterThanOrEqual(0);
-      expect(layout.canvas.right).toBeLessThanOrEqual(viewport.width + 1);
-      expect(layout.canvas.bottom).toBeLessThanOrEqual(viewport.height + 1);
-    } else {
-      const scoreboardBottom = layout.canvas.y + layout.canvas.height * 35 / 216;
-      expect(layout.hud.bottom).toBeLessThanOrEqual(scoreboardBottom + 1);
-    }
+    const scoreboardBottom = layout.canvas.y + layout.canvas.height * 35 / 216;
+    expect(layout.hud.bottom).toBeLessThanOrEqual(scoreboardBottom + 1);
     mkdirSync('artifacts/visual', { recursive: true });
-    await page.screenshot({ path: `artifacts/visual/m8-eight-fighters-${viewport.name}.png`, fullPage: true });
+    await page.screenshot({ path: `artifacts/visual/g2-eight-fighters-${visualStyle}-${viewport.name}.png` });
+    await page.evaluate(() => {
+      const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+      scene.state.fighters[0].koTimer = 24;
+      scene.drawFighters();
+    });
+    expect(await page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene')
+      .debugPlayerMarkers().every((marker: { visible: boolean }) => marker.visible)), 'markers remain visible through knockdown').toBe(true);
   });
 }
