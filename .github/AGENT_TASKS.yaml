@@ -1819,6 +1819,7 @@ tasks:
   - id: GRAPHICS-G2-FIGHTER-READABILITY
     title: Make every fighter slot identifiable in an eight-player crowd
     assigned_role: graphics-session
+    session_id: graphics-session-20261109-g2
     status: in_progress
     priority: P1
     specification: docs/GRAPHICS_ROADMAP.md
