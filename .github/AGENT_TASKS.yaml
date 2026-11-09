@@ -1837,7 +1837,7 @@ tasks:
     title: Add hit and knockout feedback driven by simulation events
     assigned_role: graphics-session
     session_id: graphics-session-20261109-g3
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/GRAPHICS_ROADMAP.md
     depends_on: [GRAPHICS-G2-FIGHTER-READABILITY]
@@ -1847,13 +1847,13 @@ tasks:
       - "Effect counts are capped and reduced motion removes shake"
       - "No simulation, protocol or server change"
     last_updated: "2026-11-09"
-    notes: "Presentation only. Must not obscure fighters in an eight-player crowd."
+    notes: "PR #190 merged as c79a14a. Capped impact sparks (12) and knockout cues (8), reduced motion keeps a static cue, M11 shake unchanged. Presentation only."
 
   - id: GRAPHICS-G4-ARENA-CONTRAST
     title: Improve arena depth and background contrast behind combat
     assigned_role: graphics-session
     session_id: graphics-session-20261109-g4
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/GRAPHICS_ROADMAP.md
     depends_on: [GRAPHICS-G2-FIGHTER-READABILITY]
@@ -1863,13 +1863,13 @@ tasks:
       - "Station and Mesku changes are listed explicitly and approved by the owner"
       - "No simulation, protocol or server change"
     last_updated: "2026-11-09"
-    notes: "Owner approves each changed arena. Existing accepted look is not restyled silently."
+    notes: "PR #189 merged as cfef8ac. K-kauppa background quieted; measured median fighter/background contrast 3.07 -> 3.24 classic and 2.10 -> 2.42 retro. Station and Mesku unchanged."
 
   - id: GRAPHICS-G5-DESKTOP-HUD
     title: Keep the HUD and results readable at desktop sizes
     assigned_role: graphics-session
     session_id: graphics-session-20261109-g5
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/GRAPHICS_ROADMAP.md
     depends_on: [GRAPHICS-G1-EVAL-BASELINE]
@@ -1879,12 +1879,12 @@ tasks:
       - "Minimum HUD text size is 14 px"
       - "The arena is not pushed out of view"
     last_updated: "2026-11-09"
-    notes: "Desktop only; mobile is out of scope by owner decision 2026-11-07."
+    notes: "PR #191 merged as e72529e. HUD text at least 14 px, status wraps instead of ellipsizing, key hint on its own row at small desktop widths. Semantic no-clipping spec added."
 
   - id: GRAPHICS-G6-HAZARD-ZONE-VISUALS
     title: Keep the arena hazard and the mode zone visually distinct
     assigned_role: graphics-session
-    status: blocked
+    status: done
     priority: P1
     specification: docs/GRAPHICS_ROADMAP.md
     depends_on: [GRAPHICS-G4-ARENA-CONTRAST]
@@ -1894,7 +1894,7 @@ tasks:
       - "Both warnings are visible before they hurt, in classic and retro"
       - "No damage or rule change"
     last_updated: "2026-11-09"
-    notes: "Visual only. The zone stays a mode rule and the shelf band stays arena data."
+    notes: "PR #192 merged as 92025a2. Amber arena shelf band with icon and ARENA label vs cyan contracting MODE zone; in-page exact-size captures removed a CI dimension flake."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility

@@ -1,7 +1,8 @@
 # Graphics roadmap (designer proposal, 2026-11-07)
 
-**Status:** Proposal. Nothing here is owner-approved for implementation beyond the first slice the owner asked for
-("graphics improvement, evaluable on mobile"). Each phase ends with an owner visual review. Merging is not acceptance.
+**Status:** Implemented 2026-11-09 (G1-G6 merged). Owner approved the track and asked for it to be executed; each
+phase still needs an owner visual review in the game. Merging is not acceptance. The game is desktop only: touch
+controls and mobile browsers are out of scope (owner decision 2026-11-07).
 
 **Related:** [ROADMAP.md](ROADMAP.md), [M1_5_VISUAL_UPGRADE.md](M1_5_VISUAL_UPGRADE.md), [ARCHITECTURE_PRINCIPLES.md](ARCHITECTURE_PRINCIPLES.md),
 [ADR 0006](adr/0006-arena-hazards.md).
@@ -33,7 +34,7 @@
 
 Each phase is one independently reviewable PR where possible.
 
-### G1 - Mobile and multi-size evaluation baseline (first slice, no visual change)
+### G1 - Desktop evaluation baseline (implemented, PR #183 and #188)
 
 - **Goal:** make visual review repeatable. A committed matrix of screenshots and a short review note, produced by one
   command, covering classic and retro at 640x360 and 1280x720.
@@ -45,7 +46,7 @@ Each phase is one independently reviewable PR where possible.
   4. Existing browser suites stay green in both styles.
 - **Owner gate:** the owner opens the matrix on a phone and says which sizes are unreadable.
 
-### G2 - Fighter readability for eight players
+### G2 - Fighter readability for eight players (implemented, PR #186)
 
 - **Goal:** each fighter has a clear silhouette and a player marker (ring or nameplate colour) that survives crowding.
 - **Scope:** `src/game/presentation/` only.
@@ -53,7 +54,7 @@ Each phase is one independently reviewable PR where possible.
   (number or shape); contrast of the marker against the floor meets a stated threshold; retro keeps its palette.
 - **Owner gate:** playtest or phone review of an eight-fighter capture.
 
-### G3 - Hit and knockout feedback
+### G3 - Hit and knockout feedback (implemented, PR #190)
 
 - **Goal:** hits read at a glance without slowing the fight. Uses the existing `HitLanded` and `Knockout` events.
 - **Scope:** presentation effects (spark on hit, KO flash, short tint on the victim).
@@ -61,7 +62,7 @@ Each phase is one independently reviewable PR where possible.
   no simulation or wire change.
 - **Owner gate:** owner judges whether it adds impact or clutter.
 
-### G4 - Arena depth and background contrast
+### G4 - Arena depth and background contrast (implemented, PR #189)
 
 - **Goal:** the background supports combat rather than competing with it: lower contrast behind the fighting band,
   clear floor edge, layered depth cues.
@@ -71,7 +72,7 @@ Each phase is one independently reviewable PR where possible.
   Mesku changes are listed and approved explicitly.
 - **Owner gate:** owner approves each changed arena.
 
-### G5 - Desktop HUD and results layout
+### G5 - Desktop HUD and results layout (implemented, PR #191)
 
 - **Goal:** the HUD and results stay readable at small desktop windows (for example 640x360 logical canvas scaled to a
   laptop window).
@@ -80,7 +81,7 @@ Each phase is one independently reviewable PR where possible.
   pushed out of view.
 - **Owner gate:** desktop review.
 
-### G6 - Hazard and zone visual pass
+### G6 - Hazard and zone visual pass (implemented, PR #192)
 
 - **Goal:** the K-kauppa shelf band (arena) and the Deathmatch zone (mode) get distinct, readable warnings.
 - **Scope:** presentation only. The zone visual reads mode state; the shelf visual reads arena rules. Neither changes
@@ -96,7 +97,21 @@ Each phase is one independently reviewable PR where possible.
 - Real audio samples (owner-blocked).
 - Pixel-hash baselines as acceptance criteria.
 
-## 5. Open questions for the owner
+## 5. Implemented state (2026-11-09)
+
+| Phase | What shipped | Evidence |
+| --- | --- | --- |
+| G1 | `npm run visual:matrix` writes 12 desktop captures plus a manifest | PR #183, #188 |
+| G2 | Compact P1-P8 numberplates above each fighter, contrast >= 3 measured against five floor colours | PR #186 |
+| G3 | Hit sparks capped at 12, KO ring and flash capped at 8, reduced motion keeps a static cue | PR #190 |
+| G4 | K-kauppa background quieted: muted lower shelf, quieter checkout, softer floor grid, clearer floor edge | PR #189; station and Mesku unchanged |
+| G5 | HUD text >= 14 px, status wraps, key hint on its own row at small desktop widths | PR #191 |
+| G6 | Amber arena band with shelf icon vs cyan contracting mode zone, each with an explicit ARENA/MODE label | PR #192 |
+
+Remaining owner checks: look at the game at 640x360 and 1280x720 in both styles and say whether G2, G3, G4 and
+G6 read as intended in motion. G3's spark is deliberately subtle and is the most likely candidate for tuning.
+
+## 6. Open questions for the owner
 
 1. ~~Phone viewing or phone play~~ **Answered 2026-11-07: neither. The game is desktop only.**
 2. Should the retro style become the default after G2 and G4, or stay opt-in?
