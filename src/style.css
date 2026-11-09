@@ -26,9 +26,9 @@ p { color: #c2cbd2; }
 .hud-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 6px; min-height: 17px; }
 .zone-status { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; min-width: 0; padding: 1px 2px; color: #fff1b7; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
 .zone-status[hidden] { display: none; }
-.zone-summary { color: #f4d38d; font-weight: 800; letter-spacing: .025em; }
-.zone-status.is-warning .zone-summary { color: #ffcf86; }
-.zone-status.is-warning.is-warning-flash .zone-summary { color: #ff765b; text-shadow: 0 0 4px rgba(255, 118, 91, .65); }
+.zone-summary { color: #a9eef3; font-weight: 800; letter-spacing: .025em; }
+.zone-status.is-warning .zone-summary { color: #b8f6fb; }
+.zone-status.is-warning.is-warning-flash .zone-summary { color: #e4fcff; text-shadow: 0 0 4px rgba(102, 216, 230, .55); }
 .zone-danger { color: #ff9f90; font-size: 14px; font-weight: 900; }
 .station-event-status { min-width: 0; padding: 1px 2px; color: #c8eee1; font-size: 14px; font-weight: 800; line-height: 1.2; letter-spacing: .025em; white-space: nowrap; }
 .station-event-status[hidden] { display: none; }
