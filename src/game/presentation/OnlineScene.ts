@@ -300,7 +300,8 @@ export class OnlineScene extends Phaser.Scene {
 
   private drawZone(state: GameState | null): void {
     if (!this.zoneGraphics) return;
-    drawZoneGraphics(this.zoneGraphics, zonePresentation(state), state?.tick ?? 0);
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    drawZoneGraphics(this.zoneGraphics, zonePresentation(state, reducedMotion), state?.tick ?? 0);
   }
 
   private pose(fighter: Fighter, previous?: { x: number; y: number; z: number }, tick = 0): FighterPose {
@@ -354,7 +355,7 @@ export class OnlineScene extends Phaser.Scene {
       : 'ONLINE MODE · SCORE BRAWL (SERVER DEFAULT)';
     if (hud.mode.textContent !== modeText) hud.mode.textContent = modeText;
     hud.playerList.classList.toggle('mode-specific', modeId === 'last-man-standing' || modeId === 'deathmatch');
-    const zone = zonePresentation(modeState);
+    const zone = zonePresentation(modeState, window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     if (hud.zoneStatus) {
       hud.zoneStatus.hidden = !zone.active;
       hud.zoneStatus.classList.toggle('is-warning', zone.warning);

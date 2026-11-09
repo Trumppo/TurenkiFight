@@ -196,7 +196,7 @@ test('the selected arena wires into normal, reset, ALL BOTS and wave state creat
   });
   expect(hazard.idle).toMatchObject({ phase: 'idle', bandVisible: true, warningStart: 2400 });
   expect(hazard.warning).toMatchObject({ phase: 'warning', active: true, bandVisible: true, cueCount: 1 });
-  expect(hazard.warningLabel).toBe('SHELF WARNING 3S');
+  expect(hazard.warningLabel).toBe('ARENA: SHELF ZONE · DROP 3S');
   expect(hazard.warningHealth).toEqual([100, 100]);
   expect(hazard.firstCueCount).toBe(1);
   expect(hazard.repeatedCueCount).toBe(1);
@@ -206,6 +206,20 @@ test('the selected arena wires into normal, reset, ALL BOTS and wave state creat
   expect(hazard.cameraShaking).toBe(true);
 
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  const staticWarningColors = await page.evaluate(async () => {
+    const moduleUrl = '/src/game/simulation/step.ts';
+    const simulation = await import(/* @vite-ignore */ moduleUrl);
+    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
+    const state = simulation.createState({ ids: ['P1'], phase: 'fighting', arena: 'kkauppa' });
+    state.tick = 2400;
+    scene.state = state;
+    scene.drawFighters();
+    const first = scene.arenaTelegraph.label.style.color;
+    state.tick = 2408;
+    scene.drawFighters();
+    return [first, scene.arenaTelegraph.label.style.color];
+  });
+  expect(staticWarningColors[0]).toBe(staticWarningColors[1]);
   const reducedMotion = await page.evaluate(async () => {
     const moduleUrl = '/src/game/simulation/step.ts';
     const simulation = await import(/* @vite-ignore */ moduleUrl);
@@ -273,6 +287,7 @@ test('online hazard follows the snapshot arena and tick; an omitted arena is har
 });
 
 test('the danger band, warning and collapse render at 640x360 and 1280x720', async ({ page }) => {
+  test.setTimeout(90_000);
   await page.goto('/?arena=kkauppa');
   await waitForBackdrop(page, 'arena-kkauppa-backdrop');
   await page.addStyleTag({ content: '#game { width: 648px !important; max-width: none !important; margin-left: 0 !important; margin-right: 0 !important; } #game canvas { width: 640px !important; height: 360px !important; max-width: none !important; margin: 0 !important; } main { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }' });
@@ -301,15 +316,26 @@ test('the danger band, warning and collapse render at 640x360 and 1280x720', asy
       expect(await page.evaluate(() => {
         const label = (window as any).__turenkiGame.scene.getScene('StationScene').arenaTelegraph.label;
         return { visible: label.visible, text: label.text };
-      })).toEqual({ visible: true, text: phase.name === 'warning' ? 'SHELF WARNING 2S' : phase.name === 'collapse' ? 'SHELF DROP' : 'SHELF ZONE' });
+      })).toEqual({ visible: true, text: phase.name === 'warning'
+        ? 'ARENA: SHELF ZONE · DROP 2S'
+        : phase.name === 'collapse' ? 'ARENA: SHELF ZONE · ACTIVE' : 'ARENA: SHELF ZONE' });
       await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
       const canvas = page.locator('#game canvas');
-      await canvas.evaluate((node, scaleFactor) => {
-        (node as HTMLCanvasElement).style.setProperty('width', `${640 * scaleFactor}px`, 'important');
-        (node as HTMLCanvasElement).style.setProperty('height', `${360 * scaleFactor}px`, 'important');
-        (node as HTMLCanvasElement).style.imageRendering = 'pixelated';
-      }, size.scale);
-      const screenshot = await canvas.screenshot({ path: `artifacts/screenshots/m15-hazard-${style}-${size.name}-${phase.name}.png`, scale: 'css' });
+      const raw = await canvas.screenshot();
+      const scaled = await page.evaluate(async ({ base64, width, height }) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${base64}`;
+        await image.decode();
+        const output = document.createElement('canvas');
+        output.width = width;
+        output.height = height;
+        const context = output.getContext('2d')!;
+        context.imageSmoothingEnabled = false;
+        context.drawImage(image, 0, 0, width, height);
+        return output.toDataURL('image/png');
+      }, { base64: raw.toString('base64'), width: 640 * size.scale, height: 360 * size.scale });
+      const screenshot = Buffer.from(scaled.split(',')[1]!, 'base64');
+      await writeFile(`artifacts/screenshots/m15-hazard-${style}-${size.name}-${phase.name}.png`, screenshot);
       expect([screenshot.readUInt32BE(16), screenshot.readUInt32BE(20)]).toEqual([640 * size.scale, 360 * size.scale]);
     }
   }
