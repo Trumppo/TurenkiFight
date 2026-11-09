@@ -224,10 +224,10 @@ The owner asked for a graphics improvement evaluable on mobile. Full plan: [GRAP
 - [ ] G2 Fighter readability for eight players
 - [ ] G3 Hit and knockout feedback
 - [ ] G4 Arena depth and background contrast (owner approves each changed arena)
-- [ ] G5 Mobile-friendly HUD layout
+- [ ] G5 Desktop HUD and results layout
 - [ ] G6 Hazard and zone visual pass (arena band and mode zone kept distinct)
 
-Touch controls are not part of this track.
+Touch controls and mobile browser support are not part of the game (owner decision 2026-11-07).
 
 ## Long-term phases (designer proposal, 2026-11-06)
 

@@ -23,8 +23,8 @@
 1. **Readability before decoration.** Eight fighters on a 640x360 canvas must be distinguishable by silhouette,
    colour and a player marker, in both styles.
 2. **Presentation never decides outcomes.** No graphics slice changes simulation rules, protocol or snapshot fields.
-3. **Mobile is a viewing target.** Every phase has screenshots at a phone portrait size (390x844) and landscape
-   (844x390) plus the desktop sizes 640x360 and 1280x720, so the owner can judge them on a phone.
+3. **Desktop only.** The game is not meant to be played on mobile. Screenshots cover the desktop sizes 640x360 and
+   1280x720. Touch controls and mobile browser support are out of scope (owner decision 2026-11-07).
 4. **Reduced motion is respected** for every new effect (shake, flash, particles).
 5. **Mode and arena visuals are separated.** A Deathmatch zone is a mode visual; a shelf band is an arena visual.
    Both read simulation state; neither invents damage.
@@ -36,10 +36,10 @@ Each phase is one independently reviewable PR where possible.
 ### G1 - Mobile and multi-size evaluation baseline (first slice, no visual change)
 
 - **Goal:** make visual review repeatable. A committed matrix of screenshots and a short review note, produced by one
-  command, covering classic and retro at 640x360, 1280x720, 390x844 portrait and 844x390 landscape.
+  command, covering classic and retro at 640x360 and 1280x720.
 - **Scope:** a test/harness script and `docs/visual/` evidence. No change to rendering.
 - **Acceptance:**
-  1. One command writes the matrix for the station, K-kauppa and Mesku arenas with four fighters.
+  1. One command writes the matrix for the station, K-kauppa and Mesku arenas with four fighters at the two desktop sizes.
   2. Each capture records its size, style, arena and fighter count in a manifest.
   3. The checks are semantic (canvas size, HUD inside viewport, minimum text size 14 px) and do not pin PNG bytes.
   4. Existing browser suites stay green in both styles.
@@ -49,7 +49,7 @@ Each phase is one independently reviewable PR where possible.
 
 - **Goal:** each fighter has a clear silhouette and a player marker (ring or nameplate colour) that survives crowding.
 - **Scope:** `src/game/presentation/` only.
-- **Acceptance:** at 640x360 with eight fighters, each slot has a distinct marker colour with a non-colour cue
+- **Acceptance:** at 640x360 (and 1280x720) with eight fighters, each slot has a distinct marker colour with a non-colour cue
   (number or shape); contrast of the marker against the floor meets a stated threshold; retro keeps its palette.
 - **Owner gate:** playtest or phone review of an eight-fighter capture.
 
@@ -71,13 +71,14 @@ Each phase is one independently reviewable PR where possible.
   Mesku changes are listed and approved explicitly.
 - **Owner gate:** owner approves each changed arena.
 
-### G5 - Mobile-friendly HUD layout
+### G5 - Desktop HUD and results layout
 
-- **Goal:** the HUD and results remain readable in portrait and landscape phone sizes.
+- **Goal:** the HUD and results stay readable at small desktop windows (for example 640x360 logical canvas scaled to a
+  laptop window).
 - **Scope:** `src/style.css`, HUD layout in presentation.
-- **Acceptance:** at 390x844 and 844x390 no HUD text is clipped, minimum text size is 14 px, and the arena is not
+- **Acceptance:** at 640x360 and 1280x720 no HUD text is clipped, minimum text size is 14 px, and the arena is not
   pushed out of view.
-- **Owner gate:** phone review.
+- **Owner gate:** desktop review.
 
 ### G6 - Hazard and zone visual pass
 
@@ -90,16 +91,15 @@ Each phase is one independently reviewable PR where possible.
 
 ## 4. What this roadmap does not include
 
-- Touch controls or any mobile play mode (needs its own owner decision).
+- Touch controls, mobile play and mobile browser support. **Owner decision 2026-11-07: not part of the game.**
 - New characters (M15-CHARACTERS remains blocked until a concrete need).
 - Real audio samples (owner-blocked).
 - Pixel-hash baselines as acceptance criteria.
 
 ## 5. Open questions for the owner
 
-1. Is phone **viewing** enough for review, or is a phone **play** target wanted later? (Affects G5 scope and whether
-   touch input is planned.)
+1. ~~Phone viewing or phone play~~ **Answered 2026-11-07: neither. The game is desktop only.**
 2. Should the retro style become the default after G2 and G4, or stay opt-in?
    **Owner answer 2026-11-07: B.** Retro becomes the default only after the owner has approved G2 and G4.
    Until then classic stays the default and retro stays opt-in (`VITE_VISUAL_STYLE=retro`). No default change is implemented.
-3. Is the K-kauppa band visual acceptable before the owner playtest, or should G6 wait?
+2. Is the K-kauppa band visual acceptable before the owner playtest, or should G6 wait?
