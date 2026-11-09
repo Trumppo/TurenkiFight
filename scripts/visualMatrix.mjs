@@ -11,8 +11,6 @@ const arenas = ['station', 'kkauppa', 'mesku'];
 const viewports = [
   { name: '640x360', width: 640, height: 360 },
   { name: '1280x720', width: 1280, height: 720 },
-  { name: '390x844', width: 390, height: 844 },
-  { name: '844x390', width: 844, height: 390 },
 ];
 const styles = ['classic', 'retro'];
 const fighterIds = ['P1', 'P2', 'P3', 'P4'];
