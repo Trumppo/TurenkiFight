@@ -16,6 +16,7 @@ import { ObjectPresentation } from './objectPresentation';
 import { ArenaTelegraphPresentation, hazardDamagePreemptedByKnockout, observedHazardDamage } from './arenaTelegraph';
 import { StationEventPresentation } from './stationEvent';
 import { createFighterMarker, fighterMarkerDiagnostics, fighterMarkerOffset, type FighterMarker } from './fighterMarker';
+import { CombatFeedbackState } from './combatFeedback';
 
 const MODE_NAMES: Record<ModeId, string> = {
   'score-brawl': 'Score Brawl',
@@ -50,6 +51,8 @@ export class OnlineScene extends Phaser.Scene {
   private lastPresentedTick = -1;
   private lastHazardFeedbackTick = -1;
   private hitUntil = new Map<string, number>();
+  private readonly combatFeedback = new CombatFeedbackState();
+  private combatFeedbackGraphics?: Phaser.GameObjects.Graphics;
   private domHud?: {
     timer: HTMLElement;
     status: HTMLElement;
@@ -114,6 +117,7 @@ export class OnlineScene extends Phaser.Scene {
       }).setDepth(1000);
     }
     this.zoneGraphics = this.add.graphics().setDepth(122).setVisible(false);
+    this.combatFeedbackGraphics = this.add.graphics().setDepth(500_000);
     this.itemPresentation = new ObjectPresentation(this, RETRO_PREVIEW);
     this.initDomHud();
     this.audio = createAudioPresentation(audioControlsHost());
@@ -126,6 +130,9 @@ export class OnlineScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.audioBridge?.reset();
       this.audio?.dispose();
+      this.combatFeedbackGraphics?.destroy();
+      this.combatFeedbackGraphics = undefined;
+      this.combatFeedback.reset();
       this.itemPresentation?.destroy();
       this.itemPresentation = undefined;
       this.arenaTelegraph?.destroy();
@@ -138,7 +145,7 @@ export class OnlineScene extends Phaser.Scene {
     this.renderHud(null);
   }
 
-  update(_time: number, _delta: number): void {
+  update(_time: number, delta: number): void {
     const now = this.controller.now();
     const state = this.controller.renderState(now);
     this.arenaTelegraph?.update(state?.tick ?? 0, state?.phase === 'fighting', state?.arena);
@@ -147,6 +154,7 @@ export class OnlineScene extends Phaser.Scene {
       this.audioBridge?.observe(state);
       this.audio?.director.setMusicDucked(state.phase === 'results');
     }
+    this.combatFeedback.advance(delta);
     this.drawFighters(state, now);
     const connectionState = this.controller.connectionState;
     const modeState = connectionState === 'closed' || connectionState === 'error' ? null : state;
@@ -178,6 +186,11 @@ export class OnlineScene extends Phaser.Scene {
   /** Read-only player marker diagnostics for semantic visual QA. */
   debugPlayerMarkers(): ReturnType<typeof fighterMarkerDiagnostics> {
     return fighterMarkerDiagnostics(this.fighterMarkers);
+  }
+
+  /** Read-only impact-effect counters used by semantic browser checks. */
+  combatFeedbackDiagnostics(): ReturnType<CombatFeedbackState['diagnostics']> {
+    return this.combatFeedback.diagnostics();
   }
 
   /** Read-only dev diagnostic used by the browser zone parity test. */
@@ -214,6 +227,8 @@ export class OnlineScene extends Phaser.Scene {
   }
 
   private drawFighters(state: GameState | null, _now: number): void {
+    if (state) this.combatFeedback.observe(state);
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const ids = new Set<string>();
     if (state) {
       for (const fighter of state.fighters) {
@@ -230,6 +245,9 @@ export class OnlineScene extends Phaser.Scene {
         // itself is always the snapshot's value.
         if (lastHealth !== undefined && fighter.health < lastHealth) {
           this.hitUntil.set(fighter.id, state.tick + 12);
+          if (!state.events.some(event => event.type === 'HitLanded' && event.target === fighter.id)) {
+            this.combatFeedback.observeHealthDrop(fighter);
+          }
           const previousPosition = this.previous.get(fighter.id);
           if (this.lastHazardFeedbackTick !== state.tick && previousPosition && !hazardDamagePreemptedByKnockout(state, fighter) && observedHazardDamage(
             this.lastPresentedTick, state.tick, state.arena, state.phase === 'fighting',
@@ -264,7 +282,7 @@ export class OnlineScene extends Phaser.Scene {
         marker.label.setPosition(markerX, markerY);
         if (fighter.eliminated) {
           sprite.setTintFill(0x4a5561).setAlpha(0.72);
-        } else if (RETRO_PREVIEW && (this.hitUntil.get(fighter.id) ?? 0) > state.tick && state.tick % 6 < 3) {
+        } else if (!reducedMotion && RETRO_PREVIEW && (this.hitUntil.get(fighter.id) ?? 0) > state.tick && state.tick % 6 < 3) {
           sprite.setTintFill(0xffe3a0);
           sprite.setAlpha(1);
         } else {
@@ -278,6 +296,7 @@ export class OnlineScene extends Phaser.Scene {
       this.lastPresentedTick = state.tick;
       this.arenaTelegraph?.update(state.tick, state.phase === 'fighting', state.arena);
     }
+    this.combatFeedback.draw(this.combatFeedbackGraphics!, reducedMotion);
     // The server roster is fixed for a match; this only removes stale sprites if
     // a new match with a smaller roster ever reuses the scene.
     for (const [id, sprite] of this.fighterSprites) {

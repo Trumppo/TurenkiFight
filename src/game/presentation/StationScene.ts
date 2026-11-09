@@ -26,6 +26,7 @@ import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePrese
 import { ObjectPresentation } from './objectPresentation';
 import { ArenaTelegraphPresentation, hazardDamagePreemptedByKnockout, observedHazardDamage } from './arenaTelegraph';
 import { StationEventPresentation } from './stationEvent';
+import { CombatFeedbackState } from './combatFeedback';
 
 const PLAYER_IDS = Array.from({ length: MAX_PLAYERS }, (_, index) => `P${index + 1}`);
 
@@ -144,6 +145,8 @@ export class StationScene extends Phaser.Scene {
   private lastCameraShake?: { reason: 'hit' | 'knockout'; duration: number; intensity: number };
   private lastDrawTick?: number;
   private lastHazardFeedbackTick = -1;
+  private readonly combatFeedback = new CombatFeedbackState();
+  private combatFeedbackGraphics?: Phaser.GameObjects.Graphics;
 
   constructor(arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic'), mode: ModeId = 'score-brawl') {
     super('StationScene');
@@ -192,6 +195,7 @@ export class StationScene extends Phaser.Scene {
       }).setDepth(1000);
     }
     this.zoneGraphics = this.add.graphics().setDepth(122).setVisible(false);
+    this.combatFeedbackGraphics = this.add.graphics().setDepth(500_000);
     this.itemPresentation = new ObjectPresentation(this, RETRO_PREVIEW);
     let storage: Storage | undefined;
     try { storage = window.localStorage; } catch { /* Private browsing may disable storage. */ }
@@ -232,6 +236,9 @@ export class StationScene extends Phaser.Scene {
       this.reducedMotionListener = undefined;
       this.audioBridge?.reset();
       this.audio?.dispose();
+      this.combatFeedbackGraphics?.destroy();
+      this.combatFeedbackGraphics = undefined;
+      this.combatFeedback.reset();
       this.itemPresentation?.destroy();
       this.itemPresentation = undefined;
       this.arenaTelegraph?.destroy();
@@ -303,6 +310,7 @@ export class StationScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    this.combatFeedback.advance(delta);
     const pads = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter((p): p is Gamepad => p !== null) : [];
     this.connectedGamepadIndices = pads.map(pad => pad.index).sort((a, b) => a - b);
     // Release missing gamepads and their button-edge state. The roster remains
@@ -405,6 +413,7 @@ export class StationScene extends Phaser.Scene {
       while (this.elapsedMs >= interval) {
         const previousPhase = this.state.phase;
         this.state = step(this.state, this.readInputs(pads));
+        this.combatFeedback.observe(this.state);
         this.observeCameraPunch(this.state);
         if (previousPhase === 'fighting' || this.state.phase === 'fighting' || this.state.phase === 'results') {
           this.matchEvents.push(...this.state.events);
@@ -481,6 +490,7 @@ export class StationScene extends Phaser.Scene {
     this.elapsedMs = 0;
     this.previous.clear();
     this.hitFlash.clear();
+    this.combatFeedback.reset();
     this.lastDrawTick = undefined;
     this.lastHazardFeedbackTick = -1;
     // Clear the cue bridge's seen events and previous frame: the results cue
@@ -518,6 +528,7 @@ export class StationScene extends Phaser.Scene {
     this.audioBridge?.reset();
     this.previous.clear();
     this.hitFlash.clear();
+    this.combatFeedback.reset();
     this.lastDrawTick = undefined;
     this.lastHazardFeedbackTick = -1;
   }
@@ -623,6 +634,11 @@ export class StationScene extends Phaser.Scene {
     };
   }
 
+  /** Read-only impact-effect counters used by semantic browser checks. */
+  combatFeedbackDiagnostics(): ReturnType<CombatFeedbackState['diagnostics']> {
+    return this.combatFeedback.diagnostics();
+  }
+
   private observeCameraPunch(state: GameState): void {
     if (this.reducedMotionQuery?.matches ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const knockout = state.events.some(event => event.type === 'Knockout');
@@ -702,6 +718,8 @@ export class StationScene extends Phaser.Scene {
   }
 
   private drawFighters(): void {
+    this.combatFeedback.observe(this.state);
+    const reducedMotion = this.reducedMotionQuery?.matches ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const arena = this.state.arena;
     this.arenaTelegraph?.update(this.state.tick, this.state.phase === 'fighting', arena);
     this.stationEvent?.update(this.state.tick, this.state.phase === 'fighting');
@@ -753,7 +771,7 @@ export class StationScene extends Phaser.Scene {
       if (f.eliminated) {
         // Multiply tint darkens a KO without hiding its outline, gear or uniform.
         sprite.setTint(0x8995a0).setAlpha(0.92);
-      } else if (RETRO_PREVIEW && (this.hitFlash.get(f.id) ?? 0) > this.state.tick) {
+      } else if (!reducedMotion && RETRO_PREVIEW && (this.hitFlash.get(f.id) ?? 0) > this.state.tick) {
         if (this.state.tick % 6 === 0) sprite.setTintFill(0xffe3a0).setAlpha(1);
         else sprite.setTint(0xffe3a0).setAlpha(1);
       } else {
@@ -783,6 +801,7 @@ export class StationScene extends Phaser.Scene {
     this.lastDrawTick = this.state.tick;
     this.arenaTelegraph?.update(this.state.tick, this.state.phase === 'fighting', arena);
     this.itemPresentation?.draw(this.state);
+    this.combatFeedback.draw(this.combatFeedbackGraphics!, reducedMotion);
     this.renderDomHud();
   }
 

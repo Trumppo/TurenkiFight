@@ -6,10 +6,12 @@ type CameraDiagnostics = {
   isShaking: boolean;
   reducedMotion: boolean;
 };
+type FeedbackDiagnostics = { liveSparks: number; maxLiveSparks: number; knockoutTargets: string[] };
 
 async function landPunch(page: Page, targetHealth: number): Promise<{
   knockoutEvents: number;
   camera: CameraDiagnostics;
+  feedback: FeedbackDiagnostics;
 }> {
   return page.evaluate(async targetHealth => {
     const moduleUrl = '/src/game/simulation/step.ts';
@@ -28,6 +30,7 @@ async function landPunch(page: Page, targetHealth: number): Promise<{
     return {
       knockoutEvents: scene.matchEvents.filter((event: any) => event.type === 'Knockout').length,
       camera: scene.cameraPunchDiagnostics(),
+      feedback: scene.combatFeedbackDiagnostics(),
     };
   }, targetHealth);
 }
@@ -38,8 +41,11 @@ test('a knockout produces a short restrained camera punch, stronger than an ordi
   const ordinaryHit = await landPunch(page, 100);
   expect(ordinaryHit.camera.lastShake).toMatchObject({ reason: 'hit', duration: 32, intensity: 0.0015 });
   expect(ordinaryHit.camera.isShaking).toBe(true);
+  expect(ordinaryHit.feedback.liveSparks).toBeGreaterThan(0);
+  expect(ordinaryHit.feedback.liveSparks).toBeLessThanOrEqual(ordinaryHit.feedback.maxLiveSparks);
   const knockout = await landPunch(page, 10);
   expect(knockout.knockoutEvents).toBeGreaterThan(0);
+  expect(knockout.feedback.knockoutTargets).toEqual(['P2']);
   expect(knockout.camera.lastShake).toMatchObject({ reason: 'knockout', duration: 140, intensity: 0.007 });
   expect(knockout.camera.shakeCount).toBeGreaterThan(ordinaryHit.camera.shakeCount);
   expect(knockout.camera.isShaking).toBe(true);
@@ -55,4 +61,6 @@ test('prefers-reduced-motion suppresses camera shake on a real knockout', async 
   expect(result.camera.shakeCount).toBe(0);
   expect(result.camera.lastShake).toBeNull();
   expect(result.camera.isShaking).toBe(false);
+  expect(result.feedback.liveSparks).toBeGreaterThan(0);
+  expect(result.feedback.knockoutTargets).toEqual(['P2']);
 });

@@ -220,8 +220,8 @@ Spec: [M10_DEATHMATCH_ZONE.md](M10_DEATHMATCH_ZONE.md).
 
 The owner asked for a graphics improvement evaluable on mobile. Full plan: [GRAPHICS_ROADMAP.md](GRAPHICS_ROADMAP.md).
 
-- [ ] G1 Mobile and multi-size evaluation baseline (first slice, no visual change)
-- [ ] G2 Fighter readability for eight players
+- [x] G1 Desktop evaluation baseline: 12 captures plus manifest, `npm run visual:matrix` (PR #183, `b84e82b`)
+- [x] G2 Fighter readability: compact per-slot markers with a measured contrast threshold (PR #186, `0754061`)
 - [ ] G3 Hit and knockout feedback
 - [ ] G4 Arena depth and background contrast (owner approves each changed arena)
 - [ ] G5 Desktop HUD and results layout
