@@ -222,10 +222,10 @@ The owner asked for a graphics improvement evaluable on mobile. Full plan: [GRAP
 
 - [x] G1 Desktop evaluation baseline: 12 captures plus manifest, `npm run visual:matrix` (PR #183, `b84e82b`)
 - [x] G2 Fighter readability: compact per-slot markers with a measured contrast threshold (PR #186, `0754061`)
-- [ ] G3 Hit and knockout feedback
-- [ ] G4 Arena depth and background contrast (owner approves each changed arena)
-- [ ] G5 Desktop HUD and results layout
-- [ ] G6 Hazard and zone visual pass (arena band and mode zone kept distinct)
+- [x] G3 Hit and knockout feedback: capped sparks, distinct KO cue, reduced-motion safe (PR #190, `c79a14a`)
+- [x] G4 Arena depth and background contrast: K-kauppa quieted, station and Mesku unchanged (PR #189, `cfef8ac`)
+- [x] G5 Desktop HUD and results layout: no clipping, 14 px minimum, hint on its own row (PR #191, `e72529e`)
+- [x] G6 Hazard and zone visual pass: amber arena band vs cyan contracting mode zone (PR #192, `92025a2`)
 
 Touch controls and mobile browser support are not part of the game (owner decision 2026-11-07).
 
