@@ -198,8 +198,10 @@ p { color: #c2cbd2; }
   .hud-toolbar { grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px; }
   #match-timer { grid-column: 1; grid-row: 1; }
   #match-status { grid-column: 1 / -1; grid-row: 2; white-space: normal; line-height: 1.2; }
-  .hud-toolbar .object-hint { position: absolute; z-index: 1; top: 29px; right: 4px; padding: 1px 2px; white-space: nowrap; }
-  #fight-hud:has(.object-hint:not([hidden])) #match-status { padding-right: 160px; }
+  /* Keep the key hint on the status row so it never collides with the mode
+     label, and let the status text use the remaining width. */
+  #match-status { grid-column: 1 / -1; grid-row: 2; }
+  .hud-toolbar .object-hint { position: static; grid-column: 1 / -1; grid-row: 3; justify-self: end; white-space: nowrap; }
   .hud-actions { grid-column: 2; grid-row: 1; }
   .scale-control { grid-column: 3; grid-row: 1; }
 }
@@ -208,6 +210,28 @@ p { color: #c2cbd2; }
   .hud-toolbar { grid-template-columns: auto minmax(0, 1fr) auto auto auto; }
   .hud-toolbar .object-hint { grid-column: 5; grid-row: 1; padding: 0 2px; white-space: nowrap; }
   #player-hud:not(:has(.is-lobby-slot)) { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}
+
+/* At very wide desktop widths the reserved camera scoreboard band is still
+   only 35 logical pixels tall. Put the full status on its own 14px row while
+   compacting the controls/cards vertically so all eight slots stay in-band. */
+@media (min-width: 1600px) {
+  #fight-hud { padding: 0 4px; }
+  .hud-toolbar { min-height: 16px; grid-template-columns: auto minmax(0, 1fr) auto auto auto; gap: 0 4px; }
+  #match-timer { font-size: 14px; line-height: 16px; }
+  #match-status { grid-column: 1 / -1; grid-row: 2; font-size: 14px; line-height: 16px; white-space: nowrap; }
+  #match-status.is-results, #match-status.is-paused { grid-column: 1 / -1; grid-row: 2; font-size: 14px; line-height: 16px; white-space: nowrap; }
+  .hud-actions { grid-column: 3; grid-row: 1; gap: 3px; }
+  .scale-control { grid-column: 4; grid-row: 1; }
+  .mode-control select, .scale-control select, .hud-reset, .hud-pause {
+    height: 16px;
+    min-height: 16px;
+    padding: 0 3px;
+    font-size: 14px;
+    line-height: 14px;
+  }
+  #player-hud { margin-top: 0; gap: 0 1px; }
+  #player-hud .hud-player { min-height: 14px; padding: 0 2px; column-gap: 2px; line-height: 14px; }
 }
 
 .instructions { font-size: 13px; line-height: 1.7; }
@@ -550,7 +574,7 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   #match-status { grid-column: 2; grid-row: 1; white-space: nowrap; line-height: 16px; }
   #match-status.is-results, #match-status.is-paused { grid-column: 2; grid-row: 1; white-space: nowrap; line-height: 16px; }
   #match-status.is-wave-lobby { grid-column: 2; grid-row: 1; white-space: nowrap; }
-  .hud-toolbar .object-hint { position: static; grid-column: 3; grid-row: 1; padding: 0 1px; white-space: nowrap; }
+  .hud-toolbar .object-hint { position: static; grid-column: 1 / -1; grid-row: 2; justify-self: end; padding: 0 1px; white-space: nowrap; }
   .hud-actions { grid-column: 4; grid-row: 1; gap: 3px; }
   #player-hud { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 1px; margin-top: 0; }
   .hud-player { min-height: 15px; line-height: 15px; }
