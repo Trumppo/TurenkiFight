@@ -15,6 +15,7 @@ import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePrese
 import { ObjectPresentation } from './objectPresentation';
 import { ArenaTelegraphPresentation, hazardDamagePreemptedByKnockout, observedHazardDamage } from './arenaTelegraph';
 import { StationEventPresentation } from './stationEvent';
+import { createFighterMarker, fighterMarkerDiagnostics, fighterMarkerOffset, type FighterMarker } from './fighterMarker';
 
 const MODE_NAMES: Record<ModeId, string> = {
   'score-brawl': 'Score Brawl',
@@ -37,6 +38,7 @@ export class OnlineScene extends Phaser.Scene {
   private readonly controller: OnlineMatchController;
   private readonly onFrame?: (now: number) => void;
   private fighterSprites = new Map<string, Phaser.GameObjects.Image>();
+  private fighterMarkers = new Map<string, FighterMarker>();
   private shadows = new Map<string, Phaser.GameObjects.Ellipse>();
   private zoneGraphics?: Phaser.GameObjects.Graphics;
   private itemPresentation?: ObjectPresentation;
@@ -173,6 +175,11 @@ export class OnlineScene extends Phaser.Scene {
     return this.itemPresentation?.diagnostics(state) ?? [];
   }
 
+  /** Read-only player marker diagnostics for semantic visual QA. */
+  debugPlayerMarkers(): ReturnType<typeof fighterMarkerDiagnostics> {
+    return fighterMarkerDiagnostics(this.fighterMarkers);
+  }
+
   /** Read-only dev diagnostic used by the browser zone parity test. */
   debugZoneVisible(): boolean {
     return this.zoneGraphics?.visible ?? false;
@@ -215,6 +222,7 @@ export class OnlineScene extends Phaser.Scene {
           this.shadows.set(fighter.id, this.add.ellipse(0, 0, 22, 7, 0x283640, 0.55));
           this.fighterSprites.set(fighter.id, this.add.image(0, 0, fighterKey(fighter.id, 'idle', 0))
             .setOrigin(0.5, 1));
+          this.fighterMarkers.set(fighter.id, createFighterMarker(this, fighter.id));
         }
         const previous = this.previous.get(fighter.id);
         const lastHealth = this.lastHealth.get(fighter.id);
@@ -248,6 +256,12 @@ export class OnlineScene extends Phaser.Scene {
           .setPosition(x, y - Math.round(fighter.z))
           .setFlipX(fighter.facing < 0)
           .setDepth(y);
+        const markerOffset = fighterMarkerOffset(fighter.id);
+        const marker = this.fighterMarkers.get(fighter.id)!;
+        const markerX = Phaser.Math.Clamp(x + markerOffset.x, 14, VIEWPORT.logicalWidth - 14);
+        const markerY = Phaser.Math.Clamp(y - Math.round(fighter.z) + markerOffset.y, 12, VIEWPORT.logicalHeight - 12);
+        marker.face.setPosition(markerX, markerY);
+        marker.label.setPosition(markerX, markerY);
         if (fighter.eliminated) {
           sprite.setTintFill(0x4a5561).setAlpha(0.72);
         } else if (RETRO_PREVIEW && (this.hitUntil.get(fighter.id) ?? 0) > state.tick && state.tick % 6 < 3) {
@@ -272,6 +286,10 @@ export class OnlineScene extends Phaser.Scene {
       this.shadows.get(id)?.destroy();
       this.fighterSprites.delete(id);
       this.shadows.delete(id);
+      const marker = this.fighterMarkers.get(id);
+      marker?.face.destroy();
+      marker?.label.destroy();
+      this.fighterMarkers.delete(id);
       this.poses.delete(id);
       this.previous.delete(id);
       this.lastHealth.delete(id);

@@ -17,6 +17,7 @@ import { botInput } from '../input/botPolicy';
 import { rankMatch } from '../simulation/ranking';
 import type { MatchRanking, RankedEntry } from '../simulation/ranking';
 import { playerColor } from './visualTheme';
+import { createFighterMarker, fighterMarkerDiagnostics, fighterMarkerOffset, type FighterMarker } from './fighterMarker';
 import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
 import { CueBridge, type AudioCue } from './audio/cueBridge';
 import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
@@ -81,6 +82,8 @@ export class StationScene extends Phaser.Scene {
   private itemPresentation?: ObjectPresentation;
   private arenaTelegraph?: ArenaTelegraphPresentation;
   private stationEvent?: StationEventPresentation;
+  private fighterMarkers = new Map<string, FighterMarker>();
+  /** Kept as the existing presentation diagnostic interface; now always visible. */
   private koMarkers = new Map<string, Phaser.GameObjects.Text>();
   private domHud?: {
     timer: HTMLElement;
@@ -710,7 +713,10 @@ export class StationScene extends Phaser.Scene {
       this.fighterSprites.delete(id);
       this.shadows.get(id)?.destroy();
       this.shadows.delete(id);
-      this.koMarkers.get(id)?.destroy();
+      const marker = this.fighterMarkers.get(id);
+      marker?.face.destroy();
+      marker?.label.destroy();
+      this.fighterMarkers.delete(id);
       this.koMarkers.delete(id);
       this.previous.delete(id);
       this.hitFlash.delete(id);
@@ -719,11 +725,9 @@ export class StationScene extends Phaser.Scene {
       if (!this.fighterSprites.has(f.id)) {
         this.shadows.set(f.id, this.add.ellipse(0, 0, 22, 7, 0x283640, 0.55));
         this.fighterSprites.set(f.id, this.add.image(0, 0, fighterKey(f.id, 'idle', 0)).setOrigin(0.5, 1));
-        this.koMarkers.set(f.id, this.add.text(0, 0, f.id, {
-          fontFamily: 'monospace', fontSize: '8px', color: '#fff1b7',
-          backgroundColor: '#202a36', padding: { x: 2, y: 1 },
-          stroke: '#101820', strokeThickness: 1, align: 'center',
-        }).setOrigin(0.5, 1).setDepth(1_000_000));
+        const marker = createFighterMarker(this, f.id);
+        this.fighterMarkers.set(f.id, marker);
+        this.koMarkers.set(f.id, marker.label);
       }
       const prev = this.previous.get(f.id);
       if (prev && f.health < prev.health) this.hitFlash.set(f.id, this.state.tick + 12);
@@ -755,21 +759,24 @@ export class StationScene extends Phaser.Scene {
         sprite.clearTint();
         sprite.setAlpha(1);
       }
-      // A tiny monochrome player-ID badge sits just above the KO head for both
-      // temporary knockdown and elimination. The horizontal pose remains the
-      // primary down signal; the badge identifies the target in a crowded greyscale view.
+      // Keep the slot tag visible in every pose, including KO and respawn.
+      // Per-ID offsets fan the tags out when several fighters crowd together.
       const down = f.eliminated || f.koTimer > 0;
-      const marker = this.koMarkers.get(f.id)!;
-      marker.setVisible(down);
+      let markerX: number;
+      let markerY: number;
       if (down) {
         const playerNumber = Number(f.id.slice(1));
-        // KO drawings lie on the floor, with the head at a different vertical
-        // offset from the standing pose. Keep the badge tucked just above that head.
         const koHeadOffset = [15, 15, 15, 15, 21, 22, 18, 19][playerNumber - 1] ?? 19;
-        // Float the marker over overlapping bodies so it stays attached/readable
-        // even when another fighter is standing in front of the downed player.
-        marker.setText(f.id).setPosition(x + 10 * (f.facing < 0 ? -1 : 1), y - Math.round(f.z) - koHeadOffset - 2);
+        markerX = x + 10 * (f.facing < 0 ? -1 : 1);
+        markerY = y - Math.round(f.z) - koHeadOffset - 2;
+      } else {
+        const markerOffset = fighterMarkerOffset(f.id);
+        markerX = Phaser.Math.Clamp(x + markerOffset.x, 14, VIEWPORT.logicalWidth - 14);
+        markerY = Phaser.Math.Clamp(y - Math.round(f.z) + markerOffset.y, 12, VIEWPORT.logicalHeight - 12);
       }
+      const marker = this.fighterMarkers.get(f.id)!;
+      marker.face.setPosition(markerX, markerY);
+      marker.label.setPosition(markerX, markerY);
       this.previous.set(f.id, { x: f.x, y: f.y, health: f.health });
     }
     this.lastDrawTick = this.state.tick;
@@ -781,6 +788,11 @@ export class StationScene extends Phaser.Scene {
   /** Read-only item draw diagnostics for browser visual QA. */
   debugObjects(): ReturnType<ObjectPresentation['diagnostics']> {
     return this.itemPresentation?.diagnostics(this.state) ?? [];
+  }
+
+  /** Read-only player marker diagnostics for semantic visual QA. */
+  debugPlayerMarkers(): ReturnType<typeof fighterMarkerDiagnostics> {
+    return fighterMarkerDiagnostics(this.fighterMarkers);
   }
 
   private initDomHud(): void {

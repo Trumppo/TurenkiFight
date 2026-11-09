@@ -1820,7 +1820,7 @@ tasks:
     title: Make every fighter slot identifiable in an eight-player crowd
     assigned_role: graphics-session
     session_id: graphics-session-20261109-g2
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/GRAPHICS_ROADMAP.md
     depends_on: [GRAPHICS-G1-EVAL-BASELINE]
@@ -1831,12 +1831,13 @@ tasks:
       - "Retro palette and classic look otherwise unchanged; station and Mesku art untouched"
       - "No simulation, protocol or input change; semantic checks only, no PNG byte pins"
     last_updated: "2026-11-09"
-    notes: "First real visual change of the graphics track. Owner approval required before merge."
+    notes: "PR #186 merged as 0754061. Compact 18x14 per-slot numberplates (12 px) in a tight two-row fan above the fighter head, driven by player id. Contrast threshold 3 measured against five sampled floor colours. Presentation only."
 
   - id: GRAPHICS-G3-HIT-FEEDBACK
     title: Add hit and knockout feedback driven by simulation events
     assigned_role: graphics-session
-    status: blocked
+    session_id: graphics-session-20261109-g3
+    status: in_progress
     priority: P1
     specification: docs/GRAPHICS_ROADMAP.md
     depends_on: [GRAPHICS-G2-FIGHTER-READABILITY]
@@ -1851,7 +1852,8 @@ tasks:
   - id: GRAPHICS-G4-ARENA-CONTRAST
     title: Improve arena depth and background contrast behind combat
     assigned_role: graphics-session
-    status: blocked
+    session_id: graphics-session-20261109-g4
+    status: in_progress
     priority: P1
     specification: docs/GRAPHICS_ROADMAP.md
     depends_on: [GRAPHICS-G2-FIGHTER-READABILITY]
@@ -1866,7 +1868,8 @@ tasks:
   - id: GRAPHICS-G5-DESKTOP-HUD
     title: Keep the HUD and results readable at desktop sizes
     assigned_role: graphics-session
-    status: blocked
+    session_id: graphics-session-20261109-g5
+    status: in_progress
     priority: P1
     specification: docs/GRAPHICS_ROADMAP.md
     depends_on: [GRAPHICS-G1-EVAL-BASELINE]

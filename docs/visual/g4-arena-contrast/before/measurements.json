@@ -1,0 +1,1639 @@
+{
+  "task": "GRAPHICS-G4-ARENA-CONTRAST",
+  "stage": "before",
+  "method": "Paired canvas captures. Every changed pixel within each sprite bounds (markers and floor shadows excluded) is compared to the same pixel in a background-only capture using WCAG relative luminance; report p10, median, and share at or above 3:1.",
+  "captures": [
+    {
+      "file": "classic-station-4p-640x360.png",
+      "style": "classic",
+      "arena": "station",
+      "selectedArena": "station",
+      "fighterCount": 4,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 562,
+          "changedPixels": 1749,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2.38,
+          "silhouettePixelsAtLeast3To1": 36
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 522,
+          "changedPixels": 1749,
+          "silhouetteP10": 1.74,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 42
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 418,
+          "changedPixels": 1745,
+          "silhouetteP10": 1.13,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 39
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 602,
+          "changedPixels": 1717,
+          "silhouetteP10": 1.43,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 44
+        }
+      ]
+    },
+    {
+      "file": "classic-station-4p-1280x720.png",
+      "style": "classic",
+      "arena": "station",
+      "selectedArena": "station",
+      "fighterCount": 4,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1452,
+          "changedPixels": 4537,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2.38,
+          "silhouettePixelsAtLeast3To1": 37
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1315,
+          "changedPixels": 4576,
+          "silhouetteP10": 1.74,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 41
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 995,
+          "changedPixels": 4405,
+          "silhouetteP10": 1.13,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 39
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1478,
+          "changedPixels": 4472,
+          "silhouetteP10": 1.43,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 43
+        }
+      ]
+    },
+    {
+      "file": "classic-station-8p-640x360.png",
+      "style": "classic",
+      "arena": "station",
+      "selectedArena": "station",
+      "fighterCount": 8,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 562,
+          "changedPixels": 1749,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2.38,
+          "silhouettePixelsAtLeast3To1": 36
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 498,
+          "changedPixels": 1753,
+          "silhouetteP10": 1.74,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 41
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 391,
+          "changedPixels": 1736,
+          "silhouetteP10": 1.39,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 45
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 544,
+          "changedPixels": 1746,
+          "silhouetteP10": 1.43,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 40
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 655,
+          "changedPixels": 2121,
+          "silhouetteP10": 1.45,
+          "silhouetteMedian": 3.16,
+          "silhouettePixelsAtLeast3To1": 52
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 946,
+          "changedPixels": 2104,
+          "silhouetteP10": 2.2,
+          "silhouetteMedian": 3.24,
+          "silhouettePixelsAtLeast3To1": 60
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1026,
+          "changedPixels": 2067,
+          "silhouetteP10": 1.55,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 47
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 821,
+          "changedPixels": 1762,
+          "silhouetteP10": 1.61,
+          "silhouetteMedian": 3.24,
+          "silhouettePixelsAtLeast3To1": 64
+        }
+      ]
+    },
+    {
+      "file": "classic-station-8p-1280x720.png",
+      "style": "classic",
+      "arena": "station",
+      "selectedArena": "station",
+      "fighterCount": 8,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1427,
+          "changedPixels": 4481,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2.38,
+          "silhouettePixelsAtLeast3To1": 37
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1351,
+          "changedPixels": 4595,
+          "silhouetteP10": 1.74,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 42
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1018,
+          "changedPixels": 4416,
+          "silhouetteP10": 1.39,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 45
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1315,
+          "changedPixels": 4432,
+          "silhouetteP10": 1.43,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 39
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1691,
+          "changedPixels": 5345,
+          "silhouetteP10": 1.48,
+          "silhouetteMedian": 3.22,
+          "silhouettePixelsAtLeast3To1": 54
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 2424,
+          "changedPixels": 5433,
+          "silhouetteP10": 2.2,
+          "silhouetteMedian": 3.24,
+          "silhouettePixelsAtLeast3To1": 60
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 2484,
+          "changedPixels": 5148,
+          "silhouetteP10": 1.55,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 48
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 2106,
+          "changedPixels": 4590,
+          "silhouetteP10": 1.61,
+          "silhouetteMedian": 3.24,
+          "silhouettePixelsAtLeast3To1": 62
+        }
+      ]
+    },
+    {
+      "file": "classic-kkauppa-4p-640x360.png",
+      "style": "classic",
+      "arena": "kkauppa",
+      "selectedArena": "kkauppa",
+      "fighterCount": 4,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 562,
+          "changedPixels": 1749,
+          "silhouetteP10": 1.56,
+          "silhouetteMedian": 2.1,
+          "silhouettePixelsAtLeast3To1": 38
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 522,
+          "changedPixels": 1749,
+          "silhouetteP10": 1.58,
+          "silhouetteMedian": 3.07,
+          "silhouettePixelsAtLeast3To1": 56
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 418,
+          "changedPixels": 1745,
+          "silhouetteP10": 1.11,
+          "silhouetteMedian": 3.25,
+          "silhouettePixelsAtLeast3To1": 54
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 602,
+          "changedPixels": 1717,
+          "silhouetteP10": 1.21,
+          "silhouetteMedian": 3.08,
+          "silhouettePixelsAtLeast3To1": 57
+        }
+      ]
+    },
+    {
+      "file": "classic-kkauppa-4p-1280x720.png",
+      "style": "classic",
+      "arena": "kkauppa",
+      "selectedArena": "kkauppa",
+      "fighterCount": 4,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1427,
+          "changedPixels": 4481,
+          "silhouetteP10": 1.44,
+          "silhouetteMedian": 2.1,
+          "silhouettePixelsAtLeast3To1": 38
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1315,
+          "changedPixels": 4576,
+          "silhouetteP10": 1.58,
+          "silhouetteMedian": 3.07,
+          "silhouettePixelsAtLeast3To1": 57
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 961,
+          "changedPixels": 4353,
+          "silhouetteP10": 1.11,
+          "silhouetteMedian": 3.25,
+          "silhouettePixelsAtLeast3To1": 52
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1478,
+          "changedPixels": 4472,
+          "silhouetteP10": 1.21,
+          "silhouetteMedian": 3.08,
+          "silhouettePixelsAtLeast3To1": 58
+        }
+      ]
+    },
+    {
+      "file": "classic-kkauppa-8p-640x360.png",
+      "style": "classic",
+      "arena": "kkauppa",
+      "selectedArena": "kkauppa",
+      "fighterCount": 8,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 562,
+          "changedPixels": 1749,
+          "silhouetteP10": 1.56,
+          "silhouetteMedian": 2.1,
+          "silhouettePixelsAtLeast3To1": 38
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 498,
+          "changedPixels": 1753,
+          "silhouetteP10": 1.58,
+          "silhouetteMedian": 3.07,
+          "silhouettePixelsAtLeast3To1": 56
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 391,
+          "changedPixels": 1736,
+          "silhouetteP10": 1.62,
+          "silhouetteMedian": 2.1,
+          "silhouettePixelsAtLeast3To1": 42
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 544,
+          "changedPixels": 1746,
+          "silhouetteP10": 1.21,
+          "silhouetteMedian": 3.07,
+          "silhouettePixelsAtLeast3To1": 55
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 655,
+          "changedPixels": 2121,
+          "silhouetteP10": 1.62,
+          "silhouetteMedian": 2.47,
+          "silhouettePixelsAtLeast3To1": 36
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 946,
+          "changedPixels": 2104,
+          "silhouetteP10": 1.86,
+          "silhouetteMedian": 3.38,
+          "silhouettePixelsAtLeast3To1": 66
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1026,
+          "changedPixels": 2067,
+          "silhouetteP10": 1.37,
+          "silhouetteMedian": 3.58,
+          "silhouettePixelsAtLeast3To1": 65
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 821,
+          "changedPixels": 1762,
+          "silhouetteP10": 1.36,
+          "silhouetteMedian": 3.08,
+          "silhouettePixelsAtLeast3To1": 61
+        }
+      ]
+    },
+    {
+      "file": "classic-kkauppa-8p-1280x720.png",
+      "style": "classic",
+      "arena": "kkauppa",
+      "selectedArena": "kkauppa",
+      "fighterCount": 8,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1452,
+          "changedPixels": 4537,
+          "silhouetteP10": 1.56,
+          "silhouetteMedian": 2.1,
+          "silhouettePixelsAtLeast3To1": 39
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1351,
+          "changedPixels": 4595,
+          "silhouetteP10": 1.58,
+          "silhouetteMedian": 3.08,
+          "silhouettePixelsAtLeast3To1": 58
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1052,
+          "changedPixels": 4468,
+          "silhouetteP10": 1.62,
+          "silhouetteMedian": 2.1,
+          "silhouettePixelsAtLeast3To1": 42
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1315,
+          "changedPixels": 4432,
+          "silhouetteP10": 1.21,
+          "silhouetteMedian": 3.07,
+          "silhouettePixelsAtLeast3To1": 56
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1678,
+          "changedPixels": 5380,
+          "silhouetteP10": 1.62,
+          "silhouetteMedian": 2.47,
+          "silhouettePixelsAtLeast3To1": 39
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 2424,
+          "changedPixels": 5433,
+          "silhouetteP10": 1.86,
+          "silhouetteMedian": 3.38,
+          "silhouettePixelsAtLeast3To1": 66
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 2465,
+          "changedPixels": 5191,
+          "silhouetteP10": 1.28,
+          "silhouetteMedian": 3.58,
+          "silhouettePixelsAtLeast3To1": 64
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 2106,
+          "changedPixels": 4590,
+          "silhouetteP10": 1.36,
+          "silhouetteMedian": 3.22,
+          "silhouettePixelsAtLeast3To1": 61
+        }
+      ]
+    },
+    {
+      "file": "classic-mesku-4p-640x360.png",
+      "style": "classic",
+      "arena": "mesku",
+      "selectedArena": "station",
+      "fighterCount": 4,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 562,
+          "changedPixels": 1749,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2.38,
+          "silhouettePixelsAtLeast3To1": 36
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 522,
+          "changedPixels": 1749,
+          "silhouetteP10": 1.74,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 42
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 418,
+          "changedPixels": 1745,
+          "silhouetteP10": 1.13,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 39
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 602,
+          "changedPixels": 1717,
+          "silhouetteP10": 1.43,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 44
+        }
+      ]
+    },
+    {
+      "file": "classic-mesku-4p-1280x720.png",
+      "style": "classic",
+      "arena": "mesku",
+      "selectedArena": "station",
+      "fighterCount": 4,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1452,
+          "changedPixels": 5051,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2.38,
+          "silhouettePixelsAtLeast3To1": 36
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1315,
+          "changedPixels": 4654,
+          "silhouetteP10": 1.74,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 41
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 995,
+          "changedPixels": 4684,
+          "silhouetteP10": 1.13,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 41
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1478,
+          "changedPixels": 4592,
+          "silhouetteP10": 1.43,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 42
+        }
+      ]
+    },
+    {
+      "file": "classic-mesku-8p-640x360.png",
+      "style": "classic",
+      "arena": "mesku",
+      "selectedArena": "station",
+      "fighterCount": 8,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 562,
+          "changedPixels": 1749,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2.38,
+          "silhouettePixelsAtLeast3To1": 36
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 498,
+          "changedPixels": 1753,
+          "silhouetteP10": 1.74,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 41
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 391,
+          "changedPixels": 1736,
+          "silhouetteP10": 1.39,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 45
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 544,
+          "changedPixels": 1746,
+          "silhouetteP10": 1.43,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 40
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 655,
+          "changedPixels": 2121,
+          "silhouetteP10": 1.45,
+          "silhouetteMedian": 3.16,
+          "silhouettePixelsAtLeast3To1": 52
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 946,
+          "changedPixels": 2104,
+          "silhouetteP10": 2.2,
+          "silhouetteMedian": 3.24,
+          "silhouettePixelsAtLeast3To1": 60
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1026,
+          "changedPixels": 2067,
+          "silhouetteP10": 1.55,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 47
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 821,
+          "changedPixels": 1762,
+          "silhouetteP10": 1.61,
+          "silhouetteMedian": 3.24,
+          "silhouettePixelsAtLeast3To1": 64
+        }
+      ]
+    },
+    {
+      "file": "classic-mesku-8p-1280x720.png",
+      "style": "classic",
+      "arena": "mesku",
+      "selectedArena": "station",
+      "fighterCount": 8,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1452,
+          "changedPixels": 4537,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2.38,
+          "silhouettePixelsAtLeast3To1": 37
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1351,
+          "changedPixels": 4595,
+          "silhouetteP10": 1.74,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 42
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1052,
+          "changedPixels": 4468,
+          "silhouetteP10": 1.39,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 45
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1315,
+          "changedPixels": 4432,
+          "silhouetteP10": 1.43,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 39
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 1678,
+          "changedPixels": 5380,
+          "silhouetteP10": 1.45,
+          "silhouetteMedian": 3.16,
+          "silhouettePixelsAtLeast3To1": 53
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 2424,
+          "changedPixels": 5433,
+          "silhouetteP10": 2.2,
+          "silhouetteMedian": 3.24,
+          "silhouettePixelsAtLeast3To1": 60
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 2465,
+          "changedPixels": 5191,
+          "silhouetteP10": 1.55,
+          "silhouetteMedian": 2.95,
+          "silhouettePixelsAtLeast3To1": 48
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202a36",
+          "dominantPixelCount": 2106,
+          "changedPixels": 4590,
+          "silhouetteP10": 1.61,
+          "silhouetteMedian": 3.24,
+          "silhouettePixelsAtLeast3To1": 62
+        }
+      ]
+    },
+    {
+      "file": "retro-station-4p-640x360.png",
+      "style": "retro",
+      "arena": "station",
+      "selectedArena": "station",
+      "fighterCount": 4,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 277,
+          "changedPixels": 2057,
+          "silhouetteP10": 1.13,
+          "silhouetteMedian": 2.17,
+          "silhouettePixelsAtLeast3To1": 33
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#e2af89",
+          "dominantPixelCount": 130,
+          "changedPixels": 1827,
+          "silhouetteP10": 1.23,
+          "silhouetteMedian": 2.43,
+          "silhouettePixelsAtLeast3To1": 26
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 239,
+          "changedPixels": 2131,
+          "silhouetteP10": 1.25,
+          "silhouetteMedian": 2.3,
+          "silhouettePixelsAtLeast3To1": 30
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#d8a27c",
+          "dominantPixelCount": 261,
+          "changedPixels": 2005,
+          "silhouetteP10": 1.05,
+          "silhouetteMedian": 2.05,
+          "silhouettePixelsAtLeast3To1": 13
+        }
+      ]
+    },
+    {
+      "file": "retro-station-4p-1280x720.png",
+      "style": "retro",
+      "arena": "station",
+      "selectedArena": "station",
+      "fighterCount": 4,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 692,
+          "changedPixels": 5299,
+          "silhouetteP10": 1.13,
+          "silhouetteMedian": 2.14,
+          "silhouettePixelsAtLeast3To1": 32
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#485256",
+          "dominantPixelCount": 350,
+          "changedPixels": 4705,
+          "silhouetteP10": 1.23,
+          "silhouetteMedian": 2.43,
+          "silhouettePixelsAtLeast3To1": 26
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 600,
+          "changedPixels": 5302,
+          "silhouetteP10": 1.25,
+          "silhouetteMedian": 2.26,
+          "silhouettePixelsAtLeast3To1": 29
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#4d8164",
+          "dominantPixelCount": 687,
+          "changedPixels": 5166,
+          "silhouetteP10": 1.05,
+          "silhouetteMedian": 2.02,
+          "silhouettePixelsAtLeast3To1": 13
+        }
+      ]
+    },
+    {
+      "file": "retro-station-8p-640x360.png",
+      "style": "retro",
+      "arena": "station",
+      "selectedArena": "station",
+      "fighterCount": 8,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 277,
+          "changedPixels": 2057,
+          "silhouetteP10": 1.13,
+          "silhouetteMedian": 2.17,
+          "silhouettePixelsAtLeast3To1": 33
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#485256",
+          "dominantPixelCount": 129,
+          "changedPixels": 1830,
+          "silhouetteP10": 1.23,
+          "silhouetteMedian": 2.43,
+          "silhouettePixelsAtLeast3To1": 27
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 239,
+          "changedPixels": 2113,
+          "silhouetteP10": 1.2,
+          "silhouetteMedian": 2.27,
+          "silhouettePixelsAtLeast3To1": 28
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#4d8164",
+          "dominantPixelCount": 262,
+          "changedPixels": 1998,
+          "silhouetteP10": 1.05,
+          "silhouetteMedian": 2.01,
+          "silhouettePixelsAtLeast3To1": 13
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#fff1b7",
+          "dominantPixelCount": 363,
+          "changedPixels": 2447,
+          "silhouetteP10": 1.21,
+          "silhouetteMedian": 2.4,
+          "silhouettePixelsAtLeast3To1": 40
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202b31",
+          "dominantPixelCount": 421,
+          "changedPixels": 2223,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2.32,
+          "silhouettePixelsAtLeast3To1": 28
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#252433",
+          "dominantPixelCount": 400,
+          "changedPixels": 2460,
+          "silhouetteP10": 1.19,
+          "silhouetteMedian": 2.21,
+          "silhouettePixelsAtLeast3To1": 30
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202b2d",
+          "dominantPixelCount": 407,
+          "changedPixels": 2172,
+          "silhouetteP10": 1.18,
+          "silhouetteMedian": 2.12,
+          "silhouettePixelsAtLeast3To1": 26
+        }
+      ]
+    },
+    {
+      "file": "retro-station-8p-1280x720.png",
+      "style": "retro",
+      "arena": "station",
+      "selectedArena": "station",
+      "fighterCount": 8,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 692,
+          "changedPixels": 5299,
+          "silhouetteP10": 1.13,
+          "silhouetteMedian": 2.14,
+          "silhouettePixelsAtLeast3To1": 32
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#485256",
+          "dominantPixelCount": 350,
+          "changedPixels": 4722,
+          "silhouetteP10": 1.23,
+          "silhouetteMedian": 2.43,
+          "silhouettePixelsAtLeast3To1": 27
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 598,
+          "changedPixels": 5343,
+          "silhouetteP10": 1.18,
+          "silhouetteMedian": 2.27,
+          "silhouettePixelsAtLeast3To1": 27
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#d8a27c",
+          "dominantPixelCount": 651,
+          "changedPixels": 5185,
+          "silhouetteP10": 1.05,
+          "silhouetteMedian": 1.98,
+          "silhouettePixelsAtLeast3To1": 12
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#fff1b7",
+          "dominantPixelCount": 948,
+          "changedPixels": 6257,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2.4,
+          "silhouettePixelsAtLeast3To1": 40
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202b31",
+          "dominantPixelCount": 1027,
+          "changedPixels": 5651,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2.32,
+          "silhouettePixelsAtLeast3To1": 27
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#252433",
+          "dominantPixelCount": 994,
+          "changedPixels": 6230,
+          "silhouetteP10": 1.19,
+          "silhouetteMedian": 2.21,
+          "silhouettePixelsAtLeast3To1": 30
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202b2d",
+          "dominantPixelCount": 1020,
+          "changedPixels": 5623,
+          "silhouetteP10": 1.18,
+          "silhouetteMedian": 2.12,
+          "silhouettePixelsAtLeast3To1": 26
+        }
+      ]
+    },
+    {
+      "file": "retro-kkauppa-4p-640x360.png",
+      "style": "retro",
+      "arena": "kkauppa",
+      "selectedArena": "kkauppa",
+      "fighterCount": 4,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 270,
+          "changedPixels": 2059,
+          "silhouetteP10": 1.19,
+          "silhouetteMedian": 1.88,
+          "silhouettePixelsAtLeast3To1": 34
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#e2af89",
+          "dominantPixelCount": 130,
+          "changedPixels": 1827,
+          "silhouetteP10": 1.25,
+          "silhouetteMedian": 2.25,
+          "silhouettePixelsAtLeast3To1": 30
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 239,
+          "changedPixels": 2137,
+          "silhouetteP10": 1.31,
+          "silhouetteMedian": 2.69,
+          "silhouettePixelsAtLeast3To1": 35
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#d8a27c",
+          "dominantPixelCount": 261,
+          "changedPixels": 2007,
+          "silhouetteP10": 1.06,
+          "silhouetteMedian": 1.91,
+          "silhouettePixelsAtLeast3To1": 23
+        }
+      ]
+    },
+    {
+      "file": "retro-kkauppa-4p-1280x720.png",
+      "style": "retro",
+      "arena": "kkauppa",
+      "selectedArena": "kkauppa",
+      "fighterCount": 4,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 661,
+          "changedPixels": 5333,
+          "silhouetteP10": 1.19,
+          "silhouetteMedian": 1.88,
+          "silhouettePixelsAtLeast3To1": 34
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#e2af89",
+          "dominantPixelCount": 348,
+          "changedPixels": 4705,
+          "silhouetteP10": 1.25,
+          "silhouetteMedian": 2.28,
+          "silhouettePixelsAtLeast3To1": 30
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 614,
+          "changedPixels": 5370,
+          "silhouetteP10": 1.35,
+          "silhouetteMedian": 2.69,
+          "silhouettePixelsAtLeast3To1": 35
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#4d8164",
+          "dominantPixelCount": 687,
+          "changedPixels": 5172,
+          "silhouetteP10": 1.06,
+          "silhouetteMedian": 1.91,
+          "silhouettePixelsAtLeast3To1": 23
+        }
+      ]
+    },
+    {
+      "file": "retro-kkauppa-8p-640x360.png",
+      "style": "retro",
+      "arena": "kkauppa",
+      "selectedArena": "kkauppa",
+      "fighterCount": 8,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 270,
+          "changedPixels": 2059,
+          "silhouetteP10": 1.19,
+          "silhouetteMedian": 1.88,
+          "silhouettePixelsAtLeast3To1": 34
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#152331",
+          "dominantPixelCount": 126,
+          "changedPixels": 1830,
+          "silhouetteP10": 1.25,
+          "silhouetteMedian": 2.35,
+          "silhouettePixelsAtLeast3To1": 32
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 239,
+          "changedPixels": 2117,
+          "silhouetteP10": 1.15,
+          "silhouetteMedian": 1.84,
+          "silhouettePixelsAtLeast3To1": 26
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#4d8164",
+          "dominantPixelCount": 262,
+          "changedPixels": 1999,
+          "silhouetteP10": 1.06,
+          "silhouetteMedian": 1.91,
+          "silhouettePixelsAtLeast3To1": 23
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#fff1b7",
+          "dominantPixelCount": 363,
+          "changedPixels": 2448,
+          "silhouetteP10": 1.17,
+          "silhouetteMedian": 2.2,
+          "silhouettePixelsAtLeast3To1": 35
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202b31",
+          "dominantPixelCount": 421,
+          "changedPixels": 2227,
+          "silhouetteP10": 1.14,
+          "silhouetteMedian": 2.49,
+          "silhouettePixelsAtLeast3To1": 35
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#252433",
+          "dominantPixelCount": 402,
+          "changedPixels": 2462,
+          "silhouetteP10": 1.12,
+          "silhouetteMedian": 2.5,
+          "silhouettePixelsAtLeast3To1": 42
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202b2d",
+          "dominantPixelCount": 405,
+          "changedPixels": 2174,
+          "silhouetteP10": 1.15,
+          "silhouetteMedian": 1.9,
+          "silhouettePixelsAtLeast3To1": 33
+        }
+      ]
+    },
+    {
+      "file": "retro-kkauppa-8p-1280x720.png",
+      "style": "retro",
+      "arena": "kkauppa",
+      "selectedArena": "kkauppa",
+      "fighterCount": 8,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 661,
+          "changedPixels": 5690,
+          "silhouetteP10": 1.19,
+          "silhouetteMedian": 1.92,
+          "silhouettePixelsAtLeast3To1": 34
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#e2af89",
+          "dominantPixelCount": 338,
+          "changedPixels": 5150,
+          "silhouetteP10": 1.15,
+          "silhouetteMedian": 2.1,
+          "silhouettePixelsAtLeast3To1": 29
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 611,
+          "changedPixels": 5740,
+          "silhouetteP10": 1.16,
+          "silhouetteMedian": 1.92,
+          "silhouettePixelsAtLeast3To1": 27
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#d8a27c",
+          "dominantPixelCount": 651,
+          "changedPixels": 5550,
+          "silhouetteP10": 1.06,
+          "silhouetteMedian": 1.9,
+          "silhouettePixelsAtLeast3To1": 20
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#fff1b7",
+          "dominantPixelCount": 903,
+          "changedPixels": 6516,
+          "silhouetteP10": 1.2,
+          "silhouetteMedian": 2.37,
+          "silhouettePixelsAtLeast3To1": 35
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202b31",
+          "dominantPixelCount": 1027,
+          "changedPixels": 5900,
+          "silhouetteP10": 1.15,
+          "silhouetteMedian": 2.25,
+          "silhouettePixelsAtLeast3To1": 33
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#252433",
+          "dominantPixelCount": 995,
+          "changedPixels": 6381,
+          "silhouetteP10": 1.12,
+          "silhouetteMedian": 2.46,
+          "silhouettePixelsAtLeast3To1": 41
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202b2d",
+          "dominantPixelCount": 1014,
+          "changedPixels": 5871,
+          "silhouetteP10": 1.15,
+          "silhouetteMedian": 1.84,
+          "silhouettePixelsAtLeast3To1": 31
+        }
+      ]
+    },
+    {
+      "file": "retro-mesku-4p-640x360.png",
+      "style": "retro",
+      "arena": "mesku",
+      "selectedArena": "mesku",
+      "fighterCount": 4,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 271,
+          "changedPixels": 2057,
+          "silhouetteP10": 1.16,
+          "silhouetteMedian": 1.93,
+          "silhouettePixelsAtLeast3To1": 28
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#e2af89",
+          "dominantPixelCount": 130,
+          "changedPixels": 1827,
+          "silhouetteP10": 1.3,
+          "silhouetteMedian": 2.24,
+          "silhouettePixelsAtLeast3To1": 3
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 239,
+          "changedPixels": 2131,
+          "silhouetteP10": 1.23,
+          "silhouetteMedian": 2,
+          "silhouettePixelsAtLeast3To1": 11
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#d8a27c",
+          "dominantPixelCount": 261,
+          "changedPixels": 2005,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 1.88,
+          "silhouettePixelsAtLeast3To1": 2
+        }
+      ]
+    },
+    {
+      "file": "retro-mesku-4p-1280x720.png",
+      "style": "retro",
+      "arena": "mesku",
+      "selectedArena": "mesku",
+      "fighterCount": 4,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 659,
+          "changedPixels": 5330,
+          "silhouetteP10": 1.16,
+          "silhouetteMedian": 1.91,
+          "silhouettePixelsAtLeast3To1": 27
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#444d50",
+          "dominantPixelCount": 350,
+          "changedPixels": 4705,
+          "silhouetteP10": 1.31,
+          "silhouetteMedian": 2.24,
+          "silhouettePixelsAtLeast3To1": 4
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 614,
+          "changedPixels": 5355,
+          "silhouetteP10": 1.23,
+          "silhouetteMedian": 2,
+          "silhouettePixelsAtLeast3To1": 10
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#4d8164",
+          "dominantPixelCount": 687,
+          "changedPixels": 5166,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 1.86,
+          "silhouettePixelsAtLeast3To1": 1
+        }
+      ]
+    },
+    {
+      "file": "retro-mesku-8p-640x360.png",
+      "style": "retro",
+      "arena": "mesku",
+      "selectedArena": "mesku",
+      "fighterCount": 8,
+      "viewport": "640x360",
+      "screenshot": [
+        640,
+        360
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 271,
+          "changedPixels": 2057,
+          "silhouetteP10": 1.16,
+          "silhouetteMedian": 1.93,
+          "silhouettePixelsAtLeast3To1": 28
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#444d50",
+          "dominantPixelCount": 129,
+          "changedPixels": 1830,
+          "silhouetteP10": 1.35,
+          "silhouetteMedian": 2.27,
+          "silhouettePixelsAtLeast3To1": 3
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 239,
+          "changedPixels": 2115,
+          "silhouetteP10": 1.2,
+          "silhouetteMedian": 2,
+          "silhouettePixelsAtLeast3To1": 13
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#4d8164",
+          "dominantPixelCount": 262,
+          "changedPixels": 1998,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 1.83,
+          "silhouettePixelsAtLeast3To1": 1
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#fff1b7",
+          "dominantPixelCount": 363,
+          "changedPixels": 2447,
+          "silhouetteP10": 1.13,
+          "silhouetteMedian": 2.13,
+          "silhouettePixelsAtLeast3To1": 30
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202b31",
+          "dominantPixelCount": 421,
+          "changedPixels": 2223,
+          "silhouetteP10": 1.27,
+          "silhouetteMedian": 2.45,
+          "silhouettePixelsAtLeast3To1": 8
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#252433",
+          "dominantPixelCount": 398,
+          "changedPixels": 2460,
+          "silhouetteP10": 1.07,
+          "silhouetteMedian": 1.64,
+          "silhouettePixelsAtLeast3To1": 15
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202b2d",
+          "dominantPixelCount": 405,
+          "changedPixels": 2172,
+          "silhouetteP10": 1.09,
+          "silhouetteMedian": 1.99,
+          "silhouettePixelsAtLeast3To1": 1
+        }
+      ]
+    },
+    {
+      "file": "retro-mesku-8p-1280x720.png",
+      "style": "retro",
+      "arena": "mesku",
+      "selectedArena": "mesku",
+      "fighterCount": 8,
+      "viewport": "1280x720",
+      "screenshot": [
+        1280,
+        720
+      ],
+      "fighterMetrics": [
+        {
+          "id": "P1",
+          "dominantForeground": "#151c28",
+          "dominantPixelCount": 659,
+          "changedPixels": 5330,
+          "silhouetteP10": 1.16,
+          "silhouetteMedian": 1.91,
+          "silhouettePixelsAtLeast3To1": 27
+        },
+        {
+          "id": "P2",
+          "dominantForeground": "#444d50",
+          "dominantPixelCount": 350,
+          "changedPixels": 4722,
+          "silhouetteP10": 1.36,
+          "silhouetteMedian": 2.27,
+          "silhouettePixelsAtLeast3To1": 4
+        },
+        {
+          "id": "P3",
+          "dominantForeground": "#b67b58",
+          "dominantPixelCount": 611,
+          "changedPixels": 5400,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 2,
+          "silhouettePixelsAtLeast3To1": 12
+        },
+        {
+          "id": "P4",
+          "dominantForeground": "#d8a27c",
+          "dominantPixelCount": 651,
+          "changedPixels": 5185,
+          "silhouetteP10": 1.22,
+          "silhouetteMedian": 1.82,
+          "silhouettePixelsAtLeast3To1": 1
+        },
+        {
+          "id": "P5",
+          "dominantForeground": "#fff1b7",
+          "dominantPixelCount": 903,
+          "changedPixels": 6278,
+          "silhouetteP10": 1.13,
+          "silhouetteMedian": 2.16,
+          "silhouettePixelsAtLeast3To1": 30
+        },
+        {
+          "id": "P6",
+          "dominantForeground": "#202b31",
+          "dominantPixelCount": 1027,
+          "changedPixels": 5651,
+          "silhouetteP10": 1.27,
+          "silhouetteMedian": 2.4,
+          "silhouettePixelsAtLeast3To1": 8
+        },
+        {
+          "id": "P7",
+          "dominantForeground": "#252433",
+          "dominantPixelCount": 986,
+          "changedPixels": 6258,
+          "silhouetteP10": 1.07,
+          "silhouetteMedian": 1.64,
+          "silhouettePixelsAtLeast3To1": 16
+        },
+        {
+          "id": "P8",
+          "dominantForeground": "#202b2d",
+          "dominantPixelCount": 1014,
+          "changedPixels": 5623,
+          "silhouetteP10": 1.09,
+          "silhouetteMedian": 1.97,
+          "silhouettePixelsAtLeast3To1": 1
+        }
+      ]
+    }
+  ]
+}

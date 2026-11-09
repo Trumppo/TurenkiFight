@@ -14,12 +14,12 @@
   <rect x="16" y="51" width="181" height="51" fill="#39434a"/>
   <rect x="20" y="55" width="173" height="43" fill="#8d8d7b"/>
   <rect x="20" y="72" width="173" height="3" fill="#454b49"/>
-  <rect x="20" y="88" width="173" height="3" fill="#454b49"/>
-  <rect x="20" y="97" width="173" height="5" fill="#303a40"/>
+  <rect x="20" y="88" width="173" height="3" fill="#76766c"/>
+  <rect x="20" y="97" width="173" height="5" fill="#79796f"/>
   <g fill="#ad875a"><rect x="28" y="59" width="9" height="10"/><rect x="58" y="58" width="11" height="11"/><rect x="94" y="59" width="10" height="10"/><rect x="128" y="57" width="12" height="12"/><rect x="169" y="59" width="11" height="10"/></g>
   <g fill="#65847d"><rect x="42" y="60" width="10" height="9"/><rect x="75" y="58" width="11" height="11"/><rect x="109" y="60" width="10" height="9"/><rect x="146" y="59" width="11" height="10"/><rect x="183" y="60" width="7" height="9"/></g>
-  <g fill="#a96758"><rect x="29" y="77" width="11" height="8"/><rect x="64" y="77" width="11" height="8"/><rect x="100" y="77" width="10" height="8"/><rect x="135" y="77" width="11" height="8"/><rect x="170" y="77" width="11" height="8"/></g>
-  <g fill="#d0c09a"><rect x="46" y="78" width="12" height="7"/><rect x="82" y="78" width="12" height="7"/><rect x="118" y="78" width="12" height="7"/><rect x="153" y="78" width="12" height="7"/><rect x="183" y="78" width="7" height="7"/></g>
+  <g fill="#887669"><rect x="29" y="77" width="11" height="8"/><rect x="64" y="77" width="11" height="8"/><rect x="100" y="77" width="10" height="8"/><rect x="135" y="77" width="11" height="8"/><rect x="170" y="77" width="11" height="8"/></g>
+  <g fill="#aaa58e"><rect x="46" y="78" width="12" height="7"/><rect x="82" y="78" width="12" height="7"/><rect x="118" y="78" width="12" height="7"/><rect x="153" y="78" width="12" height="7"/><rect x="183" y="78" width="7" height="7"/></g>
   <!-- Cold-drink fridge, glass highlights, shelves and simplified bottle shapes. -->
   <rect x="231" y="43" width="69" height="66" fill="#2e414a"/>
   <rect x="235" y="47" width="61" height="58" fill="#7e9694"/>
@@ -32,15 +32,16 @@
   <rect x="101" y="34" width="111" height="12" fill="#303c41"/>
   <rect x="104" y="36" width="105" height="8" fill="#d2c7a9"/>
   <text x="156" y="42.5" text-anchor="middle" font-family="monospace" font-size="7" font-weight="bold" letter-spacing="1" fill="#516466">K-KAUPPA</text>
-  <!-- Checkout counter at the back edge of the playable floor. -->
-  <rect x="34" y="102" width="146" height="12" fill="#4a4841"/>
-  <rect x="37" y="104" width="140" height="5" fill="#998266"/>
-  <rect x="40" y="114" width="7" height="10" fill="#5f5950"/><rect x="167" y="114" width="7" height="10" fill="#5f5950"/>
+  <!-- Muted checkout silhouette stays behind the fighting band instead of cutting through it. -->
+  <rect x="34" y="102" width="146" height="12" fill="#6d7470"/>
+  <rect x="37" y="103" width="140" height="3" fill="#808477"/>
+  <rect x="40" y="114" width="7" height="10" fill="#68706b"/><rect x="167" y="114" width="7" height="10" fill="#68706b"/>
   <rect x="139" y="97" width="20" height="7" fill="#28393f"/><rect x="142" y="99" width="14" height="3" fill="#9eaca2"/>
   <rect x="114" y="99" width="11" height="3" fill="#a96758"/>
   <!-- Uncluttered low-contrast tile field: subtle broad seams only. -->
   <rect y="124" width="320" height="56" fill="#727d79"/>
-  <rect y="124" width="320" height="3" fill="#5e6a69"/>
-  <g stroke="#677371" stroke-width="1"><path d="M0 145H320M0 163H320M0 179H320"/><path d="M40 127v53m40-53v53m40-53v53m40-53v53m40-53v53m40-53v53m40-53v53m40-53v53"/></g>
-  <g stroke="#879087" stroke-width="1" opacity=".45"><path d="M0 136H320M0 154H320m0 18H0"/></g>
+  <rect y="124" width="320" height="3" fill="#4e5e5c"/>
+  <rect y="127" width="320" height="1" fill="#92958a"/>
+  <g stroke="#677371" stroke-width="1" opacity=".45"><path d="M0 145H320M0 163H320M0 179H320"/><path d="M40 127v53m40-53v53m40-53v53m40-53v53m40-53v53m40-53v53m40-53v53m40-53v53"/></g>
+  <g stroke="#879087" stroke-width="1" opacity=".25"><path d="M0 136H320M0 154H320m0 18H0"/></g>
 </svg>
