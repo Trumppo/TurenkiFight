@@ -723,7 +723,6 @@ export class StationScene extends Phaser.Scene {
     const arena = this.state.arena;
     this.arenaTelegraph?.update(this.state.tick, this.state.phase === 'fighting', arena);
     this.stationEvent?.update(this.state.tick, this.state.phase === 'fighting');
-    const reducedMotion = this.reducedMotionQuery?.matches ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     drawZoneGraphics(this.zoneGraphics!, zonePresentation(this.state, reducedMotion), this.state.tick);
     const liveIds = new Set(this.state.fighters.map(fighter => fighter.id));
     for (const [id, sprite] of this.fighterSprites) {
