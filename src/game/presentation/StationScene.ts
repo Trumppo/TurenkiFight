@@ -1120,6 +1120,7 @@ export class StationScene extends Phaser.Scene {
       const accessibleLabel = outsideZone ? `${label}, outside the safe zone` : label;
       if (nodes.root.getAttribute('aria-label') !== accessibleLabel) nodes.root.setAttribute('aria-label', accessibleLabel);
     }
+    const compactDesktopHud = window.innerWidth >= 601 && window.innerHeight <= 540;
     let statusText: string;
     let fullStatusText: string;
     if (this.state.phase === 'lobby') {
@@ -1134,42 +1135,50 @@ export class StationScene extends Phaser.Scene {
         const ready = this.waveRosterReady();
         fullStatusText += ' · WAVE RULE: AT LEAST ONE HUMAN AND ONE BOT; HUMANS ARE PLAYERS, BOTS ARE ENEMIES.';
         statusText = ready
-          ? `WAVE READY · HUMANS=PLAYERS · BOTS=ENEMIES · ENTER TO START${pairing}`
-          : `WAVE NEEDS HUMAN + BOT${hasBot ? '' : ' · ADD BOT'} · HUMANS=PLAYERS, BOTS=ENEMIES${pairing}`;
+          ? compactDesktopHud ? 'WAVE READY' : `WAVE READY · HUMANS=PLAYERS · BOTS=ENEMIES · ENTER TO START${pairing}`
+          : compactDesktopHud ? `WAVE NEEDS HUMAN + BOT${hasBot ? '' : ' · ADD BOT'}`
+            : `WAVE NEEDS HUMAN + BOT${hasBot ? '' : ' · ADD BOT'} · HUMANS=PLAYERS, BOTS=ENEMIES${pairing}`;
       } else {
-        statusText = window.innerHeight <= 540 ? `SHIFT/PAD JOIN${pairing} · START` : `SHIFT/PAD JOIN${pairing} · ENTER`;
+        statusText = compactDesktopHud ? 'SHIFT/PAD JOIN · START'
+          : window.innerHeight <= 540 ? `SHIFT/PAD JOIN${pairing} · START` : `SHIFT/PAD JOIN${pairing} · ENTER`;
       }
     }
     else if (this.paused && this.canPauseLocal()) {
-      fullStatusText = statusText = 'PAUSED · LOCAL MATCH FROZEN · PRESS P OR RESUME';
+      fullStatusText = 'PAUSED · LOCAL MATCH FROZEN · PRESS P OR RESUME';
+      statusText = compactDesktopHud ? 'PAUSED · PRESS P OR RESUME' : fullStatusText;
     }
     else if (this.state.phase === 'results') {
       const winner = this.lastResult?.mode === (this.state.mode ?? 'score-brawl') ? this.lastResult.winner : resultWinner(this.state);
       const reason = this.lastResult?.mode === (this.state.mode ?? 'score-brawl') ? this.lastResult.reason : resultReason(this.state);
+      const compactResult = compactDesktopHud
+        ? `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'}`
+        : undefined;
       if (this.state.mode === 'last-man-standing') {
         const roster = this.state.fighters.map(f => `${f.id} ${f.eliminated ? 'OUT' : 'STOCK 1'}`).join(' · ');
         const reasonLabel = RESULT_REASON_LABELS[reason] ?? reason;
         fullStatusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reasonLabel} · ${roster} · ENTER: REMATCH`;
-        statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reasonLabel} · ENTER: REMATCH`;
+        statusText = compactResult ?? `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reasonLabel} · ENTER: REMATCH`;
       } else if (this.state.mode === 'deathmatch') {
         const reasonLabel = RESULT_REASON_LABELS[reason] ?? reason;
         const roster = this.state.fighters.map(f => `${f.id} ${f.frags ?? 0}F/${f.deaths ?? 0}D`).join(' · ');
         fullStatusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reasonLabel} · ${roster} · ENTER: REMATCH`;
-        statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reasonLabel} · ENTER: REMATCH`;
+        statusText = compactResult ?? `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reasonLabel} · ENTER: REMATCH`;
       } else {
         const reasonLabel = RESULT_REASON_LABELS[reason] ?? reason;
         const scoreTable = standings(this.state).map(s => `#${s.rank} ${s.id}: ${s.score}`).join(' · ');
         fullStatusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reasonLabel} · ${scoreTable} · ENTER: REMATCH`;
-        statusText = `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reasonLabel} · ENTER: REMATCH`;
+        statusText = compactResult ?? `RESULTS · ${winner ? `WINNER: ${winner}` : 'DRAW'} · REASON: ${reasonLabel} · ENTER: REMATCH`;
       }
     }
     else if (this.state.phase === 'countdown') {
       const countdown = `START ${Math.ceil(this.state.countdownTicks / TICK_RATE)}`;
-      fullStatusText = statusText = this.state.mode ? `${countdown} · ${MODE_NAMES[this.state.mode].toUpperCase()}` : countdown;
+      fullStatusText = this.state.mode ? `${countdown} · ${MODE_NAMES[this.state.mode].toUpperCase()}` : countdown;
+      statusText = compactDesktopHud ? countdown : fullStatusText;
     }
     else {
       const fightStatus = this.state.fighters.filter(f => f.koTimer > 0).map(f => `${f.id} KO`).join(' · ') || 'FIGHT';
-      fullStatusText = statusText = this.state.mode ? `${fightStatus} · ${MODE_NAMES[this.state.mode].toUpperCase()}` : fightStatus;
+      fullStatusText = this.state.mode ? `${fightStatus} · ${MODE_NAMES[this.state.mode].toUpperCase()}` : fightStatus;
+      statusText = compactDesktopHud ? (fightStatus === 'FIGHT' ? 'FIGHT' : 'KO') : fullStatusText;
     }
     if (hud.status.textContent !== statusText) hud.status.textContent = statusText;
     hud.status.classList.toggle('is-wave-lobby', this.state.phase === 'lobby' && this.selectedMode === 'wave');
