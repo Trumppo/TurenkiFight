@@ -1803,7 +1803,7 @@ tasks:
     title: Produce a repeatable desktop visual evaluation matrix
     assigned_role: graphics-session
     session_id: graphics-session-20261107-g1
-    status: in_progress
+    status: done
     priority: P1
     specification: docs/GRAPHICS_ROADMAP.md
     depends_on: []
@@ -1814,7 +1814,83 @@ tasks:
       - "Checks are semantic (canvas size, HUD inside viewport, text at least 14 px) and do not pin PNG bytes"
       - "Existing browser suites stay green in both styles"
     last_updated: "2026-11-07"
-    notes: "Owner asked for a visual evaluation matrix. Mobile is out of scope (owner decision 2026-11-07). No visual change in this slice."
+    notes: "PR #183 merged as b84e82b. 12 desktop captures (classic/retro x station/K-kauppa/Mesku at 640x360 and 1280x720) plus manifest, written by npm run visual:matrix. Semantic checks only; phone sizes removed by owner decision 2026-11-07. Desktop-only scope recorded in PR #184."
+
+  - id: GRAPHICS-G2-FIGHTER-READABILITY
+    title: Make every fighter slot identifiable in an eight-player crowd
+    assigned_role: graphics-session
+    status: in_progress
+    priority: P1
+    specification: docs/GRAPHICS_ROADMAP.md
+    depends_on: [GRAPHICS-G1-EVAL-BASELINE]
+    scope: [src/game/presentation/, src/style.css, tests/browser/]
+    acceptance:
+      - "A per-slot marker driven by fighter id, not hue alone, appears for all eight slots"
+      - "Marker-to-floor contrast meets a stated threshold with a measured unit test"
+      - "Retro palette and classic look otherwise unchanged; station and Mesku art untouched"
+      - "No simulation, protocol or input change; semantic checks only, no PNG byte pins"
+    last_updated: "2026-11-09"
+    notes: "First real visual change of the graphics track. Owner approval required before merge."
+
+  - id: GRAPHICS-G3-HIT-FEEDBACK
+    title: Add hit and knockout feedback driven by simulation events
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/GRAPHICS_ROADMAP.md
+    depends_on: [GRAPHICS-G2-FIGHTER-READABILITY]
+    scope: [src/game/presentation/, src/style.css, tests/browser/]
+    acceptance:
+      - "An effect appears on each HitLanded event and a stronger one on Knockout"
+      - "Effect counts are capped and reduced motion removes shake"
+      - "No simulation, protocol or server change"
+    last_updated: "2026-11-09"
+    notes: "Presentation only. Must not obscure fighters in an eight-player crowd."
+
+  - id: GRAPHICS-G4-ARENA-CONTRAST
+    title: Improve arena depth and background contrast behind combat
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/GRAPHICS_ROADMAP.md
+    depends_on: [GRAPHICS-G2-FIGHTER-READABILITY]
+    scope: [src/game/presentation/, src/style.css, tests/browser/]
+    acceptance:
+      - "Fighter-to-background contrast meets the G2 threshold on captures"
+      - "Station and Mesku changes are listed explicitly and approved by the owner"
+      - "No simulation, protocol or server change"
+    last_updated: "2026-11-09"
+    notes: "Owner approves each changed arena. Existing accepted look is not restyled silently."
+
+  - id: GRAPHICS-G5-DESKTOP-HUD
+    title: Keep the HUD and results readable at desktop sizes
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/GRAPHICS_ROADMAP.md
+    depends_on: [GRAPHICS-G1-EVAL-BASELINE]
+    scope: [src/game/presentation/, src/style.css, tests/browser/]
+    acceptance:
+      - "No HUD text is clipped at 640x360 or 1280x720"
+      - "Minimum HUD text size is 14 px"
+      - "The arena is not pushed out of view"
+    last_updated: "2026-11-09"
+    notes: "Desktop only; mobile is out of scope by owner decision 2026-11-07."
+
+  - id: GRAPHICS-G6-HAZARD-ZONE-VISUALS
+    title: Keep the arena hazard and the mode zone visually distinct
+    assigned_role: graphics-session
+    status: blocked
+    priority: P1
+    specification: docs/GRAPHICS_ROADMAP.md
+    depends_on: [GRAPHICS-G4-ARENA-CONTRAST]
+    scope: [src/game/presentation/, src/style.css, tests/browser/]
+    acceptance:
+      - "A viewer can tell the K-kauppa shelf band (arena) from the Deathmatch zone (mode) by visual language alone"
+      - "Both warnings are visible before they hurt, in classic and retro"
+      - "No damage or rule change"
+    last_updated: "2026-11-09"
+    notes: "Visual only. The zone stays a mode rule and the shelf band stays arena data."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
