@@ -309,6 +309,18 @@ test('the danger band, warning and collapse render at 640x360 and 1280x720', asy
         (node as HTMLCanvasElement).style.setProperty('height', `${360 * scaleFactor}px`, 'important');
         (node as HTMLCanvasElement).style.imageRendering = 'pixelated';
       }, size.scale);
+      await canvas.evaluate((node, scaleFactor) => new Promise<void>(resolve => {
+        const expectedWidth = 640 * scaleFactor;
+        const expectedHeight = 360 * scaleFactor;
+        let frames = 0;
+        const settle = (): void => {
+          const rect = node.getBoundingClientRect();
+          const sized = Math.round(rect.width) === expectedWidth && Math.round(rect.height) === expectedHeight;
+          if (sized || frames++ > 120) resolve();
+          else requestAnimationFrame(settle);
+        };
+        settle();
+      }), size.scale);
       const screenshot = await canvas.screenshot({ path: `artifacts/screenshots/m15-hazard-${style}-${size.name}-${phase.name}.png`, scale: 'css' });
       expect([screenshot.readUInt32BE(16), screenshot.readUInt32BE(20)]).toEqual([640 * size.scale, 360 * size.scale]);
     }

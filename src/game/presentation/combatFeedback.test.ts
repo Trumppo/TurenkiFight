@@ -62,7 +62,7 @@ describe('presentation combat feedback', () => {
     feedback.draw(graphics as never, true);
 
     expect(calls.some(call => call.startsWith('fillRect:') && call.endsWith(',4,4'))).toBe(true);
-    expect(calls.some(call => call.startsWith('strokeCircle:') && call.endsWith(',7'))).toBe(true);
+    expect(calls.some(call => call.startsWith('strokeCircle:') && call.endsWith(',9'))).toBe(true);
     expect(calls.some(call => call.startsWith('lineTo:') || call.startsWith('moveTo:'))).toBe(false);
   });
 });

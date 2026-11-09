@@ -89,7 +89,7 @@ export class CombatFeedbackState {
         graphics.fillStyle(0xffe3a0, 0.95).fillRect(Math.round(spark.x - 2), Math.round(spark.y - 2), 4, 4);
         continue;
       }
-      const radius = Math.round(2 + progress * 3);
+      const radius = Math.round(3 + progress * 3);
       const alpha = 1 - progress;
       graphics.lineStyle(2, 0xffe3a0, alpha);
       graphics.beginPath();
@@ -103,7 +103,7 @@ export class CombatFeedbackState {
 
     for (const cue of this.knockouts) {
       const progress = clamp01(cue.ageMs / KNOCKOUT_CUE_LIFETIME_MS);
-      const radius = Math.round(reducedMotion ? 7 : 7 + progress * 5);
+      const radius = Math.round(reducedMotion ? 9 : 9 + progress * 5);
       const alpha = reducedMotion ? 0.9 : 1 - progress;
       graphics.lineStyle(2, 0xfff1b7, alpha).strokeCircle(cue.x, cue.y, radius);
       if (!reducedMotion && cue.ageMs < KNOCKOUT_FLASH_LIFETIME_MS) {
@@ -128,7 +128,7 @@ export class CombatFeedbackState {
     const fighter = fighterById(fighters, event.target);
     if (!fighter) return;
     const { x } = fighterCenter(fighter);
-    const y = fighter.y - fighter.z - 10;
+    const y = fighter.y - fighter.z - 1;
     if (this.knockouts.length === MAX_LIVE_KNOCKOUT_CUES) this.knockouts.shift();
     this.knockouts.push({ fighterId: fighter.id, x: Math.round(x), y: Math.round(y), ageMs: 0 });
   }

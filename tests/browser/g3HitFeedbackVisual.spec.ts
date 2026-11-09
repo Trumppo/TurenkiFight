@@ -7,22 +7,28 @@ async function triggerFeedback(page: Page, targetHealth: number): Promise<void> 
     const moduleUrl = '/src/game/simulation/step.ts';
     const simulation = await import(/* @vite-ignore */ moduleUrl);
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
-    const state = simulation.createState({ ids: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'], phase: 'fighting' });
-    const crowd = [
-      { x: 270, y: 160 }, { x: 290, y: 160 }, { x: 250, y: 155 }, { x: 310, y: 155 },
-      { x: 256, y: 174 }, { x: 304, y: 174 }, { x: 270, y: 145 }, { x: 290, y: 145 },
-    ];
-    state.fighters.forEach((fighter: { x: number; y: number }, index: number) => Object.assign(fighter, crowd[index]));
+    const state = simulation.createState({ ids: ['P1', 'P2'], phase: 'fighting' });
     const attacker = state.fighters[0];
     const target = state.fighters[1];
-    Object.assign(attacker, { facing: 1 });
-    Object.assign(target, { health: targetHealth });
+    Object.assign(attacker, { x: 170, y: 160, facing: 1 });
+    Object.assign(target, { x: 190, y: 160, health: targetHealth });
     scene.state = state;
     scene.matchEvents = [];
     scene.elapsedMs = 0;
     scene.keys.F.isDown = true;
     scene.update(0, 150);
     scene.keys.F.isDown = false;
+
+    // Add six stationary presentation-only fighters after the real two-player
+    // simulation step, so the captured hit/KO is not hidden by crowd combat.
+    const crowd = simulation.createState({ ids: ['P3', 'P4', 'P5', 'P6', 'P7', 'P8'], phase: 'fighting' });
+    const crowdPositions = [
+      { x: 125, y: 195 }, { x: 250, y: 195 }, { x: 130, y: 220 },
+      { x: 200, y: 220 }, { x: 270, y: 220 }, { x: 340, y: 220 },
+    ];
+    crowd.fighters.forEach((fighter: { x: number; y: number }, index: number) => Object.assign(fighter, crowdPositions[index]));
+    scene.state.fighters.push(...crowd.fighters);
+    scene.drawFighters();
   }, targetHealth);
 }
 
