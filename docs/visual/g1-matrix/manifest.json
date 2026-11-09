@@ -1,7 +1,7 @@
 {
   "task": "GRAPHICS-G1-EVAL-BASELINE",
-  "commitSha": "b5909f6a25e79a2c184118e7e4e6a513516948f7",
-  "date": "2026-11-09T06:27:25.670Z",
+  "commitSha": "b9888beebc3a309d15f2b252e7729755e3dc49a4",
+  "date": "2026-11-09T07:30:05.603Z",
   "logicalCanvas": {
     "width": 640,
     "height": 360
@@ -24,7 +24,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 11106
+      "bytes": 12333
     },
     {
       "file": "classic-station-1280x720.png",
@@ -43,7 +43,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 25691
+      "bytes": 27178
     },
     {
       "file": "classic-kkauppa-640x360.png",
@@ -62,7 +62,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 15133
+      "bytes": 16310
     },
     {
       "file": "classic-kkauppa-1280x720.png",
@@ -81,7 +81,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 30769
+      "bytes": 32164
     },
     {
       "file": "classic-mesku-640x360.png",
@@ -100,7 +100,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 11106
+      "bytes": 12333
     },
     {
       "file": "classic-mesku-1280x720.png",
@@ -119,7 +119,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 26965
+      "bytes": 28447
     },
     {
       "file": "retro-station-640x360.png",
@@ -138,7 +138,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 20402
+      "bytes": 21655
     },
     {
       "file": "retro-station-1280x720.png",
@@ -157,7 +157,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 37243
+      "bytes": 38651
     },
     {
       "file": "retro-kkauppa-640x360.png",
@@ -176,7 +176,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 23127
+      "bytes": 24361
     },
     {
       "file": "retro-kkauppa-1280x720.png",
@@ -195,7 +195,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 40686
+      "bytes": 42052
     },
     {
       "file": "retro-mesku-640x360.png",
@@ -214,7 +214,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 20708
+      "bytes": 21972
     },
     {
       "file": "retro-mesku-1280x720.png",
@@ -233,7 +233,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 38497
+      "bytes": 39914
     }
   ]
 }
