@@ -30,7 +30,7 @@ p { color: #c2cbd2; }
 .zone-status.is-warning .zone-summary { color: #ffcf86; }
 .zone-status.is-warning.is-warning-flash .zone-summary { color: #ff765b; text-shadow: 0 0 4px rgba(255, 118, 91, .65); }
 .zone-danger { color: #ff9f90; font-size: 14px; font-weight: 900; }
-.station-event-status { min-width: 0; padding: 1px 2px; overflow: hidden; color: #c8eee1; font-size: 14px; font-weight: 800; line-height: 1.2; letter-spacing: .025em; white-space: nowrap; text-overflow: ellipsis; }
+.station-event-status { min-width: 0; padding: 1px 2px; color: #c8eee1; font-size: 14px; font-weight: 800; line-height: 1.2; letter-spacing: .025em; white-space: nowrap; }
 .station-event-status[hidden] { display: none; }
 .wave-status {
   display: flex;
@@ -52,10 +52,10 @@ p { color: #c2cbd2; }
 .wave-status strong { color: #f4d38d; }
 #wave-countdown { color: #ffcf86; }
 #wave-countdown[hidden] { display: none; }
-.object-hint { padding: 1px 2px; color: #b9eee0; font-size: 12px; font-weight: 800; line-height: 1.15; letter-spacing: .04em; }
+.object-hint { padding: 1px 2px; color: #b9eee0; font-size: 14px; font-weight: 800; line-height: 1.15; letter-spacing: .04em; }
 .object-hint[hidden] { display: none; }
 #match-timer { font-size: clamp(16px, 2vw, 28px); line-height: 1.1; letter-spacing: .04em; white-space: nowrap; }
-#match-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#match-status { min-width: 0; overflow-wrap: anywhere; }
 #match-status.is-results { overflow: visible; text-overflow: clip; white-space: normal; font-size: 14px; line-height: 1.15; }
 #match-status.is-paused { overflow: visible; text-overflow: clip; white-space: normal; font-size: 14px; line-height: 1.15; color: #ffe39a; font-weight: 900; }
 #match-status.is-wave-lobby {
@@ -189,21 +189,25 @@ p { color: #c2cbd2; }
   .victory-reveal.is-revealing .victory-burst::after { animation: none; }
 }
 
-/* At full-width desktop sizes, give match status its own compact HUD row. Its
-   14px text can use the whole reserved band instead of being ellipsized beside
-   the timer and controls; the native short-viewport HUD stays unchanged. */
+/* At small desktop widths, give the status its own full-width row rather than
+   hiding the end of it beside the mode and display controls. At wider desktop
+   widths it shares the toolbar row, leaving room for the eight player cards on
+   one line inside the canvas's reserved scoreboard strip. */
+@media (min-width: 601px) and (max-width: 1023px) {
+  #fight-hud { padding-top: 1px; padding-bottom: 1px; }
+  .hud-toolbar { grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px; }
+  #match-timer { grid-column: 1; grid-row: 1; }
+  #match-status { grid-column: 1 / -1; grid-row: 2; white-space: normal; line-height: 1.2; }
+  .hud-toolbar .object-hint { position: absolute; z-index: 1; top: 29px; right: 4px; padding: 1px 2px; white-space: nowrap; }
+  #fight-hud:has(.object-hint:not([hidden])) #match-status { padding-right: 160px; }
+  .hud-actions { grid-column: 2; grid-row: 1; }
+  .scale-control { grid-column: 3; grid-row: 1; }
+}
+
 @media (min-width: 1024px) {
-  body:not(.integer-scale-2) #fight-hud { padding-top: 0; padding-bottom: 0; }
-  body:not(.integer-scale-2) .hud-toolbar { grid-template-columns: auto minmax(0, 1fr) auto; }
-  body:not(.integer-scale-2) #match-status {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
-    font-size: 14px;
-    line-height: 1.2;
-  }
+  .hud-toolbar { grid-template-columns: auto minmax(0, 1fr) auto auto auto; }
+  .hud-toolbar .object-hint { grid-column: 5; grid-row: 1; padding: 0 2px; white-space: nowrap; }
+  #player-hud:not(:has(.is-lobby-slot)) { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 }
 
 .instructions { font-size: 13px; line-height: 1.7; }
@@ -269,7 +273,8 @@ body.integer-scale-2 .lobby-actions button { min-height: 28px; padding: 2px 8px;
 }
 
 /* Fit the complete playfield into short browser windows without changing
-   Phaser's logical canvas or deterministic simulation. */
+   Phaser's logical canvas or deterministic simulation. HUD text itself stays
+   at the 14px minimum even when the canvas is scaled down. */
 @media (max-height: 540px) {
   main { padding: 4px 8px; }
   h1 { font-size: 16px; line-height: 20px; margin: 0; }
@@ -277,11 +282,11 @@ body.integer-scale-2 .lobby-actions button { min-height: 28px; padding: 2px 8px;
   #game { width: min(100%, calc((100dvh - 100px) * 16 / 9 + 8px)); margin: 4px auto; }
   .instructions { font-size: 10px; line-height: 12px; margin: 4px 0; }
   #fight-hud { padding: 0 4px; }
-  .hud-toolbar { min-height: 15px; gap: 5px; }
+  .hud-toolbar { min-height: 16px; gap: 4px; }
   #match-timer { font-size: 14px; line-height: 16px; }
   #player-hud { gap: 1px; margin-top: 0; }
-  .hud-player { min-height: 13px; padding: 0; column-gap: 4px; line-height: 13px; }
-  .hud-slot-action { min-height: 14px; line-height: 12px; }
+  .hud-player { min-height: 16px; padding: 0; column-gap: 3px; line-height: 16px; }
+  .hud-slot-action { min-height: 16px; line-height: 14px; }
 }
 
 /* Explicit ?scale=2 mode: canvas CSS dimensions are exactly 2x its 640x360
@@ -335,6 +340,7 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   #fight-hud { position: static; padding: 7px; border: 1px solid #c7a76a; font-size: 14px; }
   .hud-toolbar { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 6px; }
   #match-status { grid-column: 1 / -1; grid-row: 3; white-space: normal; line-height: 1.25; }
+  .hud-toolbar .object-hint { position: static; grid-column: 1 / -1; grid-row: 5; padding: 1px 2px; white-space: normal; }
   .mode-control { grid-column: 1; grid-row: 2; justify-self: start; }
   .hud-actions { grid-column: 2; grid-row: 2; justify-self: end; }
   .mode-control select { max-width: 180px; }
@@ -538,6 +544,18 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   body.integer-scale-2 #game canvas { width: 100% !important; height: auto !important; }
 }
 
+@media (min-width: 601px) and (max-height: 540px) {
+  #fight-hud { padding: 0 4px; }
+  .hud-toolbar { grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 3px; row-gap: 0; }
+  #match-status { grid-column: 2; grid-row: 1; white-space: nowrap; line-height: 16px; }
+  #match-status.is-results, #match-status.is-paused { grid-column: 2; grid-row: 1; white-space: nowrap; line-height: 16px; }
+  #match-status.is-wave-lobby { grid-column: 2; grid-row: 1; white-space: nowrap; }
+  .hud-toolbar .object-hint { position: static; grid-column: 3; grid-row: 1; padding: 0 1px; white-space: nowrap; }
+  .hud-actions { grid-column: 4; grid-row: 1; gap: 3px; }
+  #player-hud { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 1px; margin-top: 0; }
+  .hud-player { min-height: 15px; line-height: 15px; }
+}
+
 /* A short 16:9 viewport can show the full native camera at 1× when page chrome
    is removed. This keeps the eight-slot grid broad enough to read at 640×360. */
 @media (max-height: 400px) and (min-width: 601px) {
@@ -548,7 +566,7 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   #game { width: min(100%, 597px) !important; height: auto !important; max-width: none !important; margin: 0 auto !important; border: 0 !important; }
   .victory-reveal { top: 55%; max-height: calc(100% - 52px); }
   #game canvas { width: 100% !important; height: auto !important; }
-  #fight-hud { padding: 2px 4px; }
+  #fight-hud { padding: 0 4px; }
   body.integer-scale-2 main { width: 100%; max-width: none; padding: 0; }
   body.integer-scale-2 .page-header,
   body.integer-scale-2 .controls { display: block; }
