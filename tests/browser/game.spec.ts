@@ -97,7 +97,7 @@ test('all fighter poses resolve to distinct, nonempty canvas textures', async ({
     };
     const poses = ['idle', 'walk', 'depth', 'punch', 'kick', 'jump', 'jumpkick', 'hit', 'ko', 'respawn'];
     const signatures: Record<string, number[]> = {};
-    for (const id of ['P1', 'P2', 'P3', 'P4']) {
+    for (const id of ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8']) {
       const samples: number[] = [];
       for (const pose of poses) {
         for (let frame = 0; frame < 4; frame++) {
@@ -123,7 +123,15 @@ test('all fighter poses resolve to distinct, nonempty canvas textures', async ({
     expect(samples).toHaveLength(40);
     expect(samples.every(checksum => checksum > 0)).toBe(true);
   }
-  expect(result.P1).not.toEqual(result.P2);
+  // Every slot must have its own art: eight identical fighters would mean a
+  // silent classic fallback or a shared palette in the retro style.
+  const ids = Object.keys(result);
+  expect(ids).toHaveLength(8);
+  for (let a = 0; a < ids.length; a++) {
+    for (let b = a + 1; b < ids.length; b++) {
+      expect(result[ids[a]], `${ids[a]} and ${ids[b]} share the same textures`).not.toEqual(result[ids[b]]);
+    }
+  }
 });
 
 test('HUD clock, score and hit/KO/respawn presentation follow authoritative state', async ({ page }) => {
