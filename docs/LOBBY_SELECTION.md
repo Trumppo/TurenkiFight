@@ -1,7 +1,7 @@
 # Lobby selection: arena, mode, players and character
 
-**Status:** Owner requirement 2026-11-10. L1 arena selection and L2 player count are implemented locally;
-L3 character selection and L4 summary remain proposals.
+**Status:** Owner requirement 2026-11-10. L1 arena selection, L2 player count and L3 character selection are
+implemented locally; L4 summary remains a proposal.
 **Related:** [GRAPHICS_ROADMAP.md](GRAPHICS_ROADMAP.md), [GAME_DESIGN.md](GAME_DESIGN.md), [M1_GAMEPLAY_CONTROLS.md](M1_GAMEPLAY_CONTROLS.md).
 
 ## 1. The gap
@@ -51,11 +51,12 @@ The chosen combination is visible as one summary line before the match starts, a
 - Acceptance: a 1-player match creates one fighter, an 8-player match eight; results and HUD match the count; no ghost slots.
 - Evidence: `docs/LOBBY_L2_PLAYER_COUNT_PLAN.md` and `tests/browser/lobbyPlayerCount.spec.ts`.
 
-### L3 - Character per slot
+### L3 - Character per slot (current work package)
 
 - Each active slot shows its character name and a small preview; cycling changes the appearance only.
 - Presentation maps `slot -> characterId`; `fighterKey` uses the mapped character for sprites, and the HUD shows the character name next to the slot.
 - Acceptance: P1 can look like P6 and still act as P1 (score, results, replays unchanged); all eight appearances available; choice persists; simulation snapshots and fingerprints unchanged.
+- Evidence: `docs/LOBBY_L3_CHARACTER_SELECT_PLAN.md` and `tests/browser/lobbyCharacterSelect.spec.ts`.
 
 ### L4 - Summary and start
 

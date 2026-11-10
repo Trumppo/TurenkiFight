@@ -30,6 +30,11 @@ import { CombatFeedbackState } from './combatFeedback';
 
 const PLAYER_IDS = Array.from({ length: MAX_PLAYERS }, (_, index) => `P${index + 1}`);
 const PLAYER_COUNT_STORAGE_KEY = 'turenkifight.playerCount';
+const CHARACTER_SELECTION_STORAGE_KEY = 'turenkifight.characterSelections';
+const CHARACTER_NAMES: Record<string, string> = {
+  P1: 'RED COAT', P2: 'BLUE JACKET', P3: 'RED HOOD', P4: 'GREEN COAT',
+  P5: 'STATION MASTER', P6: 'KIOSK VENDOR', P7: 'HOODED STUDENT', P8: 'COMMUTER',
+};
 
 const MODE_NAMES: Record<ModeId, string> = {
   'score-brawl': 'Score Brawl',
@@ -69,6 +74,7 @@ export class StationScene extends Phaser.Scene {
   private state!: GameState;
   private selectedMode: ModeId = 'score-brawl';
   private selectedPlayerCount = MAX_PLAYERS;
+  private characterSelections = new Map<string, string>();
   private elapsedMs = 0;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -107,7 +113,7 @@ export class StationScene extends Phaser.Scene {
     allBotsPanel?: HTMLElement;
     waveHelp?: HTMLElement;
     playerList: HTMLElement;
-    players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; action: HTMLButtonElement }>;
+    players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; character: HTMLSelectElement; action: HTMLButtonElement }>;
   };
   private previous = new Map<string, { x: number; y: number; health: number }>();
   private hitFlash = new Map<string, number>();
@@ -198,6 +204,7 @@ export class StationScene extends Phaser.Scene {
     let storage: Storage | undefined;
     try { storage = window.localStorage; } catch { /* Private browsing may disable storage. */ }
     this.keyboardStore = new KeyboardMappingStore(storage);
+    this.loadCharacterSelections(storage);
     const persistedKeyboardSlots = (['P3', 'P4'] as const).filter(slot => this.keyboardStore.hasKeyboardBindings(slot));
     if (persistedKeyboardSlots.length) {
       this.state = this.createLobbyState([...this.state.fighters.map(fighter => fighter.id), ...persistedKeyboardSlots]);
@@ -597,6 +604,37 @@ export class StationScene extends Phaser.Scene {
     return Number.isInteger(parsed) && parsed >= 1 && parsed <= MAX_PLAYERS ? parsed : MAX_PLAYERS;
   }
 
+  private loadCharacterSelections(storage?: Storage): void {
+    this.characterSelections = new Map(PLAYER_IDS.map(id => [id, id]));
+    let raw: string | null = null;
+    try { raw = storage?.getItem(CHARACTER_SELECTION_STORAGE_KEY) ?? null; } catch { /* Storage is optional. */ }
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      for (const id of PLAYER_IDS) {
+        const value = parsed[id];
+        if (typeof value === 'string' && PLAYER_IDS.includes(value)) this.characterSelections.set(id, value);
+      }
+    } catch { /* Invalid persisted choices fall back to identity. */ }
+  }
+
+  private characterFor(slotId: string): string {
+    return this.characterSelections.get(slotId) ?? slotId;
+  }
+
+  private characterName(characterId: string): string {
+    return CHARACTER_NAMES[characterId] ?? characterId;
+  }
+
+  private setCharacterSelection(slotId: string, characterId: string): void {
+    if (this.state.phase !== 'lobby' || !PLAYER_IDS.includes(slotId) || !PLAYER_IDS.includes(characterId)) return;
+    this.characterSelections.set(slotId, characterId);
+    try {
+      window.localStorage.setItem(CHARACTER_SELECTION_STORAGE_KEY, JSON.stringify(Object.fromEntries(this.characterSelections)));
+    } catch { /* Storage is optional. */ }
+    this.drawFighters();
+  }
+
   private setPlayerCount(count: number): void {
     if (this.state.phase !== 'lobby') return;
     const next = Math.max(1, Math.min(MAX_PLAYERS, Math.trunc(count)));
@@ -773,7 +811,7 @@ export class StationScene extends Phaser.Scene {
     for (const f of this.state.fighters) {
       if (!this.fighterSprites.has(f.id)) {
         this.shadows.set(f.id, this.add.ellipse(0, 0, 22, 7, 0x283640, 0.55));
-        this.fighterSprites.set(f.id, this.add.image(0, 0, fighterKey(f.id, 'idle', 0)).setOrigin(0.5, 1));
+        this.fighterSprites.set(f.id, this.add.image(0, 0, fighterKey(this.characterFor(f.id), 'idle', 0)).setOrigin(0.5, 1));
         const marker = createFighterMarker(this, f.id);
         this.fighterMarkers.set(f.id, marker);
         this.koMarkers.set(f.id, marker.label);
@@ -795,7 +833,7 @@ export class StationScene extends Phaser.Scene {
       const x = Math.round(f.x), y = Math.round(f.y);
       this.shadows.get(f.id)!.setPosition(x, y).setDepth(y - 0.2).setVisible(f.koTimer === 0);
       const sprite = this.fighterSprites.get(f.id)!;
-      sprite.setTexture(fighterKey(f.id, pose, frame)).setPosition(x, y - Math.round(f.z)).setFlipX(f.facing < 0).setDepth(y);
+      sprite.setTexture(fighterKey(this.characterFor(f.id), pose, frame)).setPosition(x, y - Math.round(f.z)).setFlipX(f.facing < 0).setDepth(y);
       // Keep one strong retro hit-pop frame in each six-tick cycle, then show the
       // character's pixels on the remaining flash frames so the silhouette persists.
       if (f.eliminated) {
@@ -871,21 +909,23 @@ export class StationScene extends Phaser.Scene {
     const resetKeyboardSlot = document.getElementById('keyboard-reset-slot') as HTMLButtonElement | null;
     const resetAllKeyboard = document.getElementById('keyboard-reset-all') as HTMLButtonElement | null;
     if (!timer || !status || !modeSelect || !playerCountSelect || !playerList) return;
-    const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; action: HTMLButtonElement }>();
+    const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; character: HTMLSelectElement; action: HTMLButtonElement }>();
     for (const node of Array.from(document.querySelectorAll('.hud-player[data-player]'))) {
       const root = node as HTMLElement;
       const id = root.dataset.player;
       const score = root.querySelector('.hud-score') as HTMLElement | null;
       const health = root.querySelector('.hud-health') as HTMLElement | null;
       const name = root.querySelector('.hud-name') as HTMLElement | null;
+      const character = root.querySelector('.hud-character-select') as HTMLSelectElement | null;
       const action = root.querySelector('.hud-slot-action') as HTMLButtonElement | null;
-      if (id && score && health && name && action) {
+      if (id && score && health && name && character && action) {
+        character.addEventListener('change', () => this.setCharacterSelection(id, character.value));
         action.addEventListener('click', () => {
           if (this.botSlots.has(id)) this.removeBotSlot(id);
           else this.addBotSlot(id);
           this.drawFighters();
         });
-        players.set(id, { root, score, health, name, action });
+        players.set(id, { root, score, health, name, character, action });
       }
     }
     modeSelect.value = this.selectedMode;
@@ -1136,6 +1176,7 @@ export class StationScene extends Phaser.Scene {
     for (const [id, nodes] of hud.players) {
       const fighter = this.state.fighters.find(f => f.id === id);
       const slotActive = Number(id.slice(1)) <= this.selectedPlayerCount;
+      const characterId = this.characterFor(id);
       const isBot = this.botSlots.has(id) && !!fighter;
       nodes.root.classList.toggle('is-empty', !fighter);
       nodes.root.classList.toggle('is-eliminated', !!fighter?.eliminated);
@@ -1144,6 +1185,15 @@ export class StationScene extends Phaser.Scene {
       nodes.root.classList.toggle('is-bot', isBot);
       nodes.root.classList.toggle('is-lobby-slot', this.state.phase === 'lobby');
       nodes.root.hidden = !slotActive || (this.state.phase !== 'lobby' && !fighter);
+      nodes.character.value = characterId;
+      const characterChoice = nodes.character.parentElement as HTMLElement | null;
+      if (characterChoice) characterChoice.hidden = this.state.phase !== 'lobby' || !slotActive;
+      nodes.character.disabled = this.state.phase !== 'lobby' || !slotActive;
+      nodes.character.title = this.characterName(characterId);
+      nodes.character.setAttribute('aria-label', `${id} character: ${this.characterName(characterId)}`);
+      for (const option of Array.from(nodes.character.options)) {
+        option.textContent = option.value;
+      }
       const slotNumber = Number(id.slice(1));
       nodes.name.textContent = this.state.phase === 'lobby'
         ? this.selectedMode === 'wave' && fighter ? `${id} ${isBot ? 'ENEMY' : 'PLAYER'}`
@@ -1151,7 +1201,7 @@ export class StationScene extends Phaser.Scene {
             : isBot ? id
               : fighter && this.gamepadSlotFor(id) !== undefined ? `${id} PAD ${this.gamepadSlotFor(id)}`
                 : fighter && id === 'P2' ? `${id} KEYBOARD`
-                  : fighter ? `${id} NO PAD` : slotNumber === 2 ? `${id} KEY/PAD` : slotNumber <= 4 ? `${id} PAD` : `${id} PAD/BOT`
+                : fighter ? `${id} NO PAD` : slotNumber === 2 ? `${id} KEY/PAD` : slotNumber <= 4 ? `${id} PAD` : `${id} PAD/BOT`
         : id;
       const canEditBot = this.state.phase === 'lobby' && id !== 'P1' && (!fighter || isBot);
       nodes.action.hidden = !canEditBot;

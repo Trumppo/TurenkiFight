@@ -95,13 +95,18 @@ p { color: #c2cbd2; }
 .hud-player { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 3px; min-width: 0; min-height: 16px; padding: 0 2px; border-left: 2px solid #c7a76a; background: #202a36; font-size: 14px; line-height: 16px; }
 .hud-player[hidden] { display: none; }
 .hud-name { color: #f4d38d; white-space: nowrap; }
+.hud-character-choice { min-width: 0; }
+.hud-character-choice[hidden] { display: none; }
+.hud-character-select { min-width: 0; max-width: 100%; min-height: 16px; padding: 0 2px; border: 1px solid #77cfdf; border-radius: 0; background: #172536; color: #c6f0e7; font: inherit; font-size: 12px; line-height: 14px; }
+.hud-character-select:disabled { opacity: 1; color: #fff1b7; }
+.hud-character-select[hidden] { display: none; }
 .hud-score { justify-self: center; padding-left: 3px; border-left: 1px solid #526071; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hud-health { padding-left: 3px; border-left: 1px solid #526071; color: #d7d7c3; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hud-player.is-empty { opacity: .56; }
 .hud-player.is-bot .hud-name::after { content: 'BOT'; margin-left: 1px; padding-left: 1px; border-left: 1px solid #77cfdf; color: #9fd0e0; font-weight: 700; }
 .hud-slot-action { display: none; min-width: 25px; min-height: 16px; padding: 0; border: 1px solid #77cfdf; border-radius: 0; background: #172536; color: #c6f0e7; font: inherit; font-size: 14px; line-height: 14px; cursor: pointer; white-space: nowrap; pointer-events: auto; }
 .hud-slot-action:hover { background: #2b5260; }
-#player-hud .hud-player.is-lobby-slot { grid-template-columns: minmax(0, 1fr) auto; }
+#player-hud .hud-player.is-lobby-slot { grid-template-columns: minmax(0, 1fr) minmax(0, auto) auto; }
 #player-hud .hud-player.is-lobby-slot .hud-score,
 #player-hud .hud-player.is-lobby-slot .hud-health { display: none; }
 #player-hud .hud-player.is-lobby-slot .hud-slot-action:not([hidden]) { display: inline-block; }
