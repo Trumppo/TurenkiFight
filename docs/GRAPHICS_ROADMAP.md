@@ -1,6 +1,6 @@
 # Graphics roadmap (designer proposal, 2026-11-07)
 
-**Status:** Implemented 2026-11-09 (G1-G6 merged). Owner approved the track and asked for it to be executed; each
+**Status:** Implemented 2026-11-09 (G1-G6 merged). **Retro is the default style since 2026-11-10** (owner decision; build with `VITE_VISUAL_STYLE=classic` for the classic art). Owner approved the track and asked for it to be executed; each
 phase still needs an owner visual review in the game. Merging is not acceptance. The game is desktop only: touch
 controls and mobile browsers are out of scope (owner decision 2026-11-07).
 

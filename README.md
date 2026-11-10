@@ -26,6 +26,8 @@ npm ci
 npm run dev
 ```
 
+Retro pixel art is the default style. Build or run with `VITE_VISUAL_STYLE=classic` for the original classic art; the browser test harness pins classic by default and the retro job sets `VITE_VISUAL_STYLE=retro`.
+
 Open the local URL printed by Vite. To check changes, run `npm test`, `npm run build`, and `npm run test:browser` (Playwright browsers may need installation via `npx playwright install chromium`). GitHub Pages publishes the static browser client; it is not a multiplayer server.
 
 ## Serve a real authoritative match (LAN or VPN only)
