@@ -14,6 +14,17 @@ if (pageDescription) {
   else if (arenaSelection.manifest.id !== 'station') pageDescription.textContent = `${arenaSelection.manifest.displayName} · evening 2.5D arena prototype`;
 }
 
+const arenaSelect = document.getElementById('arena-select') as HTMLSelectElement | null;
+if (arenaSelect) {
+  arenaSelect.value = arenaSelection.manifest.id;
+  arenaSelect.addEventListener('change', () => {
+    const next = new URL(window.location.href);
+    if (arenaSelect.value === 'station') next.searchParams.delete('arena');
+    else next.searchParams.set('arena', arenaSelect.value);
+    window.location.assign(next);
+  });
+}
+
 const displayScale = new URLSearchParams(window.location.search).get('scale') === '2' ? '2' : 'fit';
 if (displayScale === '2') document.body.classList.add('integer-scale-2');
 const scaleSelect = document.getElementById('display-scale') as HTMLSelectElement | null;

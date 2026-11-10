@@ -265,6 +265,8 @@ p { color: #c2cbd2; }
   cursor: pointer;
 }
 .lobby-actions button:hover { background: #2b5260; }
+.arena-control { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-weight: 900; letter-spacing: .08em; }
+.arena-control select { min-height: 34px; max-width: 220px; padding: 4px 8px; border: 1px solid #a7e4e7; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-size: 14px; }
 .lobby-actions .lobby-start { border-color: #e3b85e; background: #3c3425; }
 .lobby-actions .lobby-start:hover:not(:disabled) { background: #5a4729; }
 .lobby-actions button:disabled { opacity: .5; cursor: not-allowed; }
@@ -286,6 +288,7 @@ body.integer-scale-2 .lobby-actions {
 }
 body.integer-scale-2 .lobby-actions p { display: none; }
 body.integer-scale-2 .lobby-actions button { min-height: 28px; padding: 2px 8px; }
+body.integer-scale-2 .arena-control select { min-height: 28px; padding: 2px 6px; }
 
 /* Remove the old page's ~20px overflow at the measured 1280x720 viewport. */
 @media (min-width: 601px) and (max-height: 760px) {
