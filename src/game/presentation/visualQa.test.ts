@@ -5,9 +5,9 @@ import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
 describe('presentation asset and camera contract', () => {
   it('resolves station artwork in development and GitHub Pages subpaths', () => {
     const path = VISUAL_ASSETS.station.backdrop.path;
-    expect(publicAssetUrl('/', path)).toBe('/assets/station/turenki-station-background.svg');
-    expect(publicAssetUrl('./', path)).toBe('./assets/station/turenki-station-background.svg');
-    expect(publicAssetUrl('/TurenkiFight/', path)).toBe('/TurenkiFight/assets/station/turenki-station-background.svg');
+    expect(publicAssetUrl('/', path)).toBe('/assets/station/turenki-station-retro.svg');
+    expect(publicAssetUrl('./', path)).toBe('./assets/station/turenki-station-retro.svg');
+    expect(publicAssetUrl('/TurenkiFight/', path)).toBe('/TurenkiFight/assets/station/turenki-station-retro.svg');
     expect(() => publicAssetUrl('/', '../private')).toThrow();
     expect(() => publicAssetUrl('/', 'https://elsewhere.example/art.svg')).toThrow();
   });
@@ -26,7 +26,7 @@ describe('presentation asset and camera contract', () => {
   });
 
   it('keeps art rasterization independent from render resolution', () => {
-    expect(VISUAL_ASSETS.station.backdrop.width).toBe(VIEWPORT.logicalWidth);
-    expect(VISUAL_ASSETS.station.backdrop.height).toBe(VIEWPORT.logicalHeight);
+    expect(VISUAL_ASSETS.station.backdrop.width).toBe(VIEWPORT.renderWidth);
+    expect(VISUAL_ASSETS.station.backdrop.height).toBe(VIEWPORT.renderHeight);
   });
 });

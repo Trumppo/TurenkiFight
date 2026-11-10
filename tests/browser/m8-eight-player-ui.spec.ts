@@ -121,7 +121,7 @@ const viewports = [
   { name: '640x360', width: 640, height: 360 },
   { name: '1280x720', width: 1280, height: 720 },
 ];
-const visualStyle = process.env.VITE_VISUAL_STYLE === 'retro' ? 'retro' : 'classic';
+const visualStyle = 'retro';
 
 for (const viewport of viewports) {
   test(`M8 eight-fighter arena readability evidence at ${viewport.name}`, async ({ page }) => {

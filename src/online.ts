@@ -7,7 +7,6 @@ import type { GameState } from './game/simulation/types';
 import { KEYBOARD_LAYOUTS, keyboardPlayerInput } from './game/input/keyboardMapping';
 import { VIEWPORT } from './game/presentation/viewport';
 import { arenaBackdropTextureKey, resolveArenaSelection } from './game/presentation/arenaVisuals';
-import { RETRO_PREVIEW } from './game/presentation/retroPrototype';
 
 /**
  * Online entry page.
@@ -30,7 +29,7 @@ const STATE_LABEL: Record<OnlineConnectionState, string> = {
 };
 
 const params = new URLSearchParams(window.location.search);
-const arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic');
+const arenaSelection = resolveArenaSelection(window.location.search);
 const pageDescription = document.querySelector('.page-header p');
 if (pageDescription) {
   if (arenaSelection.notice) pageDescription.textContent = arenaSelection.notice;

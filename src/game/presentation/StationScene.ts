@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
 import { createState, step, standings, TICK_RATE, WAVE_RULES } from '../simulation/step';
 import type { ArenaId, EndReason, GameEvent, GameState, ModeId, PlayerInput, Fighter, Team } from '../simulation/types';
-import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
+import { publicAssetUrl } from './visualAssets';
 import { VIEWPORT, cameraScale } from './viewport';
-import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
-import { createRetroP1Textures, RETRO_PREVIEW } from './retroPrototype';
+import { fighterKey, type FighterPose } from './fighterSprites';
+import { createRetroP1Textures } from './retroPrototype';
 import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
 import { createRetroP5P8Textures } from './retroP5P8';
@@ -148,7 +148,7 @@ export class StationScene extends Phaser.Scene {
   private readonly combatFeedback = new CombatFeedbackState();
   private combatFeedbackGraphics?: Phaser.GameObjects.Graphics;
 
-  constructor(arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic'), mode: ModeId = 'score-brawl') {
+  constructor(arenaSelection = resolveArenaSelection(window.location.search), mode: ModeId = 'score-brawl') {
     super('StationScene');
     this.arenaSelection = arenaSelection;
     this.selectedMode = mode;
@@ -156,11 +156,9 @@ export class StationScene extends Phaser.Scene {
   }
 
   preload(): void {
-    const backdrop = VISUAL_ASSETS.station.backdrop;
     const key = arenaBackdropTextureKey(this.arenaSelection.manifest.id);
     const path = this.arenaSelection.backdropPath;
-    const retro = this.arenaSelection.style === 'retro';
-    this.load.svg(key, publicAssetUrl(import.meta.env.BASE_URL, path), { width: retro ? 640 : backdrop.width, height: retro ? 360 : backdrop.height });
+    this.load.svg(key, publicAssetUrl(import.meta.env.BASE_URL, path), { width: 640, height: 360 });
     this.load.on('loaderror', (file: Phaser.Loader.File) => {
       if (file.key !== key) return;
       const message = `Could not load ${this.arenaSelection.manifest.displayName} arena art: ${path}`;
@@ -177,13 +175,10 @@ export class StationScene extends Phaser.Scene {
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,F,G,H,T,L,K,J,U,I,B,V,O,SPACE,ENTER,SHIFT,ESC') as Record<string, Phaser.Input.Keyboard.Key>;
     this.cameras.main.setZoom(cameraScale(this.scale.width, this.scale.height));
     this.cameras.main.centerOn(VIEWPORT.logicalWidth / 2, VIEWPORT.logicalHeight / 2);
-    createFighterTextures(this);
-    if (RETRO_PREVIEW) {
-      createRetroP1Textures(this);
-      createRetroP2Textures(this);
-      createRetroExtraTextures(this);
-      createRetroP5P8Textures(this);
-    }
+    createRetroP1Textures(this);
+    createRetroP2Textures(this);
+    createRetroExtraTextures(this);
+    createRetroP5P8Textures(this);
     const textureKey = arenaBackdropTextureKey(this.arenaSelection.manifest.id);
     const backgroundDepth = this.arenaSelection.layers.find(layer => layer.id === 'architecture')?.depth ?? -100;
     if (this.textures.exists(textureKey)) {
@@ -196,7 +191,7 @@ export class StationScene extends Phaser.Scene {
     }
     this.zoneGraphics = this.add.graphics().setDepth(122).setVisible(false);
     this.combatFeedbackGraphics = this.add.graphics().setDepth(500_000);
-    this.itemPresentation = new ObjectPresentation(this, RETRO_PREVIEW);
+    this.itemPresentation = new ObjectPresentation(this);
     let storage: Storage | undefined;
     try { storage = window.localStorage; } catch { /* Private browsing may disable storage. */ }
     this.keyboardStore = new KeyboardMappingStore(storage);
@@ -212,7 +207,7 @@ export class StationScene extends Phaser.Scene {
     this.audioBridge = new CueBridge(cue => this.playAudioCue(cue));
     if (this.arenaSelection.manifest.id === 'station') {
       const status = document.getElementById('station-event-status');
-      if (status) this.stationEvent = new StationEventPresentation(this, status, cue => this.playAudioCue(cue), RETRO_PREVIEW);
+      if (status) this.stationEvent = new StationEventPresentation(this, status, cue => this.playAudioCue(cue), true);
     }
     this.arenaTelegraph = new ArenaTelegraphPresentation(this, cue => this.playAudioCue(cue));
     this.audioBridge.observe(this.state);
@@ -770,7 +765,7 @@ export class StationScene extends Phaser.Scene {
       if (f.eliminated) {
         // Multiply tint darkens a KO without hiding its outline, gear or uniform.
         sprite.setTint(0x8995a0).setAlpha(0.92);
-      } else if (!reducedMotion && RETRO_PREVIEW && (this.hitFlash.get(f.id) ?? 0) > this.state.tick) {
+      } else if (!reducedMotion && (this.hitFlash.get(f.id) ?? 0) > this.state.tick) {
         if (this.state.tick % 6 === 0) sprite.setTintFill(0xffe3a0).setAlpha(1);
         else sprite.setTint(0xffe3a0).setAlpha(1);
       } else {

@@ -9,7 +9,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const stage = process.argv[2];
 if (!['before', 'after'].includes(stage)) throw new Error('Usage: node scripts/g4ArenaContrast.mjs before|after');
 const outputDir = join(root, 'docs', 'visual', 'g4-arena-contrast', stage);
-const styles = ['classic', 'retro'];
+const styles = ['retro'];
 const arenas = ['station', 'kkauppa', 'mesku'];
 const counts = [4, 8];
 const viewports = [
@@ -89,8 +89,6 @@ function percentile(values, q) {
 }
 
 async function launchStyle(browser, style) {
-  const oldStyle = process.env.VITE_VISUAL_STYLE;
-  process.env.VITE_VISUAL_STYLE = style;
   let server;
   try {
     server = await createServer({
@@ -103,8 +101,6 @@ async function launchStyle(browser, style) {
     return { server, baseUrl: `http://127.0.0.1:${address.port}`, oldStyle };
   } catch (error) {
     if (server) await server.close();
-    if (oldStyle === undefined) delete process.env.VITE_VISUAL_STYLE;
-    else process.env.VITE_VISUAL_STYLE = oldStyle;
     throw error;
   }
 }
@@ -148,7 +144,7 @@ try {
             })),
           };
         }, ids);
-        const expected = style === 'classic' && requestedArena === 'mesku' ? 'station' : requestedArena;
+        const expected = requestedArena;
         assert(setup.selected === expected, `${style}/${requestedArena} selected ${setup.selected}, expected ${expected}`);
         assert(setup.backing[0] === 640 && setup.backing[1] === 360, 'Logical canvas backing changed');
         assert(setup.fighters.length === count, `${style}/${requestedArena}: expected ${count} fighters`);
@@ -210,8 +206,6 @@ try {
       await context.close();
     } finally {
       await server.close();
-      if (oldStyle === undefined) delete process.env.VITE_VISUAL_STYLE;
-      else process.env.VITE_VISUAL_STYLE = oldStyle;
     }
   }
 } finally {

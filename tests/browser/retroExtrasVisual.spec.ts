@@ -2,7 +2,6 @@ import { test, expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 
 test('VIS-02B visual review sheet for all four retro fighters', async ({ page }) => {
-  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro-only visual evidence');
   await page.goto('/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.evaluate(() => {

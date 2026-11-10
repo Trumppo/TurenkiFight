@@ -1,10 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 
-const retro = process.env.VITE_VISUAL_STYLE === 'retro';
-
 test('VIS-02A P2 retro contract and four-frame poses', async ({ page }) => {
-  test.skip(!retro, 'Retro-only character artwork');
   await page.goto('/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const evidence = await page.evaluate(() => {
@@ -66,6 +63,6 @@ for (const [label, width, height] of [
       return game?.scene.getScene('StationScene').fighterSprites.size ?? 0;
     })).toBeGreaterThanOrEqual(2);
     mkdirSync('artifacts/visual', { recursive: true });
-    await page.screenshot({ path: `artifacts/visual/vis-02a-${retro ? 'retro' : 'classic'}-${label}.png`, animations: 'disabled' });
+    await page.screenshot({ path: `artifacts/visual/vis-02a-retro-${label}.png`, animations: 'disabled' });
   });
 }

@@ -2,7 +2,7 @@
 
 TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting game with an 8-bit-inspired pixel-art aesthetic. Inspired by the energy of classic arcade fighters (including IK+), but with its own mechanics, art and identity.
 
-**Status (2026-11-04):** M1 and M1.5 are accepted with documented limitations. Three modes are playable locally and online (Score Brawl, Last Man Standing, Deathmatch), local bots can fill empty slots, and an **ALL BOTS** action runs an eight-bot match unattended for testing. The roster supports up to **eight** players, the Ravintola Mesku arena is available with `?arena=mesku`, the local results screen shows a ranked podium with a victory cue, and placeholder audio exists. An authoritative WebSocket prototype serves real matches over LAN or VPN, now with an authoritative result payload and an opt-in rematch in the same process; it has no TLS, authentication or rate limiting, and eight-player network load is not measured. See [roadmap](docs/ROADMAP.md) and [ADR 0001](docs/adr/0001-network-topology.md).
+**Status (2026-11-11):** M1 and M1.5 are accepted with documented limitations. Four modes are playable locally and online (Score Brawl, Last Man Standing, Deathmatch, Wave), local bots can fill empty slots, and an **ALL BOTS** action runs an eight-bot match unattended for testing. The roster supports up to **eight** players. K-kauppa and Ravintola Mesku arenas are selectable via the lobby ARENA dropdown (or `?arena=kkauppa` / `?arena=mesku` for direct links); the local results screen shows a ranked podium with a victory cue, and placeholder audio exists. An authoritative WebSocket prototype serves real matches over LAN or VPN, now with an authoritative result payload and an opt-in rematch in the same process; it has no TLS, authentication or rate limiting, and eight-player network load is not measured. See [roadmap](docs/ROADMAP.md) and [ADR 0001](docs/adr/0001-network-topology.md).
 
 ## Core vision
 
@@ -10,9 +10,9 @@ TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting 
 - Fixed arena camera: everyone sees the same battlefield.
 - 2.5D movement: X/Y ground-plane movement and Z jump height, rendered with depth-sorted 2D sprites.
 - First arena: **Turengin rautatieasema** (Turenki railway station), a stylized interpretation rather than a scale model.
-- Game modes: **Score Brawl**, **Last Man Standing** and **Deathmatch** are implemented; a full tie ends as a draw by owner decision.
+- Game modes: **Score Brawl**, **Last Man Standing**, **Deathmatch** and **Wave** are implemented; a full tie ends as a draw by owner decision.
 - Player count: **eight** is the supported maximum (owner decision 2026-11-03, one `MAX_PLAYERS` constant). Slots 1-4 have keyboard layouts; slots 5-8 are gamepad or bot slots. Eight fighters are supported but not reliably readable in the 640x360 arena during combat, which is a known limitation.
-- Arenas: Turengin rautatieasema (default) and Ravintola Mesku (`?arena=mesku`).
+- Arenas: Turengin rautatieasema (default), K-kauppa and Ravintola Mesku. Choose from the lobby ARENA dropdown (or use `?arena=kkauppa` / `?arena=mesku` for direct links).
 - Browser-only client with keyboard and gamepad support.
 
 ## Planned distribution
@@ -26,7 +26,7 @@ npm ci
 npm run dev
 ```
 
-Retro pixel art is the default style. Build or run with `VITE_VISUAL_STYLE=classic` for the original classic art; the browser test harness pins classic by default and the retro job sets `VITE_VISUAL_STYLE=retro`.
+Retro pixel art is the only supported visual style. `VITE_FIGHTER_CANVAS=expanded` remains an optional retro rendering experiment.
 
 Open the local URL printed by Vite. To check changes, run `npm test`, `npm run build`, and `npm run test:browser` (Playwright browsers may need installation via `npx playwright install chromium`). GitHub Pages publishes the static browser client; it is not a multiplayer server.
 

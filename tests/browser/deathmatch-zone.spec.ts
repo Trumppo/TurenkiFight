@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-const visualStyle = process.env.VITE_VISUAL_STYLE === 'retro' ? 'retro' : 'classic';
+const visualStyle = 'retro';
 
 async function setLocalZoneState(page: Page, tick: number, mode = 'deathmatch', outside = false): Promise<void> {
   await expect.poll(() => page.evaluate(() => {

@@ -6,7 +6,7 @@ task; the damaging hazard is a separate decision.
 ## 1. The arena
 
 Second Turenki location: **K-kauppa**, a small Finnish convenience store. It must read as a shop at 640x360 with two
-or more fighters on screen, in both the classic and retro styles.
+or more fighters on screen in the supported retro style.
 
 - Interior: shelving along the back wall, a fridge with bottles, a counter, a checkout, floor tiles, a window band.
 - The fighting plane stays the same world coordinates as every arena; changing art never changes collision or rules.
@@ -36,7 +36,7 @@ warning before the hazard is playable; until scene wiring lands, `?arena=kkauppa
 
 ## 3. Accept criteria
 
-1. `?arena=kkauppa` renders the new interior in classic and retro at 640x360 and 1280x720; fighters stay visible and
+1. `?arena=kkauppa` renders the new interior in retro at 640x360 and 1280x720; fighters stay visible and
    distinguishable.
 2. Station and Mesku captures are byte-identical to before the change.
 3. No simulation, protocol or server change.

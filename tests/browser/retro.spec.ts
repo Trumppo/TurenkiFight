@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-const retro = process.env.VITE_VISUAL_STYLE === 'retro';
-const expanded = retro && process.env.VITE_FIGHTER_CANVAS === 'expanded';
+const expanded = process.env.VITE_FIGHTER_CANVAS === 'expanded';
 const p1Width = expanded ? 48 : 32;
 const p1Height = expanded ? 64 : 48;
-const screenshotPrefix = expanded ? 'retro-expanded' : retro ? 'retro' : 'classic';
+const screenshotPrefix = expanded ? 'retro-expanded' : 'retro';
 
 async function startMatch(page: import('@playwright/test').Page): Promise<void> {
   await page.goto('/');
@@ -81,14 +80,14 @@ test('station and P1 prototype render with stable legacy sprite API', async ({ p
       origin: [scene.fighterSprites.get('P1')?.originX, scene.fighterSprites.get('P1')?.originY],
     };
   });
-  expect(result.station).toBe(retro ? 640 : 384);
+    expect(result.station).toBe(640);
   expect(result.p1).toEqual([p1Width, p1Height]);
   expect(result.p2).toEqual([32, 48]);
   expect(result.keys).toBe(true);
   expect(result.origin).toEqual([0.5, 1]);
   expect(result.p1DistinctFromP2).toBe(true);
   // Deliberately permit 1px facial detail: 320x180 is a stage art grid, not a fighter limit.
-  if (retro && !expanded) expect(result.p1Paired).toBe(false);
+  if (!expanded) expect(result.p1Paired).toBe(false);
   expect(errors).toEqual([]);
   expect(missing).toEqual([]);
 });
@@ -99,7 +98,7 @@ for (const [label, width, height] of [
   ['3x', 1920, 1080],
   ['mobile', 390, 844],
 ] as const) {
-  test(`visual screenshot ${label} with ${retro ? 'retro' : 'classic'} art`, async ({ page }) => {
+  test(`retro visual screenshot ${label}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
     const canvas = page.locator('#game canvas');
@@ -114,7 +113,7 @@ for (const [label, width, height] of [
     await page.screenshot({ path: `artifacts/visual/${screenshotPrefix}-${label}.png`, animations: 'disabled' });
   });
 
-  test(`match screenshot ${label} with ${retro ? 'retro' : 'classic'} art`, async ({ page }) => {
+  test(`retro match screenshot ${label}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await startMatch(page);
     const canvas = page.locator('#game canvas');
@@ -150,7 +149,6 @@ for (const [label, width, height] of [
 }
 
 test('capture enlarged P1 pose sheet for visual acceptance', async ({ page }) => {
-  test.skip(!retro, 'Only the retro preview is the subject of this pose sheet');
   await page.goto('/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
@@ -188,7 +186,6 @@ test('capture enlarged P1 pose sheet for visual acceptance', async ({ page }) =>
 });
 
 test('capture four-frame kick anatomy strip for acceptance', async ({ page }) => {
-  test.skip(!retro, 'Retro fighter anatomy only');
   await page.goto('/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
@@ -222,7 +219,7 @@ test('capture four-frame kick anatomy strip for acceptance', async ({ page }) =>
 });
 
 test('forward kick overlaps torso without a duplicate third leg', async ({ page }) => {
-  test.skip(!retro || expanded, 'Pixel coordinates are specific to the original 32x48 kick');
+  test.skip(expanded, 'Pixel coordinates are specific to the original 32x48 kick');
   await page.goto('/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const result = await page.evaluate(() => {
@@ -275,7 +272,7 @@ test('expanded P1 keeps the same feet anchor and leaves P2 unchanged', async ({ 
 });
 
 test('extended kick toe uses boot shading rather than a stray bright spark', async ({ page }) => {
-  test.skip(!retro || expanded, 'Toe pixel coordinate is specific to the original 32x48 canvas');
+  test.skip(expanded, 'Toe pixel coordinate is specific to the original 32x48 canvas');
   await page.goto('/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {

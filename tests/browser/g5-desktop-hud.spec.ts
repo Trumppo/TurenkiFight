@@ -110,7 +110,7 @@ function assertReadable(layout: Awaited<ReturnType<typeof inspectTextAndBounds>>
 }
 
 test('G5 desktop HUD and results stay readable at native and scaled desktop sizes', async ({ page }) => {
-  const style = process.env.VITE_VISUAL_STYLE === 'retro' ? 'retro' : 'classic';
+  const style = 'retro';
   const outputDirectory = path.join(process.cwd(), 'artifacts', 'g5-desktop-hud');
   await mkdir(outputDirectory, { recursive: true });
 

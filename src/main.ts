@@ -3,9 +3,8 @@ import { StationScene } from './game/presentation/StationScene';
 import './style.css';
 import { VIEWPORT } from './game/presentation/viewport';
 import { resolveArenaSelection } from './game/presentation/arenaVisuals';
-import { RETRO_PREVIEW } from './game/presentation/retroPrototype';
 
-const arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic');
+const arenaSelection = resolveArenaSelection(window.location.search);
 document.documentElement.dataset.visualStyle = arenaSelection.style;
 const pageDescription = document.querySelector('.page-header p');
 if (pageDescription) {

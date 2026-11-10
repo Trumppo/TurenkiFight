@@ -19,8 +19,7 @@ test('ALL BOTS starts a visibly bot-driven P1-P8 match, finishes unattended, and
   await expect(page.locator('#all-bots-match')).toBeVisible();
   await expect(page.locator('#lobby-actions')).toContainText('P1 is bot-driven');
   mkdirSync('artifacts/visual', { recursive: true });
-  const style = process.env.VITE_VISUAL_STYLE === 'retro' ? 'retro' : 'classic';
-  await page.screenshot({ path: `artifacts/visual/${style}-all-bot-lobby-action.png`, animations: 'disabled' });
+  await page.screenshot({ path: 'artifacts/visual/retro-all-bot-lobby-action.png', animations: 'disabled' });
 
   // Last Man Standing ends as soon as seven bots are eliminated, while still
   // exercising the complete unattended all-bot loop without waiting for timer.
@@ -47,7 +46,7 @@ test('ALL BOTS starts a visibly bot-driven P1-P8 match, finishes unattended, and
     return Math.abs(p1.x - p1Start.x) + Math.abs(p1.y - p1Start.y);
   }, { timeout: 8_000 }).toBeGreaterThan(0);
   await page.waitForTimeout(250);
-  await page.screenshot({ path: `artifacts/visual/${style}-all-bot-match.png`, animations: 'disabled' });
+  await page.screenshot({ path: 'artifacts/visual/retro-all-bot-match.png', animations: 'disabled' });
 
   await expect.poll(() => scene(page).then(state => state.phase), { timeout: 100_000, intervals: [100,250,500,1000] }).toBe('results');
   const finalState = await scene(page);
@@ -100,8 +99,7 @@ test('O is the stated keyboard shortcut for an all-bot match', async ({ page }) 
   await expect(page.locator('#all-bots-match')).toContainText('O');
   await expect(page.locator('#lobby-actions')).toContainText('P1 is bot-driven');
   mkdirSync('artifacts/visual', { recursive: true });
-  const style = process.env.VITE_VISUAL_STYLE === 'retro' ? 'retro' : 'classic';
-  await page.screenshot({ path: `artifacts/visual/${style}-all-bot-lobby-mobile.png`, fullPage: true, animations: 'disabled' });
+  await page.screenshot({ path: 'artifacts/visual/retro-all-bot-lobby-mobile.png', fullPage: true, animations: 'disabled' });
   await page.keyboard.down('o');
   await expect.poll(() => scene(page), { timeout: 5_000 }).toMatchObject({ phase: 'countdown', fighters: Array.from({ length: 8 }, (_, i) => ({ id: `P${i+1}` })) });
   await page.keyboard.up('o');

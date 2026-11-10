@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 
-const style = process.env.VITE_VISUAL_STYLE === 'retro' ? 'retro' : 'classic';
+const style = 'retro';
 const evidenceDirectory = resolve('artifacts/m12-item-ui');
 
 test('M12 bottles render on the floor, follow a holder, and use snapshot flight coordinates', async ({ page }) => {

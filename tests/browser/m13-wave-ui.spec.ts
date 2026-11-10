@@ -126,8 +126,8 @@ test('Wave results show score ranking and the waves-cleared end reason', async (
   await expect(page.locator('#victory-podium')).toContainText('20 SCORE');
 });
 
-test('classic and retro Wave HUD visual proof at 640x360 and 1280x720', async ({ page }, testInfo) => {
-  const style = process.env.VITE_VISUAL_STYLE === 'retro' ? 'retro' : 'classic';
+test('retro Wave HUD visual proof at 640x360 and 1280x720', async ({ page }, testInfo) => {
+  const style = 'retro';
   const screenshotDir = join(process.cwd(), 'artifacts', 'visual');
   mkdirSync(screenshotDir, { recursive: true });
   const prepareWaveSnapshot = async () => {
