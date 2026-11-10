@@ -1896,6 +1896,73 @@ tasks:
     last_updated: "2026-11-09"
     notes: "PR #192 merged as 92025a2. Amber arena shelf band with icon and ARENA label vs cyan contracting MODE zone; in-page exact-size captures removed a CI dimension flake."
 
+  - id: LOBBY-L1-ARENA-SELECT
+    title: Add an arena selector to the lobby
+    assigned_role: graphics-session
+    session_id: graphics-session-20261110-l1
+    status: in_progress
+    priority: P1
+    specification: docs/LOBBY_SELECTION.md
+    depends_on: [GRAPHICS-G6-HAZARD-ZONE-VISUALS]
+    scope: [src/game/presentation/, index.html, src/style.css, tests/browser/]
+    acceptance:
+      - "The lobby offers station, K-kauppa and Mesku"
+      - "Selecting an arena updates the backdrop, the URL ?arena= value and the arena passed to createState"
+      - "The K-kauppa hazard applies only when K-kauppa is the selected arena"
+      - "Station remains byte-identical when selected; reload keeps the choice"
+    last_updated: "2026-11-10"
+    notes: "First lobby slice. Owner requirement 2026-11-10: arena, mode, players and characters all selectable in the browser."
+
+  - id: LOBBY-L2-PLAYER-COUNT
+    title: Let the lobby choose how many slots play
+    assigned_role: graphics-session
+    session_id: graphics-session-20261110-l2
+    status: blocked
+    priority: P1
+    specification: docs/LOBBY_SELECTION.md
+    depends_on: [LOBBY-L1-ARENA-SELECT]
+    scope: [src/game/presentation/, index.html, src/style.css, tests/browser/]
+    acceptance:
+      - "Player count 1-8 is selectable before the match"
+      - "Slots above the count are not created in the match state and do not appear in results"
+      - "Bots fill the active slots that no human claimed"
+      - "Wave mode keeps its human/enemy split"
+    last_updated: "2026-11-10"
+    notes: "Interacts with bot filling and the Wave team rule; handle both explicitly."
+
+  - id: LOBBY-L3-CHARACTER-SELECT
+    title: Let each slot choose which fighter it looks like
+    assigned_role: graphics-session
+    session_id: graphics-session-20261110-l3
+    status: blocked
+    priority: P1
+    specification: docs/LOBBY_SELECTION.md
+    depends_on: [LOBBY-L2-PLAYER-COUNT]
+    scope: [src/game/presentation/, index.html, src/style.css, tests/browser/]
+    acceptance:
+      - "Each active slot can choose any of the eight fighters"
+      - "The choice is presentation only: simulation ids, scores, replays and state hashes are unchanged"
+      - "The HUD shows the chosen character name next to the slot"
+      - "The choice persists in localStorage and the eight looks stay distinct in classic and retro"
+    last_updated: "2026-11-10"
+    notes: "A character is a slot-to-art mapping, never a simulation field. Prove identical state hashes."
+
+  - id: LOBBY-L4-SUMMARY
+    title: Show the chosen setup and start from it
+    assigned_role: graphics-session
+    session_id: graphics-session-20261110-l4
+    status: blocked
+    priority: P1
+    specification: docs/LOBBY_SELECTION.md
+    depends_on: [LOBBY-L3-CHARACTER-SELECT]
+    scope: [src/game/presentation/, index.html, src/style.css, tests/browser/]
+    acceptance:
+      - "One summary line shows arena, mode, players and bots"
+      - "The line matches the match that actually starts and updates when any control changes"
+      - "Starting needs no URL editing or documentation"
+    last_updated: "2026-11-10"
+    notes: "Closes the lobby feature. Readable at 640x360 and 1280x720."
+
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
     assigned_role: tester-session
