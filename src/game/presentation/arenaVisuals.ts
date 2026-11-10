@@ -2,7 +2,7 @@
  * Presentation-only arena art metadata. This module intentionally has no
  * imports: it must remain independent from simulation, input and networking.
  */
-export type ArenaArtStyle = 'classic' | 'retro';
+export type ArenaArtStyle = 'retro';
 export type ArenaLayerId = 'sky' | 'architecture' | 'combat-surface' | 'foreground';
 
 export interface ArenaVisualManifest {
@@ -11,7 +11,6 @@ export interface ArenaVisualManifest {
   readonly logicalSize: { readonly width: 640; readonly height: 360 };
   readonly artSize: { readonly width: 320; readonly height: 180 };
   readonly variants: {
-    readonly classic?: { readonly backdropPath: string };
     readonly retro: { readonly backdropPath: string };
   };
   readonly layers: readonly {
@@ -32,7 +31,6 @@ export const ARENA_MANIFESTS = {
     logicalSize: { width: 640, height: 360 },
     artSize: { width: 320, height: 180 },
     variants: {
-      classic: { backdropPath: 'assets/station/turenki-station-background.svg' },
       retro: { backdropPath: STATION_RETRO },
     },
     // The legacy station is a single composite backdrop, so it has no extra
@@ -59,7 +57,6 @@ export const ARENA_MANIFESTS = {
     logicalSize: { width: 640, height: 360 },
     artSize: { width: 320, height: 180 },
     variants: {
-      classic: { backdropPath: 'assets/kkauppa/k-kauppa-classic.svg' },
       retro: { backdropPath: 'assets/kkauppa/k-kauppa-retro.svg' },
     },
     // The entire shop is a single calm, composite backdrop; its optional
@@ -113,15 +110,10 @@ export function validateArenaManifest(input: unknown): asserts input is ArenaVis
   checkSize(input.logicalSize, 'logicalSize', 640, 360);
   checkSize(input.artSize, 'artSize', 320, 180);
   if (!isRecord(input.variants)) throw new Error(`Arena "${input.id}" variants must be an object`);
-  assertExactKeys(input.variants, ['classic', 'retro'], `Arena "${input.id}" variants`);
+  assertExactKeys(input.variants, ['retro'], `Arena "${input.id}" variants`);
   if (!isRecord(input.variants.retro)) throw new Error(`Arena "${input.id}" needs a retro variant`);
   assertExactKeys(input.variants.retro, ['backdropPath'], `Arena "${input.id}" retro variant`);
   assertAssetPath(input.variants.retro.backdropPath, `Arena "${input.id}" retro backdropPath`);
-  if (input.variants.classic !== undefined) {
-    if (!isRecord(input.variants.classic)) throw new Error(`Arena "${input.id}" classic variant must be an object`);
-    assertExactKeys(input.variants.classic, ['backdropPath'], `Arena "${input.id}" classic variant`);
-    assertAssetPath(input.variants.classic.backdropPath, `Arena "${input.id}" classic backdropPath`);
-  }
   if (!Array.isArray(input.layers)) throw new Error(`Arena "${input.id}" layers must be an array`);
   for (const [index, layer] of input.layers.entries()) {
     if (!isRecord(layer)) throw new Error(`Arena "${input.id}" layer ${index} must be an object`);
@@ -141,14 +133,13 @@ export function validateArenaManifest(input: unknown): asserts input is ArenaVis
 for (const manifest of Object.values(ARENA_MANIFESTS)) validateArenaManifest(manifest);
 
 /** Pure lookup: unknown IDs and unavailable visual variants fail descriptively. */
-export function resolveArenaVisual(arenaId: string, style: ArenaArtStyle): ResolvedArenaVisual {
+export function resolveArenaVisual(arenaId: string): ResolvedArenaVisual {
   const manifest = (ARENA_MANIFESTS as Readonly<Record<string, ArenaVisualManifest>>)[arenaId];
   if (!manifest) {
     throw new Error(`Unknown arena "${arenaId}". Available arenas: ${Object.keys(ARENA_MANIFESTS).join(', ')}`);
   }
-  const variant = manifest.variants[style];
-  if (!variant) throw new Error(`Arena "${manifest.displayName}" has no ${style} art variant`);
-  return { manifest, style, backdropPath: variant.backdropPath, layers: manifest.layers };
+  const variant = manifest.variants.retro;
+  return { manifest, style: 'retro', backdropPath: variant.backdropPath, layers: manifest.layers };
 }
 
 export interface ArenaSelection extends ResolvedArenaVisual {
@@ -156,17 +147,17 @@ export interface ArenaSelection extends ResolvedArenaVisual {
 }
 
 /** URL parsing and deliberate fallback policy are pure presentation behavior. */
-export function resolveArenaSelection(search: string, style: ArenaArtStyle): ArenaSelection {
+export function resolveArenaSelection(search: string): ArenaSelection {
   const requestedId = new URLSearchParams(search).get('arena')?.trim() || DEFAULT_ARENA_ID;
   const requested = (ARENA_MANIFESTS as Readonly<Record<string, ArenaVisualManifest>>)[requestedId];
   if (!requested) {
-    const station = resolveArenaVisual(DEFAULT_ARENA_ID, style);
+    const station = resolveArenaVisual(DEFAULT_ARENA_ID);
     return { ...station, notice: `Unknown arena "${requestedId}"; showing ${station.manifest.displayName}.` };
   }
   try {
-    return { ...resolveArenaVisual(requestedId, style), notice: null };
+    return { ...resolveArenaVisual(requestedId), notice: null };
   } catch {
-    const station = resolveArenaVisual(DEFAULT_ARENA_ID, style);
-    return { ...station, notice: `Arena "${requested.displayName}" has no ${style} art; showing ${station.manifest.displayName}.` };
+    const station = resolveArenaVisual(DEFAULT_ARENA_ID);
+    return { ...station, notice: `Arena "${requested.displayName}" could not be loaded; showing ${station.manifest.displayName}.` };
   }
 }

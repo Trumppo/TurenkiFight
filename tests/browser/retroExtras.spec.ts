@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test('VIS-02B P3/P4 original retro fighters: all poses and distinct silhouettes', async ({ page }) => {
-  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro-only character artwork');
   await page.goto('/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const result = await page.evaluate(() => {

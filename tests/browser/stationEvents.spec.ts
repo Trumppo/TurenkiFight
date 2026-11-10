@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { createState } from '../../src/game/simulation/step';
 
-const style = process.env.VITE_VISUAL_STYLE === 'retro' ? 'retro' : 'classic';
+const style = 'retro';
 
 test('station event is tick-derived, visible only during its window and cues once', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });

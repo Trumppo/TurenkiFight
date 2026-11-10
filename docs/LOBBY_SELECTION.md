@@ -65,7 +65,7 @@ The chosen combination is visible as one summary line before the match starts, a
 1. A player can start a match without touching the URL and without reading documentation.
 2. Arena, mode, player count and characters are all visible and changeable in the lobby.
 3. Character choice changes appearance only: identical inputs produce identical simulation results and identical state hashes as before.
-4. 640x360 and 1280x720 screenshots inspected in classic and retro.
+4. 640x360 and 1280x720 screenshots inspected in retro.
 5. Existing keyboard, gamepad, remap and pause behaviour unchanged.
 
 ## 6. Out of scope

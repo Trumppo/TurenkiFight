@@ -4,8 +4,7 @@ import { join, resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { createState } from '../../src/game/simulation/step';
 
-const retro = process.env.VITE_VISUAL_STYLE === 'retro';
-const style = retro ? 'retro' : 'classic';
+const style = 'retro';
 
 async function waitForBackdrop(page: import('@playwright/test').Page, texture: string): Promise<void> {
   await expect.poll(() => page.evaluate((key) => {
@@ -43,7 +42,7 @@ async function assetSha256(assetPath: string): Promise<string> {
   return createHash('sha256').update(bytes).digest('hex');
 }
 
-test('K-kauppa renders in both styles with four readable fighter sprites at native and 2x scale', async ({ page }) => {
+test('K-kauppa renders in retro with four readable fighter sprites at native and 2x scale', async ({ page }) => {
   for (const size of [{ name: '640x360', width: 640, height: 360, scale: 1 }, { name: '1280x720', width: 1280, height: 720, scale: 2 }]) {
     await page.setViewportSize({ width: size.width, height: size.height });
     await page.goto(size.scale === 2 ? '/?arena=kkauppa&scale=2' : '/?arena=kkauppa');
@@ -107,8 +106,7 @@ test('station default and Mesku selection still resolve their original backdrops
   })).toEqual({ selectedArena: 'station', station: true, kkauppa: false });
 
   await page.goto('/?arena=mesku');
-  const expected = retro ? 'arena-mesku-backdrop' : 'station-backdrop';
-  await waitForBackdrop(page, expected);
+  await waitForBackdrop(page, 'arena-mesku-backdrop');
   expect(await page.evaluate(() => {
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
     return {
@@ -117,11 +115,9 @@ test('station default and Mesku selection still resolve their original backdrops
       mesku: scene.textures.exists('arena-mesku-backdrop'),
       shop: scene.textures.exists('arena-kkauppa-backdrop'),
     };
-  })).toEqual(retro
-    ? { selectedArena: 'mesku', station: false, mesku: true, shop: false }
-    : { selectedArena: 'station', station: true, mesku: false, shop: false });
+  })).toEqual({ selectedArena: 'mesku', station: false, mesku: true, shop: false });
   expect(await page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene').createLobbyState(['P1', 'P2']).arena))
-    .toBe(retro ? 'mesku' : undefined);
+    .toBe('mesku');
 
   await page.goto('/online.html?arena=kkauppa');
   await expect(page.locator('.page-header p')).toHaveText('Remote authoritative match · arena: K-kauppa');
@@ -341,10 +337,8 @@ test('the danger band, warning and collapse render at 640x360 and 1280x720', asy
   }
 });
 
-test('station and Mesku SVG content matches the line-ending-independent pre-arena baseline', async () => {
+test('supported station and Mesku SVG content matches the line-ending-independent baseline', async () => {
   // SHA-256 values are computed over UTF-8 text after CRLF-to-LF normalization.
-  expect(await assetSha256('assets/station/turenki-station-background.svg'))
-    .toBe('738e9082dd3b73ff0893d877047455c7fea20cb38438c174299c2fb0a01e5962');
   expect(await assetSha256('assets/station/turenki-station-retro.svg'))
     .toBe('01fcb21015ce6a8666dd15738927480d85353421bf1db59a37a45d6bba0ed4c5');
   expect(await assetSha256('assets/mesku/ravintola-mesku-evening.svg'))

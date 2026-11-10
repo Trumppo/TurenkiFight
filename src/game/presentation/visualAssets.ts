@@ -1,7 +1,7 @@
 /** Presentation-only asset manifest. Paths are relative to the Vite public root. */
 export const VISUAL_ASSETS = {
   station: {
-    backdrop: { key: 'station-backdrop', path: 'assets/station/turenki-station-background.svg', width: 384, height: 216 },
+    backdrop: { key: 'station-backdrop', path: 'assets/station/turenki-station-retro.svg', width: 640, height: 360 },
   },
 } as const;
 

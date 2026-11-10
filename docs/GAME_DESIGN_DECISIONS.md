@@ -78,10 +78,10 @@ Do not bundle all of this into one PR. First define input/state transitions and 
 - Consequence: a shrinking field in another mode is a mode rule change that needs its own decision; it is not added to arena data.
 - Status: owner-stated direction. Not an implementation claim.
 
-## Owner decision 2026-11-07: retro style default (conditional)
+## Owner decision 2026-11-11: retro-only visual style
 
-- Owner chose: retro becomes the default visual style **only after** the owner has approved G2 (fighter readability) and G4 (arena depth and contrast) in `docs/GRAPHICS_ROADMAP.md`.
-- Until then: classic is the default, retro stays opt-in.
+- Owner chose: retro is the only supported visual style. The former classic build-time path, fallback art and classic test matrix are removed.
+- `VITE_FIGHTER_CANVAS=expanded` remains an optional retro rendering experiment.
 - Status: owner decision recorded. The default change itself is not implemented and needs its own PR after the two approvals.
 
 ## Owner decision 2026-11-07: desktop only

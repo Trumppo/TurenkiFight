@@ -11,7 +11,6 @@ const sizes = [
 
 for (const size of sizes) {
   test(`Mesku arena preserves four-player readability at ${size.name}`, async ({ page }) => {
-    test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Mesku is a retro-only visual arena');
     await page.setViewportSize({ width: size.width, height: size.height });
     const assetResponses: number[] = [];
     page.on('response', response => {
@@ -85,7 +84,6 @@ for (const size of sizes) {
 }
 
 test('unknown arena selection clearly falls back to the default station', async ({ page }) => {
-  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
   await page.goto('/?arena=not-real');
   await expect(page.locator('.page-header p')).toHaveText('Unknown arena "not-real"; showing Turenki railway station.');
   await expect.poll(() => page.evaluate(() => {
@@ -93,24 +91,11 @@ test('unknown arena selection clearly falls back to the default station', async 
     return scene?.textures.exists('station-backdrop') && !scene.textures.exists('arena-not-real-backdrop');
   })).toBe(true);
 });
-
 test('online entry uses the selected Mesku arena before connecting', async ({ page }) => {
-  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Mesku is a retro-only visual arena');
   await page.goto('/online.html?arena=mesku');
   await expect(page.locator('.page-header p')).toHaveText('Remote authoritative match · arena: Ravintola Mesku');
   await expect.poll(() => page.evaluate(() => {
     const game = (window as any).__turenkiOnline;
     return !!game?.arenaTextureExists();
-  })).toBe(true);
-});
-
-test('classic builds clearly keep the station when Mesku has no classic variant', async ({ page }) => {
-  test.skip(process.env.VITE_VISUAL_STYLE === 'retro', 'Classic fallback is checked in the classic build');
-  await page.goto('/?arena=mesku');
-  await expect(page.locator('.page-header p'))
-    .toHaveText('Arena "Ravintola Mesku" has no classic art; showing Turenki railway station.');
-  await expect.poll(() => page.evaluate(() => {
-    const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
-    return scene?.textures.exists('station-backdrop') && !scene.textures.exists('arena-mesku-backdrop');
   })).toBe(true);
 });

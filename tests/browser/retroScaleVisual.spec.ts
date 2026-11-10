@@ -11,7 +11,6 @@ const sizes = [
 
 for (const size of sizes) {
   test(`VIS-05 retro arena at ${size.name} viewport`, async ({ page }) => {
-    test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
     await page.setViewportSize({ width: size.width, height: size.height });
     await page.goto('/');
     const canvas = page.locator('#game canvas');
@@ -76,7 +75,6 @@ for (const size of [
   { name: '1920', width: 1920, height: 1080 },
 ]) {
   test(`VIS-05 integer 2x mode at ${size.name}`, async ({ page }) => {
-    test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
     await page.setViewportSize({ width: size.width, height: size.height });
     await page.goto(size.name === '1280' ? '/' : '/?scale=2');
     if (size.name === '1280') {
@@ -117,7 +115,6 @@ for (const size of [
 }
 
 test('VIS-05 2x preference falls back cleanly on a short viewport', async ({ page }) => {
-  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
   await page.setViewportSize({ width: 640, height: 360 });
   await page.goto('/?scale=2');
   const canvas = page.locator('#game canvas');
@@ -140,7 +137,6 @@ test('VIS-05 2x preference falls back cleanly on a short viewport', async ({ pag
 });
 
 test('VIS-05 2x preference has no scroll at 1280x680', async ({ page }) => {
-  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
   await page.setViewportSize({ width: 1280, height: 680 });
   await page.goto('/?scale=2');
   const canvas = page.locator('#game canvas');
@@ -159,7 +155,6 @@ test('VIS-05 2x preference has no scroll at 1280x680', async ({ page }) => {
 });
 
 test('scale control is hidden only below the short-height cutoff and remains reachable elsewhere', async ({ page }) => {
-  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
   const scaleControl = page.locator('.scale-control');
 
   await page.setViewportSize({ width: 640, height: 540 });
@@ -183,7 +178,6 @@ test('scale control is hidden only below the short-height cutoff and remains rea
 });
 
 test('VIS-05 native short-viewport lobby status is fully readable', async ({ page }) => {
-  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
   await page.setViewportSize({ width: 640, height: 360 });
   await page.goto('/');
   const status = page.locator('#match-status');
@@ -210,7 +204,6 @@ for (const size of [
   { name: 'mobile', width: 390, height: 844 },
 ]) {
   test(`VIS-05 external HUD stays readable at ${size.name}`, async ({ page }) => {
-    test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
     await page.setViewportSize({ width: size.width, height: size.height });
     await page.goto('/');
     const canvas = page.locator('#game canvas');
@@ -243,7 +236,6 @@ for (const size of [
   { name: 'mobile', width: 390, height: 844 },
 ]) {
   test(`VIS-05 full eight-player status is visible at ${size.name}`, async ({ page }) => {
-    test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
     await page.setViewportSize({ width: size.width, height: size.height });
     await page.goto('/');
     await page.locator('#game canvas').waitFor({ state: 'visible' });
@@ -297,7 +289,6 @@ for (const size of [
   { name: 'mobile', width: 390, height: 844 },
 ]) {
   test(`VIS-05 four-player HUD and fighter distinction at ${size.name}`, async ({ page }) => {
-    test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro visual review only');
     await page.setViewportSize({ width: size.width, height: size.height });
     await page.goto('/');
     const fixture = createState(['P1', 'P2', 'P3', 'P4'], 'lobby');

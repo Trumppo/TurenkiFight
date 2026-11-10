@@ -12,7 +12,7 @@ const viewports = [
   { name: '640x360', width: 640, height: 360 },
   { name: '1280x720', width: 1280, height: 720 },
 ];
-const styles = ['classic', 'retro'];
+const styles = ['retro'];
 const fighterIds = ['P1', 'P2', 'P3', 'P4'];
 const hudTextSelector = [
   '#match-timer', '#match-status', '.hud-player', '.hud-name', '.hud-score',
@@ -25,13 +25,10 @@ function requireCheck(condition, message) {
 }
 
 function expectedSelectedArena(style, requestedArena) {
-  // The classic art manifest intentionally falls back to the station for Mesku.
-  return style === 'classic' && requestedArena === 'mesku' ? 'station' : requestedArena;
+  return requestedArena;
 }
 
-async function startVite(style) {
-  const previousStyle = process.env.VITE_VISUAL_STYLE;
-  process.env.VITE_VISUAL_STYLE = style;
+async function startVite() {
   let server;
   try {
     server = await createServer({
@@ -42,19 +39,12 @@ async function startVite(style) {
     });
     await server.listen();
     const address = server.httpServer.address();
-    requireCheck(address && typeof address === 'object', `Vite did not bind a port for ${style}`);
-    return { server, baseUrl: `http://127.0.0.1:${address.port}`, previousStyle };
+    requireCheck(address && typeof address === 'object', 'Vite did not bind a port');
+    return { server, baseUrl: `http://127.0.0.1:${address.port}` };
   } catch (error) {
     if (server) await server.close();
-    if (previousStyle === undefined) delete process.env.VITE_VISUAL_STYLE;
-    else process.env.VITE_VISUAL_STYLE = previousStyle;
     throw error;
   }
-}
-
-async function restoreStyle(previousStyle) {
-  if (previousStyle === undefined) delete process.env.VITE_VISUAL_STYLE;
-  else process.env.VITE_VISUAL_STYLE = previousStyle;
 }
 
 async function totalOutputBytes() {
@@ -71,9 +61,9 @@ const captures = [];
 const browser = await chromium.launch({ headless: true });
 
 try {
-  // Run the two style passes sequentially on separate, freshly allocated ports.
+  // Run the retro pass on a freshly allocated port.
   for (const style of styles) {
-    const { server, baseUrl, previousStyle } = await startVite(style);
+    const { server, baseUrl } = await startVite();
     try {
       const context = await browser.newContext({ deviceScaleFactor: 1 });
       const page = await context.newPage();
@@ -176,7 +166,6 @@ try {
       await context.close();
     } finally {
       await server.close();
-      await restoreStyle(previousStyle);
     }
   }
 } finally {
@@ -196,7 +185,7 @@ const rows = captures.map(capture =>
   `| ${capture.style} | ${capture.arena} | ${capture.size} | ${capture.fighterCount} | ${capture.selectedArena.selected} | [${capture.file}](./${capture.file}) | ${(capture.bytes / 1024).toFixed(1)} KiB |`,
 ).join('\n');
 const captureBytes = captures.reduce((sum, capture) => sum + capture.bytes, 0);
-const index = `# G1 visual evaluation matrix\n\nGenerated ${date} from commit \`${commitSha}\`. Each capture uses a 640×360 logical canvas and four fighters. The classic Mesku request intentionally resolves to the station art because Mesku is only available in the retro manifest.\n\nSemantic checks: logical canvas size, selected arena (including documented classic Mesku fallback), visible HUD bounds, and visible HUD text at least 14 CSS px. No screenshot or cross-platform pixel comparisons are used.\n\nCaptures: ${captures.length} PNGs, ${(captureBytes / 1024 / 1024).toFixed(2)} MiB total (${captureBytes.toLocaleString()} bytes).\n\n| Style | Requested arena | Viewport | Fighters | Selected arena | Capture | Size |\n|---|---|---:|---:|---|---|---:|\n${rows}\n`;
+const index = `# G1 visual evaluation matrix\n\nGenerated ${date} from commit \`${commitSha}\`. Each capture uses the retro style, a 640×360 logical canvas and four fighters.\n\nSemantic checks: logical canvas size, selected arena, visible HUD bounds, and visible HUD text at least 14 CSS px. No screenshot or cross-platform pixel comparisons are used.\n\nCaptures: ${captures.length} PNGs, ${(captureBytes / 1024 / 1024).toFixed(2)} MiB total (${captureBytes.toLocaleString()} bytes).\n\n| Style | Requested arena | Viewport | Fighters | Selected arena | Capture | Size |\n|---|---|---:|---:|---|---|---:|\n${rows}\n`;
 await writeFile(join(outputDir, 'README.md'), index);
 const totalBytes = await totalOutputBytes();
 console.log(`Wrote ${captures.length} captures to docs/visual/g1-matrix/ (${captureBytes.toLocaleString()} PNG bytes; ${totalBytes.toLocaleString()} total bytes including manifest and index).`);

@@ -9,12 +9,6 @@ const retroMainHashes = {
   P3: '64846402',
   P4: '3acf70bf',
 };
-const classicMainHashes = {
-  P1: '12331824',
-  P2: '56189232',
-  P3: '42b5bab2',
-  P4: '41683c57',
-};
 
 test('P5-P8 are original monochrome silhouettes; P1-P4 textures match main', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
@@ -67,8 +61,7 @@ test('P5-P8 are original monochrome silhouettes; P1-P4 textures match main', asy
     return { combined, silhouette, bounds };
   }, poses);
 
-  const mainHashes = process.env.VITE_VISUAL_STYLE === 'retro' ? retroMainHashes : classicMainHashes;
-  expect(Object.fromEntries(Object.entries(evidence.combined).filter(([id]) => id <= 'P4'))).toEqual(mainHashes);
+  expect(Object.fromEntries(Object.entries(evidence.combined).filter(([id]) => id <= 'P4'))).toEqual(retroMainHashes);
   const newSilhouetteHashes = ['P5', 'P6', 'P7', 'P8'].map(id => evidence.silhouette[id].hash);
   expect(new Set(newSilhouetteHashes).size, 'Each new character must have a different monochrome bitmap silhouette').toBe(4);
   expect(['P5', 'P6', 'P7', 'P8'].every(id => evidence.silhouette[id].pixels > 150)).toBe(true);

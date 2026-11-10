@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { createState } from '../../src/game/simulation/step';
 
-const retro = process.env.VITE_VISUAL_STYLE === 'retro';
+const retro = true;
 const visualDirectory = 'artifacts/visual';
 
 type SpriteSample = {

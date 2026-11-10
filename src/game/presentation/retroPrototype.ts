@@ -6,11 +6,8 @@ import { ARENA_MANIFESTS } from './arenaVisuals';
 /**
  * Original 1990s arcade-inspired martial artist, not a licensed character.
  *
- * Retro is the shipped default (owner decision 2026-11-10). Build with
- * `VITE_VISUAL_STYLE=classic` to get the original classic art instead; the test
- * harness pins classic explicitly so both styles stay covered.
+ * Retro is the only supported visual style.
  */
-export const RETRO_PREVIEW = import.meta.env.VITE_VISUAL_STYLE !== 'classic';
 export const EXPANDED_P1_CANVAS = import.meta.env.VITE_FIGHTER_CANVAS === 'expanded';
 export const RETRO_P1_SIZE = EXPANDED_P1_CANVAS ? { width: 48, height: 64 } : { width: 32, height: 48 };
 export const RETRO_STATION_PATH = ARENA_MANIFESTS.station.variants.retro.backdropPath;
@@ -37,7 +34,7 @@ export function createRetroP1Textures(scene: Phaser.Scene): void {
     g.clearRect(0, 0, RETRO_P1_SIZE.width, RETRO_P1_SIZE.height);
     g.imageSmoothingEnabled = false;
     // Isolated canvas-size experiment: preserve the original authored coordinates and feet origin.
-    // Geometry is scaled only in the experimental variant; classic 32x48 remains bit-identical.
+    // Geometry is scaled only in the experimental retro variant.
     if (EXPANDED_P1_CANVAS) {
       const scale = 4 / 3;
       // Preserve 1px transparent bottom margin after scaling; avoid clipping feet at y=63.

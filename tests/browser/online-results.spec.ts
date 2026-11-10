@@ -124,7 +124,7 @@ test('authoritative winner, reason and full podium render without client-side ra
 
     const screenshotDir = path.resolve('artifacts');
     await mkdir(screenshotDir, { recursive: true });
-    const screenshotPrefix = process.env.VITE_VISUAL_STYLE === 'retro' ? 'online-results-retro' : 'online-results';
+    const screenshotPrefix = 'online-results-retro';
     await p1.setViewportSize({ width: 1280, height: 720 });
     await p1.screenshot({ path: path.join(screenshotDir, `${screenshotPrefix}-1280x720.png`) });
     await p1.setViewportSize({ width: 390, height: 844 });
