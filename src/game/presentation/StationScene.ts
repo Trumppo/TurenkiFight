@@ -29,6 +29,7 @@ import { StationEventPresentation } from './stationEvent';
 import { CombatFeedbackState } from './combatFeedback';
 
 const PLAYER_IDS = Array.from({ length: MAX_PLAYERS }, (_, index) => `P${index + 1}`);
+const PLAYER_COUNT_STORAGE_KEY = 'turenkifight.playerCount';
 
 const MODE_NAMES: Record<ModeId, string> = {
   'score-brawl': 'Score Brawl',
@@ -67,6 +68,7 @@ export class StationScene extends Phaser.Scene {
   private readonly arenaSelection: ArenaSelection;
   private state!: GameState;
   private selectedMode: ModeId = 'score-brawl';
+  private selectedPlayerCount = MAX_PLAYERS;
   private elapsedMs = 0;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -90,6 +92,7 @@ export class StationScene extends Phaser.Scene {
     timer: HTMLElement;
     status: HTMLElement;
     modeSelect: HTMLSelectElement;
+    playerCountSelect: HTMLSelectElement;
     waveStatus?: HTMLElement;
     waveNumber?: HTMLElement;
     waveEnemies?: HTMLElement;
@@ -361,7 +364,7 @@ export class StationScene extends Phaser.Scene {
         const join = !!pad.buttons[GAMEPAD_BUTTONS.join]?.pressed;
         if (join && !this.lastJoinButtons.get(pad.index) && !this.gamepadSlots.has(pad.index)) {
           const assigned = new Set(this.gamepadSlots.values());
-          const joinableSlots = PLAYER_IDS.slice(1);
+          const joinableSlots = this.activePlayerIds().slice(1);
           const id = joinableSlots.find(candidate => this.reclaimableGamepadSlots.has(candidate) && this.state.fighters.some(f => f.id === candidate) && !assigned.has(candidate))
             ?? joinableSlots.find(candidate => !this.state.fighters.some(f => f.id === candidate));
           if (!id) continue;
@@ -531,14 +534,15 @@ export class StationScene extends Phaser.Scene {
   /** Fill P1-P8 with bots and immediately begin the countdown. */
   private startAllBotMatch(): void {
     if (this.state.phase !== 'lobby' || this.selectedMode === 'wave') return;
-    this.botSlots = new Set(PLAYER_IDS);
+    const ids = this.activePlayerIds();
+    this.botSlots = new Set(ids);
     this.gamepadSlots.clear();
     this.reclaimableGamepadSlots.clear();
     this.rememberedGamepadSlots.clear();
     this.lastPadStart.clear();
     this.lastJoinButtons.clear();
     this.allBotMatch = true;
-    this.state = this.createLobbyState(PLAYER_IDS);
+    this.state = this.createLobbyState(ids);
     this.startLocalMatch();
     this.drawFighters();
   }
@@ -549,8 +553,8 @@ export class StationScene extends Phaser.Scene {
   private addBotSlot(requestedId?: string): string | null {
     if (this.state.phase !== 'lobby') return null;
     const id = requestedId
-      ? PLAYER_IDS.slice(1).includes(requestedId) && !this.state.fighters.some(fighter => fighter.id === requestedId) ? requestedId : undefined
-      : PLAYER_IDS.slice(1).find(candidate => !this.state.fighters.some(fighter => fighter.id === candidate));
+      ? this.activePlayerIds().slice(1).includes(requestedId) && !this.state.fighters.some(fighter => fighter.id === requestedId) ? requestedId : undefined
+      : this.activePlayerIds().slice(1).find(candidate => !this.state.fighters.some(fighter => fighter.id === candidate));
     if (!id) return null;
     this.botSlots.add(id);
     this.state = this.createLobbyState([...this.state.fighters.map(fighter => fighter.id), id]);
@@ -562,7 +566,7 @@ export class StationScene extends Phaser.Scene {
     if (this.state.phase !== 'lobby') return null;
     const id = requestedId
       ? this.botSlots.has(requestedId) ? requestedId : undefined
-      : [...PLAYER_IDS].reverse().find(candidate => this.botSlots.has(candidate));
+      : [...this.activePlayerIds()].reverse().find(candidate => this.botSlots.has(candidate));
     if (!id) return null;
     this.botSlots.delete(id);
     const ids = this.state.fighters.map(fighter => fighter.id).filter(candidate => candidate !== id);
@@ -572,11 +576,43 @@ export class StationScene extends Phaser.Scene {
 
   /** Rebuild a lobby using its selected local rules; an incomplete wave roster stays a neutral lobby. */
   private createLobbyState(ids: string[]): GameState {
+    const allowed = new Set(this.activePlayerIds());
+    const roster = Array.from(new Set(ids)).filter(id => allowed.has(id));
+    if (!roster.includes('P1')) roster.unshift('P1');
     const arena = this.simulationArenaId();
     const arenaSetup = arena ? { arena } : {};
-    if (this.selectedMode !== 'wave') return createState({ ids, phase: 'lobby', mode: this.selectedMode, ...arenaSetup });
-    if (!this.waveRosterReady(ids)) return createState({ ids, phase: 'lobby', ...arenaSetup });
-    return createState({ ids, phase: 'lobby', mode: 'wave', teams: this.waveTeams(ids), ...arenaSetup });
+    if (this.selectedMode !== 'wave') return createState({ ids: roster, phase: 'lobby', mode: this.selectedMode, ...arenaSetup });
+    if (!this.waveRosterReady(roster)) return createState({ ids: roster, phase: 'lobby', ...arenaSetup });
+    return createState({ ids: roster, phase: 'lobby', mode: 'wave', teams: this.waveTeams(roster), ...arenaSetup });
+  }
+
+  private activePlayerIds(): string[] {
+    return PLAYER_IDS.slice(0, this.selectedPlayerCount);
+  }
+
+  private readPlayerCount(): number {
+    let raw: string | null = null;
+    try { raw = window.localStorage.getItem(PLAYER_COUNT_STORAGE_KEY); } catch { /* Storage is optional. */ }
+    const parsed = raw ? Number(raw) : NaN;
+    return Number.isInteger(parsed) && parsed >= 1 && parsed <= MAX_PLAYERS ? parsed : MAX_PLAYERS;
+  }
+
+  private setPlayerCount(count: number): void {
+    if (this.state.phase !== 'lobby') return;
+    const next = Math.max(1, Math.min(MAX_PLAYERS, Math.trunc(count)));
+    this.selectedPlayerCount = next;
+    const allowed = new Set(this.activePlayerIds());
+    for (const [index, slot] of this.gamepadSlots) {
+      if (!allowed.has(slot)) this.gamepadSlots.delete(index);
+    }
+    this.reclaimableGamepadSlots = new Set([...this.reclaimableGamepadSlots].filter(slot => allowed.has(slot)));
+    for (const [index, remembered] of this.rememberedGamepadSlots) {
+      if (!allowed.has(remembered.slot)) this.rememberedGamepadSlots.delete(index);
+    }
+    this.botSlots = new Set([...this.botSlots].filter(slot => allowed.has(slot)));
+    this.state = this.createLobbyState(this.state.fighters.map(fighter => fighter.id));
+    try { window.localStorage.setItem(PLAYER_COUNT_STORAGE_KEY, String(next)); } catch { /* Storage is optional. */ }
+    this.drawFighters();
   }
 
   /** Presentation arena choice becomes simulation data only when non-station. */
@@ -600,7 +636,7 @@ export class StationScene extends Phaser.Scene {
     if (this.state.phase !== 'lobby') return false;
     return this.selectedMode === 'wave'
       ? this.waveRosterReady()
-      : this.state.fighters.length >= 2;
+      : this.state.fighters.length >= (this.selectedPlayerCount === 1 ? 1 : 2);
   }
 
   /** Read-only audio diagnostics used by browser QA; no simulation state is exposed. */
@@ -813,6 +849,7 @@ export class StationScene extends Phaser.Scene {
     const timer = document.getElementById('match-timer');
     const status = document.getElementById('match-status');
     const modeSelect = document.getElementById('game-mode') as HTMLSelectElement | null;
+    const playerCountSelect = document.getElementById('player-count') as HTMLSelectElement | null;
     const waveStatus = document.getElementById('wave-status');
     const waveNumber = document.getElementById('wave-number');
     const waveEnemies = document.getElementById('wave-enemies');
@@ -833,7 +870,7 @@ export class StationScene extends Phaser.Scene {
     const keyboardMessage = document.getElementById('keyboard-message');
     const resetKeyboardSlot = document.getElementById('keyboard-reset-slot') as HTMLButtonElement | null;
     const resetAllKeyboard = document.getElementById('keyboard-reset-all') as HTMLButtonElement | null;
-    if (!timer || !status || !modeSelect || !playerList) return;
+    if (!timer || !status || !modeSelect || !playerCountSelect || !playerList) return;
     const players = new Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; action: HTMLButtonElement }>();
     for (const node of Array.from(document.querySelectorAll('.hud-player[data-player]'))) {
       const root = node as HTMLElement;
@@ -857,6 +894,13 @@ export class StationScene extends Phaser.Scene {
       this.selectedMode = modeSelect.value as ModeId;
       this.state = this.createLobbyState(this.state.fighters.map(f => f.id));
       this.drawFighters();
+    });
+    this.selectedPlayerCount = this.readPlayerCount();
+    this.state = this.createLobbyState(this.state.fighters.map(fighter => fighter.id));
+    playerCountSelect.value = String(this.selectedPlayerCount);
+    playerCountSelect.addEventListener('change', () => {
+      this.setPlayerCount(Number(playerCountSelect.value));
+      playerCountSelect.blur();
     });
     keyboardSlotSelect?.addEventListener('change', () => {
       this.keyboardCapture = undefined;
@@ -920,7 +964,7 @@ export class StationScene extends Phaser.Scene {
       startButton.blur();
     });
     this.domHud = {
-      timer, status, modeSelect,
+      timer, status, modeSelect, playerCountSelect,
       waveStatus: waveStatus ?? undefined, waveNumber: waveNumber ?? undefined,
       waveEnemies: waveEnemies ?? undefined, waveCountdown: waveCountdown ?? undefined,
       startButton: startButton ?? undefined, allBotsButton: allBotsButton ?? undefined,
@@ -1029,6 +1073,8 @@ export class StationScene extends Phaser.Scene {
     if (hud.timer.textContent !== timerText) hud.timer.textContent = timerText;
     hud.modeSelect.value = this.selectedMode;
     hud.modeSelect.disabled = this.state.phase !== 'lobby';
+    hud.playerCountSelect.value = String(this.selectedPlayerCount);
+    hud.playerCountSelect.disabled = this.state.phase !== 'lobby';
     const wave = this.state.mode === 'wave' ? this.state.wave : undefined;
     if (hud.waveStatus) hud.waveStatus.hidden = !wave || this.state.phase === 'lobby';
     if (wave && hud.waveNumber && hud.waveEnemies && hud.waveCountdown) {
@@ -1073,17 +1119,23 @@ export class StationScene extends Phaser.Scene {
       hud.pauseButton.setAttribute('aria-pressed', String(this.paused));
     }
     if (hud.allBotsPanel) hud.allBotsPanel.hidden = this.state.phase !== 'lobby';
-    if (hud.waveHelp) hud.waveHelp.hidden = this.selectedMode !== 'wave' || this.state.phase !== 'lobby';
+    if (hud.waveHelp) {
+      hud.waveHelp.hidden = this.selectedMode !== 'wave' || this.state.phase !== 'lobby';
+      hud.waveHelp.textContent = this.selectedPlayerCount === 1
+        ? 'Wave needs at least 2 active slots: one human player and one bot enemy.'
+        : 'Wave requires at least one human and one bot. Humans are allies; bots are enemies.';
+    }
     if (hud.startButton) hud.startButton.disabled = !this.canStartLocalMatch();
     if (hud.allBotsButton) {
       hud.allBotsButton.disabled = this.selectedMode === 'wave';
       hud.allBotsButton.title = this.selectedMode === 'wave'
         ? 'Wave requires at least one human player; all-bot matches cannot start.'
-        : 'Fill all 8 slots with bots and start. P1 is bot-driven.';
+        : `Fill all ${this.selectedPlayerCount} active slots with bots and start. P1 is bot-driven.`;
     }
     hud.playerList.classList.toggle('mode-specific', this.state.mode === 'last-man-standing' || this.state.mode === 'deathmatch');
     for (const [id, nodes] of hud.players) {
       const fighter = this.state.fighters.find(f => f.id === id);
+      const slotActive = Number(id.slice(1)) <= this.selectedPlayerCount;
       const isBot = this.botSlots.has(id) && !!fighter;
       nodes.root.classList.toggle('is-empty', !fighter);
       nodes.root.classList.toggle('is-eliminated', !!fighter?.eliminated);
@@ -1091,6 +1143,7 @@ export class StationScene extends Phaser.Scene {
       nodes.root.classList.toggle('is-zone-danger', outsideZone);
       nodes.root.classList.toggle('is-bot', isBot);
       nodes.root.classList.toggle('is-lobby-slot', this.state.phase === 'lobby');
+      nodes.root.hidden = !slotActive || (this.state.phase !== 'lobby' && !fighter);
       const slotNumber = Number(id.slice(1));
       nodes.name.textContent = this.state.phase === 'lobby'
         ? this.selectedMode === 'wave' && fighter ? `${id} ${isBot ? 'ENEMY' : 'PLAYER'}`

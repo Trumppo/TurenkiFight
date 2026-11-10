@@ -1,6 +1,7 @@
 # Lobby selection: arena, mode, players and character
 
-**Status:** Owner requirement 2026-11-10. Proposal for implementation; nothing here is implemented yet.
+**Status:** Owner requirement 2026-11-10. L1 arena selection and L2 player count are implemented locally;
+L3 character selection and L4 summary remain proposals.
 **Related:** [GRAPHICS_ROADMAP.md](GRAPHICS_ROADMAP.md), [GAME_DESIGN.md](GAME_DESIGN.md), [M1_GAMEPLAY_CONTROLS.md](M1_GAMEPLAY_CONTROLS.md).
 
 ## 1. The gap
@@ -48,6 +49,7 @@ The chosen combination is visible as one summary line before the match starts, a
 - A count control (1-8). Slots above the count are inactive and not created in the match state.
 - Bots fill the empty active slots when the player chooses; a "bots" toggle or the existing ALL BOTS path stays.
 - Acceptance: a 1-player match creates one fighter, an 8-player match eight; results and HUD match the count; no ghost slots.
+- Evidence: `docs/LOBBY_L2_PLAYER_COUNT_PLAN.md` and `tests/browser/lobbyPlayerCount.spec.ts`.
 
 ### L3 - Character per slot
 
