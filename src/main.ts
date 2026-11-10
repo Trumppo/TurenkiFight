@@ -6,6 +6,7 @@ import { resolveArenaSelection } from './game/presentation/arenaVisuals';
 import { RETRO_PREVIEW } from './game/presentation/retroPrototype';
 
 const arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic');
+document.documentElement.dataset.visualStyle = arenaSelection.style;
 const pageDescription = document.querySelector('.page-header p');
 if (pageDescription) {
   if (arenaSelection.notice) pageDescription.textContent = arenaSelection.notice;

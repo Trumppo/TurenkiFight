@@ -3,8 +3,14 @@ import { fighterKey, POSES, FRAMES_PER_POSE } from './fighterSprites';
 import { fighterRig } from './fighterRig';
 import { ARENA_MANIFESTS } from './arenaVisuals';
 
-/** Original 1990s arcade-inspired martial artist, not a licensed character. */
-export const RETRO_PREVIEW = import.meta.env.VITE_VISUAL_STYLE === 'retro';
+/**
+ * Original 1990s arcade-inspired martial artist, not a licensed character.
+ *
+ * Retro is the shipped default (owner decision 2026-11-10). Build with
+ * `VITE_VISUAL_STYLE=classic` to get the original classic art instead; the test
+ * harness pins classic explicitly so both styles stay covered.
+ */
+export const RETRO_PREVIEW = import.meta.env.VITE_VISUAL_STYLE !== 'classic';
 export const EXPANDED_P1_CANVAS = import.meta.env.VITE_FIGHTER_CANVAS === 'expanded';
 export const RETRO_P1_SIZE = EXPANDED_P1_CANVAS ? { width: 48, height: 64 } : { width: 32, height: 48 };
 export const RETRO_STATION_PATH = ARENA_MANIFESTS.station.variants.retro.backdropPath;

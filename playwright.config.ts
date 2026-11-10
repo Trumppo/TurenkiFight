@@ -19,5 +19,9 @@ export default defineConfig({
     url: `http://127.0.0.1:${testPort}`,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
+    // Retro is the shipped default. The harness pins classic unless a run
+    // overrides it, so the default suite still covers classic and the retro job
+    // sets VITE_VISUAL_STYLE=retro.
+    env: { VITE_VISUAL_STYLE: process.env.VITE_VISUAL_STYLE ?? 'classic' },
   },
 });
