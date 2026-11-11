@@ -246,6 +246,7 @@
 - Existing browser coverage also exercises results, rematch, join UI and server input/snapshot flow; existing server tests cover TLS, abuse limits and rejoin.
 - **Not claimed:** no real internet/LAN performance, operational TLS certificate renewal verification, or owner playtest. Host room settings (arena/mode/duration/max players) are still server/operator driven, not yet selectable in the browser; this remains the next Gate F implementation slice. A single room per process was retained per owner answer 2026-11-11; multi-room hosting remains out of scope.
 - No Gate F milestone acceptance is asserted here; automated results and owner approval remain distinct.
+- **Owner decision (2026-11-11):** Online room duration choices are 1, 2 and 3 minutes; retain the existing 2-minute timer as the default. This resolves the prior open duration-option question. The simulation now has a typed duration selection foundation; end-to-end room configuration wiring remains outstanding.
 
 ### Gate F work package: browser access and operator hosting (F1)
 

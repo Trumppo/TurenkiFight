@@ -2189,3 +2189,25 @@ tasks:
     user_decision_gate: "Owner chose one room per process on 2026-11-11; no further decision for this slice. Owner approval remains required to merge."
     notes: "Browser E2E test verifies host role, readiness barrier, forged guest-start denial, and successful host start. Manual mode is required; default auto mode is preserved for backward compatibility."
     last_updated: "2026-11-11"
+
+  - id: GATE-F-DURATION-OPTIONS
+    title: Define and validate room-selectable match duration options
+    assigned_role: planning-session
+    status: done
+    priority: P1
+    specification: docs/GATE_PLANS.md#gate-f
+    depends_on: [GATE-F-LOBBY-READY-START]
+    scope: [src/game/simulation/modes.ts, src/game/simulation/step.ts, src/game/simulation/modes.test.ts, docs/GATE_PLANS.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - "Owner-approved duration values are exactly 1, 2 and 3 minutes"
+      - "Duration converts to deterministic tick counts at 60 Hz"
+      - "Default room remains the historical 7200-tick / 2-minute match"
+      - "Unsupported duration values are rejected"
+      - "No wall-clock dependency or network performance claim is added"
+    rationale: "Room creation explicitly requires a duration setting, but no selectable values were approved. A typed deterministic timer option is needed before wiring browser configuration through the authoritative room."
+    out_of_scope: [room-protocol-wiring, browser-ui, arena-and-mode-selection, player-cap-selection]
+    branch: designer/gate-f-online
+    pull_request: "DESIGNER: wire Gate F room configuration end to end; Task: GATE-F-ONLINE-PRODUCTIZATION"
+    user_decision_gate: "Owner approved 1, 2 and 3 minute choices on 2026-11-11; two-minute default retained."
+    notes: "Implemented as typed MATCH_DURATION_MINUTES and matchDurationTicks; MatchSetup accepts selected duration. Focused simulation tests 7/7 and production build pass. This is a prerequisite only; Gate F remains in progress."
+    last_updated: "2026-11-11"
