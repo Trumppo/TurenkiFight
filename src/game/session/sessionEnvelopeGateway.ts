@@ -270,6 +270,11 @@ export class SessionEnvelopeGateway {
         this.sequences.set(connectionId, header.sequence);
         return accepted(envelope);
       }
+      case 'start-request': {
+        const envelope = decodeClientEnvelope(message, header);
+        this.sequences.set(connectionId, header.sequence);
+        return accepted(envelope);
+      }
     }
   }
 

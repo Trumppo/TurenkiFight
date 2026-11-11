@@ -242,8 +242,9 @@
 - Existing M14 slices provide optional TLS/WSS, room-code admission, room connection caps, per-client message size/rate/invalid-message limits, non-host 30 s rejoin, authoritative results and opt-in rematch.
 - Added a non-developer-oriented [`docs/GATE_F_HOSTING_GUIDE.md`](GATE_F_HOSTING_GUIDE.md) covering LAN/VPN, public WSS prerequisites, setup, security caveats and troubleshooting; corrected stale README security claims.
 - Expanded online browser slot selection to P1–P8 and added a real browser + authoritative server test with seven additional clients; it asserts all eight authoritative fighters render and session enters running.
+- Added a server-authored lobby roster/readiness state, participant READY action and host-only HOST START. For this flow, operators use `--start=manual`; tests prove the server rejects a forged guest start and the host cannot start until every required player has readied.
 - Existing browser coverage also exercises results, rematch, join UI and server input/snapshot flow; existing server tests cover TLS, abuse limits and rejoin.
-- **Not claimed:** no real internet/LAN performance, operational TLS certificate renewal verification, or owner playtest. Room creation/settings are still server/operator driven, not an in-browser host lobby; full room-level configuration (arena/mode/duration/max players) remains a candidate follow-up to confirm against this gate's desired product boundary.
+- **Not claimed:** no real internet/LAN performance, operational TLS certificate renewal verification, or owner playtest. Host room settings (arena/mode/duration/max players) are still server/operator driven, not yet selectable in the browser; this remains the next Gate F implementation slice. A single room per process was retained per owner answer 2026-11-11; multi-room hosting remains out of scope.
 - No Gate F milestone acceptance is asserted here; automated results and owner approval remain distinct.
 
 ### Gate F work package: browser access and operator hosting (F1)
@@ -257,6 +258,18 @@
 - **Risk:** 8-slot selection is only an admission UI, not a full configurable lobby; online arena/mode/duration still use server/operator defaults. A loopback test cannot validate firewall, certificate hostname, router or internet behavior.
 - **Branch/PR plan:** `designer/gate-f-online`; one reviewable `DESIGNER: ` PR with `Task: GATE-F-ONLINE-BASELINE`; no merge without owner approval.
 - **User decision gate:** None for this narrow slice; existing approved security choices apply. Owner review/merge is still required. Overall Gate F remains open until remaining product-boundary/configuration gaps are resolved and evidence is consolidated.
+
+### Gate F work package: participant readiness and host start (F2)
+
+- **Objective:** Replace the operator-only start step with a browser-visible roster, per-player READY, and host-authorized manual start.
+- **Rationale:** The owner-approved room design says every participant readies and the host starts manually; the Gate D `ready-request` existed but had no browser API/feedback and start was stdin-only.
+- **Dependencies:** F1, Gate D typed envelope, M14 authoritative WS session.
+- **Files/ownership:** `src/game/session/sessionEnvelope.ts`, `src/game/session/sessionEnvelopeGateway.ts`, `src/game/networking/wsMessages.ts`, `src/game/networking/wsSessionClient.ts`, `src/game/networking/onlineMatchController.ts`, `server/ws/authoritativeWsSession.ts`, `server/ws/wsServer.ts`, `online.html`, `src/online.ts`, `src/style.css`, `tests/browser/online.spec.ts`, and corresponding unit tests.
+- **Out of scope:** room setting mutation, multiple rooms per process, auth/accounts/matchmaking, simulation changes, network performance claims.
+- **Acceptance tests:** Host sees its role; all joined users can ready; host start is disabled until all required slots (or all claimed human slots in wave mode) are ready; server rejects guest-forged start; accepted host start sends both clients into running; manual and legacy auto server modes remain covered.
+- **Risk:** protocol expands; old clients may ignore new server messages, but new client depends on the matching server version. Manual start must be enabled for this flow.
+- **Branch/PR plan:** continue `designer/gate-f-online` PR #197 as same Gate F package; body primary task must be updated to `Task: GATE-F-ONLINE-PRODUCTIZATION` before adding this slice to PR.
+- **User decision gate:** resolved for this flow: owner selected one room per process. No multi-room implementation or capacity claim.
 
 ---
 

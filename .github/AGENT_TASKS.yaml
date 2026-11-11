@@ -2133,7 +2133,7 @@ tasks:
     priority: P0
     specification: docs/GATE_PLANS.md#gate-f
     depends_on: [GATE-E-BASE8-SPLIT-HARNESS, M14-TLS-ROOMCODES, M14-RATE-LIMITS, M14-REJOIN]
-    scope: [online.html, src/online.ts, server/ws/, tests/browser/online*.spec.ts, tests/m14-*.test.ts, docs/GATE_F_HOSTING_GUIDE.md, README.md, docs/GATE_PLANS.md]
+    scope: [online.html, src/online.ts, src/style.css, src/game/session/, src/game/networking/, server/ws/, tests/browser/online*.spec.ts, tests/m14-*.test.ts, docs/GATE_F_HOSTING_GUIDE.md, README.md, docs/GATE_PLANS.md]
     acceptance:
       - Browser create/join/play/results/rematch-or-leave flow is covered end-to-end
       - Browser client can select all configured player slots through P8
@@ -2142,7 +2142,7 @@ tasks:
       - No account, matchmaking or progression systems are added before Gate G
       - Network-performance unknowns stay NOT_MEASURED; tests do not imply real-link performance
       - Full relevant browser/unit tests and production build pass
-    notes: "Active. Existing M14 TLS/room-code/rate-limit/rejoin implementations verified by tests. Added P1-P8 browser slot selection, 8-client browser+server roster test and operator hosting guide. Remaining audit: confirm room creation/config product boundary and rejoin/WSS browser-path coverage; do not mark Gate F complete until acceptance evidence is consolidated."
+    notes: "Active. Owner selected single room per process for Gate F on 2026-11-11, resolving M14/Gate F multiplicity conflict. Existing M14 TLS/room-code/rate-limit/rejoin implementations are covered by tests. Added P1-P8 browser slot selection, 8-client browser+server roster test, host/ready UI and hosting guide. Room creation/settings still need browser control of arena/mode/max players/duration; do not mark Gate F complete before this and full evidence consolidation."
     last_updated: "2026-11-11"
 
   - id: GATE-F-ONLINE-BASELINE
@@ -2165,4 +2165,27 @@ tasks:
     pull_request: "DESIGNER: complete Gate F browser slot and hosting baseline; Task: GATE-F-ONLINE-BASELINE"
     user_decision_gate: "No new product decision for this slice; owner approval is required before merge and Gate F acceptance."
     notes: "Implemented and verified 2026-11-11: online E2E 12/12, security/rejoin unit focus 59/59, full unit 72 files/627 tests, build green. See docs/GATE_F_HOSTING_GUIDE.md. Overall GATE-F-ONLINE-PRODUCTIZATION remains in progress."
+    last_updated: "2026-11-11"
+
+  - id: GATE-F-LOBBY-READY-START
+    title: Add server-authored lobby readiness and host-only start control
+    assigned_role: planning-session
+    status: done
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-f
+    depends_on: [GATE-F-ONLINE-BASELINE, GATE-D-ROOM-CONTRACT]
+    scope: [src/game/session/sessionEnvelope.ts, src/game/session/sessionEnvelopeGateway.ts, src/game/networking/wsMessages.ts, src/game/networking/wsSessionClient.ts, src/game/networking/onlineMatchController.ts, server/ws/authoritativeWsSession.ts, server/ws/wsServer.ts, online.html, src/online.ts, src/style.css, tests/browser/online.spec.ts]
+    acceptance:
+      - Server broadcasts claimed roster, ready player ids, host player id, required roster and configured mode
+      - Every joined browser can ready; state is reflected in all lobby clients
+      - Only the first joining host can request start, and only after all required joined participants are ready
+      - Guest-forged start request is denied server-side; match does not begin
+      - Host start begins the authoritative match for every connected client
+      - Existing auto-start server behavior remains unchanged
+    rationale: "The accepted room/lobby design calls for all ready followed by manual host start; previously READY was only a codec/backend marker and start was operator stdin-only."
+    out_of_scope: [browser-mutable-room-settings, multi-room-per-process, accounts, matchmaking, simulation-rule-changes, real-network-performance-claims]
+    branch: designer/gate-f-online
+    pull_request: "DESIGNER: complete Gate F browser lobby and host flow; Task: GATE-F-ONLINE-PRODUCTIZATION"
+    user_decision_gate: "Owner chose one room per process on 2026-11-11; no further decision for this slice. Owner approval remains required to merge."
+    notes: "Browser E2E test verifies host role, readiness barrier, forged guest-start denial, and successful host start. Manual mode is required; default auto mode is preserved for backward compatibility."
     last_updated: "2026-11-11"

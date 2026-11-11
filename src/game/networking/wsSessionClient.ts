@@ -28,6 +28,7 @@ export type SessionClientHandlers = {
   onWelcome?: (info: { connectionId: string; roomId: string }) => void;
   onJoinResult?: (info: { accepted: boolean; playerIds: readonly string[]; code?: string }) => void;
   onRoster?: (playerIds: readonly string[]) => void;
+  onLobbyState?: (state: { requiredPlayerIds: readonly string[]; playerIds: readonly string[]; readyPlayerIds: readonly string[]; hostPlayerId: string | null; mode: string }) => void;
   onMatchStart?: (info: {
     startTick: number;
     tickRate: number;
@@ -125,6 +126,16 @@ export class SessionClientCore {
     return this.send({ version: 1, kind: 'rematch', sequence: this.nextSequence() });
   }
 
+  ready(): number {
+    if (this.state !== 'joined') throw new Error('Ready requires an accepted join');
+    return this.send({ version: 1, kind: 'ready-request', sequence: this.nextSequence() });
+  }
+
+  startMatch(): number {
+    if (this.state !== 'joined') throw new Error('Starting requires an accepted join');
+    return this.send({ version: 1, kind: 'start-request', sequence: this.nextSequence() });
+  }
+
   submitInput(tick: number, inputs: readonly PlayerInput[]): number {
     if (this.state !== 'joined') throw new Error('Input requires an accepted join');
     if (!Number.isSafeInteger(tick) || tick < 0) throw new Error('Invalid target tick');
@@ -169,6 +180,15 @@ export class SessionClientCore {
         return;
       case 'roster':
         this.handlers.onRoster?.([...message.playerIds]);
+        return;
+      case 'lobby-state':
+        this.handlers.onLobbyState?.({
+          requiredPlayerIds: [...message.requiredPlayerIds],
+          playerIds: [...message.playerIds],
+          readyPlayerIds: [...message.readyPlayerIds],
+          hostPlayerId: message.hostPlayerId,
+          mode: message.mode,
+        });
         return;
       case 'match-start': {
         const previousMatchId = this.matchIdValue;

@@ -86,6 +86,14 @@ type MatchStartInfo = {
   readonly matchId?: number;
 };
 
+export type OnlineLobbyState = {
+  readonly requiredPlayerIds: readonly string[];
+  readonly playerIds: readonly string[];
+  readonly readyPlayerIds: readonly string[];
+  readonly hostPlayerId: string | null;
+  readonly mode: string;
+};
+
 const ROOM_ID = 'match';
 const PLAYER_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
@@ -136,6 +144,7 @@ export class OnlineMatchController {
   private playerIdValue = '';
   private roomCodeValue = '';
   private urlValue = '';
+  private lobbyStateValue: OnlineLobbyState = { requiredPlayerIds: [], playerIds: [], readyPlayerIds: [], hostPlayerId: null, mode: 'score-brawl' };
 
   private statusValue: OnlineStatus = { state: 'idle', message: 'Not connected.' };
   private snapshots: TimedSnapshot[] = [];
@@ -172,6 +181,7 @@ export class OnlineMatchController {
   get connectionState(): OnlineConnectionState { return this.statusValue.state; }
   get playerId(): string { return this.playerIdValue; }
   get roomCode(): string { return this.roomCodeValue; }
+  get lobbyState(): OnlineLobbyState { return this.lobbyStateValue; }
   get url(): string { return this.urlValue; }
   get snapshotCount(): number { return this.snapshotCountValue; }
   get latestTick(): number {
@@ -255,6 +265,17 @@ export class OnlineMatchController {
             this.statusValue.state === 'running') return;
         this.setStatus('joined', `Roster: ${playerIds.join(', ') || 'empty'}. ` +
           'Waiting for every configured slot…');
+      },
+      onLobbyState: state => {
+        if (attempt !== this.attemptToken || this.terminal) return;
+        this.lobbyStateValue = {
+          requiredPlayerIds: [...state.requiredPlayerIds],
+          playerIds: [...state.playerIds],
+          readyPlayerIds: [...state.readyPlayerIds],
+          hostPlayerId: state.hostPlayerId,
+          mode: state.mode,
+        };
+        this.emitStatus();
       },
       onMatchStart: info => {
         if (attempt !== this.attemptToken || !this.joined) return;
@@ -439,6 +460,16 @@ export class OnlineMatchController {
     return this.session.client.rematch();
   }
 
+  requestReady(): number {
+    if (this.session === null) throw new Error('No open session to ready up');
+    return this.session.client.ready();
+  }
+
+  requestHostStart(): number {
+    if (this.session === null) throw new Error('No open session to start');
+    return this.session.client.startMatch();
+  }
+
   /** Best-effort graceful leave, then close the socket. Idempotent. */
   disconnect(): void {
     const hadSession = this.session !== null;
@@ -475,6 +506,7 @@ export class OnlineMatchController {
     this.matchStartValue = null;
     this.matchStartedAt = null;
     this.matchResultValue = null;
+    this.lobbyStateValue = { requiredPlayerIds: [], playerIds: [], readyPlayerIds: [], hostPlayerId: null, mode: 'score-brawl' };
     this.rematchRefusedCodeValue = null;
     this.nextTick = 0;
     this.roomCodeValue = '';

@@ -18,7 +18,7 @@ export const SESSION_ENVELOPE_VERSION = 1 as const;
 
 /** Client-authored envelopes understood by the transport-neutral boundary. */
 export const CLIENT_SESSION_ENVELOPE_KINDS = [
-  'join-request', 'leave-request', 'input', 'ping', 'rematch', 'ready-request',
+  'join-request', 'leave-request', 'input', 'ping', 'rematch', 'ready-request', 'start-request',
 ] as const;
 export type ClientSessionEnvelopeKind = (typeof CLIENT_SESSION_ENVELOPE_KINDS)[number];
 
@@ -27,7 +27,7 @@ export type ClientSessionEnvelopeKind = (typeof CLIENT_SESSION_ENVELOPE_KINDS)[n
  * their wire schema and this module does not encode them yet.
  */
 export const SERVER_SESSION_ENVELOPE_KINDS = [
-  'join-result', 'roster', 'match-start', 'snapshot', 'events', 'error', 'pong',
+  'join-result', 'roster', 'lobby-state', 'match-start', 'snapshot', 'events', 'error', 'pong',
 ] as const;
 export type ServerSessionEnvelopeKind = (typeof SERVER_SESSION_ENVELOPE_KINDS)[number];
 
@@ -135,13 +135,22 @@ export type ReadyRequestEnvelope = {
   playerIds?: string[];
 };
 
+/** Host-only request to begin once all joined participants are ready. */
+export type StartRequestEnvelope = {
+  version: typeof SESSION_ENVELOPE_VERSION;
+  kind: 'start-request';
+  sequence: number;
+  roomId?: string;
+};
+
 export type ClientSessionEnvelope =
   | JoinRequestEnvelope
   | LeaveRequestEnvelope
   | InputEnvelope
   | PingEnvelope
   | RematchEnvelope
-  | ReadyRequestEnvelope;
+  | ReadyRequestEnvelope
+  | StartRequestEnvelope;
 
 /**
  * Envelope metadata after strict field/version/kind/range checks. The gameplay

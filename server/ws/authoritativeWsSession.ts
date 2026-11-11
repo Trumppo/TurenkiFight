@@ -1,7 +1,7 @@
 import { createState, step, TICK_RATE } from '../../src/game/simulation/step';
 import { MODE_IDS } from '../../src/game/simulation/modes';
 import { botInput } from '../../src/game/input/botPolicy';
-import { MAX_PLAYERS } from '../../src/game/protocol/players';
+import { MAX_PLAYERS, MIN_PLAYERS } from '../../src/game/protocol/players';
 import type { GameEvent, GameState, ModeId, PlayerInput, Team } from '../../src/game/simulation/types';
 import { DEFAULT_MAX_INPUT_LEAD_TICKS } from '../../src/game/session/sessionInputBuffer';
 import type { StateSnapshot } from '../../src/game/protocol/stateSnapshot';
@@ -442,6 +442,28 @@ export class AuthoritativeWsSession {
       return result;
     }
 
+    if (header?.kind === 'start-request') {
+      if (connectionId !== this.host) {
+        return this.denyRoom(connectionId, 'host-only', 'Only the room host can start the match', header);
+      }
+      if (this.playerIds.length < MIN_PLAYERS + 1) {
+        return this.denyRoom(connectionId, 'minimum-players', 'A room needs at least two player slots', header);
+      }
+      if (this.phaseValue !== 'starting') {
+        return this.denyRoom(connectionId, 'roster-incomplete', 'The room is not ready to start', header);
+      }
+      const claimed = this.mode === 'wave' ? this.claimedPlayerIds() : [...this.playerIds];
+      const ready = new Set(this.readyPlayerIds());
+      if (claimed.length === 0 || claimed.some(playerId => !ready.has(playerId))) {
+        return this.denyRoom(connectionId, 'not-all-ready', 'Every joined player must be ready before the host starts', header);
+      }
+      const refusal = this.matchStartRefusal();
+      if (refusal !== null || !this.beginMatch()) {
+        return this.denyRoom(connectionId, refusal ?? 'start-refused', 'The room cannot start in its current state', header);
+      }
+      return result;
+    }
+
     if (header?.kind === 'leave-request') {
       this.ownership.delete(connectionId);
       this.readys.delete(connectionId);
@@ -799,11 +821,32 @@ export class AuthoritativeWsSession {
     for (const reservation of this.reservations.values()) {
       for (const playerId of reservation.playerIds) owned.add(playerId);
     }
+    const playerIds = this.playerIds.filter(playerId => owned.has(playerId));
     this.emit(null, {
       version: 1,
       kind: 'roster',
-      playerIds: this.playerIds.filter(playerId => owned.has(playerId)),
+      playerIds,
     });
+    const readyPlayerIds = this.readyPlayerIds();
+    const hostPlayerId = this.host === null ? null : this.ownership.get(this.host)?.[0] ?? null;
+    this.emit(null, {
+      version: 1,
+      kind: 'lobby-state',
+      requiredPlayerIds: [...this.playerIds],
+      playerIds,
+      readyPlayerIds,
+      hostPlayerId,
+      mode: this.mode,
+    });
+  }
+
+  private readyPlayerIds(): string[] {
+    const ready = new Set<string>();
+    for (const [connectionId, playerIds] of this.ownership) {
+      if (!this.readys.has(connectionId)) continue;
+      for (const playerId of playerIds) ready.add(playerId);
+    }
+    return this.playerIds.filter(playerId => ready.has(playerId));
   }
 
   private emitError(

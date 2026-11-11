@@ -48,6 +48,11 @@ const statusEl = document.getElementById('online-status') as HTMLElement;
 const metricsEl = document.getElementById('online-metrics') as HTMLElement;
 const keysEl = document.getElementById('online-keys') as HTMLElement;
 const leaveButton = document.getElementById('online-leave') as HTMLButtonElement | null;
+const lobbyPanel = document.getElementById('online-lobby') as HTMLElement;
+const lobbySummary = document.getElementById('online-lobby-summary') as HTMLElement;
+const lobbyRoster = document.getElementById('online-lobby-roster') as HTMLElement;
+const readyButton = document.getElementById('online-ready') as HTMLButtonElement;
+const hostStartButton = document.getElementById('online-host-start') as HTMLButtonElement;
 const fightHud = document.getElementById('fight-hud') as HTMLElement;
 const resultCard = document.getElementById('online-result') as HTMLElement;
 const resultWinner = document.getElementById('online-result-winner') as HTMLElement;
@@ -266,6 +271,24 @@ rematchButton.addEventListener('click', () => {
   }
 });
 
+readyButton.addEventListener('click', () => {
+  try {
+    controller.requestReady();
+    readyButton.disabled = true;
+  } catch (error) {
+    showError(error instanceof Error ? error.message : String(error));
+  }
+});
+
+hostStartButton.addEventListener('click', () => {
+  try {
+    controller.requestHostStart();
+    hostStartButton.disabled = true;
+  } catch (error) {
+    showError(error instanceof Error ? error.message : String(error));
+  }
+});
+
 function updatePanel(): void {
   updateResultCard();
   const info = controller.linkInfo();
@@ -281,6 +304,29 @@ function updatePanel(): void {
   const age = info.lastSnapshotAgeMs === null ? '—' : `${Math.round(info.lastSnapshotAgeMs)} ms`;
   setText(metricsEl,
     `LINK ${label} · RTT ${rtt} · SNAP ${info.snapshotCount} · TICK ${info.tick} · AGE ${age}`);
+  const lobby = controller.lobbyState;
+  const inLobby = info.state === 'joined' && lobby.requiredPlayerIds.length > 0;
+  lobbyPanel.hidden = !inLobby;
+  if (inLobby) {
+    const isHost = lobby.hostPlayerId === controller.playerId;
+    const readySet = new Set(lobby.readyPlayerIds);
+    const connectedSet = new Set(lobby.playerIds);
+    const hostCanStart = lobby.mode === 'wave'
+      ? lobby.playerIds.length > 0 && lobby.playerIds.length < lobby.requiredPlayerIds.length &&
+        lobby.playerIds.every(playerId => readySet.has(playerId))
+      : lobby.requiredPlayerIds.every(playerId => connectedSet.has(playerId) && readySet.has(playerId));
+    const rosterText = lobby.requiredPlayerIds.map(playerId => {
+      const status = !connectedSet.has(playerId) ? 'OPEN'
+        : readySet.has(playerId) ? 'READY' : 'WAITING';
+      return `${playerId} ${status}${playerId === lobby.hostPlayerId ? ' · HOST' : ''}`;
+    }).join(' · ');
+    setText(lobbySummary, `${lobby.mode.toUpperCase()} · ${lobby.playerIds.length}/${lobby.requiredPlayerIds.length} JOINED · ${lobby.readyPlayerIds.length} READY`);
+    setText(lobbyRoster, rosterText);
+    readyButton.disabled = info.state !== 'joined' || !connectedSet.has(controller.playerId) || readySet.has(controller.playerId);
+    readyButton.textContent = readySet.has(controller.playerId) ? 'READY ✓' : 'READY';
+    hostStartButton.hidden = !isHost;
+    hostStartButton.disabled = !isHost || !hostCanStart;
+  }
   // A connection failure reopens the form so the URL can be corrected. A
   // running or ended match keeps it hidden to leave the arena unobstructed.
   if (info.state === 'error' && setup.hidden) setup.hidden = false;

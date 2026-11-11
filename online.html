@@ -55,6 +55,14 @@
         <p id="online-keys" class="online-note" aria-live="polite"></p>
       </section>
 
+      <section id="online-lobby" class="online-panel online-lobby" aria-label="Online room lobby" hidden>
+        <h2>ROOM LOBBY</h2>
+        <p id="online-lobby-summary" role="status" aria-live="polite">Waiting for the room state…</p>
+        <p id="online-lobby-roster"></p>
+        <button id="online-ready" type="button" disabled>READY</button>
+        <button id="online-host-start" type="button" hidden disabled>HOST START</button>
+      </section>
+
       <div id="game" aria-label="TurenkiFight online game canvas">
         <section id="fight-hud" aria-label="Match HUD">
           <div class="hud-toolbar">

@@ -19,12 +19,12 @@ The static client and authoritative match server are separate processes. GitHub 
 3. In another terminal, start the authoritative room. Example for a four-player match:
 
    ```sh
-   npm run serve:match -- --host=0.0.0.0 --port=8787 --players=4 --snapshot-hz=20 --rematch
+   npm run serve:match -- --host=0.0.0.0 --port=8787 --players=4 --snapshot-hz=20 --start=manual --rematch
    ```
 
-   Add `--mode=score-brawl|last-man-standing|deathmatch|wave` as desired. Add `--start=manual` to require the host to type `start` after everyone joins. The default is automatic start when the configured roster is full.
+   Add `--mode=score-brawl|last-man-standing|deathmatch|wave` as desired. Use `--start=manual` for browser lobby READY/host-start (the default auto mode starts as soon as the configured roster is full). The host presses **HOST START** after all joined participants show READY.
 4. Copy the `match-server-ready` JSON line from stdout. It includes the listening URL and generated `roomCode`. Share the reachable server address, room code and one unique slot (P1…P4 in this example) with each player.
-5. Players open `/online.html`, enter the server URL, room code and assigned slot, then choose **Connect**. Each configured slot must join before an automatic start; for manual start, the host types `start` and presses Enter.
+5. Players open `/online.html`, enter the server URL, room code and assigned slot, then choose **Connect**. In manual mode everyone chooses **READY**; the first player to join is the room host and can press **HOST START** when all required slots are ready. The server rejects start attempts from other players.
 6. At results, use **Rematch** (requires `--rematch` and the complete roster to be present) or **Leave**. `quit` or Ctrl+C stops the server.
 
 For eight players, set `--players=8` and assign P1 through P8. On a trusted network, use the host's LAN/VPN address, not `127.0.0.1` from another device. Open only the selected TCP port in the host firewall, and scope the rule to the private LAN/VPN where possible.
@@ -37,7 +37,7 @@ This is an operator-run deployment, not a managed service. A DNS name must resol
 2. Make the match server reachable on a TLS endpoint. Direct TLS example:
 
    ```sh
-   npm run serve:match -- --host=0.0.0.0 --port=8787 --players=4 --snapshot-hz=20 --rematch --cert=/secure/path/fullchain.pem --key=/secure/path/private-key.pem
+   npm run serve:match -- --host=0.0.0.0 --port=8787 --players=4 --snapshot-hz=20 --start=manual --rematch --cert=/secure/path/fullchain.pem --key=/secure/path/private-key.pem
    ```
 
    The certificate must be valid for the hostname players use. Protect the key with restrictive filesystem permissions. The service must be restarted after certificate renewal unless the operator's deployment handles reloads.

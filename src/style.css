@@ -471,6 +471,11 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
 .online-form button:hover { background: #2b3a4c; }
 .online-error { margin: 6px 0 0; color: #ffb4a2; font-size: 14px; }
 .online-link p { margin: 2px 0; }
+.online-lobby h2 { margin: 0 0 4px; font-size: 16px; }
+.online-lobby p { margin: 3px 0; }
+.online-lobby button { min-height: 32px; margin: 4px 6px 0 0; padding: 4px 12px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-weight: 700; cursor: pointer; }
+.online-lobby button:hover:not(:disabled) { background: #2b3a4c; }
+.online-lobby button:disabled { opacity: .55; cursor: default; }
 .online-link-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .online-leave { flex: 0 0 auto; min-height: 30px; padding: 3px 10px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-weight: 700; cursor: pointer; }
 .online-leave:hover:not(:disabled) { background: #2b3a4c; }

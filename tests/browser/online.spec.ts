@@ -25,6 +25,7 @@ type OnlineBridge = {
   statusText(): string;
   metricsText(): string;
   hudFontSize(): string;
+  controller?: { requestHostStart(): number };
 };
 
 async function renderedX(page: Page, id: string): Promise<number | null> {
@@ -192,6 +193,64 @@ test('online browser can claim P8 and render the complete eight-player authorita
     for (const peer of peers) peer.close();
     await Promise.all(peers.map(peer => peer.closed.catch(() => undefined)));
     await page.close().catch(() => undefined);
+    await context.close().catch(() => undefined);
+    if (server) await server.close().catch(() => undefined);
+  }
+});
+
+test('manual room lobby gates host start on every player ready and rejects a guest start request', async ({ browser }) => {
+  test.setTimeout(45_000);
+  let server: MatchServerHandle | null = null;
+  try {
+    server = await startMatchServer({
+      host: '127.0.0.1', port: 0, playerIds: ['P1', 'P2'], startMode: 'manual',
+      snapshotHz: 20, startDelayMs: 0, firstTickDelayMs: 20,
+    });
+  } catch (error) {
+    test.skip(true, `WebSocket server could not bind: ${error instanceof Error ? error.message : String(error)}`);
+    return;
+  }
+
+  const context = await browser.newContext();
+  const host = await context.newPage();
+  const guest = await context.newPage();
+  const errors: string[] = [];
+  host.on('pageerror', error => errors.push(`host: ${error.message}`));
+  guest.on('pageerror', error => errors.push(`guest: ${error.message}`));
+  try {
+    const query = `?server=${encodeURIComponent(server.url!)}&player=`;
+    await host.goto(`/online.html${query}P1`);
+    await expect.poll(() => host.evaluate(() => (window as any).__turenkiOnline?.state)).toBe('joined');
+    await guest.goto(`/online.html${query}P2`);
+    for (const page of [host, guest]) {
+      await expect(page.locator('#online-lobby')).toBeVisible();
+      await expect(page.locator('#online-lobby-summary')).toContainText('2');
+    }
+
+    await expect(host.locator('#online-host-start')).toBeVisible();
+    await expect(guest.locator('#online-host-start')).toBeHidden();
+    await host.locator('#online-ready').click();
+    await expect(host.locator('#online-lobby-roster')).toContainText('P1 READY');
+    await expect(host.locator('#online-host-start')).toBeDisabled();
+
+    // Hiding the host-only button is presentation; the server must still reject
+    // a forged start request from the joined guest connection.
+    await guest.evaluate(() => (window as any).__turenkiOnline.controller.requestHostStart());
+    await expect.poll(() => server!.room.phase).toBe('starting');
+    await expect(host.locator('#online-host-start')).toBeDisabled();
+
+    await guest.locator('#online-ready').click();
+    await expect(host.locator('#online-lobby-roster')).toContainText('P2 READY');
+    await expect(host.locator('#online-host-start')).toBeEnabled();
+    await host.locator('#online-host-start').click();
+    for (const page of [host, guest]) {
+      await expect.poll(() => page.evaluate(() => (window as any).__turenkiOnline?.state), { timeout: 10_000 })
+        .toBe('running');
+    }
+    expect(errors).toEqual([]);
+  } finally {
+    await host.close().catch(() => undefined);
+    await guest.close().catch(() => undefined);
     await context.close().catch(() => undefined);
     if (server) await server.close().catch(() => undefined);
   }

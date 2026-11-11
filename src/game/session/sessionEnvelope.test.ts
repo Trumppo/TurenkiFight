@@ -203,9 +203,16 @@ describe('M2 session envelope codec', () => {
   });
 
   it('documents the approved client and server kind names', () => {
-    expect([...CLIENT_SESSION_ENVELOPE_KINDS]).toEqual(['join-request', 'leave-request', 'input', 'ping', 'rematch', 'ready-request']);
+    expect([...CLIENT_SESSION_ENVELOPE_KINDS]).toEqual(['join-request', 'leave-request', 'input', 'ping', 'rematch', 'ready-request', 'start-request']);
     expect([...SERVER_SESSION_ENVELOPE_KINDS]).toEqual([
-      'join-result', 'roster', 'match-start', 'snapshot', 'events', 'error', 'pong',
+      'join-result', 'roster', 'lobby-state', 'match-start', 'snapshot', 'events', 'error', 'pong',
     ]);
+  });
+
+  it('round-trips a host start request as a minimal canonical envelope', () => {
+    const request = { version: 1 as const, kind: 'start-request' as const, sequence: 3 };
+    const encoded = encodeClientEnvelope(request);
+    expect(encoded).toBe('{"version":1,"kind":"start-request","sequence":3}');
+    expect(decodeClientEnvelope(encoded)).toEqual(request);
   });
 });

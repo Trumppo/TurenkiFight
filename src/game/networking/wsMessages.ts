@@ -3,6 +3,7 @@ import { MAX_PLAYERS_PER_FRAME } from '../protocol/inputFrame';
 import { MAX_SNAPSHOT_BYTES, parseStateSnapshot, type StateSnapshot } from '../protocol/stateSnapshot';
 import { isSessionIdentifier } from '../session/sessionEnvelope';
 import type { EndReason, PlayerId } from '../simulation/types';
+import { MODE_IDS } from '../simulation/modes';
 
 /**
  * Prototype-only server message schema for the architecture-A WebSocket slice.
@@ -25,6 +26,7 @@ export const WS_SERVER_MESSAGE_KINDS = [
   'welcome',
   'join-result',
   'roster',
+  'lobby-state',
   'match-start',
   'snapshot',
   'error',
@@ -62,6 +64,7 @@ export type WsServerMessage =
   | { version: typeof WS_SERVER_PROTOCOL_VERSION; kind: 'welcome'; connectionId: string; roomId: string }
   | { version: typeof WS_SERVER_PROTOCOL_VERSION; kind: 'join-result'; accepted: boolean; playerIds: string[]; code?: string }
   | { version: typeof WS_SERVER_PROTOCOL_VERSION; kind: 'roster'; playerIds: string[] }
+  | { version: typeof WS_SERVER_PROTOCOL_VERSION; kind: 'lobby-state'; requiredPlayerIds: string[]; playerIds: string[]; readyPlayerIds: string[]; hostPlayerId: string | null; mode: (typeof MODE_IDS)[number] }
   | {
       version: typeof WS_SERVER_PROTOCOL_VERSION;
       kind: 'match-start';
@@ -223,6 +226,27 @@ function parseServerMessage(value: unknown, roster?: ReadonlySet<string>): WsSer
         throw new Error('Malformed server message');
       }
       return { version: WS_SERVER_PROTOCOL_VERSION, kind: 'roster', playerIds: [...value.playerIds] };
+    case 'lobby-state': {
+      if (!keys(value, ['version', 'kind', 'requiredPlayerIds', 'playerIds', 'readyPlayerIds', 'hostPlayerId', 'mode']) ||
+          !slotIds(value.requiredPlayerIds) || value.requiredPlayerIds.length < 1 ||
+          !slotIds(value.playerIds) || !slotIds(value.readyPlayerIds) ||
+          !(value.hostPlayerId === null || isSessionIdentifier(value.hostPlayerId)) ||
+          (value.readyPlayerIds as string[]).some(id => !(value.playerIds as string[]).includes(id)) ||
+          (value.playerIds as string[]).some(id => !(value.requiredPlayerIds as string[]).includes(id)) ||
+          (value.hostPlayerId !== null && !value.playerIds.includes(value.hostPlayerId)) ||
+          !MODE_IDS.includes(value.mode as (typeof MODE_IDS)[number])) {
+        throw new Error('Malformed server message');
+      }
+      return {
+        version: WS_SERVER_PROTOCOL_VERSION,
+        kind: 'lobby-state',
+        requiredPlayerIds: [...value.requiredPlayerIds],
+        playerIds: [...value.playerIds],
+        readyPlayerIds: [...value.readyPlayerIds],
+        hostPlayerId: value.hostPlayerId as string | null,
+        mode: value.mode as (typeof MODE_IDS)[number],
+      };
+    }
     case 'match-start':
       if (!keys(value, own(value, 'matchId')
         ? ['version', 'kind', 'startTick', 'tickRate', 'snapshotHz', 'matchId']
