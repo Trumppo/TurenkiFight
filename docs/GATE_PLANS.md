@@ -59,28 +59,30 @@
 **Entry criteria:** Gate A complete (deterministic match loop).
 
 **Must be ready at exit:**
-- Arena selector: station, K-kauppa, Mesku (real photos used as reference for future updates).
-- Mode selector: all four modes.
-- Player count selector: 1–8 active slots.
-- Character selection per active slot (presentation mapping only – simulation IDs P1–P8 unchanged).
-- Live summary line that exactly reflects the current lobby state.
-- Start validation rules (e.g. Wave requires ≥1 human + ≥1 bot enemy).
-- Preferences persist (localStorage) and survive reload.
-- RESET returns to clean lobby while preserving chosen preferences.
-- All choices are local only (online keeps server flags until later gates).
+- Arena selector in lobby (station, K-kauppa, Mesku). Changing it updates backdrop, URL param, and the arena passed to createState. Uses photo reference workflow for future accuracy.
+- Mode selector: Score Brawl, Last Man Standing, Deathmatch, Wave.
+- Player count selector (1–8). Slots above count are inactive and not created in match state. Bots fill unclaimed active slots.
+- Character selection per active slot: presentation mapping only (P1 can look like any of the 8 fighters). Simulation identity (P1–P8) unchanged. No effect on bots or scoring.
+- Live summary line: "ARENA · MODE · PLAYERS · HUMANS · BOTS" that exactly matches current lobby state.
+- Start validation: normal matches need at least 2 fighters (except 1-player allowed); Wave requires ≥1 human + ≥1 bot enemy.
+- Persistence: choices saved to localStorage, restored on load, URL param wins for arena.
+- RESET behavior: returns to lobby, clears joined humans/bots but keeps selected preferences.
+- All lobby choices are local-only. Online uses server flags until Gate D/F.
+- No simulation bytes change due to visual choices (prove with state hash tests).
 
 **Acceptance evidence:**
-- A player can configure a full match without touching the URL.
-- Starting a match produces exactly the roster, arena and mode shown in the summary.
-- Results and HUD use the same identities.
-- Simulation state hash is unchanged by presentation choices (character mapping is presentation-only).
-- Browser tests cover all combinations + persistence.
+- Full local match can be started from browser UI only (no URL editing).
+- Configured values exactly match match state, HUD, results, and summary.
+- State hash regression test: identical inputs with different character visuals produce identical simulation results.
+- All L1–L4 combinations covered in browser tests.
+- Persistence + reload works.
+- Start validation prevents invalid Wave setups.
 
-**Agent work packages (already partially done):**
-- L1 Arena select
-- L2 Player count
-- L3 Character per slot (presentation mapping)
-- L4 Summary + start validation
+**Agent work packages (build on existing LOBBY_*.md plans):**
+- Designer: maintain `docs/LOBBY_SELECTION.md` and this gate plan; ensure photo workflow referenced for arenas.
+- Graphics: implement arena selector UI, character previews using retro assets; apply photo-to-retro for new arena visuals when needed.
+- Gameplay: ensure lobby state correctly passes arena/mode/roster to simulation without changing deterministic logic; add state hash tests for character mapping.
+- Tester: browser tests for all selector combinations, persistence, start validation, and state hash invariance.
 
 **Human input points:**
 - Exact start validation rules for Wave (already specified in LOBBY_SELECTION.md).
@@ -98,20 +100,23 @@
 
 **Entry criteria:** Gate B complete (honest lobby that can produce 1–8 player setups).
 
-**Must be ready at exit:**
-- Up to 4 physical controllers + keyboard for remaining slots.
-- Bots can reliably fill any unclaimed slots with good behaviour.
-- 8-player presentation is readable (updated markers, HUD, results).
-- Retro visuals updated for all arenas using real photo references where possible (photo-to-retro workflow).
-- Reset, pause, rematch all work cleanly with 8 slots.
-- Results screen handles 1–8 players gracefully.
-- Performance is acceptable on typical desktop hardware.
+**Must be ready at exit (locked per recommendation):**
+- Support for 4 physical controllers; remaining slots via keyboard or bots.
+- Bots fill unclaimed slots with deterministic seeded policy that remains competitive at 8 players.
+- 8-player presentation readable using:
+  - Existing G2 compact per-slot markers with contrast threshold.
+  - Semantic checks (no clipping, text size, quiet platform).
+  - Photo-to-retro arena updates (station first, using real photos for silhouette and color accuracy).
+- All 8 slots work with reset, pause, rematch, results.
+- Results screen scales to 1–8 players.
+- No performance regression in 8-player local matches.
 
-**Acceptance evidence:**
-- 8-player ALL BOTS match runs without issues.
-- 4-human + 4-bot match is controllable and results are correct.
-- Visual QA at 640×360 and 1280×720 shows no clipping and acceptable fighter distinction.
-- Browser tests + manual owner playtest pass for crowded fights.
+**Acceptance evidence (pre-Gate G, locked):**
+- 8-player ALL BOTS and mixed human+bot matches run cleanly.
+- Visual matrix + targeted 8-player browser tests pass (G1/G2/G5 style semantic checks).
+- Photo-to-retro applied at least to station; reference images and real photos preserved in docs/visual/references/.
+- Designer report confirms 8 fighters are distinguishable at 640×360 using current markers + arena visuals.
+- No simulation impact from visuals.
 
 **Agent work packages:**
 - Gameplay: bot policy improvements if needed for 8 players.
@@ -275,17 +280,110 @@
 
 ## How to use this document for agentic work
 
-1. Pick the next unfinished gate.
-2. Read the plan.
-3. Derive tasks from the "Must be ready" and "Acceptance evidence" sections.
-4. If a decision point is reached, check the "Recommendation" column first.
-5. If still ambiguous, surface it with the recommendation and context from vision.
+1. Pick the next unfinished gate (start with the earliest incomplete one).
+2. Read the full gate section + cross-cutting rules.
+3. Derive concrete tasks from "Must be ready at exit", "Acceptance evidence", and "Agent work packages".
+4. For any decision point, first apply the **Locked recommendation** in the document.
+5. Reference this document in every task and PR description.
+6. Produce: updated code, tests (unit + browser + visual), documentation updates, and a short "Gate X Readiness Report" (build green, tests pass, limitations listed).
+7. Only escalate to human if something cannot be derived from vision + this doc.
+
+**Agent guidelines:**
+- Always preserve deterministic simulation.
+- Use existing patterns from previous gates (e.g. LOBBY_*.md plans as templates).
+- For graphics: follow `docs/ART_PHOTO_REFERENCE_WORKFLOW.md`.
+- For readability (Gate C+): follow locked G2 + semantic rules below.
+- Document everything so the next agent can continue without context loss.
 
 This structure is designed so that future designer + gameplay + graphics + tester agents can execute with minimal real-time human intervention until Gate G.
 
+## Preparing Agent Task Lists from this Document (once documentation is considered ready)
+
+When creating tasks in `.github/AGENT_TASKS.yaml` or per-gate plans:
+- Reference this document and the specific Gate section.
+- Break "Must be ready at exit" into small, independently testable slices (prefer 2–5 related tasks per PR).
+- Each task must specify: objective, acceptance criteria (tied to this doc), files/ownership, tests, risks.
+- For graphics tasks: always reference `docs/ART_PHOTO_REFERENCE_WORKFLOW.md`.
+- For readability: reference the locked Gate C criteria above.
+- Example task title pattern: "GATE-C-01: 8-player marker and arena visual updates (station photo reference)" 
+
+Task lists are created only after the gate documentation is stable.
+
+## Locked Decisions for Ambiguous Areas (use these unless owner changes vision)
+
+- **Character selection (Gate B and later):** Strictly presentation-only. No effect on simulation, bots, scoring or hashes.
+- **Readability for 8 players (Gate C and later):** 
+  - Apply existing G2 fighter markers (compact per-slot with measured contrast threshold).
+  - Use semantic visual checks (G1/G5 style): no clipping, text >=14px, quiet platform.
+  - Apply photo-to-retro arena workflow for better real-world silhouette recognition.
+  - Acceptance before Gate G: visual matrix + 8-player browser tests + designer report.
+  - Evaluation and possible tuning happens in Gate G based on actual play.
+- **Online configuration (Gate D):** Server flags (`--mode`, `--arena`) as defaults. Full lobby-like selection deferred to Gate F.
+- **Photo-based arena updates:** Start in Gate C (for 8-player comfort). Use real photos as primary reference. Generated images are references only; final is hand-crafted SVG.
+- **Pre-G acceptance:** No owner playtesting. Use automated tests, visual:matrix, semantic checks, and agent reports. Owner acceptance only at Gate G.
+- **Measurements:** Never invent. Use `NOT_MEASURED` honestly until real data exists (Gate E).
+
 ---
 
-**Status of this plan:** 2026-11-11 – initial detailed expansion based on LONG_TERM_PLAN.md and current implementation state.
+**Status of this plan:** 2026-11-11 – documentation expanded with sufficient detail for agentic work (locked recommendations, concrete deliverables, agent guidance, task derivation instructions). 
+
+The documentation in this file + `docs/ART_PHOTO_REFERENCE_WORKFLOW.md` + `docs/LOBBY_SELECTION.md` + `docs/LONG_TERM_PLAN.md` is now considered ready as a base for creating agent task lists. Agents should derive all work from here and existing specs. Evaluation of choices like exact readability metrics will happen after implementation based on real results in Gate G.
+
+## Example Agent Task List (to be moved to .github/AGENT_TASKS.yaml when approved)
+
+These are derived directly from the gate plans above. Each task references this document.
+
+**For completing Gate B (current priority):**
+- id: GATE-B-01
+  title: Complete arena and player count selectors in local lobby (L1 + L2)
+  assigned_role: graphics-session
+  specification: docs/GATE_PLANS.md#gate-b
+  depends_on: [existing LOBBY-L1, LOBBY-L2]
+  acceptance:
+    - Arena selector works in lobby UI and updates simulation arena
+    - Player count 1-8 works, inactive slots not created in state
+    - Tests and visual checks pass
+
+- id: GATE-B-02
+  title: Implement character per slot selection as presentation-only (L3)
+  assigned_role: graphics-session
+  specification: docs/GATE_PLANS.md#gate-b
+  depends_on: [GATE-B-01]
+  acceptance:
+    - P1 can be assigned any of 8 appearances
+    - State hashes unchanged (regression test)
+    - Photo reference workflow used for consistency
+
+- id: GATE-B-03
+  title: Live summary, start validation and persistence (L4)
+  assigned_role: gameplay-session
+  specification: docs/GATE_PLANS.md#gate-b
+  depends_on: [GATE-B-02]
+  acceptance:
+    - Summary exactly matches lobby state
+    - Wave validation and 1-player rules enforced
+    - Persistence works
+
+**For Gate C planning and start (after B or parallel docs):**
+- id: GATE-C-01
+  title: Define and implement 8-player readability baseline using locked criteria
+  assigned_role: graphics-session
+  specification: docs/GATE_PLANS.md#gate-c
+  acceptance:
+    - G2 markers + semantic checks applied
+    - Station updated with photo-to-retro workflow (real photos as reference)
+    - 8-player visual matrix and browser tests pass
+    - Designer report on distinguishability
+
+- id: GATE-C-02
+  title: Extend bots and controller support for comfortable 8-player local
+  assigned_role: gameplay-session
+  specification: docs/GATE_PLANS.md#gate-c
+  acceptance:
+    - Bots competitive at 8 players
+    - 4 controllers + fallback documented and tested
+
+These tasks are examples. Full list will be added to AGENT_TASKS.yaml referencing this document once confirmed.
 
 **Locked execution order & principles (2026-11-11 per owner instruction):**
 - Complete Gate B fully before heavy Gate C work.
