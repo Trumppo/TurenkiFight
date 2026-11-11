@@ -2035,3 +2035,17 @@ tasks:
       - Keep M2 envelope implementation blocked pending owner approval
     last_updated: "2026-10-31"
     notes: "Replacement for conflicted planning PR #72; merged as 785539e (merge commit). No milestone accepted by this PR."
+  - id: GATE-B-COMPLETE
+    title: Complete Gate B local lobby technical implementation (arena, count, character mapping, summary, validation)
+    assigned_role: gameplay-session
+    specification: docs/GATE_PLANS.md#gate-b
+    depends_on: [LOBBY-L1-ARENA-SELECT, LOBBY-L2-PLAYER-COUNT, LOBBY-L3-CHARACTER-SELECT, LOBBY-L4-SUMMARY]
+    scope: [src/game/presentation/, src/game/, tests/browser/, docs/GATE_PLANS.md]
+    acceptance:
+      - Arena, player count, character (presentation only) and summary work in lobby
+      - Start validation and persistence complete
+      - State hashes unchanged by visual choices
+      - No major new graphics (use existing assets)
+      - Focused tests and visual matrix pass
+    notes: "Technical focus. Graphics polish (photo-to-retro) deferred post-Gate G per locked decisions. Follow recommendations in GATE_PLANS.md."
+    last_updated: "2026-11-11"
