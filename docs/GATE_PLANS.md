@@ -309,79 +309,70 @@ When creating tasks in `.github/AGENT_TASKS.yaml` or per-gate plans:
 
 Task lists are created only after the gate documentation is stable.
 
-## Locked Decisions for Ambiguous Areas (use these unless owner changes vision)
+## Locked Decisions for Ambiguous Areas (agents must follow these; this reduces the need for owner approval on every design decision)
 
-- **Character selection (Gate B and later):** Strictly presentation-only. No effect on simulation, bots, scoring or hashes.
-- **Readability for 8 players (Gate C and later):** 
-  - Apply existing G2 fighter markers (compact per-slot with measured contrast threshold).
-  - Use semantic visual checks (G1/G5 style): no clipping, text >=14px, quiet platform.
-  - Apply photo-to-retro arena workflow for better real-world silhouette recognition.
-  - Acceptance before Gate G: visual matrix + 8-player browser tests + designer report.
-  - Evaluation and possible tuning happens in Gate G based on actual play.
-- **Online configuration (Gate D):** Server flags (`--mode`, `--arena`) as defaults. Full lobby-like selection deferred to Gate F.
-- **Photo-based arena updates:** Start in Gate C (for 8-player comfort). Use real photos as primary reference. Generated images are references only; final is hand-crafted SVG.
-- **Pre-G acceptance:** No owner playtesting. Use automated tests, visual:matrix, semantic checks, and agent reports. Owner acceptance only at Gate G.
-- **Measurements:** Never invent. Use `NOT_MEASURED` honestly until real data exists (Gate E).
+- **Priority order:** Complete Gate B fully before moving to Gate C or later gates.
+- **Graphics and audio (including photo-to-retro for arenas and music generation):** Explicitly deferred until after Gate G. Pre-G work uses existing retro assets only. Real photo references are preserved in docs for later use.
+- **Character selection (Gate B and later):** Strictly presentation-only. No effect on simulation, bots, scoring or hashes. (Heavy visual work deferred post-Gate G.)
+- **Readability for 8 players (Gate C and later):** Use existing G2 markers + semantic checks. Major visual updates (photo references) deferred post-Gate G. Pre-G acceptance via tests + agent reports.
+- **Online configuration (Gate D):** Server flags as defaults. Full configuration in Gate F.
+- **Pre-G acceptance:** No owner playtesting. Use automated tests, visual matrix, semantic checks, and agent reports. Owner acceptance only at Gate G.
+- **Measurements:** Never invent numbers. Use `NOT_MEASURED` until real data.
+- **Documentation style:** High-level enough to give agents flexibility, but every section explicitly instructs to follow locked recommendations so the owner does not need to approve every design decision.
+
+Agents: When in doubt, follow the locked recommendations above. Document your choice and the reasoning from this plan + vision. Evaluation happens after implementation in Gate G.
 
 ---
 
-**Status of this plan:** 2026-11-11 – documentation expanded with sufficient detail for agentic work (locked recommendations, concrete deliverables, agent guidance, task derivation instructions). 
+**Status of this plan:** 2026-11-11 – documentation expanded with sufficient detail for agentic work.
 
-The documentation in this file + `docs/ART_PHOTO_REFERENCE_WORKFLOW.md` + `docs/LOBBY_SELECTION.md` + `docs/LONG_TERM_PLAN.md` is now considered ready as a base for creating agent task lists. Agents should derive all work from here and existing specs. Evaluation of choices like exact readability metrics will happen after implementation based on real results in Gate G.
+Key principles locked:
+- Complete Gate B fully before advancing.
+- Major graphics (photo-to-retro, new assets) and audio deferred until after Gate G. Focus on technical implementation.
+- High-level documentation with explicit "follow locked recommendations" instruction.
+- Agents derive work from this doc; owner approval not required for every design choice within locked recommendations.
+- Evaluation of results (including graphics choices) in Gate G.
+
+The documentation in this file + related specs is now ready as base for agent task lists.
 
 ## Example Agent Task List (to be moved to .github/AGENT_TASKS.yaml when approved)
 
 These are derived directly from the gate plans above. Each task references this document.
 
-**For completing Gate B (current priority):**
+**For completing Gate B (priority - complete fully before advancing):**
+Focus on technical lobby implementation. Use existing retro assets. Heavy graphics/polish deferred post-Gate G.
+
 - id: GATE-B-01
-  title: Complete arena and player count selectors in local lobby (L1 + L2)
+  title: Complete arena selector and player count in local lobby (technical)
   assigned_role: graphics-session
   specification: docs/GATE_PLANS.md#gate-b
   depends_on: [existing LOBBY-L1, LOBBY-L2]
   acceptance:
-    - Arena selector works in lobby UI and updates simulation arena
-    - Player count 1-8 works, inactive slots not created in state
-    - Tests and visual checks pass
+    - Arena selector works in lobby and correctly passes to simulation
+    - Player count 1-8, inactive slots not created in state
+    - Tests pass (no major new graphics)
 
 - id: GATE-B-02
-  title: Implement character per slot selection as presentation-only (L3)
+  title: Character selection as presentation-only (minimal, using existing assets)
   assigned_role: graphics-session
   specification: docs/GATE_PLANS.md#gate-b
   depends_on: [GATE-B-01]
   acceptance:
-    - P1 can be assigned any of 8 appearances
-    - State hashes unchanged (regression test)
-    - Photo reference workflow used for consistency
+    - Basic assignment of appearances to slots
+    - State hash invariance proven
+    - Full photo-based art deferred post-Gate G
 
 - id: GATE-B-03
-  title: Live summary, start validation and persistence (L4)
+  title: Live summary, validation, persistence and start (L4)
   assigned_role: gameplay-session
   specification: docs/GATE_PLANS.md#gate-b
   depends_on: [GATE-B-02]
   acceptance:
-    - Summary exactly matches lobby state
-    - Wave validation and 1-player rules enforced
-    - Persistence works
+    - Summary exactly reflects state
+    - Validations enforced
+    - Persistence and flow complete
 
-**For Gate C planning and start (after B or parallel docs):**
-- id: GATE-C-01
-  title: Define and implement 8-player readability baseline using locked criteria
-  assigned_role: graphics-session
-  specification: docs/GATE_PLANS.md#gate-c
-  acceptance:
-    - G2 markers + semantic checks applied
-    - Station updated with photo-to-retro workflow (real photos as reference)
-    - 8-player visual matrix and browser tests pass
-    - Designer report on distinguishability
-
-- id: GATE-C-02
-  title: Extend bots and controller support for comfortable 8-player local
-  assigned_role: gameplay-session
-  specification: docs/GATE_PLANS.md#gate-c
-  acceptance:
-    - Bots competitive at 8 players
-    - 4 controllers + fallback documented and tested
+**Gate C and later:** Planning only at this stage. Major graphics (photo-to-retro) and 8-player visual work deferred until after Gate G per locked decisions. Technical core (bots, controllers, lobby flow) can be prepared.
 
 These tasks are examples. Full list will be added to AGENT_TASKS.yaml referencing this document once confirmed.
 
