@@ -326,6 +326,16 @@ Agents: When in doubt, follow the locked recommendations above. Document your ch
 
 **Status of this plan:** 2026-11-11 – documentation expanded with sufficient detail for agentic work.
 
+Key principles locked (agents must follow):
+- Complete Gate B fully before advancing to later gates.
+- Major graphics (photo-to-retro arena updates, new assets) and audio generation deferred until after Gate G. Pre-G focus is purely technical implementation using existing retro assets.
+- High-level documentation leaves room for agent decisions, but explicitly requires following locked recommendations to minimize owner approvals for design choices.
+- All pre-G acceptance via automated tests, visual matrix, semantic checks, and agent reports.
+- Documentation must be maintained as the project evolves.
+
+**My long-term goal as designer (set per owner instruction to decide and act on recommendations):**
+Drive the project gate-by-gate per LONG_TERM_PLAN.md and this document, starting with full technical completion of Gate B (honest configurable local lobby without simulation impact), maintaining all documentation, deferring non-technical work (graphics/audio), enabling agentic progress by clear plans and locked recommendations. Progress one gate at a time, updating docs as the project evolves.
+
 Key principles locked:
 - Complete Gate B fully before advancing.
 - Major graphics (photo-to-retro, new assets) and audio deferred until after Gate G. Focus on technical implementation.

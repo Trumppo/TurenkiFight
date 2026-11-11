@@ -619,6 +619,10 @@ export class StationScene extends Phaser.Scene {
     } catch { /* Invalid persisted choices fall back to identity. */ }
   }
 
+  // Locked recommendation (per designer 2026-11-11, following GATE_PLANS.md):
+  // Character selection is presentation-only. It must never affect simulation state, bots, or hashes.
+  // Graphics/polish deferred post-Gate G. Use existing assets for now.
+
   private characterFor(slotId: string): string {
     return this.characterSelections.get(slotId) ?? slotId;
   }
