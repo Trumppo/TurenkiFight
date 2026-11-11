@@ -2219,19 +2219,19 @@ tasks:
     priority: P0
     specification: docs/GATE_PLANS.md#gate-f
     depends_on: [GATE-F-LOBBY-READY-START, GATE-F-DURATION-OPTIONS]
-    scope: [online.html, src/online.ts, src/style.css, src/game/session/sessionEnvelope.ts, src/game/networking/wsSessionClient.ts, src/game/networking/onlineMatchController.ts, src/game/networking/wsMessages.ts, server/ws/authoritativeWsSession.ts, tests/browser/online.spec.ts, src/game/session/sessionEnvelope.test.ts, docs/GATE_F_HOSTING_GUIDE.md]
+    scope: [online.html, src/online.ts, src/style.css, src/game/presentation/OnlineScene.ts, src/game/session/sessionEnvelope.ts, src/game/networking/wsSessionClient.ts, src/game/networking/onlineMatchController.ts, src/game/networking/wsMessages.ts, server/ws/authoritativeWsSession.ts, tests/browser/online.spec.ts, src/game/session/sessionEnvelope.test.ts, docs/GATE_F_HOSTING_GUIDE.md]
     acceptance:
       - Browser offers explicit CREATE ROOM and JOIN ROOM actions
       - First host join carries mode, arena, requested player count and approved duration through canonical validation to the authoritative process
       - Server rejects invalid/late/non-first configuration before unauthorized slot mutation and refuses count above process capacity
       - Authoritative lobby publishes selected settings and selected roster to every participant
       - Server-created simulation uses selected mode, arena and duration, with configured roster bounds
-      - Browser E2E verifies create, join, ready, host-start, actual match timer/game and results
+      - Browser E2E verifies create, join, ready, host-start, actual match timer/game, server result, and arena backdrop texture on both clients
       - `npm test`, relevant browser E2E and production build pass; no network-performance claim
     rationale: "Server startup flags previously controlled all room settings, so browser users could not create a chosen room under the selected single-process model."
-    out_of_scope: [multi-room, accounts, matchmaking, progression, real-network-measurements, arena-backdrop-refactor]
+    out_of_scope: [multi-room, accounts, matchmaking, progression, real-network-measurements]
     branch: designer/gate-f-online
     pull_request: "DESIGNER: complete Gate F browser room creation; Task: GATE-F-ONLINE-PRODUCTIZATION"
     user_decision_gate: "Room count choices cannot exceed process --players capacity; duration 1/2/3 min and one room/process are owner decisions."
-    notes: "Implementation underway. Existing `--players` roster is the hard room-capacity ceiling; set --players=8 for browser selection through eight. Visual arena backdrop remains Graphics-owned and authoritative-state integration is not yet complete."
+    notes: "Implementation and technical verification complete 2026-11-11: online browser/results E2E 14/14 (including room create through real one-minute results and Mesku texture on both clients), M14 TLS/rate/rejoin tests 39/39, full unit 72 files/630 tests, build green. Existing --players roster is hard capacity; set --players=8 for browser selection through eight. Owner review/approval and merge remain pending; no Gate F acceptance or real-link performance claim."
     last_updated: "2026-11-11"

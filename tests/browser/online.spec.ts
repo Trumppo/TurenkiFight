@@ -26,6 +26,8 @@ type OnlineBridge = {
   metricsText(): string;
   hudFontSize(): string;
   controller?: { requestHostStart(): number };
+  arenaId(): string;
+  arenaBackdropTexture(): string | null;
 };
 
 async function renderedX(page: Page, id: string): Promise<number | null> {
@@ -286,6 +288,9 @@ test('browser-created room applies mode, arena, roster and timer through the com
     await expect.poll(() => host.evaluate(() => (window as any).__turenkiOnline?.controller.lobbyState)).toMatchObject({
       requiredPlayerIds: ['P1', 'P2'], playerIds: ['P1'], mode: 'deathmatch', arena: 'mesku', durationMinutes: 1,
     });
+    await expect.poll(() => host.evaluate(() => (window as any).__turenkiOnline?.arenaId())).toBe('mesku');
+    await expect.poll(() => host.evaluate(() => (window as any).__turenkiOnline?.arenaBackdropTexture()))
+      .toBe('arena-mesku-backdrop');
     expect(server.room.snapshot().state).toMatchObject({ mode: 'deathmatch', arena: 'mesku' });
     expect(server.room.snapshot().state.remainingTicks).toBeLessThanOrEqual(3600);
 
@@ -299,6 +304,9 @@ test('browser-created room applies mode, arena, roster and timer through the com
     await guest.selectOption('#room-action', 'join');
     await guest.click('#online-connect');
     await expect.poll(() => guest.evaluate(() => (window as any).__turenkiOnline?.state)).toBe('joined');
+    await expect.poll(() => guest.evaluate(() => (window as any).__turenkiOnline?.arenaId())).toBe('mesku');
+    await expect.poll(() => guest.evaluate(() => (window as any).__turenkiOnline?.arenaBackdropTexture()))
+      .toBe('arena-mesku-backdrop');
     await host.locator('#online-ready').click();
     await guest.locator('#online-ready').click();
     await expect(host.locator('#online-host-start')).toBeEnabled();

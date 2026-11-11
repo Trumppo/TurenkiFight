@@ -415,6 +415,7 @@ function leaveMatch(): void {
 }
 leaveButton?.addEventListener('click', leaveMatch);
 
+const onlineScene = new OnlineScene(controller, updatePanel, arenaSelection);
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
@@ -424,7 +425,7 @@ const game = new Phaser.Game({
   pixelArt: true,
   antialias: false,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [new OnlineScene(controller, updatePanel, arenaSelection)],
+  scene: [onlineScene],
 });
 
 let left = false;
@@ -463,6 +464,8 @@ if (serverParam && playerParam) {
 if (import.meta.env.DEV) {
   (window as typeof window & { __turenkiOnline?: unknown }).__turenkiOnline = {
     controller,
+    arenaId(): string { return onlineScene.debugArenaId(); },
+    arenaBackdropTexture(): string | null { return onlineScene.debugArenaBackdropTexture(); },
     get state(): OnlineConnectionState { return controller.connectionState; },
     get snapshotCount(): number { return controller.snapshotCount; },
     get rttMs(): number | null { return controller.rttMs; },
