@@ -38,7 +38,14 @@ test('local character selection remaps presentation only and persists', async ({
   });
   await page.goto('/');
   await expect(page.locator('[data-player="P1"] .hud-character-select')).toBeVisible();
+
+  // Gate B technical: prove character change does not affect simulation state (locked recommendation)
   const before = await diagnostics(page);
+  await page.locator('[data-player="P1"] .hud-character-select').selectOption('P5');
+  await page.waitForTimeout(100); // allow draw
+  const after = await diagnostics(page);
+  expect(after.stateJson).toBe(before.stateJson); // simulation state unchanged
+  expect(after.p1Texture).not.toBe(before.p1Texture); // presentation changed
 
   await page.locator('[data-player="P1"] .hud-character-select').selectOption('P6');
   await expect.poll(() => diagnostics(page)).toMatchObject({
@@ -46,10 +53,10 @@ test('local character selection remaps presentation only and persists', async ({
     p1Texture: 'fighter-P6-idle-0',
     activeCount: 8,
   });
-  const after = await diagnostics(page);
-  expect(after.stateJson).toBe(before.stateJson);
+  const after2 = await diagnostics(page);
+  expect(after2.stateJson).toBe(before.stateJson);
   await expect(page.locator('[data-player="P1"] .hud-character-select')).toHaveAttribute('aria-label', 'P1 character: KIOSK VENDOR');
-  expect(after.textureKeys).toHaveLength(8);
+  expect(after2.textureKeys).toHaveLength(8);
 
   await page.reload();
   await expect(page.locator('[data-player="P1"] .hud-character-select')).toHaveValue('P6');
