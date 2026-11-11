@@ -14,7 +14,7 @@ import {
   MAX_RUN_TIMEOUT_MS,
   MAX_TICKS,
   START_DELAY_MS,
-  WS_BENCHMARK_ROSTER,
+  wsBenchmarkRoster,
   argument,
   decodeFixtureSchedule,
   defaultRunTimeoutMs,
@@ -386,13 +386,18 @@ async function runServerCli(): Promise<void> {
     throw new Error('Server mode requires an explicit --host (for example --host=0.0.0.0)');
   }
   const port = portArgument(argument('port'));
-  const runId = `ws-base4-server-${Date.now()}`;
+  const playerCountRaw = argument('players');
+  const playerCount = playerCountRaw === undefined ? 4 : Number(playerCountRaw);
+  if (playerCount !== 4 && playerCount !== 8) throw new Error(`Invalid player count: ${playerCountRaw} (expected 4 or 8)`);
+  const roster = wsBenchmarkRoster(playerCount);
+  const runId = `ws-base${playerCount}-server-${Date.now()}`;
   const commitSha = currentCommitSha();
 
   const result = await runServerRole({
     host,
     port,
     ticks,
+    playerCount,
     snapshotHz,
     tickMode,
     timeoutMs,
@@ -408,7 +413,7 @@ async function runServerCli(): Promise<void> {
         url: info.url,
         host: info.host,
         port: info.port,
-        players: [...WS_BENCHMARK_ROSTER],
+        players: [...roster],
         boundedTicks: ticks,
         snapshotHz,
         tickMode,
@@ -449,12 +454,16 @@ async function runClientCli(): Promise<void> {
   );
   const url = argument('url');
   if (url === undefined || url.length === 0) throw new Error('Client mode requires --url=ws://host:port');
+  const playerCountRaw = argument('players');
+  const playerCount = playerCountRaw === undefined ? 4 : Number(playerCountRaw);
+  if (playerCount !== 4 && playerCount !== 8) throw new Error(`Invalid player count: ${playerCountRaw} (expected 4 or 8)`);
+  const roster = wsBenchmarkRoster(playerCount);
   const playerId = argument('player');
   if (playerId === undefined || playerId.length === 0) {
-    throw new Error(`Client mode requires --player (one of ${WS_BENCHMARK_ROSTER.join(', ')})`);
+    throw new Error(`Client mode requires --player (one of ${roster.join(', ')})`);
   }
 
-  const result = await runClientRole({ url, playerId, ticks, timeoutMs });
+  const result = await runClientRole({ url, playerId, playerCount, ticks, timeoutMs });
   process.stdout.write(`${JSON.stringify({
     kind: 'ws-benchmark-client-result',
     role: 'client',

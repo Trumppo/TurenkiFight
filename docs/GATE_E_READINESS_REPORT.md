@@ -10,12 +10,12 @@ Gate E requires a repeatable measurement procedure, available 4/8-player evidenc
 
 1. **Eight-player, single-machine measurement:** [`benchmarks/results/m14-8p-20261107T011738309Z.md`](../benchmarks/results/m14-8p-20261107T011738309Z.md), produced by `npm run measure:m14-8p` on 2026-11-07. It covers eight clients, 7200 ticks, snapshots at 10/20/30 Hz and a separate 120-second interval run. It reports snapshot bytes, CPU/RSS and tick/codec timing for that machine only.
 2. The measurement report explicitly records network latency, jitter, packet loss, join success, TURN cost, bandwidth and measured network count as `NOT_MEASURED` / zero measured networks. Loopback-only results are not network data.
-3. **Repeatable split-role correctness harness:** [`benchmarks/ws/README.md`](../benchmarks/ws/README.md) documents coordinator/client roles, command lines, manifest semantics, failure cases and the fact that all performance fields remain `NOT_MEASURED`. The current distributed fixture is BASE-4; it does not claim an 8-player split-network run.
+3. **Repeatable split-role correctness harness:** [`benchmarks/ws/README.md`](../benchmarks/ws/README.md) documents coordinator/client roles for BASE-4 and BASE-8, command lines, manifest semantics, failure cases and the fact that all performance fields remain `NOT_MEASURED`. The automated 8-client fixture run is over local loopback and is correctness evidence only, not a real-network measurement.
 4. Existing test suites verify the 8-player one-machine harness and split-role correctness/failure behavior. Test results are reproducible using the commands below.
 
-## Owner-run split-machine procedure (BASE-4 correctness, no performance claims)
+## Owner-run split-machine procedure (BASE-4 / BASE-8 correctness; no performance claims)
 
-Use a controlled network and trusted participants only. The prototype is plain `ws://`, has no TLS/authentication/origin checks, and is not suitable for an untrusted network. Allow the chosen TCP port through the coordinator firewall.
+Use a controlled network and trusted participants only. The prototype is plain `ws://`, has no TLS/authentication/origin checks, and is not suitable for an untrusted network. Allow the chosen TCP port through the coordinator firewall. Set `--players=8` for the coordinator and all eight clients for BASE-8; omit it (default 4) for BASE-4. The full commands for each client slot are in the benchmark README.
 
 Coordinator machine, in repository root:
 
@@ -47,7 +47,7 @@ All roles must use matching tick counts and tick mode. The coordinator writes `b
 | Snapshot bytes / encode/decode / tick duration | `NOT_MEASURED` on real network | `NOT_MEASURED` on real network | Measured on one recorded machine in the M14 report; see that report for exact tables and caveats |
 | TURN cost | `NOT_MEASURED` | `NOT_MEASURED` | `NOT_MEASURED` |
 
-**Known limitation:** the documented split-role WS runner currently drives BASE-4 only; the BASE-8 M14 measurement uses eight loopback clients on one machine. Therefore, an 8-player split-network measurement is not yet executable with the current distributed runner. No Gate E conclusion about real 8-player network conditions or capacity is authorized. Address that limitation before claiming real 8-player network validation.
+**Known limitation:** the split BASE-8 run is now executable and covered by an eight-client loopback test, but no owner-run LAN/internet run has occurred. No Gate E conclusion about real 4/8-player network conditions or capacity is authorized until such evidence exists.
 
 ## Automated verification
 

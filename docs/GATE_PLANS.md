@@ -350,9 +350,9 @@ Complete Gate E's technical preparation and automated verification; do not claim
 
 - Added `docs/GATE_E_READINESS_REPORT.md` with evidence inventory, run procedure and 4/8 player measurement ledger.
 - Existing M14 report contains actual eight-player single-machine snapshot/tick/CPU/RSS measurements; its network fields are strictly `NOT_MEASURED`.
-- Existing split-role WS harness is repeatable on separate machines for BASE-4 correctness only; it reports no latency/bandwidth/pacing numbers.
+- Extended split-role WS harness to BASE-8 (coordinator plus eight one-slot client roles); deterministic fixture fingerprints checked against in-memory reference. BASE-4 defaults/fingerprints remain unchanged.
 - Added a regression test that reads the committed M14 JSON and asserts loopback scope plus every network field remains `NOT_MEASURED` (including `measuredNetworks: 0`).
-- **Known gap:** distributed BASE-8 is not wired into the split-role runner. No 4/8-player real-network conditions have been measured. Owner-run two-machine test is still outstanding; no fabricated results.
+- **Known gap:** no owner-run LAN/internet test has occurred. All 4/8-player real-network conditions remain `NOT_MEASURED`; the BASE-8 automated split test runs over loopback and is correctness-only.
 - Verification determines the technical prep is ready; this does not represent owner acceptance or real network validation.
 
 Key principles locked (agents must follow):

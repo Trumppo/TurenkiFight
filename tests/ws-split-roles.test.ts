@@ -12,7 +12,7 @@ import {
   type WsServerHandle,
 } from '../server/ws/wsServer';
 import { openNodeSession, type NodeSession } from '../server/ws/nodeWsClient';
-import { inMemoryReferenceFingerprints, loadWsBenchmarkSchedule } from '../benchmarks/ws/benchmarkSetup';
+import { inMemoryReferenceFingerprints, inMemoryReferenceFingerprintsForPlayers, loadWsBenchmarkSchedule } from '../benchmarks/ws/benchmarkSetup';
 import {
   runClientRole,
   runServerRole,
@@ -170,6 +170,48 @@ async function waitFor<T>(
 const controls = (playerId: string) => ({ playerId, moveX: 1 as const, moveY: 0 as const, jump: false });
 
 describe('M2 split WebSocket benchmark roles', () => {
+  it('rejects unsupported split roster sizes instead of creating misleading fixtures', async () => {
+    await expect(runClientRole({
+      url: 'ws://127.0.0.1:9000', playerId: 'P1', playerCount: 5 as 4, ticks: 1, timeoutMs: 1000,
+    })).rejects.toThrow('Client role supports only 4 or 8 players');
+    await expect(runServerRole(baseServerOptions({ playerCount: 5 as 4 })))
+      .rejects.toThrow('Server role supports only 4 or 8 players');
+  });
+
+  it('runs the deterministic BASE-8 fixture through eight split client roles', async (ctx: TestContext) => {
+    const ticks = 180;
+    const players = Array.from({ length: 8 }, (_, index) => `P${index + 1}`);
+    const server = await startServer(ctx, { ticks, playerCount: 8, timeoutMs: 60000 });
+    const clientResults = await Promise.allSettled(players.map(playerId => runClientRole({
+      url: server.url,
+      playerId,
+      playerCount: 8,
+      ticks,
+      timeoutMs: 60000,
+    })));
+    const roleResult = await server.result;
+    expect(clientResults.filter(result => result.status === 'rejected')).toEqual([]);
+    const clients = clientResults.map(result => (result as PromiseFulfilledResult<ClientRoleResult>).value);
+    expect(clients.map(client => client.playerId).sort()).toEqual(players);
+    for (const client of clients) {
+      expect(client.finalTick).toBe(ticks);
+      expect(client.submittedTicks).toBe(ticks);
+      expect(client.deniedMessages).toBe(0);
+      expect(client.lateTicks).toBe(0);
+    }
+    expect(roleResult.manifest.scenarioId).toBe('BASE-8-60-20');
+    expect(roleResult.manifest.players).toBe(8);
+    expect(roleResult.manifest.topology.clientCount).toBe(8);
+    expect(roleResult.manifest.correctness.finalTick).toBe(ticks);
+    expect(roleResult.manifest.correctness.matchesInMemoryReference).toBe(true);
+    expect(roleResult.manifest.correctness.finalStateSha256)
+      .toBe(inMemoryReferenceFingerprintsForPlayers(ticks, 8).finalStateSha256);
+    expect(roleResult.manifest.result).toBe('NOT_MEASURED');
+    expect(roleResult.manifest.measurements).toEqual({
+      latency: 'NOT_MEASURED', bandwidth: 'NOT_MEASURED', cpu: 'NOT_MEASURED', tickPacing: 'NOT_MEASURED',
+    });
+  }, 90000);
+
   it('reproduces the pinned 7200-tick fingerprints through separate roles', async (ctx: TestContext) => {
     const server = await startServer(ctx, { ticks: FULL_TICKS, timeoutMs: 90000 });
 

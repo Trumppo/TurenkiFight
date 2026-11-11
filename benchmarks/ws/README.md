@@ -38,8 +38,8 @@ loopback run, and its behaviour and output are unchanged.
 | Mode | What it does | Writes a manifest |
 | --- | --- | --- |
 | `loopback` (default) | Starts the server and four synthetic clients in one process on an ephemeral `127.0.0.1` port. | yes |
-| `server` | Binds an explicit `--host`/`--port`, waits for exactly the four-player roster, runs the authoritative session for the bounded ticks, and owns the manifest. | yes |
-| `client` | Connects to `--url`, joins one `--player` slot, drives the same fixture slice and exits. | no |
+| `server` | Binds an explicit `--host`/`--port`, waits for exactly the selected four- or eight-player roster, runs the authoritative session for the bounded ticks, and owns the manifest. | yes |
+| `client` | Connects to `--url`, joins one `--player` slot, drives the selected BASE-4 or BASE-8 fixture slice and exits. | no |
 
 A `server` role prints one machine-readable JSON line on stdout *before* the run:
 
@@ -66,6 +66,17 @@ npm run bench:ws -- --mode=client --url=ws://SERVER:9000 --player=P2 --ticks=720
 npm run bench:ws -- --mode=client --url=ws://SERVER:9000 --player=P3 --ticks=7200 --tick-mode=manual
 npm run bench:ws -- --mode=client --url=ws://SERVER:9000 --player=P4 --ticks=7200 --tick-mode=manual
 
+# BASE-8 split-role correctness: set --players=8 on coordinator and every client.
+npm run bench:ws -- --mode=server --players=8 --host=0.0.0.0 --port=9000 --ticks=7200 --tick-mode=manual
+npm run bench:ws -- --mode=client --players=8 --url=ws://SERVER:9000 --player=P1 --ticks=7200 --tick-mode=manual
+npm run bench:ws -- --mode=client --players=8 --url=ws://SERVER:9000 --player=P2 --ticks=7200 --tick-mode=manual
+npm run bench:ws -- --mode=client --players=8 --url=ws://SERVER:9000 --player=P3 --ticks=7200 --tick-mode=manual
+npm run bench:ws -- --mode=client --players=8 --url=ws://SERVER:9000 --player=P4 --ticks=7200 --tick-mode=manual
+npm run bench:ws -- --mode=client --players=8 --url=ws://SERVER:9000 --player=P5 --ticks=7200 --tick-mode=manual
+npm run bench:ws -- --mode=client --players=8 --url=ws://SERVER:9000 --player=P6 --ticks=7200 --tick-mode=manual
+npm run bench:ws -- --mode=client --players=8 --url=ws://SERVER:9000 --player=P7 --ticks=7200 --tick-mode=manual
+npm run bench:ws -- --mode=client --players=8 --url=ws://SERVER:9000 --player=P8 --ticks=7200 --tick-mode=manual
+
 npx vitest run tests/ws-prototype.test.ts tests/ws-integration.test.ts \
   tests/ws-full-length-benchmark.test.ts tests/ws-split-roles.test.ts
 ```
@@ -76,13 +87,15 @@ npx vitest run tests/ws-prototype.test.ts tests/ws-integration.test.ts \
    `--host`/`--port`. Use `--host=0.0.0.0` to accept remote clients; the
    operating system firewall must allow the port.
 2. Read the single JSON ready line and give clients the `ws://host:port` URL.
-3. Start exactly four client roles, one per `P1`..`P4` slot, on any machines
-   that can reach the server. Every role must use the same `--ticks` and
-   `--tick-mode`; a mismatch fails explicitly on `run-complete`.
+3. Start exactly four or eight client roles, one per roster slot, on any machines
+   that can reach the server. For BASE-8, pass `--players=8` to coordinator and
+   every client. All roles must use the same roster size, `--ticks` and
+   `--tick-mode`; a mismatch fails rather than silently changing fixtures.
 4. The server role prints the result and writes `benchmarks/out/<runId>.json`
-   (git-ignored) when all four clients supplied the full fixture slice.
+   (git-ignored) when all clients supplied the full fixture slice.
 
-The server accepts exactly four connections (`maxConnections`). A fifth socket
+The server accepts exactly the configured number of connections (four or eight,
+`maxConnections`). An extra socket
 is closed with WebSocket code 1008 before it can register, and a roster that is
 incomplete or spread over the wrong number of connections fails with an explicit
 bounded error instead of hanging.
@@ -233,9 +246,8 @@ inspected to confirm `ws` is absent from the browser bundle.
   is **not** a real-time pacing run. No numbers are reported by any role.
 - The benchmark helpers (`maxTicks`, `maxConnections`, envelope observation) and
   the server message schema are prototype-only.
-- Only the four-player BASE-4 input stream is wired into this prototype. The
-  protocol, session and server now accept an eight-player roster, but
-  `BASE-8-60-20` remains unwired because the WebSocket benchmark setup and
-  client roles are built around the four-slot BASE-4 fixture. `RATE-4-30-10`
+- The split runner supports BASE-4 and BASE-8 input streams. BASE-8 split runs
+  establish only fixture correctness across eight connections; they are not
+  measurements of network conditions. `RATE-4-30-10`
   would additionally need neutral ticks for the 30 Hz frame
   schedule. Snapshot rate is configurable with `--snapshot-hz` (10/20/30).

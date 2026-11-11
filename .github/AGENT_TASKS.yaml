@@ -2097,12 +2097,31 @@ tasks:
     priority: P0
     specification: docs/GATE_PLANS.md#gate-e
     depends_on: [GATE-D-ROOM-CONTRACT]
-    scope: [docs/GATE_E_READINESS_REPORT.md, docs/GATE_PLANS.md, tests/m14-eight-player-measurement.test.ts]
+    scope: [benchmarks/ws/, tests/ws-split-roles.test.ts, docs/GATE_E_READINESS_REPORT.md, docs/GATE_PLANS.md, tests/m14-eight-player-measurement.test.ts]
     acceptance:
       - Existing 8-player single-machine measurements documented without representing them as network results
-      - Owner-runnable split-machine procedure documented with prototype safety and limitations
+      - Owner-runnable BASE-4 and BASE-8 split-machine procedure documented with prototype safety and limitations
       - All network performance fields explicitly remain NOT_MEASURED until real measurements exist
       - Regression test fails if committed M14 report claims network measurements or fails to identify loopback scope
-      - Relevant M14 and WS split-role tests pass
-    notes: "Technical prep complete. Report: docs/GATE_E_READINESS_REPORT.md. Existing split-role harness is BASE-4 only; BASE-8 split networking and owner-run LAN measurement remain explicit gaps. Gate E evidence is not a capacity/network-performance claim."
+      - Relevant M14 and WS split-role tests pass, including eight clients and in-memory fingerprint match
+      - Existing BASE-4 behavior/fingerprints remain green
+    notes: "Gate E technical harness complete. Split roles support `--players=8` and eight client slots; automated BASE-8 split-role correctness run passes. No real LAN/internet measurement has been performed, and all network performance fields remain NOT_MEASURED. Report: docs/GATE_E_READINESS_REPORT.md."
+    last_updated: "2026-11-11"
+
+  - id: GATE-E-BASE8-SPLIT-HARNESS
+    title: Extend split-role WebSocket correctness harness to deterministic BASE-8
+    assigned_role: gameplay-session
+    status: done
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-e
+    depends_on: [GATE-E-MEASUREMENT-READINESS]
+    scope: [benchmarks/ws/benchmarkSetup.ts, benchmarks/ws/splitRoles.ts, benchmarks/ws/runWsBenchmark.ts, benchmarks/ws/wsManifest.ts, tests/ws-split-roles.test.ts, benchmarks/ws/README.md]
+    acceptance:
+      - Server/client roles accept only explicit supported player counts 4 or 8, defaulting to legacy 4
+      - BASE-8 server expects eight connections with one unique slot each
+      - Eight-client fixture run reaches requested tick and matches deterministic in-memory state/event reference
+      - BASE-4 fingerprint regression remains unchanged
+      - All network/performance values stay NOT_MEASURED
+      - Focused tests and production build pass
+    notes: "Implemented during active Gate E goal. Local 8-client split-role test proves correctness only; not a real LAN measurement."
     last_updated: "2026-11-11"
