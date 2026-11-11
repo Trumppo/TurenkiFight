@@ -86,7 +86,7 @@
 - Exact start validation rules for Wave (already specified in LOBBY_SELECTION.md).
 - Whether character choice affects bot AI (recommendation: no – bots stay pure policy regardless of visual).
 
-**Recommendation:** Character choice must never leak into simulation. If a conflict appears, default to "visual only" and add a regression test that identical inputs produce identical state hashes.
+**Locked recommendation (per owner instruction 2026-11-11):** Character selection is strictly visual/presentation only. Simulation IDs (P1–P8), bot behavior, scoring, and state hashes remain completely unaffected. A regression test must prove that identical inputs produce identical state hashes regardless of chosen appearance.
 
 **Current status (2026-11-11):** L1–L4 largely implemented locally; this gate is close to completion.
 
@@ -120,10 +120,16 @@
 
 **Human input points:**
 - What constitutes "comfortable" 8-player readability? 
-  **Recommendation:** Use existing G2 contrast rules + owner visual review at 640×360 with 8 fighters. If owner says "not readable", add more markers or simplify visuals rather than reducing player count.
+  **Locked recommendation (per owner instruction 2026-11-11):** 
+- Use existing G2 fighter marker contrast rules + semantic visual checks (no clipping, text >=14px, platform remains quiet).
+- Since owner does not want to playtest before Gate G, acceptance for Gate C will be based on:
+  - Automated visual matrix + browser tests
+  - Designer/tester reports on readability at 640×360 and 1280×720 with 8 fighters
+  - Application of the photo-to-retro workflow for arenas (starting with station)
+- If later owner feedback in Gate G indicates problems, address in a follow-up iteration. Do not reduce max players.
 
 - Exact number of supported physical gamepads.
-  **Recommendation:** 4 (as per current code and vision). Extras fall back to keyboard or bots.
+  **Locked recommendation (per owner instruction 2026-11-11):** Apply the photo-to-retro arena workflow (real photos → AI reference → hand-crafted SVG) starting in Gate C for 8-player readability. Station first, then K-kauppa and Mesku. Use the documented process in `docs/ART_PHOTO_REFERENCE_WORKFLOW.md`.
 
 **Derivation from vision:** Local focus first + 80% chaos means we must support crowded fights without the game becoming unplayable.
 
@@ -155,7 +161,7 @@
 
 **Human input points:**
 - How much configuration happens in the room vs. server flags?
-  **Recommendation:** For now, keep server `--mode` and `--arena` as defaults. Full room configuration comes in Gate F. Derive from "local lobby first" principle.
+  **Locked recommendation (per owner instruction 2026-11-11):** Keep server `--mode` and `--arena` as defaults for early online (Gate D). Full room-level configuration (matching local lobby) is deferred to Gate F. This keeps the contract simpler and derives directly from "local lobby first" principle.
 
 **Risk mitigation:** Room logic must never touch deterministic simulation bytes.
 
@@ -222,7 +228,10 @@
   **Recommendation:** Keep it simple (room codes + TLS). No accounts or progression until the game is past Gate G. Derive from "LAN/VPN first" and "no matchmaking" in vision.
 
 - Exact rate limits and connection caps.
-  **Recommendation:** Start conservative (e.g. 8–12 concurrent) and tune after measurement.
+  **Locked recommendation (per owner instruction 2026-11-11):** 
+- Security model: TLS + room codes + basic rate limiting and connection caps.
+- No accounts, progression or matchmaking until after Gate G.
+- Conservative defaults: max 8–12 concurrent rooms, max 8 players per room. Tune only after real measurements in Gate E.
 
 ---
 
@@ -278,4 +287,9 @@ This structure is designed so that future designer + gameplay + graphics + teste
 
 **Status of this plan:** 2026-11-11 – initial detailed expansion based on LONG_TERM_PLAN.md and current implementation state.
 
-Next step for the project: complete Gate B (lobby), then move to Gate C with heavy focus on 8-player readability and photo-based arena updates.
+**Locked execution order & principles (2026-11-11 per owner instruction):**
+- Complete Gate B fully before heavy Gate C work.
+- Gate C includes application of photo-to-retro workflow.
+- No owner playtesting before Gate G. All pre-G acceptance uses automated tests, visual matrix, semantic checks and agent reports.
+- All human decision points use the locked recommendations above.
+- Focus on documentation and clear agent task definitions so future work can proceed with minimal live clarification.
