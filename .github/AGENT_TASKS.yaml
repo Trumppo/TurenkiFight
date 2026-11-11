@@ -1951,7 +1951,7 @@ tasks:
     title: Show the chosen setup and start from it
     assigned_role: graphics-session
     session_id: graphics-session-20261110-l4
-    status: blocked
+    status: in_progress
     priority: P1
     specification: docs/LOBBY_SELECTION.md
     depends_on: [LOBBY-L3-CHARACTER-SELECT]
@@ -1960,8 +1960,8 @@ tasks:
       - "One summary line shows arena, mode, players and bots"
       - "The line matches the match that actually starts and updates when any control changes"
       - "Starting needs no URL editing or documentation"
-    last_updated: "2026-11-10"
-    notes: "Closes the lobby feature. Readable at 640x360 and 1280x720."
+    last_updated: "2026-11-11"
+    notes: "Implemented locally on graphics/lobby-player-count; summary is placed before START MATCH and reports selected players plus current humans/bots without inventing missing bots. Full Vitest and browser evidence is green. Update to done after review/merge."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility

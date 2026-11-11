@@ -1,7 +1,7 @@
 # Lobby selection: arena, mode, players and character
 
 **Status:** Owner requirement 2026-11-10. L1 arena selection, L2 player count and L3 character selection are
-implemented locally; L4 summary remains a proposal.
+implemented locally; L4 summary is implemented locally as well.
 **Related:** [GRAPHICS_ROADMAP.md](GRAPHICS_ROADMAP.md), [GAME_DESIGN.md](GAME_DESIGN.md), [M1_GAMEPLAY_CONTROLS.md](M1_GAMEPLAY_CONTROLS.md).
 
 ## 1. The gap
@@ -58,10 +58,14 @@ The chosen combination is visible as one summary line before the match starts, a
 - Acceptance: P1 can look like P6 and still act as P1 (score, results, replays unchanged); all eight appearances available; choice persists; simulation snapshots and fingerprints unchanged.
 - Evidence: `docs/LOBBY_L3_CHARACTER_SELECT_PLAN.md` and `tests/browser/lobbyCharacterSelect.spec.ts`.
 
-### L4 - Summary and start
+### L4 - Summary and start (current work package)
 
 - One summary line: `ARENA · MODE · PLAYERS · BOTS`, plus a start hint.
 - Acceptance: the line matches the actual match that starts; changing any control updates it immediately.
+
+Locked format: `ARENA · MODE · PLAYERS · HUMANS · BOTS`; counts report the current joined roster and do not invent bots for empty slots.
+Evidence plan: `docs/LOBBY_L4_SUMMARY_PLAN.md`.
+Complete menu path: `docs/LOBBY_FLOW.md`.
 
 ## 5. Acceptance for the whole feature
 

@@ -111,6 +111,7 @@ export class StationScene extends Phaser.Scene {
     resetButton?: HTMLButtonElement;
     pauseButton?: HTMLButtonElement;
     allBotsPanel?: HTMLElement;
+    lobbySummary?: HTMLElement;
     waveHelp?: HTMLElement;
     playerList: HTMLElement;
     players: Map<string, { root: HTMLElement; score: HTMLElement; health: HTMLElement; name: HTMLElement; character: HTMLSelectElement; action: HTMLButtonElement }>;
@@ -900,6 +901,7 @@ export class StationScene extends Phaser.Scene {
     const allBotsButton = document.getElementById('all-bots-match') as HTMLButtonElement | null;
     const startButton = document.getElementById('start-match') as HTMLButtonElement | null;
     const allBotsPanel = document.getElementById('lobby-actions');
+    const lobbySummary = document.getElementById('lobby-summary');
     const waveHelp = document.getElementById('wave-lobby-help');
     const playerList = document.getElementById('player-hud');
     const keyboardEditor = document.getElementById('keyboard-editor') as HTMLDetailsElement | null;
@@ -1009,6 +1011,7 @@ export class StationScene extends Phaser.Scene {
       waveEnemies: waveEnemies ?? undefined, waveCountdown: waveCountdown ?? undefined,
       startButton: startButton ?? undefined, allBotsButton: allBotsButton ?? undefined,
       waveHelp: waveHelp ?? undefined,
+      lobbySummary: lobbySummary ?? undefined,
       zoneStatus: zoneStatus ?? undefined, zoneSummary: zoneSummary ?? undefined,
       zoneDanger: zoneDanger ?? undefined, resetButton: resetButton ?? undefined,
       pauseButton: pauseButton ?? undefined,
@@ -1159,6 +1162,13 @@ export class StationScene extends Phaser.Scene {
       hud.pauseButton.setAttribute('aria-pressed', String(this.paused));
     }
     if (hud.allBotsPanel) hud.allBotsPanel.hidden = this.state.phase !== 'lobby';
+    if (hud.lobbySummary) {
+      hud.lobbySummary.hidden = this.state.phase !== 'lobby';
+      const humans = this.state.fighters.filter(fighter => !this.botSlots.has(fighter.id)).length;
+      const bots = this.state.fighters.filter(fighter => this.botSlots.has(fighter.id)).length;
+      hud.lobbySummary.textContent = `ARENA ${this.arenaSelection.manifest.displayName.toUpperCase()} · MODE ${MODE_NAMES[this.selectedMode].toUpperCase()} · PLAYERS ${this.selectedPlayerCount} · HUMANS ${humans} · BOTS ${bots}`;
+      hud.lobbySummary.setAttribute('aria-label', `Arena ${this.arenaSelection.manifest.displayName}, mode ${MODE_NAMES[this.selectedMode]}, ${this.selectedPlayerCount} player slots, ${humans} humans, ${bots} bots`);
+    }
     if (hud.waveHelp) {
       hud.waveHelp.hidden = this.selectedMode !== 'wave' || this.state.phase !== 'lobby';
       hud.waveHelp.textContent = this.selectedPlayerCount === 1

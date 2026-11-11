@@ -278,6 +278,8 @@ p { color: #c2cbd2; }
 .lobby-actions .lobby-start:hover:not(:disabled) { background: #5a4729; }
 .lobby-actions button:disabled { opacity: .5; cursor: not-allowed; }
 .lobby-actions p { margin: 0; color: #d7e6e4; font-size: 14px; line-height: 1.35; }
+.lobby-actions .lobby-summary { flex: 1 1 100%; color: #fff1b7; font-weight: 900; letter-spacing: .04em; text-align: center; white-space: nowrap; }
+.lobby-actions .lobby-summary[hidden] { display: none; }
 .lobby-actions strong { color: #ffe39a; }
 .lobby-actions kbd { padding: 1px 5px; border: 1px solid #c7a76a; background: #293849; color: #fff1b7; font: inherit; font-weight: 800; }
 /* Integer 2× is an edge-to-edge 1280×720 composition. Keep the lobby CTA
@@ -294,6 +296,7 @@ body.integer-scale-2 .lobby-actions {
   transform: translateX(-50%);
 }
 body.integer-scale-2 .lobby-actions p { display: none; }
+body.integer-scale-2 .lobby-actions .lobby-summary { display: block; }
 body.integer-scale-2 .lobby-actions button { min-height: 28px; padding: 2px 8px; }
 body.integer-scale-2 .arena-control select { min-height: 28px; padding: 2px 6px; }
   body.integer-scale-2 .player-count-control select { min-height: 28px; padding: 2px 6px; }

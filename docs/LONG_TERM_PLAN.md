@@ -35,8 +35,12 @@ gates:
 | F | Productize the browser multiplayer loop | secure hosting, clear room flow, reconnect/rematch and tested eight-player sessions |
 | G | Owner playtest and iterate | owner accepts the feel, readability and fun; unresolved limitations stay documented |
 
-The current work package is Gate B: `LOBBY-L2-PLAYER-COUNT`, following the arena selector slice. It must not change
+The current work package is Gate B: `LOBBY-L4-SUMMARY`, closing the local lobby selection chain. It must not change
 the deterministic simulation or the selected network architecture.
+
+The local browser-to-results path is documented as a numbered flow in
+[`LOBBY_FLOW.md`](LOBBY_FLOW.md). It is the shared vocabulary for completing
+the local lobby gates before online room work.
 
 ## 3. Where the project is now (2026-11-11)
 
