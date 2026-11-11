@@ -326,8 +326,8 @@ Agents: When in doubt, follow the locked recommendations above. Document your ch
 
 **Status of this plan:** 2026-11-11 – Gate C technical complete (tests pass per evidence); now advancing to Gate D per user directive "Git commit ja push kaikki... Sen jälkeen Gate D maaliksi ja toteutukseen" and untrusted_objective "kehitä Gate D sisältö ja testaa toimivaksi. Valmista on, kun testit menee läpi".
 
-**Current Focused Goal (my decision as designer):**
-Develop Gate D content (stabilize online room contract: typed room state, join/leave/ready, rejoin, failure paths, session envelope over WS) and test until all related tests pass. Follow locked recommendations (server --mode/--arena defaults; no full config yet; no sim impact).
+**Current Focused Goal (per user objective 2026-11-11):**
+Complete Gate E's technical preparation and automated verification; do not claim any real network measurements that have not occurred. Existing owner-run steps and network fields remain explicitly `NOT_MEASURED` until actually executed.
 
 **Gate B completion evidence (required before Gate C per locked):**
 - All relevant browser tests: lobby*.spec.ts + bot-lobby.spec.ts + all-bot-match.spec.ts + m8-eight-player-ui.spec.ts : 10/10 passed.
@@ -345,6 +345,15 @@ Develop Gate D content (stabilize online room contract: typed room state, join/l
 - Git changes are committed and pushed after verification.
 - Locked recommendation followed: mode/arena remain server defaults; full room configuration is deferred to Gate F.
 - No owner playtest or network performance claim; pre-G acceptance is automated tests and code evidence only.
+
+## Gate E execution status (2026-11-11)
+
+- Added `docs/GATE_E_READINESS_REPORT.md` with evidence inventory, run procedure and 4/8 player measurement ledger.
+- Existing M14 report contains actual eight-player single-machine snapshot/tick/CPU/RSS measurements; its network fields are strictly `NOT_MEASURED`.
+- Existing split-role WS harness is repeatable on separate machines for BASE-4 correctness only; it reports no latency/bandwidth/pacing numbers.
+- Added a regression test that reads the committed M14 JSON and asserts loopback scope plus every network field remains `NOT_MEASURED` (including `measuredNetworks: 0`).
+- **Known gap:** distributed BASE-8 is not wired into the split-role runner. No 4/8-player real-network conditions have been measured. Owner-run two-machine test is still outstanding; no fabricated results.
+- Verification determines the technical prep is ready; this does not represent owner acceptance or real network validation.
 
 Key principles locked (agents must follow):
 - Complete Gate B fully before advancing to later gates.

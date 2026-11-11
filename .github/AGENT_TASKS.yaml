@@ -2089,3 +2089,20 @@ tasks:
       - No simulation bytes touched
     notes: "Gate D technical slice complete 2026-11-11: added typed canonical ready-request, gateway ownership checks, authoritative room handling and disconnect cleanup without simulation mutation. Focused Gate D tests 13 files/108 passed; full unit 72 files/624 passed; build green. Existing join/leave/rejoin, room-code, rematch and failure-path coverage remains green. Locked: defaults from server flags; full lobby config in Gate F."
     last_updated: "2026-11-11"
+
+  - id: GATE-E-MEASUREMENT-READINESS
+    title: Prepare Gate E network measurement evidence, rerun instructions and honest unknown ledger
+    assigned_role: planning-session
+    status: done
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-e
+    depends_on: [GATE-D-ROOM-CONTRACT]
+    scope: [docs/GATE_E_READINESS_REPORT.md, docs/GATE_PLANS.md, tests/m14-eight-player-measurement.test.ts]
+    acceptance:
+      - Existing 8-player single-machine measurements documented without representing them as network results
+      - Owner-runnable split-machine procedure documented with prototype safety and limitations
+      - All network performance fields explicitly remain NOT_MEASURED until real measurements exist
+      - Regression test fails if committed M14 report claims network measurements or fails to identify loopback scope
+      - Relevant M14 and WS split-role tests pass
+    notes: "Technical prep complete. Report: docs/GATE_E_READINESS_REPORT.md. Existing split-role harness is BASE-4 only; BASE-8 split networking and owner-run LAN measurement remain explicit gaps. Gate E evidence is not a capacity/network-performance claim."
+    last_updated: "2026-11-11"
