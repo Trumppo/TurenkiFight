@@ -162,6 +162,9 @@ export class StationScene extends Phaser.Scene {
     super('StationScene');
     this.arenaSelection = arenaSelection;
     this.selectedMode = mode;
+    // Gate B technical: load persisted player count and character selections early
+    // (presentation only per locked recommendation in GATE_PLANS.md).
+    this.selectedPlayerCount = this.readPlayerCount();
     this.state = this.createLobbyState(['P1']);
   }
 
