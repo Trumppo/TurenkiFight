@@ -116,3 +116,13 @@ G6 read as intended in motion. G3's spark is deliberately subtle and is the most
 2. ~~Should the retro style become the default after G2 and G4, or stay opt-in?~~ **Resolved 2026-11-11: retro-only.**
    The classic build path and its visual test matrix were removed; retro is the only supported style.
 3. Is the K-kauppa band visual acceptable before the owner playtest, or should G6 wait?
+
+## 7. Future arena photo-based updates (2026-11-11)
+
+A repeatable workflow now exists for updating arena backgrounds from real photos:
+- Collect multiple real photos (angles + seasons).
+- Generate 320×180 retro reference image(s) as aids (not final assets).
+- Graphics manually recreates clean SVG matching game style + correct real colors + quiet platform.
+- See `docs/ART_PHOTO_REFERENCE_WORKFLOW.md` for the full process and reference storage rules.
+
+First application: Turenki station (light pinkish-white facade instead of previous ochre). Same process will be used for K-kauppa and Mesku when ready.

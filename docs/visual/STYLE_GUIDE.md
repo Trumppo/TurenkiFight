@@ -7,7 +7,8 @@
 
 ## Directions evaluated
 
-1. **Nordic Arcade (selected):** muted Nordic blue sky, warm ochre station, dark slate roof, readable arcade fighters. Strong local identity with restrained noise.
+1. **Nordic Arcade (selected):** muted Nordic blue sky, dark slate roof, readable arcade fighters. Strong local identity with restrained noise.
+   - **Station facade update (2026-11-11):** Based on real photos the station is now light pinkish-white / nearly white wooden siding (not the previous warm ochre). See `docs/ART_PHOTO_REFERENCE_WORKFLOW.md` and `docs/visual/references/turenki-station/`.
 2. Neon Tournament: saturated cyberpunk lighting; less recognizably Turenki and weak foreground contrast.
 3. Sepia Pixel: nostalgic Finnish postcard; attractive but low team-color contrast for 4–8 fighters.
 
@@ -15,7 +16,11 @@
 
 Logical resolution remains **384 × 216**. Phaser pixelArt=true, antialias=false; use integer coordinates and nearest-neighbor filtering. Do not alter simulation or networking. Draw in layers: sky/distant buildings, station/platform, combat plane, depth-sorted fighters, foreground accents, HUD.
 
-Palette: sky #6d8999, ochre #c2a27d, slate #293f45, platform #76786f, cream #f4e5b4. Players: coral #cf665c, teal #54b7ae, gold #e3b85e, lavender #9e85cc. Each player needs a distinct ID label and silhouette in addition to color.
+Palette (base): sky #6d8999, slate #293f45, platform #76786f, cream #f4e5b4. 
+Station facade (updated 2026-11-11 from real photos): light pinkish-white / nearly white (#f0e8d8 range). 
+Players: coral #cf665c, teal #54b7ae, gold #e3b85e, lavender #9e85cc. Each player needs a distinct ID label and silhouette in addition to color.
+
+See `docs/ART_PHOTO_REFERENCE_WORKFLOW.md` for the current photo-to-retro process and per-arena color references.
 
 ## Visual geometry
 
