@@ -2071,3 +2071,21 @@ tasks:
       - Pre-G acceptance evidence: tests + designer report
     notes: "Gate C technical complete per designer verification 2026-11-11: ALL related tests pass (10/10 browser m8+lobby+bot+allbot, 621 unit, 3/3 m14). Evidence: controllers/gamepads up to P8 + bot fill + kb, reset/pause/rematch 8p aware (roster preserved), 8 HUD+results (cards, podium, places, aria), G2 semantic readability (contrast, no overflow, font>=14, markers visible at 640/1280), perf ok. Used existing retro assets. Locked followed. No code changes needed; state was already meeting 'valmista kun testit menevät läpi'. Updated docs/tasks. Ready for next (Gate D after G per long term)."
     last_updated: "2026-11-11"
+
+  - id: GATE-D-ROOM-CONTRACT
+    title: Stabilize online room contract for Gate D (typed join/leave/ready, rejoin, failure paths, session envelope)
+    assigned_role: gameplay-session
+    status: in_progress
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-d
+    depends_on: [GATE-C-TECHNICAL]
+    scope: [src/game/session/, src/game/networking/wsMessages.ts, server/ws/authoritativeWsSession.ts, tests/ws-*.test.ts, tests/m14-tls-roomcodes.test.ts, docs/GATE_PLANS.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Typed room state with join, leave, ready
+      - Rejoin window (30s) and failure paths clear
+      - Session envelope + WS authoritative works
+      - Mode/arena via server flags (per locked)
+      - All room/session tests pass
+      - No simulation bytes touched
+    notes: "Develop content per objective. Use existing patterns. Locked: defaults from server flags. Full lobby config in Gate F. Evidence required for 'valmista kun testit menee läpi'."
+    last_updated: "2026-11-11"

@@ -324,10 +324,10 @@ Agents: When in doubt, follow the locked recommendations above. Document your ch
 
 ---
 
-**Status of this plan:** 2026-11-11 – Gate B technical complete (tests pass); advancing to Gate C per active objective. Gate B prerequisite met per locked decision.
+**Status of this plan:** 2026-11-11 – Gate C technical complete (tests pass per evidence); now advancing to Gate D per user directive "Git commit ja push kaikki... Sen jälkeen Gate D maaliksi ja toteutukseen" and untrusted_objective "kehitä Gate D sisältö ja testaa toimivaksi. Valmista on, kun testit menee läpi".
 
-**Current Focused Goal (my decision as designer, per owner instruction and untrusted_objective "Ota gate C maaliksi ja toteuta kunnes valmista ja testit menee läpi"):**
-Complete Gate C fully and technically (eight-player local play comfortable) until all related tests pass. Use existing retro assets only. Follow all locked recommendations.
+**Current Focused Goal (my decision as designer):**
+Develop Gate D content (stabilize online room contract: typed room state, join/leave/ready, rejoin, failure paths, session envelope over WS) and test until all related tests pass. Follow locked recommendations (server --mode/--arena defaults; no full config yet; no sim impact).
 
 **Gate B completion evidence (required before Gate C per locked):**
 - All relevant browser tests: lobby*.spec.ts + bot-lobby.spec.ts + all-bot-match.spec.ts + m8-eight-player-ui.spec.ts : 10/10 passed.
@@ -337,15 +337,13 @@ Complete Gate C fully and technically (eight-player local play comfortable) unti
 - No simulation changes, used existing assets.
 - Updated AGENT_TASKS and docs.
 
-**Progress on current goal (Gate C technical):**
-- Gate C technical COMPLETE (valmista kun testit menevät läpi, per objective).
-- All Gate C related automated tests (m8 UI, bots, lobby, 8p measurement) pass: 10/10 browser, 621 unit, 3/3 m14 (full evidence in last test run).
-- Technical comfort items per Gate C definition implemented and verified: 4+ controllers/gamepads + keyboard fallback + bots fill, readable via G2 markers + semantic (no overflow, fonts>=14px, contrast, 8 cards), reset/pause/rematch preserve 8p roster, results scale (podium + later places + aria), no perf regression (full match runs, measurement harness green).
-- Major graphics (photo-to-retro) and audio deferred post-Gate G per locked.
-- Pre-G acceptance: tests + semantic matrix + agent reports only (no owner playtest).
-- Documentation and task list (GATE-C-TECHNICAL marked done) maintained.
-- Locked recommendations followed strictly. Gate B prerequisite confirmed complete first.
-- Build green, no changes to sim or assets.
+**Progress on current goal (Gate D):**
+- Git commit & push completed (Everything up-to-date confirmed; all prior changes pushed).
+- Gate D development started: room contract (join/leave/rejoin, roster, roomCode, envelope) exists in session/ and server/ws/.
+- Baseline tests passing: 70 session unit, 20 ws-prototype, ws-integration, 14 m14-tls-roomcodes, m2 scenarios.
+- Will develop missing "ready" support and stabilize typed room state per spec.
+- Locked: server flags for mode/arena; room logic independent of sim.
+- Pre-G: tests only.
 
 Key principles locked (agents must follow):
 - Complete Gate B fully before advancing to later gates.
