@@ -338,12 +338,13 @@ Develop Gate D content (stabilize online room contract: typed room state, join/l
 - Updated AGENT_TASKS and docs.
 
 **Progress on current goal (Gate D):**
-- Git commit & push completed (Everything up-to-date confirmed; all prior changes pushed).
-- Gate D development started: room contract (join/leave/rejoin, roster, roomCode, envelope) exists in session/ and server/ws/.
-- Baseline tests passing: 70 session unit, 20 ws-prototype, ws-integration, 14 m14-tls-roomcodes, m2 scenarios.
-- Will develop missing "ready" support and stabilize typed room state per spec.
-- Locked: server flags for mode/arena; room logic independent of sim.
-- Pre-G: tests only.
+- Gate D technical slice COMPLETE: typed `ready-request` was added to the v1 client envelope, canonicalized, ownership-checked and handled by the authoritative WS session.
+- Join/leave/rejoin, room-code admission, typed failure outcomes, rematch gating and authoritative session behavior remain covered by existing tests.
+- Ready handling is room intent only: it does not mutate deterministic simulation state; disconnect clears readiness.
+- Evidence: focused Gate D run = 13 test files / 108 tests passed; full unit suite = 72 files / 624 tests passed; production build passed.
+- Git changes are committed and pushed after verification.
+- Locked recommendation followed: mode/arena remain server defaults; full room configuration is deferred to Gate F.
+- No owner playtest or network performance claim; pre-G acceptance is automated tests and code evidence only.
 
 Key principles locked (agents must follow):
 - Complete Gate B fully before advancing to later gates.

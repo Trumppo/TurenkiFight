@@ -2075,7 +2075,7 @@ tasks:
   - id: GATE-D-ROOM-CONTRACT
     title: Stabilize online room contract for Gate D (typed join/leave/ready, rejoin, failure paths, session envelope)
     assigned_role: gameplay-session
-    status: in_progress
+    status: done
     priority: P0
     specification: docs/GATE_PLANS.md#gate-d
     depends_on: [GATE-C-TECHNICAL]
@@ -2087,5 +2087,5 @@ tasks:
       - Mode/arena via server flags (per locked)
       - All room/session tests pass
       - No simulation bytes touched
-    notes: "Develop content per objective. Use existing patterns. Locked: defaults from server flags. Full lobby config in Gate F. Evidence required for 'valmista kun testit menee läpi'."
+    notes: "Gate D technical slice complete 2026-11-11: added typed canonical ready-request, gateway ownership checks, authoritative room handling and disconnect cleanup without simulation mutation. Focused Gate D tests 13 files/108 passed; full unit 72 files/624 passed; build green. Existing join/leave/rejoin, room-code, rematch and failure-path coverage remains green. Locked: defaults from server flags; full lobby config in Gate F."
     last_updated: "2026-11-11"

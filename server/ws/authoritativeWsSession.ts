@@ -173,6 +173,7 @@ export class AuthoritativeWsSession {
   private readonly connections = new Set<string>();
   private readonly ownership = new Map<string, string[]>();
   private readonly reservations = new Map<string, RejoinReservation>();
+  private readonly readys = new Set<string>(); // ready connections for room contract (Gate D)
   private readonly eventLog: GameEvent[] = [];
   private state: GameState;
   /** Team split frozen when a wave match starts; null for every other mode. */
@@ -435,8 +436,15 @@ export class AuthoritativeWsSession {
       return result;
     }
 
+    if (header?.kind === 'ready-request') {
+      this.readys.add(connectionId);
+      this.emitRoster();
+      return result;
+    }
+
     if (header?.kind === 'leave-request') {
       this.ownership.delete(connectionId);
+      this.readys.delete(connectionId);
       if (connectionId === this.host) {
         // Host authority is revoked, never migrated. Terminating the session is
         // the documented lifecycle outcome for this prototype.
@@ -612,6 +620,7 @@ export class AuthoritativeWsSession {
   disconnect(connectionId: string, options: { reserve?: boolean } = {}): string[] {
     this.expireReservations();
     if (!this.connections.delete(connectionId)) return [];
+    this.readys.delete(connectionId);
     if (connectionId === this.host) {
       const revoked = this.gateway.disconnect(connectionId);
       this.ownership.delete(connectionId);

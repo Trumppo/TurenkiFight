@@ -18,7 +18,7 @@ export const SESSION_ENVELOPE_VERSION = 1 as const;
 
 /** Client-authored envelopes understood by the transport-neutral boundary. */
 export const CLIENT_SESSION_ENVELOPE_KINDS = [
-  'join-request', 'leave-request', 'input', 'ping', 'rematch',
+  'join-request', 'leave-request', 'input', 'ping', 'rematch', 'ready-request',
 ] as const;
 export type ClientSessionEnvelopeKind = (typeof CLIENT_SESSION_ENVELOPE_KINDS)[number];
 
@@ -125,12 +125,23 @@ export type RematchEnvelope = {
   roomId?: string;
 };
 
+/** Signals that the client (for its claimed slots) is ready for the host to start the match. */
+export type ReadyRequestEnvelope = {
+  version: typeof SESSION_ENVELOPE_VERSION;
+  kind: 'ready-request';
+  sequence: number;
+  roomId?: string;
+  /** Optional explicit slots; if omitted the gateway uses the connection's current roster. */
+  playerIds?: string[];
+};
+
 export type ClientSessionEnvelope =
   | JoinRequestEnvelope
   | LeaveRequestEnvelope
   | InputEnvelope
   | PingEnvelope
-  | RematchEnvelope;
+  | RematchEnvelope
+  | ReadyRequestEnvelope;
 
 /**
  * Envelope metadata after strict field/version/kind/range checks. The gameplay
@@ -207,6 +218,8 @@ function parseEnvelopeValue(value: unknown): ClientEnvelopeHeader {
   } else if (kind === 'join-request') {
     allowed.add('playerIds');
     allowed.add('roomCode');
+  } else if (kind === 'ready-request') {
+    allowed.add('playerIds');
   }
   if (Object.keys(value).some(key => !allowed.has(key))) throw new SessionEnvelopeError('unknown-field', 'Unknown envelope field');
 
@@ -244,6 +257,19 @@ function parseEnvelopeValue(value: unknown): ClientEnvelopeHeader {
       playerIds,
     };
   }
+  if (kind === 'ready-request') {
+    let playerIds: string[] | undefined;
+    if (own(value, 'playerIds')) {
+      playerIds = readPlayerIds(value.playerIds);
+    }
+    return {
+      version: SESSION_ENVELOPE_VERSION,
+      kind,
+      sequence,
+      ...(roomId === undefined ? {} : { roomId }),
+      ...(playerIds ? { playerIds } : {}),
+    };
+  }
   return { version: SESSION_ENVELOPE_VERSION, kind, sequence, ...(roomId === undefined ? {} : { roomId }) };
 }
 
@@ -276,6 +302,15 @@ function completeEnvelope(header: ClientEnvelopeHeader): ClientSessionEnvelope {
       ...(header.roomId === undefined ? {} : { roomId: header.roomId }),
       // Canonical slot order makes join encoding deterministic regardless of claims order.
       playerIds: [...(header.playerIds as string[])].sort(),
+    };
+  }
+  if (header.kind === 'ready-request') {
+    return {
+      version: SESSION_ENVELOPE_VERSION,
+      kind: 'ready-request',
+      sequence: header.sequence,
+      ...(header.roomId === undefined ? {} : { roomId: header.roomId }),
+      ...(header.playerIds ? { playerIds: [...header.playerIds].sort() } : {}),
     };
   }
   return {

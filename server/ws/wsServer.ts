@@ -45,6 +45,7 @@ export type WsServerEnvelopeEvent =
   | { connectionId: string; accepted: true; kind: 'ping'; sequence: number }
   | { connectionId: string; accepted: true; kind: 'leave-request' }
   | { connectionId: string; accepted: true; kind: 'rematch' }
+  | { connectionId: string; accepted: true; kind: 'ready-request'; playerIds?: readonly string[] }
   | { connectionId: string; accepted: false; code: string; source: 'gateway' | 'room' };
 
 /**
@@ -183,6 +184,13 @@ function envelopeEvent(connectionId: string, result: SessionEnvelopeResult): WsS
       return { connectionId, accepted: true, kind: 'leave-request' };
     case 'rematch':
       return { connectionId, accepted: true, kind: 'rematch' };
+    case 'ready-request':
+      return {
+        connectionId,
+        accepted: true,
+        kind: 'ready-request',
+        ...(envelope.playerIds === undefined ? {} : { playerIds: [...envelope.playerIds] }),
+      };
   }
 }
 
