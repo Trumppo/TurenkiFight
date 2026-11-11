@@ -1,6 +1,7 @@
 import { createServer } from 'node:net';
 import { expect, test, type Page } from '@playwright/test';
 import { startMatchServer, type MatchServerHandle } from '../../server/ws/matchServer';
+import { openNodeSession, type NodeSession } from '../../server/ws/nodeWsClient';
 
 /**
  * Real-browser integration for the online entry page.
@@ -130,6 +131,67 @@ test('online page joins P1, sends input and renders authoritative snapshots', as
   } finally {
     await p1.close().catch(() => undefined);
     await p2.close().catch(() => undefined);
+    await context.close().catch(() => undefined);
+    if (server) await server.close().catch(() => undefined);
+  }
+});
+
+test('online browser can claim P8 and render the complete eight-player authoritative roster', async ({ browser }) => {
+  test.setTimeout(60_000);
+  const ids = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'];
+  let server: MatchServerHandle | null = null;
+  try {
+    server = await startMatchServer({
+      host: '127.0.0.1', port: 0, playerIds: ids, snapshotHz: 20, startDelayMs: 50, firstTickDelayMs: 50,
+    });
+  } catch (error) {
+    test.skip(true, `WebSocket server could not bind: ${error instanceof Error ? error.message : String(error)}`);
+    return;
+  }
+
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const peers: NodeSession[] = [];
+  try {
+    await page.goto('/online.html');
+    await expect(page.locator('#player-slot option')).toHaveCount(8);
+    await expect(page.locator('#player-slot')).toContainText('P8');
+    await page.fill('#server-url', server.url!);
+    await page.fill('#room-code', '');
+    await page.selectOption('#player-slot', 'P8');
+    await page.click('#online-connect');
+    await expect(page.locator('#online-connect-form')).toBeHidden();
+    await expect.poll(() => page.evaluate(() => {
+      const api = (window as typeof window & { __turenkiOnline?: OnlineBridge }).__turenkiOnline;
+      return api?.state ?? 'missing';
+    })).toBe('joined');
+
+    for (const playerId of ids.slice(0, 7)) {
+      let accept!: () => void;
+      let reject!: (error: Error) => void;
+      const joined = new Promise<void>((resolve, rejectJoin) => { accept = resolve; reject = rejectJoin; });
+      const session = await openNodeSession({
+        url: server.url!,
+        handlers: { onJoinResult: result => result.accepted ? accept() : reject(new Error(`Join denied: ${playerId}`)) },
+      });
+      peers.push(session);
+      session.client.join([playerId]);
+      await joined;
+    }
+
+    await expect.poll(() => page.evaluate(() => {
+      const api = (window as typeof window & { __turenkiOnline?: OnlineBridge }).__turenkiOnline;
+      return api?.state ?? 'missing';
+    }), { timeout: 10_000 }).toBe('running');
+    await expect.poll(() => renderedX(page, 'P8'), { timeout: 10_000 }).not.toBeNull();
+    expect(await page.evaluate(() => {
+      const api = (window as typeof window & { __turenkiOnline?: OnlineBridge }).__turenkiOnline;
+      return api?.renderedFighters().map(fighter => fighter.id).sort() ?? [];
+    })).toEqual(ids);
+  } finally {
+    for (const peer of peers) peer.close();
+    await Promise.all(peers.map(peer => peer.closed.catch(() => undefined)));
+    await page.close().catch(() => undefined);
     await context.close().catch(() => undefined);
     if (server) await server.close().catch(() => undefined);
   }

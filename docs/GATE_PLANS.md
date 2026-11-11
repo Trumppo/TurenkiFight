@@ -238,6 +238,26 @@
 - No accounts, progression or matchmaking until after Gate G.
 - Conservative defaults: max 8–12 concurrent rooms, max 8 players per room. Tune only after real measurements in Gate E.
 
+**Gate F technical progress (2026-11-11; not owner-accepted):**
+- Existing M14 slices provide optional TLS/WSS, room-code admission, room connection caps, per-client message size/rate/invalid-message limits, non-host 30 s rejoin, authoritative results and opt-in rematch.
+- Added a non-developer-oriented [`docs/GATE_F_HOSTING_GUIDE.md`](GATE_F_HOSTING_GUIDE.md) covering LAN/VPN, public WSS prerequisites, setup, security caveats and troubleshooting; corrected stale README security claims.
+- Expanded online browser slot selection to P1–P8 and added a real browser + authoritative server test with seven additional clients; it asserts all eight authoritative fighters render and session enters running.
+- Existing browser coverage also exercises results, rematch, join UI and server input/snapshot flow; existing server tests cover TLS, abuse limits and rejoin.
+- **Not claimed:** no real internet/LAN performance, operational TLS certificate renewal verification, or owner playtest. Room creation/settings are still server/operator driven, not an in-browser host lobby; full room-level configuration (arena/mode/duration/max players) remains a candidate follow-up to confirm against this gate's desired product boundary.
+- No Gate F milestone acceptance is asserted here; automated results and owner approval remain distinct.
+
+### Gate F work package: browser access and operator hosting (F1)
+
+- **Objective:** Make all eight server slots selectable in the browser, prove an eight-player browser/server session reaches play, and publish accurate LAN/VPN/public-WSS setup instructions.
+- **Rationale:** The earlier browser form exposed only P1–P4 despite an eight-slot server; README security statements were stale and did not give a WSS deployment path.
+- **Dependencies:** Gate D room contract; Gate E BASE-8 correctness harness; existing M14 TLS/room-code/rate-limit/rejoin implementations.
+- **Files/ownership:** `online.html`, `src/online.ts`, `tests/browser/online.spec.ts` (online UI/gameplay integration); `docs/GATE_F_HOSTING_GUIDE.md`, `README.md`, `docs/M14_ONLINE_SECURITY.md`, `docs/GATE_PLANS.md`, `.github/AGENT_TASKS.yaml` (designer docs/task state).
+- **Out of scope:** Accounts, matchmaking, multi-room hosting, host migration, progression; actual LAN/internet measurements; changes to simulation rules or M1/M1.5 baseline.
+- **Acceptance tests:** Browser form exposes P1–P8; an 8-slot authoritative server plus seven additional clients and browser P8 reaches running and renders every authoritative fighter; online browser flows and results/rematch tests pass; TLS/rate/rejoin unit/integration tests pass; full unit suite/build pass; network metrics remain `NOT_MEASURED`.
+- **Risk:** 8-slot selection is only an admission UI, not a full configurable lobby; online arena/mode/duration still use server/operator defaults. A loopback test cannot validate firewall, certificate hostname, router or internet behavior.
+- **Branch/PR plan:** `designer/gate-f-online`; one reviewable `DESIGNER: ` PR with `Task: GATE-F-ONLINE-BASELINE`; no merge without owner approval.
+- **User decision gate:** None for this narrow slice; existing approved security choices apply. Owner review/merge is still required. Overall Gate F remains open until remaining product-boundary/configuration gaps are resolved and evidence is consolidated.
+
 ---
 
 ## Gate G – Owner playtest and iterate

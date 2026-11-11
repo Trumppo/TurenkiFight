@@ -106,7 +106,7 @@ function layoutText(playerId: string): string {
   if (playerId === 'P2') {
     return 'P2 layout: arrow keys move · K jump · L punch · J kick · U jump kick · I pick up/throw';
   }
-  if (playerId === 'P3' || playerId === 'P4') {
+  if (/^P[3-8]$/.test(playerId)) {
     return `${playerId} uses the P1 layout: WASD move · Space jump · F punch · G kick · H jump kick · T pick up/throw`;
   }
   return 'P1 layout: WASD move · Space jump · F punch · G kick · H jump kick · T pick up/throw';
@@ -295,8 +295,8 @@ function updatePanel(): void {
 function start(url: string, requestedPlayer: string, requestedRoom: string): void {
   showError(null);
   const playerId = requestedPlayer.trim().toUpperCase();
-  if (!/^P[1-4]$/.test(playerId)) {
-    showError('Choose a slot between P1 and P4.');
+  if (!/^P[1-8]$/.test(playerId)) {
+    showError('Choose a slot between P1 and P8.');
     return;
   }
   const resolvedUrl = resolveServerUrl(url, window.location.protocol);

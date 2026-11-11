@@ -3,6 +3,7 @@
 **Status:** Design spec, 2026-11-06. Part of the active long-term goal. Measurement is owner-blocked; the code below
 is implementable without it.
 **Related:** [LONG_TERM_PLAN.md](LONG_TERM_PLAN.md) M14, [ADR 0001](adr/0001-network-topology.md).
+**Operator instructions:** see [Gate F hosting guide](GATE_F_HOSTING_GUIDE.md) for LAN/VPN and TLS/WSS internet setup.
 
 ## 1. What exists
 

@@ -2125,3 +2125,44 @@ tasks:
       - Focused tests and production build pass
     notes: "Implemented during active Gate E goal. Local 8-client split-role test proves correctness only; not a real LAN measurement."
     last_updated: "2026-11-11"
+
+  - id: GATE-F-ONLINE-PRODUCTIZATION
+    title: Productize the browser multiplayer loop for Gate F
+    assigned_role: planning-session
+    status: in_progress
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-f
+    depends_on: [GATE-E-BASE8-SPLIT-HARNESS, M14-TLS-ROOMCODES, M14-RATE-LIMITS, M14-REJOIN]
+    scope: [online.html, src/online.ts, server/ws/, tests/browser/online*.spec.ts, tests/m14-*.test.ts, docs/GATE_F_HOSTING_GUIDE.md, README.md, docs/GATE_PLANS.md]
+    acceptance:
+      - Browser create/join/play/results/rematch-or-leave flow is covered end-to-end
+      - Browser client can select all configured player slots through P8
+      - Eight-player authoritative online session completes without crashes
+      - TLS/WSS, room code admission, abuse limits and rejoin are tested and hosting instructions cover LAN/VPN and simple internet deployment
+      - No account, matchmaking or progression systems are added before Gate G
+      - Network-performance unknowns stay NOT_MEASURED; tests do not imply real-link performance
+      - Full relevant browser/unit tests and production build pass
+    notes: "Active. Existing M14 TLS/room-code/rate-limit/rejoin implementations verified by tests. Added P1-P8 browser slot selection, 8-client browser+server roster test and operator hosting guide. Remaining audit: confirm room creation/config product boundary and rejoin/WSS browser-path coverage; do not mark Gate F complete until acceptance evidence is consolidated."
+    last_updated: "2026-11-11"
+
+  - id: GATE-F-ONLINE-BASELINE
+    title: Expose P1-P8 online slots, verify 8-player browser session, and document hosting
+    assigned_role: planning-session
+    status: done
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-f
+    depends_on: [GATE-E-BASE8-SPLIT-HARNESS, M14-TLS-ROOMCODES, M14-RATE-LIMITS, M14-REJOIN]
+    scope: [online.html, src/online.ts, tests/browser/online.spec.ts, docs/GATE_F_HOSTING_GUIDE.md, README.md, docs/M14_ONLINE_SECURITY.md, docs/GATE_PLANS.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Browser slot form supports P1 through P8 and validates each slot
+      - Browser plus authoritative server with seven other network clients enters running and renders all eight fighters
+      - Hosting guide covers LAN/VPN and public WSS prerequisites and security boundaries
+      - Focused online browser tests, security/rejoin tests, full unit suite and build pass
+      - No network metrics are invented and no Gate F owner acceptance is claimed
+    rationale: "Existing backend supported eight players but the browser join form exposed only four slots; prior security runbook did not explain an end-user WSS deployment and README contained stale security claims."
+    out_of_scope: [accounts, matchmaking, multi-room service, host migration, internet performance claims, simulation-rule changes]
+    branch: designer/gate-f-online
+    pull_request: "DESIGNER: complete Gate F browser slot and hosting baseline; Task: GATE-F-ONLINE-BASELINE"
+    user_decision_gate: "No new product decision for this slice; owner approval is required before merge and Gate F acceptance."
+    notes: "Implemented and verified 2026-11-11: online E2E 12/12, security/rejoin unit focus 59/59, full unit 72 files/627 tests, build green. See docs/GATE_F_HOSTING_GUIDE.md. Overall GATE-F-ONLINE-PRODUCTIZATION remains in progress."
+    last_updated: "2026-11-11"
