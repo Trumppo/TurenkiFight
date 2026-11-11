@@ -307,7 +307,7 @@ When creating tasks in `.github/AGENT_TASKS.yaml` or per-gate plans:
 - For readability: reference the locked Gate C criteria above.
 - Example task title pattern: "GATE-C-01: 8-player marker and arena visual updates (station photo reference)" 
 
-Task lists are created only after the gate documentation is stable.
+Task lists are created only after the gate documentation is stable. Example tasks have been added to .github/AGENT_TASKS.yaml referencing this document (Gate B technical completion first, graphics deferred).
 
 ## Locked Decisions for Ambiguous Areas (agents must follow these; this reduces the need for owner approval on every design decision)
 
