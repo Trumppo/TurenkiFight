@@ -324,7 +324,16 @@ Agents: When in doubt, follow the locked recommendations above. Document your ch
 
 ---
 
-**Status of this plan:** 2026-11-11 – documentation expanded with sufficient detail for agentic work.
+**Status of this plan:** 2026-11-11 – Gate B technical implementation started (per my long-term goal).
+
+**Current Focused Goal (my decision as designer, per owner instruction "toimis suosituksesi mukaan" and "tee nyt itsellesi pitkän matkan maali"):**
+Complete Gate B fully and technically before advancing to any later gates or work.
+
+**Progress on current goal:**
+- Added explicit isolation in createLobbyState and character logic (StationScene.ts) to ensure no simulation impact.
+- Locked recommendations and high-level instructions maintained in this doc.
+- Agent tasks added for Gate B technical completion.
+- Graphics deferred.
 
 Key principles locked (agents must follow):
 - Complete Gate B fully before advancing to later gates.

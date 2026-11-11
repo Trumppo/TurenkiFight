@@ -589,6 +589,8 @@ export class StationScene extends Phaser.Scene {
     if (!roster.includes('P1')) roster.unshift('P1');
     const arena = this.simulationArenaId();
     const arenaSetup = arena ? { arena } : {};
+    // Character selection is presentation-only (locked per GATE_PLANS.md recommendation).
+    // Roster uses stable P1-P8 IDs only. No character mapping leaks into simulation state.
     if (this.selectedMode !== 'wave') return createState({ ids: roster, phase: 'lobby', mode: this.selectedMode, ...arenaSetup });
     if (!this.waveRosterReady(roster)) return createState({ ids: roster, phase: 'lobby', ...arenaSetup });
     return createState({ ids: roster, phase: 'lobby', mode: 'wave', teams: this.waveTeams(roster), ...arenaSetup });
