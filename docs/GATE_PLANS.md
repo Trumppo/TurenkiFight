@@ -329,11 +329,15 @@ Agents: When in doubt, follow the locked recommendations above. Document your ch
 **Current Focused Goal (my decision as designer, per owner instruction "toimis suosituksesi mukaan" and "tee nyt itsellesi pitkän matkan maali"):**
 Complete Gate B fully and technically before advancing to any later gates or work.
 
-**Progress on current goal:**
+**Progress on current goal (Gate B technical):**
 - Added explicit isolation in createLobbyState and character logic (StationScene.ts) to ensure no simulation impact.
-- Locked recommendations and high-level instructions maintained in this doc.
-- Agent tasks added for Gate B technical completion.
-- Graphics deferred.
+- Added stronger isolation test in lobbyCharacterSelect.spec.ts that verifies stateJson unchanged on character change.
+- Evidence: all lobby*.spec.ts + bot-lobby + all-bot-match pass (5/5).
+- Unit tests green.
+- Locked recommendations and high-level instructions maintained.
+- Agent tasks in AGENT_TASKS.yaml referencing this doc.
+- Graphics deferred per locked decision.
+- Documentation maintained.
 
 Key principles locked (agents must follow):
 - Complete Gate B fully before advancing to later gates.
