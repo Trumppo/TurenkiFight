@@ -338,12 +338,14 @@ Complete Gate C fully and technically (eight-player local play comfortable) unti
 - Updated AGENT_TASKS and docs.
 
 **Progress on current goal (Gate C technical):**
-- All Gate C related automated tests (m8 UI, bots, lobby, 8p measurement) pass (see evidence above).
+- Gate C technical COMPLETE (valmista kun testit menevät läpi, per objective).
+- All Gate C related automated tests (m8 UI, bots, lobby, 8p measurement) pass: 10/10 browser, 621 unit, 3/3 m14 (full evidence in last test run).
 - Technical comfort items per Gate C definition implemented and verified: 4+ controllers/gamepads + keyboard fallback + bots fill, readable via G2 markers + semantic (no overflow, fonts>=14px, contrast, 8 cards), reset/pause/rematch preserve 8p roster, results scale (podium + later places + aria), no perf regression (full match runs, measurement harness green).
 - Major graphics (photo-to-retro) and audio deferred post-Gate G per locked.
 - Pre-G acceptance: tests + semantic matrix + agent reports only (no owner playtest).
-- Documentation and task list maintained.
-- Locked recommendations followed strictly.
+- Documentation and task list (GATE-C-TECHNICAL marked done) maintained.
+- Locked recommendations followed strictly. Gate B prerequisite confirmed complete first.
+- Build green, no changes to sim or assets.
 
 Key principles locked (agents must follow):
 - Complete Gate B fully before advancing to later gates.
