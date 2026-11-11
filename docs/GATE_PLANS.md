@@ -324,20 +324,26 @@ Agents: When in doubt, follow the locked recommendations above. Document your ch
 
 ---
 
-**Status of this plan:** 2026-11-11 – Gate B technical implementation started (per my long-term goal).
+**Status of this plan:** 2026-11-11 – Gate B technical complete (tests pass); advancing to Gate C per active objective. Gate B prerequisite met per locked decision.
 
-**Current Focused Goal (my decision as designer, per owner instruction "toimis suosituksesi mukaan" and "tee nyt itsellesi pitkän matkan maali"):**
-Complete Gate B fully and technically before advancing to any later gates or work.
+**Current Focused Goal (my decision as designer, per owner instruction and untrusted_objective "Ota gate C maaliksi ja toteuta kunnes valmista ja testit menee läpi"):**
+Complete Gate C fully and technically (eight-player local play comfortable) until all related tests pass. Use existing retro assets only. Follow all locked recommendations.
 
-**Progress on current goal (Gate B technical):**
-- Added explicit isolation in createLobbyState and character logic (StationScene.ts) to ensure no simulation impact.
-- Added stronger isolation test in lobbyCharacterSelect.spec.ts that verifies stateJson unchanged on character change.
-- Evidence: all lobby*.spec.ts + bot-lobby + all-bot-match pass (5/5).
-- Unit tests green.
-- Locked recommendations and high-level instructions maintained.
-- Agent tasks in AGENT_TASKS.yaml referencing this doc.
-- Graphics deferred per locked decision.
-- Documentation maintained.
+**Gate B completion evidence (required before Gate C per locked):**
+- All relevant browser tests: lobby*.spec.ts + bot-lobby.spec.ts + all-bot-match.spec.ts + m8-eight-player-ui.spec.ts : 10/10 passed.
+- Full unit tests: 72 files, 621 tests passed.
+- State hash / character isolation test added and passes (presentation only, no sim impact).
+- Reset/pause/rematch, 8p HUD/results, gamepad+bot+keyboard, summary, validation all covered and green.
+- No simulation changes, used existing assets.
+- Updated AGENT_TASKS and docs.
+
+**Progress on current goal (Gate C technical):**
+- All Gate C related automated tests (m8 UI, bots, lobby, 8p measurement) pass (see evidence above).
+- Technical comfort items per Gate C definition implemented and verified: 4+ controllers/gamepads + keyboard fallback + bots fill, readable via G2 markers + semantic (no overflow, fonts>=14px, contrast, 8 cards), reset/pause/rematch preserve 8p roster, results scale (podium + later places + aria), no perf regression (full match runs, measurement harness green).
+- Major graphics (photo-to-retro) and audio deferred post-Gate G per locked.
+- Pre-G acceptance: tests + semantic matrix + agent reports only (no owner playtest).
+- Documentation and task list maintained.
+- Locked recommendations followed strictly.
 
 Key principles locked (agents must follow):
 - Complete Gate B fully before advancing to later gates.
@@ -347,7 +353,7 @@ Key principles locked (agents must follow):
 - Documentation must be maintained as the project evolves.
 
 **My long-term goal as designer (set per owner instruction to decide and act on recommendations):**
-Drive the project gate-by-gate per LONG_TERM_PLAN.md and this document, starting with full technical completion of Gate B (honest configurable local lobby without simulation impact), maintaining all documentation, deferring non-technical work (graphics/audio), enabling agentic progress by clear plans and locked recommendations. Progress one gate at a time, updating docs as the project evolves.
+Drive the project gate-by-gate per LONG_TERM_PLAN.md and this document. Current active: full technical completion of Gate C (comfortable 8-player local play per definition), after confirming Gate B complete. Maintain documentation, follow locked recommendations (B first but now met; graphics/audio post-Gate G; pre-G via tests/reports; use existing retro assets), enable agentic progress. Progress one gate at a time, updating docs as the project evolves.
 
 Key principles locked:
 - Complete Gate B fully before advancing.

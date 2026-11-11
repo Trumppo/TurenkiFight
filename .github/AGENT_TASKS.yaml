@@ -2038,6 +2038,8 @@ tasks:
   - id: GATE-B-COMPLETE
     title: Complete Gate B local lobby technical implementation (arena, count, character mapping, summary, validation)
     assigned_role: gameplay-session
+    status: done
+    priority: P0
     specification: docs/GATE_PLANS.md#gate-b
     depends_on: [LOBBY-L1-ARENA-SELECT, LOBBY-L2-PLAYER-COUNT, LOBBY-L3-CHARACTER-SELECT, LOBBY-L4-SUMMARY]
     scope: [src/game/presentation/, src/game/, tests/browser/, docs/GATE_PLANS.md]
@@ -2047,5 +2049,25 @@ tasks:
       - State hashes unchanged by visual choices
       - No major new graphics (use existing assets)
       - Focused tests and visual matrix pass
-    notes: "Technical focus. Graphics polish (photo-to-retro) deferred post-Gate G per locked decisions. Follow recommendations in GATE_PLANS.md."
+    notes: "Gate B complete per designer: 10/10 browser lobby+bot+allbot+m8 tests passed (2026-11-11), 621 unit tests passed. Isolation test proves character selection presentation-only. Evidence in GATE_PLANS.md. Technical focus only; graphics deferred post-Gate G per locked. Ready to advance to Gate C."
+    last_updated: "2026-11-11"
+    pull_request: "pending designer PR for doc+task close"
+
+  - id: GATE-C-TECHNICAL
+    title: Complete Gate C eight-player local comfort technical (controllers, bots, HUD/results, reset/pause, perf) using existing assets
+    assigned_role: gameplay-session
+    status: in_progress
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-c
+    depends_on: [GATE-B-COMPLETE]
+    scope: [src/game/presentation/StationScene.ts, tests/browser/m8-eight-player-ui.spec.ts, tests/browser/*lobby*.spec.ts, tests/browser/bot-lobby.spec.ts, tests/browser/all-bot-match.spec.ts, docs/GATE_PLANS.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - 4+ gamepads + keyboard fallback + bots fill slots for 8 players
+      - Reset, pause, rematch work for full 8p rosters
+      - 8p HUD and results readable/scaled (using G2 markers + semantic checks)
+      - No performance regression in 8p matches (measurement + full runs)
+      - All related browser + unit tests pass
+      - No new major graphics or photo-to-retro (existing retro assets only)
+      - Pre-G acceptance evidence: tests + designer report
+    notes: "Follow locked recommendations strictly: existing assets, G2+semantic for readability, no owner playtest, docs updated with evidence. Technical implementation only. Smallest slice: verify+document current state since tests already green."
     last_updated: "2026-11-11"
