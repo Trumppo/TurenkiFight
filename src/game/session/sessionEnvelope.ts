@@ -4,6 +4,16 @@ import {
   parseInputFrame,
   type InputFrame,
 } from '../protocol/inputFrame';
+import { MODE_IDS, MATCH_DURATION_MINUTES, type MatchDurationMinutes } from '../simulation/modes';
+import { ARENA_RULE_IDS, type ArenaRuleId } from '../simulation/arenas';
+import { MAX_PLAYERS, MIN_PLAYERS } from '../protocol/players';
+
+export type RoomConfiguration = {
+  mode: (typeof MODE_IDS)[number];
+  arena: ArenaRuleId;
+  playerCount: number;
+  durationMinutes: MatchDurationMinutes;
+};
 
 /**
  * Transport-neutral M2 session envelope v1.
@@ -88,6 +98,8 @@ export type JoinRequestEnvelope = {
   roomCode?: string;
   roomId?: string;
   playerIds: string[];
+  /** Present only on the initial host join that creates a room. */
+  roomConfig?: RoomConfiguration;
 };
 
 export type LeaveRequestEnvelope = {
@@ -166,6 +178,7 @@ export type ClientEnvelopeHeader = {
   targetTick?: number;
   playerIds?: string[];
   frame?: unknown;
+  roomConfig?: RoomConfiguration;
 };
 
 export const isSessionIdentifier = (value: unknown): value is string =>
@@ -227,6 +240,7 @@ function parseEnvelopeValue(value: unknown): ClientEnvelopeHeader {
   } else if (kind === 'join-request') {
     allowed.add('playerIds');
     allowed.add('roomCode');
+    allowed.add('roomConfig');
   } else if (kind === 'ready-request') {
     allowed.add('playerIds');
   }
@@ -257,6 +271,23 @@ function parseEnvelopeValue(value: unknown): ClientEnvelopeHeader {
   }
   if (kind === 'join-request') {
     const playerIds = readPlayerIds(value.playerIds);
+    let roomConfig: RoomConfiguration | undefined;
+    if (own(value, 'roomConfig')) {
+      const raw = value.roomConfig;
+      if (!isRecord(raw) || Object.keys(raw).some(key => !['mode', 'arena', 'playerCount', 'durationMinutes'].includes(key)) ||
+          !MODE_IDS.includes(raw.mode as (typeof MODE_IDS)[number]) ||
+          !ARENA_RULE_IDS.includes(raw.arena as ArenaRuleId) ||
+          !Number.isSafeInteger(raw.playerCount) || (raw.playerCount as number) < MIN_PLAYERS + 1 || (raw.playerCount as number) > MAX_PLAYERS ||
+          !MATCH_DURATION_MINUTES.includes(raw.durationMinutes as MatchDurationMinutes)) {
+        throw new SessionEnvelopeError('invalid-envelope', 'Invalid room configuration');
+      }
+      roomConfig = {
+        mode: raw.mode as (typeof MODE_IDS)[number],
+        arena: raw.arena as ArenaRuleId,
+        playerCount: raw.playerCount as number,
+        durationMinutes: raw.durationMinutes as MatchDurationMinutes,
+      };
+    }
     return {
       version: SESSION_ENVELOPE_VERSION,
       kind,
@@ -264,6 +295,7 @@ function parseEnvelopeValue(value: unknown): ClientEnvelopeHeader {
       ...(roomCode === undefined ? {} : { roomCode }),
       ...(roomId === undefined ? {} : { roomId }),
       playerIds,
+      ...(roomConfig === undefined ? {} : { roomConfig }),
     };
   }
   if (kind === 'ready-request') {
@@ -311,6 +343,7 @@ function completeEnvelope(header: ClientEnvelopeHeader): ClientSessionEnvelope {
       ...(header.roomId === undefined ? {} : { roomId: header.roomId }),
       // Canonical slot order makes join encoding deterministic regardless of claims order.
       playerIds: [...(header.playerIds as string[])].sort(),
+      ...(header.roomConfig === undefined ? {} : { roomConfig: header.roomConfig }),
     };
   }
   if (header.kind === 'ready-request') {

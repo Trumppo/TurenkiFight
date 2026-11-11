@@ -1,5 +1,6 @@
 import { createState, step, TICK_RATE } from '../../src/game/simulation/step';
-import { MODE_IDS } from '../../src/game/simulation/modes';
+import { MODE_IDS, matchDurationTicks, type MatchDurationMinutes } from '../../src/game/simulation/modes';
+import { ARENA_RULE_IDS, type ArenaRuleId } from '../../src/game/simulation/arenas';
 import { botInput } from '../../src/game/input/botPolicy';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../../src/game/protocol/players';
 import type { GameEvent, GameState, ModeId, PlayerInput, Team } from '../../src/game/simulation/types';
@@ -11,6 +12,7 @@ import {
   normalizeRoomCode,
   parseClientEnvelopeHeader,
   type ClientEnvelopeHeader,
+  type RoomConfiguration,
 } from '../../src/game/session/sessionEnvelope';
 import {
   SessionEnvelopeGateway,
@@ -156,9 +158,11 @@ export class AuthoritativeWsSession {
   private readonly gateway: SessionEnvelopeGateway;
   private readonly roomId: string;
   private readonly roomCode: string | null;
-  private readonly playerIds: readonly string[];
-  private readonly playerIdSet: ReadonlySet<string>;
-  private readonly mode: ModeId;
+  private playerIds: readonly string[];
+  private playerIdSet: ReadonlySet<string>;
+  private mode: ModeId;
+  private arena: ArenaRuleId = 'station';
+  private durationMinutes: MatchDurationMinutes = 2;
   private readonly snapshotInterval: number;
   private readonly snapshotHz: SnapshotHz;
   private readonly maxLead: number;
@@ -403,6 +407,16 @@ export class AuthoritativeWsSession {
       }
     }
 
+    if (header?.kind === 'join-request' && header.roomConfig !== undefined) {
+      const slots = header.playerIds ?? [];
+      const selectedRoster = this.playerIds.slice(0, header.roomConfig.playerCount);
+      if (this.host !== null || this.phaseValue !== 'lobby' || this.gateway.playerCount !== 0 ||
+          slots.some(id => !this.playerIdSet.has(id) || !selectedRoster.includes(id)) ||
+          header.roomConfig.playerCount < slots.length || header.roomConfig.playerCount > this.playerIds.length) {
+        return this.denyRoom(connectionId, 'room-config-refused', 'Room configuration is only allowed on the first host join and must fit the server capacity', header);
+      }
+    }
+
     const result = rejoin === null
       ? this.gateway.handle(this.binding(connectionId), data)
       : this.gateway.handle(this.binding(connectionId), data, { rejoinPlayerIds: rejoin.playerIds });
@@ -413,6 +427,10 @@ export class AuthoritativeWsSession {
 
     if (header?.kind === 'join-request') {
       const slots = result.envelope.kind === 'join-request' ? [...result.envelope.playerIds] : [];
+      const requestedConfig = result.envelope.kind === 'join-request' ? result.envelope.roomConfig : undefined;
+      if (requestedConfig !== undefined) {
+        this.applyRoomConfiguration(requestedConfig);
+      }
       if (rejoin !== null) {
         // The reservation is consumed only after the reattach was accepted.
         this.reservations.delete(rejoin.connectionId);
@@ -526,7 +544,15 @@ export class AuthoritativeWsSession {
         return false;
       }
       this.waveTeams = teams;
-      this.state = createState({ ids: [...this.playerIds], phase: 'fighting', mode: 'wave', teams });
+      this.state = createState({
+        ids: [...this.playerIds], phase: 'fighting', mode: 'wave', teams,
+        ...(this.arena === 'station' ? {} : { arena: this.arena }), durationMinutes: this.durationMinutes,
+      });
+    } else {
+      this.state = createState({
+        ids: [...this.playerIds], phase: 'fighting', mode: this.mode,
+        ...(this.arena === 'station' ? {} : { arena: this.arena }), durationMinutes: this.durationMinutes,
+      });
     }
     this.setPhase('running');
     this.emitMatchStart();
@@ -837,6 +863,29 @@ export class AuthoritativeWsSession {
       readyPlayerIds,
       hostPlayerId,
       mode: this.mode,
+      durationMinutes: this.durationMinutes,
+      arena: this.arena,
+    });
+  }
+
+  private applyRoomConfiguration(config: RoomConfiguration): void {
+    if (!ARENA_RULE_IDS.includes(config.arena)) throw new Error('Unsupported room arena');
+    matchDurationTicks(config.durationMinutes);
+    this.playerIds = this.playerIds.slice(0, config.playerCount);
+    this.playerIdSet = new Set(this.playerIds);
+    this.mode = config.mode;
+    this.arena = config.arena;
+    this.durationMinutes = config.durationMinutes;
+    this.state = this.createLobbyState();
+  }
+
+  private createLobbyState(): GameState {
+    return createState({
+      ids: [...this.playerIds],
+      phase: 'lobby',
+      ...(this.mode === 'wave' ? {} : { mode: this.mode }),
+      ...(this.arena === 'station' ? {} : { arena: this.arena }),
+      durationMinutes: this.durationMinutes,
     });
   }
 

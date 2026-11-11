@@ -43,6 +43,11 @@ const form = document.getElementById('online-connect-form') as HTMLFormElement;
 const serverInput = document.getElementById('server-url') as HTMLInputElement;
 const roomInput = document.getElementById('room-code') as HTMLInputElement;
 const playerSelect = document.getElementById('player-slot') as HTMLSelectElement;
+const roomAction = document.getElementById('room-action') as HTMLSelectElement;
+const roomMode = document.getElementById('room-mode') as HTMLSelectElement;
+const roomArena = document.getElementById('room-arena') as HTMLSelectElement;
+const roomPlayerCount = document.getElementById('room-player-count') as HTMLSelectElement;
+const roomDuration = document.getElementById('room-duration') as HTMLSelectElement;
 const errorBox = document.getElementById('online-error') as HTMLElement;
 const statusEl = document.getElementById('online-status') as HTMLElement;
 const metricsEl = document.getElementById('online-metrics') as HTMLElement;
@@ -320,7 +325,7 @@ function updatePanel(): void {
         : readySet.has(playerId) ? 'READY' : 'WAITING';
       return `${playerId} ${status}${playerId === lobby.hostPlayerId ? ' · HOST' : ''}`;
     }).join(' · ');
-    setText(lobbySummary, `${lobby.mode.toUpperCase()} · ${lobby.playerIds.length}/${lobby.requiredPlayerIds.length} JOINED · ${lobby.readyPlayerIds.length} READY`);
+    setText(lobbySummary, `${lobby.mode.toUpperCase()} · ${lobby.arena.toUpperCase()} · ${lobby.durationMinutes} MIN · ${lobby.playerIds.length}/${lobby.requiredPlayerIds.length} JOINED · ${lobby.readyPlayerIds.length} READY`);
     setText(lobbyRoster, rosterText);
     readyButton.disabled = info.state !== 'joined' || !connectedSet.has(controller.playerId) || readySet.has(controller.playerId);
     readyButton.textContent = readySet.has(controller.playerId) ? 'READY ✓' : 'READY';
@@ -338,11 +343,16 @@ function updatePanel(): void {
   }
 }
 
-function start(url: string, requestedPlayer: string, requestedRoom: string): void {
+function start(url: string, requestedPlayer: string, requestedRoom: string, action = roomAction.value): void {
   showError(null);
   const playerId = requestedPlayer.trim().toUpperCase();
   if (!/^P[1-8]$/.test(playerId)) {
     showError('Choose a slot between P1 and P8.');
+    return;
+  }
+  const playerCount = Number(roomPlayerCount.value);
+  if (action === 'create' && Number(playerId.slice(1)) > playerCount) {
+    showError('Host slot must be within the selected room player count.');
     return;
   }
   const resolvedUrl = resolveServerUrl(url, window.location.protocol);
@@ -360,6 +370,12 @@ function start(url: string, requestedPlayer: string, requestedRoom: string): voi
       url: resolvedUrl,
       playerId,
       ...(roomCode.length === 0 ? {} : { roomCode }),
+      ...(action === 'create' ? { roomConfig: {
+        mode: roomMode.value as 'score-brawl' | 'last-man-standing' | 'deathmatch' | 'wave',
+        arena: roomArena.value as 'station' | 'mesku' | 'kkauppa',
+        playerCount,
+        durationMinutes: Number(roomDuration.value) as 1 | 2 | 3,
+      } } : {}),
     });
     setup.hidden = true;
   } catch (error) {
@@ -369,8 +385,14 @@ function start(url: string, requestedPlayer: string, requestedRoom: string): voi
 
 form.addEventListener('submit', event => {
   event.preventDefault();
-  start(serverInput.value, playerSelect.value, roomInput.value);
+  start(serverInput.value, playerSelect.value, roomInput.value, roomAction.value);
 });
+roomAction.addEventListener('change', () => {
+  const creating = roomAction.value === 'create';
+  for (const control of [roomMode, roomArena, roomPlayerCount, roomDuration]) control.disabled = !creating;
+  document.getElementById('online-connect')!.textContent = creating ? 'Create room' : 'Join room';
+});
+document.getElementById('online-connect')!.textContent = roomAction.value === 'create' ? 'Create room' : 'Join room';
 playerSelect.addEventListener('change', () => updateKeyHint(playerSelect.value));
 
 /**
@@ -420,12 +442,17 @@ updatePanel();
 if (serverParam && playerParam) {
   serverInput.value = serverParam;
   roomInput.value = roomParam;
-  if (/^P[1-4]$/.test(playerParam)) playerSelect.value = playerParam;
-  start(serverParam, playerParam, roomParam);
+  if (/^P[1-8]$/.test(playerParam)) playerSelect.value = playerParam;
+  // Deep links are join links; room creation uses the explicit setup form so
+  // its settings are never accidentally inferred from a player slot.
+  const queryAction = 'join';
+  roomAction.value = queryAction;
+  for (const control of [roomMode, roomArena, roomPlayerCount, roomDuration]) control.disabled = true;
+  start(serverParam, playerParam, roomParam, queryAction);
 } else {
   serverInput.value = serverParam || defaultServerUrl(window.location.protocol);
   roomInput.value = roomParam;
-  if (/^P[1-4]$/.test(playerParam)) {
+  if (/^P[1-8]$/.test(playerParam)) {
     playerSelect.value = playerParam;
     updateKeyHint(playerParam);
   }

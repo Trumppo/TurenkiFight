@@ -243,8 +243,10 @@
 - Added a non-developer-oriented [`docs/GATE_F_HOSTING_GUIDE.md`](GATE_F_HOSTING_GUIDE.md) covering LAN/VPN, public WSS prerequisites, setup, security caveats and troubleshooting; corrected stale README security claims.
 - Expanded online browser slot selection to P1–P8 and added a real browser + authoritative server test with seven additional clients; it asserts all eight authoritative fighters render and session enters running.
 - Added a server-authored lobby roster/readiness state, participant READY action and host-only HOST START. For this flow, operators use `--start=manual`; tests prove the server rejects a forged guest start and the host cannot start until every required player has readied.
+- Added an explicit browser CREATE ROOM / JOIN ROOM setup. The first host join carries typed room settings (mode, arena, player count and the owner-approved 1/2/3-minute timer) in the canonical join envelope; the authoritative server validates host eligibility/capacity and publishes settings and required roster to lobby peers. Room size may not exceed the process `--players` capacity.
+- A browser+server E2E test creates a two-player Deathmatch on Mesku with a one-minute timer, confirms authoritative settings, joins P2, readies both players, host-starts, runs the real timer and renders server-authored results.
 - Existing browser coverage also exercises results, rematch, join UI and server input/snapshot flow; existing server tests cover TLS, abuse limits and rejoin.
-- **Not claimed:** no real internet/LAN performance, operational TLS certificate renewal verification, or owner playtest. Host room settings (arena/mode/duration/max players) are still server/operator driven, not yet selectable in the browser; this remains the next Gate F implementation slice. A single room per process was retained per owner answer 2026-11-11; multi-room hosting remains out of scope.
+- **Not claimed:** no real internet/LAN performance, operational TLS certificate renewal verification, or owner playtest. Online arena backdrop still follows the page presentation selection rather than authoritative room state and needs Graphics integration. Room creation/settings have protocol and E2E coverage, but full M14 regression/CI evidence still needs rerun after integration. A single room per process was retained per owner answer 2026-11-11; multi-room hosting remains out of scope.
 - No Gate F milestone acceptance is asserted here; automated results and owner approval remain distinct.
 - **Owner decision (2026-11-11):** Online room duration choices are 1, 2 and 3 minutes; retain the existing 2-minute timer as the default. This resolves the prior open duration-option question. The simulation now has a typed duration selection foundation; end-to-end room configuration wiring remains outstanding.
 
@@ -271,6 +273,18 @@
 - **Risk:** protocol expands; old clients may ignore new server messages, but new client depends on the matching server version. Manual start must be enabled for this flow.
 - **Branch/PR plan:** continue `designer/gate-f-online` PR #197 as same Gate F package; body primary task must be updated to `Task: GATE-F-ONLINE-PRODUCTIZATION` before adding this slice to PR.
 - **User decision gate:** resolved for this flow: owner selected one room per process. No multi-room implementation or capacity claim.
+
+### Gate F work package: browser room creation and authoritative settings (F3)
+
+- **Objective:** Let the first browser participant create the process's single room and set mode, arena, player count and duration; later browsers join that configured room.
+- **Rationale:** Existing server flags were not a browser room-creation flow; user explicitly requested settings be browser-controlled and reach the authoritative server.
+- **Dependencies:** F1/F2, canonical session envelope, typed one/two/three-minute duration options.
+- **Files/ownership:** `online.html`, `src/online.ts`, `src/style.css`, `src/game/session/sessionEnvelope.ts`, `src/game/networking/wsSessionClient.ts`, `src/game/networking/onlineMatchController.ts`, `src/game/networking/wsMessages.ts`, `server/ws/authoritativeWsSession.ts`, `tests/browser/online.spec.ts`, `src/game/session/sessionEnvelope.test.ts`, `docs/GATE_F_HOSTING_GUIDE.md` (presentation of arena backdrop remains Graphics-owned `src/game/presentation/OnlineScene.ts`).
+- **Out of scope:** multi-room per process, accounts, matchmaking, changing local lobby or simulation rules beyond deterministic timer configuration, real network performance claims.
+- **Acceptance tests:** reject malformed configuration before slot mutation; reject creation by a non-first host or configuration above server capacity; authoritative lobby broadcasts chosen settings; room state uses selected mode/arena/duration/roster; browser E2E covers creation, P2 join, readiness, host start, real play timer and results.
+- **Risk:** Server process capacity remains an operator ceiling (`--players`); browser can select a room size up to that capacity. Arena rendering is separate from authoritative arena mechanics and requires Graphics follow-up.
+- **Branch/PR plan:** continue `designer/gate-f-online`, same Gate F PR #197 with primary task `GATE-F-ONLINE-PRODUCTIZATION`; no merge without owner approval.
+- **User decision gate:** duration choices approved as 1/2/3 minutes; single-room-per-process already selected. No unresolved rules decision for this slice.
 
 ---
 

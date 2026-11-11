@@ -71,6 +71,23 @@ describe('M2 session envelope codec', () => {
     ))).toBe('non-canonical-envelope');
   });
 
+  it('validates and canonicalizes initial host room settings on join', () => {
+    const create: JoinRequestEnvelope = {
+      version: 1, kind: 'join-request', sequence: 1, playerIds: ['P1'],
+      roomConfig: { mode: 'deathmatch', arena: 'kkauppa', playerCount: 8, durationMinutes: 3 },
+    };
+    expect(decodeClientEnvelope(encodeClientEnvelope(create))).toEqual(create);
+    expect(errorCode(() => encodeClientEnvelope({
+      ...create, roomConfig: { ...create.roomConfig!, durationMinutes: 5 as 1 | 2 | 3 },
+    }))).toBe('invalid-envelope');
+    expect(errorCode(() => encodeClientEnvelope({
+      ...create, roomConfig: { ...create.roomConfig!, playerCount: 1 },
+    }))).toBe('invalid-envelope');
+    expect(errorCode(() => encodeClientEnvelope({
+      ...create, roomConfig: { ...create.roomConfig!, arena: 'unknown' as 'station' },
+    }))).toBe('invalid-envelope');
+  });
+
   it('round-trips a canonical ready request and sorts optional slots', () => {
     const ready: ReadyRequestEnvelope = {
       version: 1, kind: 'ready-request', sequence: 4, roomId: 'room-1', playerIds: ['P2', 'P1'],

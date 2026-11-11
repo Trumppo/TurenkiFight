@@ -19,15 +19,15 @@ The static client and authoritative match server are separate processes. GitHub 
 3. In another terminal, start the authoritative room. Example for a four-player match:
 
    ```sh
-   npm run serve:match -- --host=0.0.0.0 --port=8787 --players=4 --snapshot-hz=20 --start=manual --rematch
+   npm run serve:match -- --host=0.0.0.0 --port=8787 --players=8 --snapshot-hz=20 --start=manual --rematch
    ```
 
-   Add `--mode=score-brawl|last-man-standing|deathmatch|wave` as desired. Use `--start=manual` for browser lobby READY/host-start (the default auto mode starts as soon as the configured roster is full). The host presses **HOST START** after all joined participants show READY.
+   `--players` is the server capacity; the browser host chooses the actual room size from two up to that capacity. Use `--players=8` to expose every supported room size. Add `--mode=score-brawl|last-man-standing|deathmatch|wave` for the server's legacy default; a browser-created room can choose its own mode, arena and 1/2/3-minute duration. Use `--start=manual` for browser lobby READY/host-start (the default auto mode starts as soon as the configured roster is full). The host presses **HOST START** after all joined participants show READY.
 4. Copy the `match-server-ready` JSON line from stdout. It includes the listening URL and generated `roomCode`. Share the reachable server address, room code and one unique slot (P1…P4 in this example) with each player.
-5. Players open `/online.html`, enter the server URL, room code and assigned slot, then choose **Connect**. In manual mode everyone chooses **READY**; the first player to join is the room host and can press **HOST START** when all required slots are ready. The server rejects start attempts from other players.
+5. The host opens `/online.html`, enters the server URL and room code, selects **CREATE ROOM**, chooses mode, arena, player count (not above server capacity), and duration, then connects using an included slot (normally P1). Other players select **JOIN ROOM** and an unclaimed slot. In manual mode everyone chooses **READY**; the first player to join is the room host and can press **HOST START** when all configured slots are ready. The server rejects start attempts from other players.
 6. At results, use **Rematch** (requires `--rematch` and the complete roster to be present) or **Leave**. `quit` or Ctrl+C stops the server.
 
-For eight players, set `--players=8` and assign P1 through P8. On a trusted network, use the host's LAN/VPN address, not `127.0.0.1` from another device. Open only the selected TCP port in the host firewall, and scope the rule to the private LAN/VPN where possible.
+For eight players, set `--players=8` and select eight in the browser room form. On a trusted network, use the host's LAN/VPN address, not `127.0.0.1` from another device. Open only the selected TCP port in the host firewall, and scope the rule to the private LAN/VPN where possible.
 
 ## Public internet with TLS
 

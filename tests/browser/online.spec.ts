@@ -77,7 +77,11 @@ test('online page joins P1, sends input and renders authoritative snapshots', as
     expect(url).not.toBeNull();
     const query = `?server=${encodeURIComponent(url!)}&player=`;
 
-    await p1.goto(`/online.html${query}P1`);
+    await p1.goto('/online.html');
+    await p1.fill('#server-url', url!);
+    await p1.selectOption('#room-player-count', '2');
+    await p1.selectOption('#player-slot', 'P1');
+    await p1.click('#online-connect');
     await expect(p1.locator('#game canvas')).toBeVisible();
     await expect.poll(() => p1.evaluate(() => {
       const api = (window as typeof window & { __turenkiOnline?: OnlineBridge }).__turenkiOnline;
@@ -160,6 +164,7 @@ test('online browser can claim P8 and render the complete eight-player authorita
     await page.fill('#server-url', server.url!);
     await page.fill('#room-code', '');
     await page.selectOption('#player-slot', 'P8');
+    await page.selectOption('#room-player-count', '8');
     await page.click('#online-connect');
     await expect(page.locator('#online-connect-form')).toBeHidden();
     await expect.poll(() => page.evaluate(() => {
@@ -219,7 +224,11 @@ test('manual room lobby gates host start on every player ready and rejects a gue
   guest.on('pageerror', error => errors.push(`guest: ${error.message}`));
   try {
     const query = `?server=${encodeURIComponent(server.url!)}&player=`;
-    await host.goto(`/online.html${query}P1`);
+    await host.goto('/online.html');
+    await host.fill('#server-url', server.url!);
+    await host.selectOption('#room-player-count', '2');
+    await host.selectOption('#player-slot', 'P1');
+    await host.click('#online-connect');
     await expect.poll(() => host.evaluate(() => (window as any).__turenkiOnline?.state)).toBe('joined');
     await guest.goto(`/online.html${query}P2`);
     for (const page of [host, guest]) {
@@ -256,6 +265,59 @@ test('manual room lobby gates host start on every player ready and rejects a gue
   }
 });
 
+test('browser-created room applies mode, arena, roster and timer through the complete results flow', async ({ browser }) => {
+  test.setTimeout(100_000);
+  const server = await startMatchServer({
+    host: '127.0.0.1', port: 0, playerIds: ['P1', 'P2'], startMode: 'manual',
+    snapshotHz: 10, startDelayMs: 0, firstTickDelayMs: 1,
+  });
+  const context = await browser.newContext();
+  const host = await context.newPage();
+  const guest = await context.newPage();
+  try {
+    await host.goto('/online.html');
+    await host.fill('#server-url', server.url!);
+    await host.selectOption('#room-mode', 'deathmatch');
+    await host.selectOption('#room-arena', 'mesku');
+    await host.selectOption('#room-player-count', '2');
+    await host.selectOption('#room-duration', '1');
+    await host.click('#online-connect');
+    await expect.poll(() => host.evaluate(() => (window as any).__turenkiOnline?.state)).toBe('joined');
+    await expect.poll(() => host.evaluate(() => (window as any).__turenkiOnline?.controller.lobbyState)).toMatchObject({
+      requiredPlayerIds: ['P1', 'P2'], playerIds: ['P1'], mode: 'deathmatch', arena: 'mesku', durationMinutes: 1,
+    });
+    expect(server.room.snapshot().state).toMatchObject({ mode: 'deathmatch', arena: 'mesku' });
+    expect(server.room.snapshot().state.remainingTicks).toBeLessThanOrEqual(3600);
+
+    await guest.goto('/online.html');
+    await guest.fill('#server-url', server.url!);
+    await guest.selectOption('#player-slot', 'P2');
+    await guest.selectOption('#room-player-count', '2');
+    await guest.click('#online-connect');
+    await expect(guest.locator('#online-status')).toContainText('room-config-refused');
+    expect(server.room.playerCount).toBe(1); // rejected create request allocated no guest slot
+    await guest.selectOption('#room-action', 'join');
+    await guest.click('#online-connect');
+    await expect.poll(() => guest.evaluate(() => (window as any).__turenkiOnline?.state)).toBe('joined');
+    await host.locator('#online-ready').click();
+    await guest.locator('#online-ready').click();
+    await expect(host.locator('#online-host-start')).toBeEnabled();
+    await host.locator('#online-host-start').click();
+    await expect.poll(() => host.evaluate(() => (window as any).__turenkiOnline?.state)).toBe('running');
+    expect(server.room.snapshot().state).toMatchObject({ mode: 'deathmatch', arena: 'mesku' });
+    expect(server.room.snapshot().state.remainingTicks).toBeLessThanOrEqual(3600);
+
+    await expect(host.locator('#online-result')).toBeVisible({ timeout: 75_000 });
+    expect(server.room.phase).toBe('results');
+    await expect(host.locator('#online-result-reason')).toContainText(/time/i);
+  } finally {
+    await host.close().catch(() => undefined);
+    await guest.close().catch(() => undefined);
+    await context.close().catch(() => undefined);
+    await server.close().catch(() => undefined);
+  }
+});
+
 test('host disconnect closes the session with a visible message for the remaining player', async ({ browser }) => {
   test.setTimeout(60_000);
   let server: MatchServerHandle | null = null;
@@ -280,7 +342,11 @@ test('host disconnect closes the session with a visible message for the remainin
     const url = server.url;
     expect(url).not.toBeNull();
     const query = `?server=${encodeURIComponent(url!)}&player=`;
-    await host.goto(`/online.html${query}P1`);
+    await host.goto('/online.html');
+    await host.fill('#server-url', server.url!);
+    await host.selectOption('#room-player-count', '2');
+    await host.selectOption('#player-slot', 'P1');
+    await host.click('#online-connect');
     await expect.poll(() => host.evaluate(() => {
       const api = (window as typeof window & { __turenkiOnline?: OnlineBridge }).__turenkiOnline;
       return api?.state ?? 'missing';
@@ -339,6 +405,7 @@ test('form fallback joins a match when query parameters are missing', async ({ p
   try {
     await page.goto('/online.html');
     await expect(page.locator('#online-connect-form')).toBeVisible();
+    await page.selectOption('#room-action', 'join');
     await page.fill('#server-url', server.url!);
     await page.selectOption('#player-slot', 'P1');
     await page.click('#online-connect');
@@ -381,14 +448,21 @@ test('roster rejection shows the denial instead of silently claiming a slot', as
   try {
     const url = server.url;
     expect(url).not.toBeNull();
-    const query = `?server=${encodeURIComponent(url!)}&player=P1`;
-    await first.goto(`/online.html${query}`);
+    await first.goto('/online.html');
+    await first.fill('#server-url', url!);
+    await first.selectOption('#room-player-count', '2');
+    await first.selectOption('#player-slot', 'P1');
+    await first.click('#online-connect');
     await expect.poll(() => first.evaluate(() => {
       const api = (window as typeof window & { __turenkiOnline?: OnlineBridge }).__turenkiOnline;
       return api?.state ?? 'missing';
     })).toBe('joined');
 
-    await second.goto(`/online.html${query}`);
+    await second.goto('/online.html');
+    await second.fill('#server-url', url!);
+    await second.selectOption('#room-action', 'join');
+    await second.selectOption('#player-slot', 'P1');
+    await second.click('#online-connect');
     await expect(second.locator('#online-status')).toContainText(/Join denied|player-owned/i, {
       timeout: 10_000,
     });

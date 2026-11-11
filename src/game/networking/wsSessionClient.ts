@@ -5,6 +5,7 @@ import {
   encodeClientEnvelope,
   isRoomCode,
   normalizeRoomCode,
+  type RoomConfiguration,
   type ClientSessionEnvelope,
   type InputEnvelope,
 } from '../session/sessionEnvelope';
@@ -28,7 +29,7 @@ export type SessionClientHandlers = {
   onWelcome?: (info: { connectionId: string; roomId: string }) => void;
   onJoinResult?: (info: { accepted: boolean; playerIds: readonly string[]; code?: string }) => void;
   onRoster?: (playerIds: readonly string[]) => void;
-  onLobbyState?: (state: { requiredPlayerIds: readonly string[]; playerIds: readonly string[]; readyPlayerIds: readonly string[]; hostPlayerId: string | null; mode: string }) => void;
+  onLobbyState?: (state: { requiredPlayerIds: readonly string[]; playerIds: readonly string[]; readyPlayerIds: readonly string[]; hostPlayerId: string | null; mode: string; arena: string; durationMinutes: number }) => void;
   onMatchStart?: (info: {
     startTick: number;
     tickRate: number;
@@ -92,7 +93,7 @@ export class SessionClientCore {
    * code-less servers and their tests stay valid; when the server enforces a
    * code, omitting it is denied before a slot is allocated.
    */
-  join(playerIds: readonly string[], roomCode?: string): number {
+  join(playerIds: readonly string[], roomCode?: string, roomConfig?: RoomConfiguration): number {
     if (!Array.isArray(playerIds) || playerIds.length < 1 || playerIds.length > MAX_PLAYERS_PER_FRAME) {
       throw new Error(`Join requires 1..${MAX_PLAYERS_PER_FRAME} player slots`);
     }
@@ -109,6 +110,7 @@ export class SessionClientCore {
       sequence: this.nextSequence(),
       ...(code === undefined ? {} : { roomCode: code }),
       playerIds: [...playerIds],
+      ...(roomConfig === undefined ? {} : { roomConfig }),
     });
   }
 
@@ -188,6 +190,8 @@ export class SessionClientCore {
           readyPlayerIds: [...message.readyPlayerIds],
           hostPlayerId: message.hostPlayerId,
           mode: message.mode,
+          arena: message.arena,
+          durationMinutes: message.durationMinutes,
         });
         return;
       case 'match-start': {
