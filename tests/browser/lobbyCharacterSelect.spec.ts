@@ -50,10 +50,12 @@ test('local character selection remaps presentation only and persists', async ({
   await page.locator('[data-player="P1"] .hud-character-select').selectOption('P6');
   await expect.poll(() => diagnostics(page)).toMatchObject({
     p1Character: 'P6',
-    p1Texture: 'fighter-P6-idle-0',
     activeCount: 8,
   });
   const after2 = await diagnostics(page);
+  // The sprite keeps animating while the browser test polls; assert the chosen
+  // character's idle animation, not one timing-dependent animation frame.
+  expect(after2.p1Texture).toMatch(/^fighter-P6-idle-\d+$/);
   expect(after2.stateJson).toBe(before.stateJson);
   await expect(page.locator('[data-player="P1"] .hud-character-select')).toHaveAttribute('aria-label', 'P1 character: KIOSK VENDOR');
   expect(after2.textureKeys).toHaveLength(8);
