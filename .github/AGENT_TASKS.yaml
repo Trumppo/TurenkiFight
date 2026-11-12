@@ -2234,3 +2234,106 @@ tasks:
     user_decision_gate: "Room count choices cannot exceed process --players capacity; duration 1/2/3 min and one room/process are owner decisions."
     notes: "Implementation and technical verification complete 2026-11-11: online browser/results E2E 14/14 (including room create through real one-minute results and Mesku texture on both clients), M14 TLS/rate/rejoin tests 39/39, full unit 72 files/630 tests, build green. Existing --players roster is hard capacity; set --players=8 for browser selection through eight. Owner review/approval and merge remain pending; no Gate F acceptance or real-link performance claim."
     last_updated: "2026-11-11"
+
+  - id: GATE-G-ONBOARDING-SPEC
+    title: Specify the Gate G start screen, main menu and readiness flow
+    assigned_role: planning-session
+    session_id: designer-session-20261112-gateg
+    status: in_progress
+    priority: P0
+    specification: docs/GATE_G_ONBOARDING_FLOW.md
+    depends_on: []
+    scope: [docs/GATE_G_ONBOARDING_FLOW.md, docs/GATE_PLANS.md, docs/LOBBY_FLOW.md, docs/LOBBY_SELECTION.md, docs/GAME_DESIGN_DECISIONS.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Owner's 2026-11-12 choices are explicitly distinguished from designer recommendations
+      - Flow covers title screen, Local/Create/Join menu, local and online identity selection, READY barrier, host start and match labels
+      - Player display names and character appearances stay presentation-only while stable P1-P8 identities remain unchanged
+      - Four independently testable implementation tasks have owners, exact scopes, acceptance checks, risks, dependencies and PR plans
+      - Gate G owner playtest and acceptance remain separate from implementation/test completion
+      - docs/GATE_G_ONBOARDING_FLOW.md and task queue validate without changing other gate decisions
+    rationale: "Owner requested a clearer first-load experience and player identities before Gate G playtesting; implementation spans presentation and authoritative online room metadata."
+    out_of_scope: [gameplay-mechanics, new-music, arena-art-overhaul, accounts, matchmaking, gate-g-acceptance]
+    branch: designer/gate-g-onboarding
+    pull_request: "pending; title must start DESIGNER:; Task: GATE-G-ONBOARDING-SPEC"
+    user_decision_gate: "Owner approved the new splash exception, Local/Create/Join menu and READY gating for local+online. Reuse current chiptune after user activation; bot-ready details remain a designer recommendation."
+    notes: "Planning task only; implementation tasks must be explicitly claimed by their assigned workers. Open PR #196 remains an integration consideration; do not claim it merged."
+    last_updated: "2026-11-12"
+
+  - id: GATE-G-TITLE-SCREEN
+    title: Add retro title screen and Local/Create/Join main menu
+    assigned_role: graphics-session
+    status: backlog
+    priority: P0
+    specification: docs/GATE_G_ONBOARDING_FLOW.md#gate-g-title-screen
+    depends_on: [GATE-G-ONBOARDING-SPEC]
+    scope: [index.html, src/main.ts, src/style.css, src/game/presentation/, public/assets/, tests/browser/startScreen.spec.ts]
+    acceptance:
+      - Fresh load displays the title state before any local lobby or match controls
+      - A keyboard, pointer or gamepad activation enters the main menu exactly once
+      - Main menu offers LOCAL FIGHT, CREATE ROOM and JOIN ROOM and routes to the corresponding existing flow
+      - Audio starts only after the user gesture and reuses the current procedural chiptune
+      - Semantic visual checks cover 640x360 and 1280x720 without PNG byte pins
+      - No simulation, combat, room protocol or broad arena asset changes
+    rationale: "The current browser opens directly into a populated prototype/lobby and gives new players no intentional entry point."
+    out_of_scope: [new-music, arena-art-overhaul, simulation-changes, online-identity-protocol, account-systems]
+    user_decision_gate: "Owner approved a new retro splash image as a narrow pre-Gate-G exception; no new soundtrack is approved."
+    last_updated: "2026-11-12"
+
+  - id: GATE-G-LOCAL-IDENTITY-READY
+    title: Add local slot display names and READY-before-host-start
+    assigned_role: graphics-session
+    status: backlog
+    priority: P0
+    specification: docs/GATE_G_ONBOARDING_FLOW.md#gate-g-local-identity-ready
+    depends_on: [GATE-G-TITLE-SCREEN]
+    scope: [index.html, src/game/presentation/StationScene.ts, src/style.css, tests/browser/lobbyIdentity.spec.ts]
+    acceptance:
+      - Each active local slot can set a display name and choose one of the eight existing character looks
+      - Local names and appearance persist per slot while internal P1-P8 IDs remain unchanged
+      - Every active human slot must READY before P1 host start; proposed bot auto-ready/unfilled-slot behavior is explicitly covered
+      - Lobby, HUD and results show the chosen name with a slot marker
+      - Identical match inputs retain identical simulation snapshots and hashes despite name/look choices
+      - Name input is bounded, safe text and keyboard accessible
+    rationale: "Character looks already vary locally, but player identity remains only P1-P8 and the requested READY barrier is absent from the local lobby."
+    out_of_scope: [online-protocol, simulation-state, scoring, new-characters, accounts]
+    user_decision_gate: "Owner approved local READY. Automatic READY for bots and P1 local host role are designer recommendations recorded for review."
+    last_updated: "2026-11-12"
+
+  - id: GATE-G-ONLINE-IDENTITY-CONTRACT
+    title: Synchronize room-scoped online names and character presentation metadata
+    assigned_role: gameplay-session
+    status: backlog
+    priority: P0
+    specification: docs/GATE_G_ONBOARDING_FLOW.md#gate-g-online-identity-contract
+    depends_on: [GATE-G-TITLE-SCREEN, GATE-F-ONLINE-PRODUCTIZATION]
+    scope: [src/game/session/sessionEnvelope.ts, src/game/networking/wsMessages.ts, src/game/networking/wsSessionClient.ts, src/game/networking/onlineMatchController.ts, server/ws/authoritativeWsSession.ts, src/game/session/, server/ws/, tests/]
+    acceptance:
+      - A connection may set presentation identity only for its claimed player slot
+      - Server validates bounded safe display text and supported character IDs before mutation
+      - Authoritative lobby metadata reaches every participant and survives supported rejoin behavior
+      - Changing a participant's name or character clears that participant's READY; host start is still refused until all required players are ready
+      - Room settings continue to clear readiness for everyone
+      - P1-P8 simulation identity, snapshots, score ownership, replay fingerprints and hashes remain unchanged
+    rationale: "Gate F already provides server-authoritative roster, READY and host START; participant-controlled presentation identity must use that authority without leaking into simulation."
+    out_of_scope: [accounts, persistent-online-profiles, matchmaking, multi-room, simulation-changes, real-network-measurements]
+    user_decision_gate: "Owner approved per-slot display names/looks and online READY-before-start. Maximum name length is an implementation proposal; validate with UI fit."
+    last_updated: "2026-11-12"
+
+  - id: GATE-G-ONLINE-IDENTITY-UI
+    title: Expose online slot identity controls and display names
+    assigned_role: graphics-session
+    status: backlog
+    priority: P0
+    specification: docs/GATE_G_ONBOARDING_FLOW.md#gate-g-online-identity-ui
+    depends_on: [GATE-G-ONLINE-IDENTITY-CONTRACT]
+    scope: [online.html, src/online.ts, src/game/presentation/OnlineScene.ts, src/style.css, tests/browser/online.spec.ts]
+    acceptance:
+      - Host and each joining participant can choose their own room-scoped name and character look
+      - Both clients show the same authoritative names, looks and READY state
+      - Changing identity visibly clears only that participant's READY and keeps host start disabled until all required participants are ready
+      - Match HUD and online result card display the alias with the stable slot marker
+      - Browser E2E proves identity is presentation-only and malformed input cannot be rendered as markup
+    rationale: "The server contract is only usable if each player can configure and recognize their own online identity in the browser."
+    out_of_scope: [simulation-ids, account-profiles, matchmaking, gameplay-balance, real-network-measurements]
+    user_decision_gate: "Owner approved names/characters per slot and the READY barrier; visual treatment and text fit remain owner review points."
+    last_updated: "2026-11-12"
