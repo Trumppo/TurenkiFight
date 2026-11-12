@@ -2131,6 +2131,7 @@ tasks:
     assigned_role: planning-session
     status: in_progress
     session_id: designer-session-20261112-gate-f
+    branch: designer/gate-f-online
     priority: P0
     specification: docs/GATE_PLANS.md#gate-f
     depends_on: [GATE-E-BASE8-SPLIT-HARNESS, M14-TLS-ROOMCODES, M14-RATE-LIMITS, M14-REJOIN]
@@ -2162,7 +2163,6 @@ tasks:
       - No network metrics are invented and no Gate F owner acceptance is claimed
     rationale: "Existing backend supported eight players but the browser join form exposed only four slots; prior security runbook did not explain an end-user WSS deployment and README contained stale security claims."
     out_of_scope: [accounts, matchmaking, multi-room service, host migration, internet performance claims, simulation-rule changes]
-    branch: designer/gate-f-online
     pull_request: "DESIGNER: complete Gate F browser slot and hosting baseline; Task: GATE-F-ONLINE-BASELINE"
     user_decision_gate: "No new product decision for this slice; owner approval is required before merge and Gate F acceptance."
     notes: "Implemented and verified 2026-11-11: online E2E 12/12, security/rejoin unit focus 59/59, full unit 72 files/627 tests, build green. See docs/GATE_F_HOSTING_GUIDE.md. Overall GATE-F-ONLINE-PRODUCTIZATION remains in progress."
@@ -2185,7 +2185,6 @@ tasks:
       - Existing auto-start server behavior remains unchanged
     rationale: "The accepted room/lobby design calls for all ready followed by manual host start; previously READY was only a codec/backend marker and start was operator stdin-only."
     out_of_scope: [browser-mutable-room-settings, multi-room-per-process, accounts, matchmaking, simulation-rule-changes, real-network-performance-claims]
-    branch: designer/gate-f-online
     pull_request: "DESIGNER: complete Gate F browser lobby and host flow; Task: GATE-F-ONLINE-PRODUCTIZATION"
     user_decision_gate: "Owner chose one room per process on 2026-11-11; no further decision for this slice. Owner approval remains required to merge."
     notes: "Browser E2E test verifies host role, readiness barrier, forged guest-start denial, and successful host start. Manual mode is required; default auto mode is preserved for backward compatibility."
@@ -2207,7 +2206,6 @@ tasks:
       - "No wall-clock dependency or network performance claim is added"
     rationale: "Room creation explicitly requires a duration setting, but no selectable values were approved. A typed deterministic timer option is needed before wiring browser configuration through the authoritative room."
     out_of_scope: [room-protocol-wiring, browser-ui, arena-and-mode-selection, player-cap-selection]
-    branch: designer/gate-f-online
     pull_request: "DESIGNER: wire Gate F room configuration end to end; Task: GATE-F-ONLINE-PRODUCTIZATION"
     user_decision_gate: "Owner approved 1, 2 and 3 minute choices on 2026-11-11; two-minute default retained."
     notes: "Implemented as typed MATCH_DURATION_MINUTES and matchDurationTicks; MatchSetup accepts selected duration. Focused simulation tests 7/7 and production build pass. This is a prerequisite only; Gate F remains in progress."
@@ -2232,7 +2230,6 @@ tasks:
       - "npm test, relevant browser E2E and production build pass; no network-performance claim"
     rationale: "Server startup flags previously controlled all room settings, so browser users could not create a chosen room under the selected single-process model."
     out_of_scope: [multi-room, accounts, matchmaking, progression, real-network-measurements]
-    branch: designer/gate-f-online
     pull_request: "DESIGNER: complete Gate F browser room creation; Task: GATE-F-ONLINE-PRODUCTIZATION"
     user_decision_gate: "Room count choices cannot exceed process --players capacity; duration 1/2/3 min and one room/process are owner decisions."
     notes: "Implementation and technical verification complete 2026-11-11: online browser/results E2E 14/14 (including room create through real one-minute results and Mesku texture on both clients), M14 TLS/rate/rejoin tests 39/39, full unit 72 files/630 tests, build green. Existing --players roster is hard capacity; set --players=8 for browser selection through eight. Owner review/approval and merge remain pending; no Gate F acceptance or real-link performance claim."
