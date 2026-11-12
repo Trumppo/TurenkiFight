@@ -81,6 +81,18 @@ const messagesOf = (messages: Captured[], kind: WsServerMessage['kind']): Captur
 const last = <T,>(values: T[]): T => values[values.length - 1];
 
 describe('M2 WebSocket prototype authoritative session', () => {
+  it('accepts typed ready requests after join without mutating simulation state', () => {
+    const { room } = captureRoom({ playerIds: ['P1', 'P2'] });
+    room.addConnection('conn-1');
+    join(room, 'conn-1', ['P1']);
+    const before = JSON.stringify(room.snapshot());
+    const result = room.handleMessage('conn-1', envelopeText({
+      version: 1, kind: 'ready-request', sequence: 2, playerIds: ['P1'],
+    }));
+    expect(result).toMatchObject({ accepted: true, envelope: { kind: 'ready-request', playerIds: ['P1'] } });
+    expect(JSON.stringify(room.snapshot())).toBe(before);
+  });
+
   it('assigns trusted connection identity outside payloads and rejects spoofed slots', () => {
     const { room, messages } = captureRoom();
     room.addConnection('conn-1');

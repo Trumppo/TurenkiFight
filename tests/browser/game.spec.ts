@@ -124,7 +124,7 @@ test('all fighter poses resolve to distinct, nonempty canvas textures', async ({
     expect(samples.every(checksum => checksum > 0)).toBe(true);
   }
   // Every slot must have its own art: eight identical fighters would mean a
-  // silent classic fallback or a shared palette in the retro style.
+  // shared retro palette in the visual fallback path.
   const ids = Object.keys(result);
   expect(ids).toHaveLength(8);
   for (let a = 0; a < ids.length; a++) {

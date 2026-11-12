@@ -12,6 +12,7 @@ import {
   type InputEnvelope,
   type JoinRequestEnvelope,
   type PingEnvelope,
+  type ReadyRequestEnvelope,
 } from './sessionEnvelope';
 
 const controls = (playerId: string, moveX: -1 | 0 | 1 = 0): PlayerInput =>
@@ -67,6 +68,37 @@ describe('M2 session envelope codec', () => {
     ))).toBe('non-canonical-envelope');
     expect(errorCode(() => decodeClientEnvelope(
       '{ "version": 1, "kind": "join-request", "sequence": 1, "playerIds": ["P1","P2"] }',
+    ))).toBe('non-canonical-envelope');
+  });
+
+  it('validates and canonicalizes initial host room settings on join', () => {
+    const create: JoinRequestEnvelope = {
+      version: 1, kind: 'join-request', sequence: 1, playerIds: ['P1'],
+      roomConfig: { mode: 'deathmatch', arena: 'kkauppa', playerCount: 8, durationMinutes: 3 },
+    };
+    expect(decodeClientEnvelope(encodeClientEnvelope(create))).toEqual(create);
+    expect(errorCode(() => encodeClientEnvelope({
+      ...create, roomConfig: { ...create.roomConfig!, durationMinutes: 5 as 1 | 2 | 3 },
+    }))).toBe('invalid-envelope');
+    expect(errorCode(() => encodeClientEnvelope({
+      ...create, roomConfig: { ...create.roomConfig!, playerCount: 1 },
+    }))).toBe('invalid-envelope');
+    expect(errorCode(() => encodeClientEnvelope({
+      ...create, roomConfig: { ...create.roomConfig!, arena: 'unknown' as 'station' },
+    }))).toBe('invalid-envelope');
+  });
+
+  it('round-trips a canonical ready request and sorts optional slots', () => {
+    const ready: ReadyRequestEnvelope = {
+      version: 1, kind: 'ready-request', sequence: 4, roomId: 'room-1', playerIds: ['P2', 'P1'],
+    };
+    const text = encodeClientEnvelope(ready);
+    expect(text).toBe('{"version":1,"kind":"ready-request","sequence":4,"roomId":"room-1","playerIds":["P1","P2"]}');
+    expect(decodeClientEnvelope(text)).toEqual({ ...ready, playerIds: ['P1', 'P2'] });
+    const allSlots: ReadyRequestEnvelope = { version: 1, kind: 'ready-request', sequence: 5 };
+    expect(decodeClientEnvelope(encodeClientEnvelope(allSlots))).toEqual(allSlots);
+    expect(errorCode(() => decodeClientEnvelope(
+      '{"version":1,"kind":"ready-request","sequence":4,"playerIds":["P2","P1"]}',
     ))).toBe('non-canonical-envelope');
   });
 
@@ -188,9 +220,16 @@ describe('M2 session envelope codec', () => {
   });
 
   it('documents the approved client and server kind names', () => {
-    expect([...CLIENT_SESSION_ENVELOPE_KINDS]).toEqual(['join-request', 'leave-request', 'input', 'ping', 'rematch']);
+    expect([...CLIENT_SESSION_ENVELOPE_KINDS]).toEqual(['join-request', 'leave-request', 'input', 'ping', 'rematch', 'ready-request', 'start-request']);
     expect([...SERVER_SESSION_ENVELOPE_KINDS]).toEqual([
-      'join-result', 'roster', 'match-start', 'snapshot', 'events', 'error', 'pong',
+      'join-result', 'roster', 'lobby-state', 'match-start', 'snapshot', 'events', 'error', 'pong',
     ]);
+  });
+
+  it('round-trips a host start request as a minimal canonical envelope', () => {
+    const request = { version: 1 as const, kind: 'start-request' as const, sequence: 3 };
+    const encoded = encodeClientEnvelope(request);
+    expect(encoded).toBe('{"version":1,"kind":"start-request","sequence":3}');
+    expect(decodeClientEnvelope(encoded)).toEqual(request);
   });
 });

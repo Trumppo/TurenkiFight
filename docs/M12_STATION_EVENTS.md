@@ -31,7 +31,7 @@ the train to hurt in other modes, that is a rules slice, not this one.
 3. The audio cue fires once per event, respects mute and does not restart an audio context.
 4. The HUD line appears only during the event and does not push other information out at 640x360.
 5. Existing visual and audio suites stay green; a browser test covers the visible/audible event.
-6. Screenshots in classic and retro at 640x360 and 1280x720 inspected.
+6. Screenshots in retro at 640x360 and 1280x720 inspected.
 
 ## 4. Out of scope
 

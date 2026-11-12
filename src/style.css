@@ -93,14 +93,20 @@ p { color: #c2cbd2; }
 .audio-controls input[type="range"] { width: 34px; height: 18px; margin: 0; accent-color: #e3b85e; cursor: pointer; }
 #player-hud { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; margin-top: 1px; }
 .hud-player { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 3px; min-width: 0; min-height: 16px; padding: 0 2px; border-left: 2px solid #c7a76a; background: #202a36; font-size: 14px; line-height: 16px; }
+.hud-player[hidden] { display: none; }
 .hud-name { color: #f4d38d; white-space: nowrap; }
+.hud-character-choice { min-width: 0; }
+.hud-character-choice[hidden] { display: none; }
+.hud-character-select { min-width: 0; max-width: 100%; min-height: 16px; padding: 0 2px; border: 1px solid #77cfdf; border-radius: 0; background: #172536; color: #c6f0e7; font: inherit; font-size: 12px; line-height: 14px; }
+.hud-character-select:disabled { opacity: 1; color: #fff1b7; }
+.hud-character-select[hidden] { display: none; }
 .hud-score { justify-self: center; padding-left: 3px; border-left: 1px solid #526071; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hud-health { padding-left: 3px; border-left: 1px solid #526071; color: #d7d7c3; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hud-player.is-empty { opacity: .56; }
 .hud-player.is-bot .hud-name::after { content: 'BOT'; margin-left: 1px; padding-left: 1px; border-left: 1px solid #77cfdf; color: #9fd0e0; font-weight: 700; }
 .hud-slot-action { display: none; min-width: 25px; min-height: 16px; padding: 0; border: 1px solid #77cfdf; border-radius: 0; background: #172536; color: #c6f0e7; font: inherit; font-size: 14px; line-height: 14px; cursor: pointer; white-space: nowrap; pointer-events: auto; }
 .hud-slot-action:hover { background: #2b5260; }
-#player-hud .hud-player.is-lobby-slot { grid-template-columns: minmax(0, 1fr) auto; }
+#player-hud .hud-player.is-lobby-slot { grid-template-columns: minmax(0, 1fr) minmax(0, auto) auto; }
 #player-hud .hud-player.is-lobby-slot .hud-score,
 #player-hud .hud-player.is-lobby-slot .hud-health { display: none; }
 #player-hud .hud-player.is-lobby-slot .hud-slot-action:not([hidden]) { display: inline-block; }
@@ -265,12 +271,15 @@ p { color: #c2cbd2; }
   cursor: pointer;
 }
 .lobby-actions button:hover { background: #2b5260; }
-.arena-control { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-weight: 900; letter-spacing: .08em; }
+  .arena-control, .player-count-control { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-weight: 900; letter-spacing: .08em; }
 .arena-control select { min-height: 34px; max-width: 220px; padding: 4px 8px; border: 1px solid #a7e4e7; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-size: 14px; }
+  .player-count-control select { min-height: 34px; width: 58px; padding: 4px 8px; border: 1px solid #a7e4e7; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-size: 14px; }
 .lobby-actions .lobby-start { border-color: #e3b85e; background: #3c3425; }
 .lobby-actions .lobby-start:hover:not(:disabled) { background: #5a4729; }
 .lobby-actions button:disabled { opacity: .5; cursor: not-allowed; }
 .lobby-actions p { margin: 0; color: #d7e6e4; font-size: 14px; line-height: 1.35; }
+.lobby-actions .lobby-summary { flex: 1 1 100%; color: #fff1b7; font-weight: 900; letter-spacing: .04em; text-align: center; white-space: nowrap; }
+.lobby-actions .lobby-summary[hidden] { display: none; }
 .lobby-actions strong { color: #ffe39a; }
 .lobby-actions kbd { padding: 1px 5px; border: 1px solid #c7a76a; background: #293849; color: #fff1b7; font: inherit; font-weight: 800; }
 /* Integer 2× is an edge-to-edge 1280×720 composition. Keep the lobby CTA
@@ -287,8 +296,10 @@ body.integer-scale-2 .lobby-actions {
   transform: translateX(-50%);
 }
 body.integer-scale-2 .lobby-actions p { display: none; }
+body.integer-scale-2 .lobby-actions .lobby-summary { display: block; }
 body.integer-scale-2 .lobby-actions button { min-height: 28px; padding: 2px 8px; }
 body.integer-scale-2 .arena-control select { min-height: 28px; padding: 2px 6px; }
+  body.integer-scale-2 .player-count-control select { min-height: 28px; padding: 2px 6px; }
 
 /* Remove the old page's ~20px overflow at the measured 1280x720 viewport. */
 @media (min-width: 601px) and (max-height: 760px) {
@@ -440,11 +451,12 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
 }
 .online-form {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto auto auto;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
   gap: 6px 8px;
   font-size: 14px;
 }
+.online-form label { align-self: end; }
 .online-form input,
 .online-form select,
 .online-form button {
@@ -460,6 +472,11 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
 .online-form button:hover { background: #2b3a4c; }
 .online-error { margin: 6px 0 0; color: #ffb4a2; font-size: 14px; }
 .online-link p { margin: 2px 0; }
+.online-lobby h2 { margin: 0 0 4px; font-size: 16px; }
+.online-lobby p { margin: 3px 0; }
+.online-lobby button { min-height: 32px; margin: 4px 6px 0 0; padding: 4px 12px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-weight: 700; cursor: pointer; }
+.online-lobby button:hover:not(:disabled) { background: #2b3a4c; }
+.online-lobby button:disabled { opacity: .55; cursor: default; }
 .online-link-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .online-leave { flex: 0 0 auto; min-height: 30px; padding: 3px 10px; border: 1px solid #c7a76a; border-radius: 0; background: #172536; color: #fff1b7; font: inherit; font-weight: 700; cursor: pointer; }
 .online-leave:hover:not(:disabled) { background: #2b3a4c; }

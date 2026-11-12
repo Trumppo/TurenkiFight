@@ -7,7 +7,6 @@ import type { GameState } from './game/simulation/types';
 import { KEYBOARD_LAYOUTS, keyboardPlayerInput } from './game/input/keyboardMapping';
 import { VIEWPORT } from './game/presentation/viewport';
 import { arenaBackdropTextureKey, resolveArenaSelection } from './game/presentation/arenaVisuals';
-import { RETRO_PREVIEW } from './game/presentation/retroPrototype';
 
 /**
  * Online entry page.
@@ -30,7 +29,7 @@ const STATE_LABEL: Record<OnlineConnectionState, string> = {
 };
 
 const params = new URLSearchParams(window.location.search);
-const arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic');
+const arenaSelection = resolveArenaSelection(window.location.search);
 const pageDescription = document.querySelector('.page-header p');
 if (pageDescription) {
   if (arenaSelection.notice) pageDescription.textContent = arenaSelection.notice;
@@ -44,11 +43,21 @@ const form = document.getElementById('online-connect-form') as HTMLFormElement;
 const serverInput = document.getElementById('server-url') as HTMLInputElement;
 const roomInput = document.getElementById('room-code') as HTMLInputElement;
 const playerSelect = document.getElementById('player-slot') as HTMLSelectElement;
+const roomAction = document.getElementById('room-action') as HTMLSelectElement;
+const roomMode = document.getElementById('room-mode') as HTMLSelectElement;
+const roomArena = document.getElementById('room-arena') as HTMLSelectElement;
+const roomPlayerCount = document.getElementById('room-player-count') as HTMLSelectElement;
+const roomDuration = document.getElementById('room-duration') as HTMLSelectElement;
 const errorBox = document.getElementById('online-error') as HTMLElement;
 const statusEl = document.getElementById('online-status') as HTMLElement;
 const metricsEl = document.getElementById('online-metrics') as HTMLElement;
 const keysEl = document.getElementById('online-keys') as HTMLElement;
 const leaveButton = document.getElementById('online-leave') as HTMLButtonElement | null;
+const lobbyPanel = document.getElementById('online-lobby') as HTMLElement;
+const lobbySummary = document.getElementById('online-lobby-summary') as HTMLElement;
+const lobbyRoster = document.getElementById('online-lobby-roster') as HTMLElement;
+const readyButton = document.getElementById('online-ready') as HTMLButtonElement;
+const hostStartButton = document.getElementById('online-host-start') as HTMLButtonElement;
 const fightHud = document.getElementById('fight-hud') as HTMLElement;
 const resultCard = document.getElementById('online-result') as HTMLElement;
 const resultWinner = document.getElementById('online-result-winner') as HTMLElement;
@@ -107,7 +116,7 @@ function layoutText(playerId: string): string {
   if (playerId === 'P2') {
     return 'P2 layout: arrow keys move · K jump · L punch · J kick · U jump kick · I pick up/throw';
   }
-  if (playerId === 'P3' || playerId === 'P4') {
+  if (/^P[3-8]$/.test(playerId)) {
     return `${playerId} uses the P1 layout: WASD move · Space jump · F punch · G kick · H jump kick · T pick up/throw`;
   }
   return 'P1 layout: WASD move · Space jump · F punch · G kick · H jump kick · T pick up/throw';
@@ -267,6 +276,24 @@ rematchButton.addEventListener('click', () => {
   }
 });
 
+readyButton.addEventListener('click', () => {
+  try {
+    controller.requestReady();
+    readyButton.disabled = true;
+  } catch (error) {
+    showError(error instanceof Error ? error.message : String(error));
+  }
+});
+
+hostStartButton.addEventListener('click', () => {
+  try {
+    controller.requestHostStart();
+    hostStartButton.disabled = true;
+  } catch (error) {
+    showError(error instanceof Error ? error.message : String(error));
+  }
+});
+
 function updatePanel(): void {
   updateResultCard();
   const info = controller.linkInfo();
@@ -282,6 +309,29 @@ function updatePanel(): void {
   const age = info.lastSnapshotAgeMs === null ? '—' : `${Math.round(info.lastSnapshotAgeMs)} ms`;
   setText(metricsEl,
     `LINK ${label} · RTT ${rtt} · SNAP ${info.snapshotCount} · TICK ${info.tick} · AGE ${age}`);
+  const lobby = controller.lobbyState;
+  const inLobby = info.state === 'joined' && lobby.requiredPlayerIds.length > 0;
+  lobbyPanel.hidden = !inLobby;
+  if (inLobby) {
+    const isHost = lobby.hostPlayerId === controller.playerId;
+    const readySet = new Set(lobby.readyPlayerIds);
+    const connectedSet = new Set(lobby.playerIds);
+    const hostCanStart = lobby.mode === 'wave'
+      ? lobby.playerIds.length > 0 && lobby.playerIds.length < lobby.requiredPlayerIds.length &&
+        lobby.playerIds.every(playerId => readySet.has(playerId))
+      : lobby.requiredPlayerIds.every(playerId => connectedSet.has(playerId) && readySet.has(playerId));
+    const rosterText = lobby.requiredPlayerIds.map(playerId => {
+      const status = !connectedSet.has(playerId) ? 'OPEN'
+        : readySet.has(playerId) ? 'READY' : 'WAITING';
+      return `${playerId} ${status}${playerId === lobby.hostPlayerId ? ' · HOST' : ''}`;
+    }).join(' · ');
+    setText(lobbySummary, `${lobby.mode.toUpperCase()} · ${lobby.arena.toUpperCase()} · ${lobby.durationMinutes} MIN · ${lobby.playerIds.length}/${lobby.requiredPlayerIds.length} JOINED · ${lobby.readyPlayerIds.length} READY`);
+    setText(lobbyRoster, rosterText);
+    readyButton.disabled = info.state !== 'joined' || !connectedSet.has(controller.playerId) || readySet.has(controller.playerId);
+    readyButton.textContent = readySet.has(controller.playerId) ? 'READY ✓' : 'READY';
+    hostStartButton.hidden = !isHost;
+    hostStartButton.disabled = !isHost || !hostCanStart;
+  }
   // A connection failure reopens the form so the URL can be corrected. A
   // running or ended match keeps it hidden to leave the arena unobstructed.
   if (info.state === 'error' && setup.hidden) setup.hidden = false;
@@ -293,11 +343,16 @@ function updatePanel(): void {
   }
 }
 
-function start(url: string, requestedPlayer: string, requestedRoom: string): void {
+function start(url: string, requestedPlayer: string, requestedRoom: string, action = roomAction.value): void {
   showError(null);
   const playerId = requestedPlayer.trim().toUpperCase();
-  if (!/^P[1-4]$/.test(playerId)) {
-    showError('Choose a slot between P1 and P4.');
+  if (!/^P[1-8]$/.test(playerId)) {
+    showError('Choose a slot between P1 and P8.');
+    return;
+  }
+  const playerCount = Number(roomPlayerCount.value);
+  if (action === 'create' && Number(playerId.slice(1)) > playerCount) {
+    showError('Host slot must be within the selected room player count.');
     return;
   }
   const resolvedUrl = resolveServerUrl(url, window.location.protocol);
@@ -315,6 +370,12 @@ function start(url: string, requestedPlayer: string, requestedRoom: string): voi
       url: resolvedUrl,
       playerId,
       ...(roomCode.length === 0 ? {} : { roomCode }),
+      ...(action === 'create' ? { roomConfig: {
+        mode: roomMode.value as 'score-brawl' | 'last-man-standing' | 'deathmatch' | 'wave',
+        arena: roomArena.value as 'station' | 'mesku' | 'kkauppa',
+        playerCount,
+        durationMinutes: Number(roomDuration.value) as 1 | 2 | 3,
+      } } : {}),
     });
     setup.hidden = true;
   } catch (error) {
@@ -324,8 +385,14 @@ function start(url: string, requestedPlayer: string, requestedRoom: string): voi
 
 form.addEventListener('submit', event => {
   event.preventDefault();
-  start(serverInput.value, playerSelect.value, roomInput.value);
+  start(serverInput.value, playerSelect.value, roomInput.value, roomAction.value);
 });
+roomAction.addEventListener('change', () => {
+  const creating = roomAction.value === 'create';
+  for (const control of [roomMode, roomArena, roomPlayerCount, roomDuration]) control.disabled = !creating;
+  document.getElementById('online-connect')!.textContent = creating ? 'Create room' : 'Join room';
+});
+document.getElementById('online-connect')!.textContent = roomAction.value === 'create' ? 'Create room' : 'Join room';
 playerSelect.addEventListener('change', () => updateKeyHint(playerSelect.value));
 
 /**
@@ -348,6 +415,7 @@ function leaveMatch(): void {
 }
 leaveButton?.addEventListener('click', leaveMatch);
 
+const onlineScene = new OnlineScene(controller, updatePanel, arenaSelection);
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
@@ -357,7 +425,7 @@ const game = new Phaser.Game({
   pixelArt: true,
   antialias: false,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [new OnlineScene(controller, updatePanel, arenaSelection)],
+  scene: [onlineScene],
 });
 
 let left = false;
@@ -375,12 +443,17 @@ updatePanel();
 if (serverParam && playerParam) {
   serverInput.value = serverParam;
   roomInput.value = roomParam;
-  if (/^P[1-4]$/.test(playerParam)) playerSelect.value = playerParam;
-  start(serverParam, playerParam, roomParam);
+  if (/^P[1-8]$/.test(playerParam)) playerSelect.value = playerParam;
+  // Deep links are join links; room creation uses the explicit setup form so
+  // its settings are never accidentally inferred from a player slot.
+  const queryAction = 'join';
+  roomAction.value = queryAction;
+  for (const control of [roomMode, roomArena, roomPlayerCount, roomDuration]) control.disabled = true;
+  start(serverParam, playerParam, roomParam, queryAction);
 } else {
   serverInput.value = serverParam || defaultServerUrl(window.location.protocol);
   roomInput.value = roomParam;
-  if (/^P[1-4]$/.test(playerParam)) {
+  if (/^P[1-8]$/.test(playerParam)) {
     playerSelect.value = playerParam;
     updateKeyHint(playerParam);
   }
@@ -391,6 +464,8 @@ if (serverParam && playerParam) {
 if (import.meta.env.DEV) {
   (window as typeof window & { __turenkiOnline?: unknown }).__turenkiOnline = {
     controller,
+    arenaId(): string { return onlineScene.debugArenaId(); },
+    arenaBackdropTexture(): string | null { return onlineScene.debugArenaBackdropTexture(); },
     get state(): OnlineConnectionState { return controller.connectionState; },
     get snapshotCount(): number { return controller.snapshotCount; },
     get rttMs(): number | null { return controller.rttMs; },

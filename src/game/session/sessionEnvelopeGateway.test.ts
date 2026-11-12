@@ -8,6 +8,7 @@ import {
   type JoinRequestEnvelope,
   type LeaveRequestEnvelope,
   type PingEnvelope,
+  type ReadyRequestEnvelope,
 } from './sessionEnvelope';
 import {
   SessionEnvelopeGateway,
@@ -26,6 +27,8 @@ const leave = (sequence: number, roomId?: string): LeaveRequestEnvelope =>
   ({ version: 1, kind: 'leave-request', sequence, ...(roomId === undefined ? {} : { roomId }) });
 const ping = (sequence: number, roomId?: string): PingEnvelope =>
   ({ version: 1, kind: 'ping', sequence, ...(roomId === undefined ? {} : { roomId }) });
+const ready = (sequence: number, playerIds?: string[], roomId?: string): ReadyRequestEnvelope =>
+  ({ version: 1, kind: 'ready-request', sequence, ...(roomId === undefined ? {} : { roomId }), ...(playerIds ? { playerIds } : {}) });
 const input = (sequence: number, tick: number, inputs: PlayerInput[], roomId?: string): InputEnvelope =>
   ({
     version: 1, kind: 'input', sequence, ...(roomId === undefined ? {} : { roomId }),
@@ -51,6 +54,16 @@ describe('M2 session envelope gateway', () => {
     expect(gateway.consume()).toEqual({ version: 1, tick: 0, inputs: [controls('P1', 1)] });
     // The submitted action is never replayed on a later tick.
     expect(gateway.consume().inputs).toEqual([]);
+  });
+
+  it('accepts ready intent only for an authorized connection and advances its sequence', () => {
+    const gateway = new SessionEnvelopeGateway({ roomId: ROOM });
+    expectAccepted(send(gateway, join(1, ['P1', 'P2'])));
+    expectAccepted(send(gateway, ready(2, ['P2', 'P1'])));
+    expect(gateway.sequenceOf('conn-1')).toBe(2);
+    expectDenied(send(gateway, ready(3, ['P3'])), 'unauthorized-player');
+    expect(gateway.sequenceOf('conn-1')).toBe(2);
+    expectAccepted(send(gateway, ready(3)));
   });
 
   it('denies spoofed players and host claims without mutating state', () => {

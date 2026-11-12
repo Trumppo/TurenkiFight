@@ -4,6 +4,16 @@ import {
   parseInputFrame,
   type InputFrame,
 } from '../protocol/inputFrame';
+import { MODE_IDS, MATCH_DURATION_MINUTES, type MatchDurationMinutes } from '../simulation/modes';
+import { ARENA_RULE_IDS, type ArenaRuleId } from '../simulation/arenas';
+import { MAX_PLAYERS, MIN_PLAYERS } from '../protocol/players';
+
+export type RoomConfiguration = {
+  mode: (typeof MODE_IDS)[number];
+  arena: ArenaRuleId;
+  playerCount: number;
+  durationMinutes: MatchDurationMinutes;
+};
 
 /**
  * Transport-neutral M2 session envelope v1.
@@ -18,7 +28,7 @@ export const SESSION_ENVELOPE_VERSION = 1 as const;
 
 /** Client-authored envelopes understood by the transport-neutral boundary. */
 export const CLIENT_SESSION_ENVELOPE_KINDS = [
-  'join-request', 'leave-request', 'input', 'ping', 'rematch',
+  'join-request', 'leave-request', 'input', 'ping', 'rematch', 'ready-request', 'start-request',
 ] as const;
 export type ClientSessionEnvelopeKind = (typeof CLIENT_SESSION_ENVELOPE_KINDS)[number];
 
@@ -27,7 +37,7 @@ export type ClientSessionEnvelopeKind = (typeof CLIENT_SESSION_ENVELOPE_KINDS)[n
  * their wire schema and this module does not encode them yet.
  */
 export const SERVER_SESSION_ENVELOPE_KINDS = [
-  'join-result', 'roster', 'match-start', 'snapshot', 'events', 'error', 'pong',
+  'join-result', 'roster', 'lobby-state', 'match-start', 'snapshot', 'events', 'error', 'pong',
 ] as const;
 export type ServerSessionEnvelopeKind = (typeof SERVER_SESSION_ENVELOPE_KINDS)[number];
 
@@ -88,6 +98,8 @@ export type JoinRequestEnvelope = {
   roomCode?: string;
   roomId?: string;
   playerIds: string[];
+  /** Present only on the initial host join that creates a room. */
+  roomConfig?: RoomConfiguration;
 };
 
 export type LeaveRequestEnvelope = {
@@ -125,12 +137,32 @@ export type RematchEnvelope = {
   roomId?: string;
 };
 
+/** Signals that the client (for its claimed slots) is ready for the host to start the match. */
+export type ReadyRequestEnvelope = {
+  version: typeof SESSION_ENVELOPE_VERSION;
+  kind: 'ready-request';
+  sequence: number;
+  roomId?: string;
+  /** Optional explicit slots; if omitted the gateway uses the connection's current roster. */
+  playerIds?: string[];
+};
+
+/** Host-only request to begin once all joined participants are ready. */
+export type StartRequestEnvelope = {
+  version: typeof SESSION_ENVELOPE_VERSION;
+  kind: 'start-request';
+  sequence: number;
+  roomId?: string;
+};
+
 export type ClientSessionEnvelope =
   | JoinRequestEnvelope
   | LeaveRequestEnvelope
   | InputEnvelope
   | PingEnvelope
-  | RematchEnvelope;
+  | RematchEnvelope
+  | ReadyRequestEnvelope
+  | StartRequestEnvelope;
 
 /**
  * Envelope metadata after strict field/version/kind/range checks. The gameplay
@@ -146,6 +178,7 @@ export type ClientEnvelopeHeader = {
   targetTick?: number;
   playerIds?: string[];
   frame?: unknown;
+  roomConfig?: RoomConfiguration;
 };
 
 export const isSessionIdentifier = (value: unknown): value is string =>
@@ -207,6 +240,9 @@ function parseEnvelopeValue(value: unknown): ClientEnvelopeHeader {
   } else if (kind === 'join-request') {
     allowed.add('playerIds');
     allowed.add('roomCode');
+    allowed.add('roomConfig');
+  } else if (kind === 'ready-request') {
+    allowed.add('playerIds');
   }
   if (Object.keys(value).some(key => !allowed.has(key))) throw new SessionEnvelopeError('unknown-field', 'Unknown envelope field');
 
@@ -235,6 +271,23 @@ function parseEnvelopeValue(value: unknown): ClientEnvelopeHeader {
   }
   if (kind === 'join-request') {
     const playerIds = readPlayerIds(value.playerIds);
+    let roomConfig: RoomConfiguration | undefined;
+    if (own(value, 'roomConfig')) {
+      const raw = value.roomConfig;
+      if (!isRecord(raw) || Object.keys(raw).some(key => !['mode', 'arena', 'playerCount', 'durationMinutes'].includes(key)) ||
+          !MODE_IDS.includes(raw.mode as (typeof MODE_IDS)[number]) ||
+          !ARENA_RULE_IDS.includes(raw.arena as ArenaRuleId) ||
+          !Number.isSafeInteger(raw.playerCount) || (raw.playerCount as number) < MIN_PLAYERS + 1 || (raw.playerCount as number) > MAX_PLAYERS ||
+          !MATCH_DURATION_MINUTES.includes(raw.durationMinutes as MatchDurationMinutes)) {
+        throw new SessionEnvelopeError('invalid-envelope', 'Invalid room configuration');
+      }
+      roomConfig = {
+        mode: raw.mode as (typeof MODE_IDS)[number],
+        arena: raw.arena as ArenaRuleId,
+        playerCount: raw.playerCount as number,
+        durationMinutes: raw.durationMinutes as MatchDurationMinutes,
+      };
+    }
     return {
       version: SESSION_ENVELOPE_VERSION,
       kind,
@@ -242,6 +295,20 @@ function parseEnvelopeValue(value: unknown): ClientEnvelopeHeader {
       ...(roomCode === undefined ? {} : { roomCode }),
       ...(roomId === undefined ? {} : { roomId }),
       playerIds,
+      ...(roomConfig === undefined ? {} : { roomConfig }),
+    };
+  }
+  if (kind === 'ready-request') {
+    let playerIds: string[] | undefined;
+    if (own(value, 'playerIds')) {
+      playerIds = readPlayerIds(value.playerIds);
+    }
+    return {
+      version: SESSION_ENVELOPE_VERSION,
+      kind,
+      sequence,
+      ...(roomId === undefined ? {} : { roomId }),
+      ...(playerIds ? { playerIds } : {}),
     };
   }
   return { version: SESSION_ENVELOPE_VERSION, kind, sequence, ...(roomId === undefined ? {} : { roomId }) };
@@ -276,6 +343,16 @@ function completeEnvelope(header: ClientEnvelopeHeader): ClientSessionEnvelope {
       ...(header.roomId === undefined ? {} : { roomId: header.roomId }),
       // Canonical slot order makes join encoding deterministic regardless of claims order.
       playerIds: [...(header.playerIds as string[])].sort(),
+      ...(header.roomConfig === undefined ? {} : { roomConfig: header.roomConfig }),
+    };
+  }
+  if (header.kind === 'ready-request') {
+    return {
+      version: SESSION_ENVELOPE_VERSION,
+      kind: 'ready-request',
+      sequence: header.sequence,
+      ...(header.roomId === undefined ? {} : { roomId: header.roomId }),
+      ...(header.playerIds ? { playerIds: [...header.playerIds].sort() } : {}),
     };
   }
   return {

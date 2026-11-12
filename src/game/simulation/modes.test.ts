@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MATCH_TICKS, MODE_RULES, compareTieBreak, modeMetric, modeWinner } from './step';
+import { MATCH_TICKS, MATCH_DURATION_MINUTES, matchDurationTicks, createState, MODE_RULES, compareTieBreak, modeMetric, modeWinner } from './step';
 import type { Fighter, ModeRules } from './types';
 
 const fighter = (id: string, overrides: Partial<Fighter> = {}): Fighter => ({
@@ -12,6 +12,15 @@ const lms: ModeRules = MODE_RULES['last-man-standing'];
 const deathmatch: ModeRules = MODE_RULES.deathmatch;
 
 describe('M7 mode rules', () => {
+  it('supports approved one-, two- and three-minute room durations and preserves the two-minute default', () => {
+    expect(MATCH_DURATION_MINUTES).toEqual([1, 2, 3]);
+    expect(MATCH_DURATION_MINUTES.map(matchDurationTicks)).toEqual([3600, 7200, 10800]);
+    expect(createState({ ids: ['P1', 'P2'], phase: 'fighting' }).remainingTicks).toBe(MATCH_TICKS);
+    expect(createState({ ids: ['P1', 'P2'], phase: 'fighting', durationMinutes: 1 }).remainingTicks).toBe(3600);
+    expect(createState({ ids: ['P1', 'P2'], phase: 'fighting', durationMinutes: 3 }).remainingTicks).toBe(10800);
+    expect(() => matchDurationTicks(4)).toThrow(/Unsupported match duration/);
+  });
+
   it('declares stocks, frag limit, respawn policy and timer per mode', () => {
     expect(MODE_RULES['score-brawl']).toMatchObject({
       stocks: null, respawn: 'respawn', fragLimit: null, timerTicks: MATCH_TICKS, hitScoring: true,

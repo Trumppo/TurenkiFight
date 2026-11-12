@@ -12,9 +12,11 @@ import {
   MAX_LEAD_TICKS,
   MAX_TICKS,
   START_DELAY_MS,
-  WS_BENCHMARK_ROSTER,
-  inMemoryReferenceFingerprints,
-  loadWsBenchmarkSchedule,
+  WS_BENCHMARK_PLAYER_COUNT,
+  wsBenchmarkRoster,
+  type WsBenchmarkPlayerCount,
+  inMemoryReferenceFingerprintsForPlayers,
+  loadWsBenchmarkScheduleForPlayers,
 } from './benchmarkSetup';
 import {
   createWsPrototypeManifest,
@@ -28,8 +30,8 @@ import {
  * `runServerRole` is the coordinator: it binds an explicit host/port, waits for
  * exactly the configured roster, runs the authoritative session for the
  * configured tick bound and owns the manifest. `runClientRole` is one synthetic
- * client on an arbitrary machine: it joins one roster slot, drives the same
- * scripted BASE-4 fixture slice and exits.
+ * client on an arbitrary machine: it joins one roster slot, drives the selected
+ * BASE-4 or BASE-8 fixture slice and exits.
  *
  * Both roles run the identical fixture and validation path as the single-process
  * loopback default, so the split run can be compared fingerprint-for-fingerprint.
@@ -45,6 +47,7 @@ export type ServerRoleOptions = {
   host: string;
   port: number;
   ticks: number;
+  playerCount?: WsBenchmarkPlayerCount;
   snapshotHz: SnapshotHz;
   tickMode: WsBenchmarkTickMode;
   /** Whole-role hang guard: roster wait, run and shutdown. Never measured. */
@@ -83,6 +86,7 @@ export type ClientRoleOptions = {
   url: string;
   /** Exactly one slot of the BASE-4 roster, e.g. `P1`. */
   playerId: string;
+  playerCount?: WsBenchmarkPlayerCount;
   /** Must match the coordinator's bounded tick count. */
   ticks: number;
   /** Whole-client hang guard, never measured. */
@@ -281,15 +285,18 @@ export async function runServerRole(options: ServerRoleOptions): Promise<ServerR
   if (!Number.isSafeInteger(options.ticks) || options.ticks < 1 || options.ticks > MAX_TICKS) {
     throw new Error(`Server role requires 1..${MAX_TICKS} bounded ticks`);
   }
+  const requestedPlayers = options.playerCount ?? WS_BENCHMARK_PLAYER_COUNT;
+  if (requestedPlayers !== 4 && requestedPlayers !== 8) throw new Error('Server role supports only 4 or 8 players');
   if (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1) throw new Error('Invalid run timeout');
   if (typeof options.commitSha !== 'string' || !/^[0-9a-f]{40}$/.test(options.commitSha)) {
     throw new Error('Server role requires a 40-character commit SHA');
   }
   if (typeof options.runId !== 'string' || options.runId.length === 0) throw new Error('Server role requires a run ID');
 
-  const players = [...WS_BENCHMARK_ROSTER];
+  const playerCount = options.playerCount ?? WS_BENCHMARK_PLAYER_COUNT;
+  const players = [...wsBenchmarkRoster(playerCount)];
   const expected = players.length;
-  const { fixture } = loadWsBenchmarkSchedule(options.ticks);
+  const { fixture } = loadWsBenchmarkScheduleForPlayers(options.ticks, playerCount);
   const barrierTimeoutMs = options.barrierTimeoutMs ?? DEFAULT_SERVER_BARRIER_TIMEOUT_MS;
   if (!Number.isSafeInteger(barrierTimeoutMs) || barrierTimeoutMs < 1) {
     throw new Error('Invalid barrier timeout');
@@ -320,6 +327,7 @@ export async function runServerRole(options: ServerRoleOptions): Promise<ServerR
       startDelayMs: START_DELAY_MS,
       firstTickDelayMs: FIRST_TICK_DELAY_MS,
       tickMode: options.tickMode,
+      playerIds: players,
       // Exactly the configured roster: an unexpected socket is closed before it
       // can register, join or influence the run.
       maxConnections: expected,
@@ -329,7 +337,7 @@ export async function runServerRole(options: ServerRoleOptions): Promise<ServerR
     const url = connectUrl(options.host, server.port);
     options.onReady?.({ url, host: server.host, port: server.port });
 
-    await waitForRoster(state, room, expected, deadline);
+    await waitForRoster(state, room, players, deadline);
     const claimed = [...state.joins.values()].flat();
     await options.onRosterComplete?.({ connections: state.joins.size, playerIds: claimed });
 
@@ -362,9 +370,10 @@ export async function runServerRole(options: ServerRoleOptions): Promise<ServerR
 
     const finalStateSha256 = sha256(encodeStateSnapshot(room.snapshot()));
     const orderedEventsSha256 = sha256(JSON.stringify(room.orderedEvents()));
-    const reference = inMemoryReferenceFingerprints(options.ticks);
+    const reference = inMemoryReferenceFingerprintsForPlayers(options.ticks, playerCount);
     const manifest = createWsPrototypeManifest({
       runId: options.runId,
+      playerCount,
       commitSha: options.commitSha,
       fixtureSha256: fixture.fixtureSha256,
       seed: fixture.seed,
@@ -409,9 +418,10 @@ export async function runServerRole(options: ServerRoleOptions): Promise<ServerR
 async function waitForRoster(
   state: RosterObservation,
   room: WsServerHandle['room'],
-  expected: number,
+  players: readonly string[],
   deadline: number,
 ): Promise<void> {
+  const expected = players.length;
   for (;;) {
     if (state.violation) throw state.violation;
     if (room.phase === 'closed') throw new Error('Session closed while waiting for the roster');
@@ -426,7 +436,7 @@ async function waitForRoster(
     if (joined === expected) {
       const claimed = [...state.joins.values()].flat();
       if (claimed.length !== expected || new Set(claimed).size !== expected ||
-          claimed.some(playerId => !WS_BENCHMARK_ROSTER.includes(playerId))) {
+          claimed.some(playerId => !players.includes(playerId))) {
         throw new Error(
           `Expected exactly one roster slot per client connection, received ${claimed.length} slot(s) over ${joined} connection(s)`,
         );
@@ -505,8 +515,11 @@ export async function runClientRole(options: ClientRoleOptions): Promise<ClientR
   if (typeof options?.url !== 'string' || !options.url.startsWith('ws://')) {
     throw new Error('Client role requires a ws:// URL (TLS is not implemented in this prototype)');
   }
-  if (!WS_BENCHMARK_ROSTER.includes(options.playerId)) {
-    throw new Error(`Unknown benchmark player: ${String(options.playerId)} (expected one of ${WS_BENCHMARK_ROSTER.join(', ')})`);
+  const playerCount = options.playerCount ?? WS_BENCHMARK_PLAYER_COUNT;
+  if (playerCount !== 4 && playerCount !== 8) throw new Error('Client role supports only 4 or 8 players');
+  const players = wsBenchmarkRoster(playerCount);
+  if (!players.includes(options.playerId)) {
+    throw new Error(`Unknown benchmark player: ${String(options.playerId)} (expected one of ${players.join(', ')})`);
   }
   if (!Number.isSafeInteger(options.ticks) || options.ticks < 1 || options.ticks > MAX_TICKS) {
     throw new Error(`Client role requires 1..${MAX_TICKS} bounded ticks`);
@@ -516,7 +529,7 @@ export async function runClientRole(options: ClientRoleOptions): Promise<ClientR
   if (!Number.isSafeInteger(maxLead) || maxLead < 1) throw new Error('Invalid input lead');
 
   const playerId = options.playerId;
-  const { schedule } = loadWsBenchmarkSchedule(options.ticks);
+  const { schedule } = loadWsBenchmarkScheduleForPlayers(options.ticks, playerCount);
   const denials = new Map<string, number>();
   const joined = deferred<void>();
   const started = deferred<void>();

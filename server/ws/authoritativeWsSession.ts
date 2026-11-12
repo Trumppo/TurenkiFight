@@ -1,7 +1,8 @@
 import { createState, step, TICK_RATE } from '../../src/game/simulation/step';
-import { MODE_IDS } from '../../src/game/simulation/modes';
+import { MODE_IDS, matchDurationTicks, type MatchDurationMinutes } from '../../src/game/simulation/modes';
+import { ARENA_RULE_IDS, type ArenaRuleId } from '../../src/game/simulation/arenas';
 import { botInput } from '../../src/game/input/botPolicy';
-import { MAX_PLAYERS } from '../../src/game/protocol/players';
+import { MAX_PLAYERS, MIN_PLAYERS } from '../../src/game/protocol/players';
 import type { GameEvent, GameState, ModeId, PlayerInput, Team } from '../../src/game/simulation/types';
 import { DEFAULT_MAX_INPUT_LEAD_TICKS } from '../../src/game/session/sessionInputBuffer';
 import type { StateSnapshot } from '../../src/game/protocol/stateSnapshot';
@@ -11,6 +12,7 @@ import {
   normalizeRoomCode,
   parseClientEnvelopeHeader,
   type ClientEnvelopeHeader,
+  type RoomConfiguration,
 } from '../../src/game/session/sessionEnvelope';
 import {
   SessionEnvelopeGateway,
@@ -156,9 +158,11 @@ export class AuthoritativeWsSession {
   private readonly gateway: SessionEnvelopeGateway;
   private readonly roomId: string;
   private readonly roomCode: string | null;
-  private readonly playerIds: readonly string[];
-  private readonly playerIdSet: ReadonlySet<string>;
-  private readonly mode: ModeId;
+  private playerIds: readonly string[];
+  private playerIdSet: ReadonlySet<string>;
+  private mode: ModeId;
+  private arena: ArenaRuleId = 'station';
+  private durationMinutes: MatchDurationMinutes = 2;
   private readonly snapshotInterval: number;
   private readonly snapshotHz: SnapshotHz;
   private readonly maxLead: number;
@@ -173,6 +177,7 @@ export class AuthoritativeWsSession {
   private readonly connections = new Set<string>();
   private readonly ownership = new Map<string, string[]>();
   private readonly reservations = new Map<string, RejoinReservation>();
+  private readonly readys = new Set<string>(); // ready connections for room contract (Gate D)
   private readonly eventLog: GameEvent[] = [];
   private state: GameState;
   /** Team split frozen when a wave match starts; null for every other mode. */
@@ -402,6 +407,16 @@ export class AuthoritativeWsSession {
       }
     }
 
+    if (header?.kind === 'join-request' && header.roomConfig !== undefined) {
+      const slots = header.playerIds ?? [];
+      const selectedRoster = this.playerIds.slice(0, header.roomConfig.playerCount);
+      if (this.host !== null || this.phaseValue !== 'lobby' || this.gateway.playerCount !== 0 ||
+          slots.some(id => !this.playerIdSet.has(id) || !selectedRoster.includes(id)) ||
+          header.roomConfig.playerCount < slots.length || header.roomConfig.playerCount > this.playerIds.length) {
+        return this.denyRoom(connectionId, 'room-config-refused', 'Room configuration is only allowed on the first host join and must fit the server capacity', header);
+      }
+    }
+
     const result = rejoin === null
       ? this.gateway.handle(this.binding(connectionId), data)
       : this.gateway.handle(this.binding(connectionId), data, { rejoinPlayerIds: rejoin.playerIds });
@@ -412,6 +427,10 @@ export class AuthoritativeWsSession {
 
     if (header?.kind === 'join-request') {
       const slots = result.envelope.kind === 'join-request' ? [...result.envelope.playerIds] : [];
+      const requestedConfig = result.envelope.kind === 'join-request' ? result.envelope.roomConfig : undefined;
+      if (requestedConfig !== undefined) {
+        this.applyRoomConfiguration(requestedConfig);
+      }
       if (rejoin !== null) {
         // The reservation is consumed only after the reattach was accepted.
         this.reservations.delete(rejoin.connectionId);
@@ -435,8 +454,37 @@ export class AuthoritativeWsSession {
       return result;
     }
 
+    if (header?.kind === 'ready-request') {
+      this.readys.add(connectionId);
+      this.emitRoster();
+      return result;
+    }
+
+    if (header?.kind === 'start-request') {
+      if (connectionId !== this.host) {
+        return this.denyRoom(connectionId, 'host-only', 'Only the room host can start the match', header);
+      }
+      if (this.playerIds.length < MIN_PLAYERS + 1) {
+        return this.denyRoom(connectionId, 'minimum-players', 'A room needs at least two player slots', header);
+      }
+      if (this.phaseValue !== 'starting') {
+        return this.denyRoom(connectionId, 'roster-incomplete', 'The room is not ready to start', header);
+      }
+      const claimed = this.mode === 'wave' ? this.claimedPlayerIds() : [...this.playerIds];
+      const ready = new Set(this.readyPlayerIds());
+      if (claimed.length === 0 || claimed.some(playerId => !ready.has(playerId))) {
+        return this.denyRoom(connectionId, 'not-all-ready', 'Every joined player must be ready before the host starts', header);
+      }
+      const refusal = this.matchStartRefusal();
+      if (refusal !== null || !this.beginMatch()) {
+        return this.denyRoom(connectionId, refusal ?? 'start-refused', 'The room cannot start in its current state', header);
+      }
+      return result;
+    }
+
     if (header?.kind === 'leave-request') {
       this.ownership.delete(connectionId);
+      this.readys.delete(connectionId);
       if (connectionId === this.host) {
         // Host authority is revoked, never migrated. Terminating the session is
         // the documented lifecycle outcome for this prototype.
@@ -496,7 +544,15 @@ export class AuthoritativeWsSession {
         return false;
       }
       this.waveTeams = teams;
-      this.state = createState({ ids: [...this.playerIds], phase: 'fighting', mode: 'wave', teams });
+      this.state = createState({
+        ids: [...this.playerIds], phase: 'fighting', mode: 'wave', teams,
+        ...(this.arena === 'station' ? {} : { arena: this.arena }), durationMinutes: this.durationMinutes,
+      });
+    } else {
+      this.state = createState({
+        ids: [...this.playerIds], phase: 'fighting', mode: this.mode,
+        ...(this.arena === 'station' ? {} : { arena: this.arena }), durationMinutes: this.durationMinutes,
+      });
     }
     this.setPhase('running');
     this.emitMatchStart();
@@ -612,6 +668,7 @@ export class AuthoritativeWsSession {
   disconnect(connectionId: string, options: { reserve?: boolean } = {}): string[] {
     this.expireReservations();
     if (!this.connections.delete(connectionId)) return [];
+    this.readys.delete(connectionId);
     if (connectionId === this.host) {
       const revoked = this.gateway.disconnect(connectionId);
       this.ownership.delete(connectionId);
@@ -790,11 +847,55 @@ export class AuthoritativeWsSession {
     for (const reservation of this.reservations.values()) {
       for (const playerId of reservation.playerIds) owned.add(playerId);
     }
+    const playerIds = this.playerIds.filter(playerId => owned.has(playerId));
     this.emit(null, {
       version: 1,
       kind: 'roster',
-      playerIds: this.playerIds.filter(playerId => owned.has(playerId)),
+      playerIds,
     });
+    const readyPlayerIds = this.readyPlayerIds();
+    const hostPlayerId = this.host === null ? null : this.ownership.get(this.host)?.[0] ?? null;
+    this.emit(null, {
+      version: 1,
+      kind: 'lobby-state',
+      requiredPlayerIds: [...this.playerIds],
+      playerIds,
+      readyPlayerIds,
+      hostPlayerId,
+      mode: this.mode,
+      durationMinutes: this.durationMinutes,
+      arena: this.arena,
+    });
+  }
+
+  private applyRoomConfiguration(config: RoomConfiguration): void {
+    if (!ARENA_RULE_IDS.includes(config.arena)) throw new Error('Unsupported room arena');
+    matchDurationTicks(config.durationMinutes);
+    this.playerIds = this.playerIds.slice(0, config.playerCount);
+    this.playerIdSet = new Set(this.playerIds);
+    this.mode = config.mode;
+    this.arena = config.arena;
+    this.durationMinutes = config.durationMinutes;
+    this.state = this.createLobbyState();
+  }
+
+  private createLobbyState(): GameState {
+    return createState({
+      ids: [...this.playerIds],
+      phase: 'lobby',
+      ...(this.mode === 'wave' ? {} : { mode: this.mode }),
+      ...(this.arena === 'station' ? {} : { arena: this.arena }),
+      durationMinutes: this.durationMinutes,
+    });
+  }
+
+  private readyPlayerIds(): string[] {
+    const ready = new Set<string>();
+    for (const [connectionId, playerIds] of this.ownership) {
+      if (!this.readys.has(connectionId)) continue;
+      for (const playerId of playerIds) ready.add(playerId);
+    }
+    return this.playerIds.filter(playerId => ready.has(playerId));
   }
 
   private emitError(

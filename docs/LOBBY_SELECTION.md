@@ -1,6 +1,7 @@
 # Lobby selection: arena, mode, players and character
 
-**Status:** Owner requirement 2026-11-10. Proposal for implementation; nothing here is implemented yet.
+**Status:** Owner requirement 2026-11-10. L1 arena selection, L2 player count and L3 character selection are
+implemented locally; L4 summary is implemented locally as well.
 **Related:** [GRAPHICS_ROADMAP.md](GRAPHICS_ROADMAP.md), [GAME_DESIGN.md](GAME_DESIGN.md), [M1_GAMEPLAY_CONTROLS.md](M1_GAMEPLAY_CONTROLS.md).
 
 ## 1. The gap
@@ -48,24 +49,30 @@ The chosen combination is visible as one summary line before the match starts, a
 - A count control (1-8). Slots above the count are inactive and not created in the match state.
 - Bots fill the empty active slots when the player chooses; a "bots" toggle or the existing ALL BOTS path stays.
 - Acceptance: a 1-player match creates one fighter, an 8-player match eight; results and HUD match the count; no ghost slots.
+- Evidence: `docs/LOBBY_L2_PLAYER_COUNT_PLAN.md` and `tests/browser/lobbyPlayerCount.spec.ts`.
 
-### L3 - Character per slot
+### L3 - Character per slot (current work package)
 
 - Each active slot shows its character name and a small preview; cycling changes the appearance only.
 - Presentation maps `slot -> characterId`; `fighterKey` uses the mapped character for sprites, and the HUD shows the character name next to the slot.
 - Acceptance: P1 can look like P6 and still act as P1 (score, results, replays unchanged); all eight appearances available; choice persists; simulation snapshots and fingerprints unchanged.
+- Evidence: `docs/LOBBY_L3_CHARACTER_SELECT_PLAN.md` and `tests/browser/lobbyCharacterSelect.spec.ts`.
 
-### L4 - Summary and start
+### L4 - Summary and start (current work package)
 
 - One summary line: `ARENA · MODE · PLAYERS · BOTS`, plus a start hint.
 - Acceptance: the line matches the actual match that starts; changing any control updates it immediately.
+
+Locked format: `ARENA · MODE · PLAYERS · HUMANS · BOTS`; counts report the current joined roster and do not invent bots for empty slots.
+Evidence plan: `docs/LOBBY_L4_SUMMARY_PLAN.md`.
+Complete menu path: `docs/LOBBY_FLOW.md`.
 
 ## 5. Acceptance for the whole feature
 
 1. A player can start a match without touching the URL and without reading documentation.
 2. Arena, mode, player count and characters are all visible and changeable in the lobby.
 3. Character choice changes appearance only: identical inputs produce identical simulation results and identical state hashes as before.
-4. 640x360 and 1280x720 screenshots inspected in classic and retro.
+4. 640x360 and 1280x720 screenshots inspected in retro.
 5. Existing keyboard, gamepad, remap and pause behaviour unchanged.
 
 ## 6. Out of scope

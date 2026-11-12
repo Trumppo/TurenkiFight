@@ -1,126 +1,12 @@
 {
   "task": "GRAPHICS-G1-EVAL-BASELINE",
-  "commitSha": "b9888beebc3a309d15f2b252e7729755e3dc49a4",
-  "date": "2026-11-09T07:30:05.603Z",
+  "commitSha": "0eb21b6898ddaf6c7be5165be3ee3db60fb66c0b",
+  "date": "2026-11-10T22:19:00.971Z",
   "logicalCanvas": {
     "width": 640,
     "height": 360
   },
   "captures": [
-    {
-      "file": "classic-station-640x360.png",
-      "size": "640x360",
-      "width": 640,
-      "height": 360,
-      "style": "classic",
-      "arena": "station",
-      "selectedArena": {
-        "selected": "station",
-        "requested": "station",
-        "fighterCount": 4,
-        "canvas": [
-          640,
-          360
-        ]
-      },
-      "fighterCount": 4,
-      "bytes": 12333
-    },
-    {
-      "file": "classic-station-1280x720.png",
-      "size": "1280x720",
-      "width": 1280,
-      "height": 720,
-      "style": "classic",
-      "arena": "station",
-      "selectedArena": {
-        "selected": "station",
-        "requested": "station",
-        "fighterCount": 4,
-        "canvas": [
-          640,
-          360
-        ]
-      },
-      "fighterCount": 4,
-      "bytes": 27178
-    },
-    {
-      "file": "classic-kkauppa-640x360.png",
-      "size": "640x360",
-      "width": 640,
-      "height": 360,
-      "style": "classic",
-      "arena": "kkauppa",
-      "selectedArena": {
-        "selected": "kkauppa",
-        "requested": "kkauppa",
-        "fighterCount": 4,
-        "canvas": [
-          640,
-          360
-        ]
-      },
-      "fighterCount": 4,
-      "bytes": 16310
-    },
-    {
-      "file": "classic-kkauppa-1280x720.png",
-      "size": "1280x720",
-      "width": 1280,
-      "height": 720,
-      "style": "classic",
-      "arena": "kkauppa",
-      "selectedArena": {
-        "selected": "kkauppa",
-        "requested": "kkauppa",
-        "fighterCount": 4,
-        "canvas": [
-          640,
-          360
-        ]
-      },
-      "fighterCount": 4,
-      "bytes": 32164
-    },
-    {
-      "file": "classic-mesku-640x360.png",
-      "size": "640x360",
-      "width": 640,
-      "height": 360,
-      "style": "classic",
-      "arena": "mesku",
-      "selectedArena": {
-        "selected": "station",
-        "requested": "mesku",
-        "fighterCount": 4,
-        "canvas": [
-          640,
-          360
-        ]
-      },
-      "fighterCount": 4,
-      "bytes": 12333
-    },
-    {
-      "file": "classic-mesku-1280x720.png",
-      "size": "1280x720",
-      "width": 1280,
-      "height": 720,
-      "style": "classic",
-      "arena": "mesku",
-      "selectedArena": {
-        "selected": "station",
-        "requested": "mesku",
-        "fighterCount": 4,
-        "canvas": [
-          640,
-          360
-        ]
-      },
-      "fighterCount": 4,
-      "bytes": 28447
-    },
     {
       "file": "retro-station-640x360.png",
       "size": "640x360",
@@ -138,7 +24,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 21655
+      "bytes": 21667
     },
     {
       "file": "retro-station-1280x720.png",
@@ -157,7 +43,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 38651
+      "bytes": 39486
     },
     {
       "file": "retro-kkauppa-640x360.png",
@@ -176,7 +62,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 24361
+      "bytes": 25491
     },
     {
       "file": "retro-kkauppa-1280x720.png",
@@ -195,7 +81,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 42052
+      "bytes": 44182
     },
     {
       "file": "retro-mesku-640x360.png",
@@ -214,7 +100,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 21972
+      "bytes": 21985
     },
     {
       "file": "retro-mesku-1280x720.png",
@@ -233,7 +119,7 @@
         ]
       },
       "fighterCount": 4,
-      "bytes": 39914
+      "bytes": 40883
     }
   ]
 }

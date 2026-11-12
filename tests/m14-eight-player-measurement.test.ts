@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import {
   M14_PLAYERS,
   loadEightPlayerSchedule,
@@ -62,5 +63,21 @@ describe('M14 eight-player single-machine measurement harness', () => {
     expect(() => validateM14Manifest({})).toThrow();
     expect(() => validateM14Manifest({ schemaVersion: 1, kind: 'm14-eight-player-single-machine-measurement' }))
       .toThrow();
+  });
+
+  it('keeps all network fields explicitly NOT_MEASURED in the committed 8-player report', () => {
+    const report = JSON.parse(readFileSync(
+      new URL('../benchmarks/results/m14-8p-20261107T011738309Z.json', import.meta.url), 'utf8',
+    )) as { scope: { networkAccess: string }; network: Record<string, unknown> };
+    expect(report.scope.networkAccess).toBe('loopback-only');
+    expect(report.network).toEqual({
+      latency: 'NOT_MEASURED',
+      jitter: 'NOT_MEASURED',
+      packetLoss: 'NOT_MEASURED',
+      joinSuccess: 'NOT_MEASURED',
+      turnCost: 'NOT_MEASURED',
+      bandwidth: 'NOT_MEASURED',
+      measuredNetworks: 0,
+    });
   });
 });

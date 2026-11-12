@@ -36,7 +36,7 @@ test('G3 hit and KO desktop visual evidence', async ({ page }) => {
   test.skip(!process.env.G3_CAPTURE_DIR, 'Set G3_CAPTURE_DIR to capture G3 visual evidence.');
   const directory = process.env.G3_CAPTURE_DIR!;
   await mkdir(directory, { recursive: true });
-  const style = process.env.VITE_VISUAL_STYLE === 'retro' ? 'retro' : 'classic';
+  const style = 'retro';
 
   for (const { width, height } of [{ width: 640, height: 360 }, { width: 1280, height: 720 }]) {
     await page.setViewportSize({ width, height });

@@ -1,9 +1,9 @@
 import type { ArenaId, Direction, Fighter, GameState, PlayerInput, Move, GameEvent, ModeId, EndReason, PlayerId, SimObject, Team, WaveRules, WaveState } from './types';
-import { aliveCount, modeRules, modeWinner } from './modes';
+import { aliveCount, modeRules, modeWinner, matchDurationTicks, type MatchDurationMinutes } from './modes';
 import { arenaRules, isHazardDamageTick, isInsideHazardBand } from './arenas';
 import { isZoneDamageTick, zoneRangeAt, ZONE_DAMAGE_HP } from './zone';
 export { MATCH_TICKS } from './modes';
-export { MODE_RULES, aliveCount, compareTieBreak, modeMetric, modeRules, modeWinner, WAVE_RULES } from './modes';
+export { MODE_RULES, aliveCount, compareTieBreak, modeMetric, modeRules, modeWinner, WAVE_RULES, MATCH_DURATION_MINUTES, matchDurationTicks } from './modes';
 export type { ArenaId, EndReason, ModeId, ModeRules, RespawnPolicy, Team, TieBreakCriterion, WaveRules, WaveState } from './types';
 export type MatchSetup = {
   ids?: string[];
@@ -14,6 +14,8 @@ export type MatchSetup = {
    * historical setup keeps its exact canonical state.
    */
   arena?: ArenaId;
+  /** Supported room timer in minutes; omitted preserves the two-minute baseline. */
+  durationMinutes?: MatchDurationMinutes;
   /**
    * Explicit combat sides. Required in `wave` mode (both sides non-empty) and
    * optional elsewhere: an omitted team keeps the historical free-for-all.
@@ -236,7 +238,8 @@ export function createState(
     }
     waveState = { index: 0, countdownTicks: 0, remaining: active };
   }
-  return { tick: 0, phase, countdownTicks: COUNTDOWN_TICKS, remainingTicks: rules.timerTicks, events: [],
+  const timerTicks = setup.durationMinutes === undefined ? rules.timerTicks : matchDurationTicks(setup.durationMinutes);
+  return { tick: 0, phase, countdownTicks: COUNTDOWN_TICKS, remainingTicks: timerTicks, events: [],
     ...(mode ? { mode } : {}),
     ...(waveState ? { wave: waveState } : {}),
     ...(arena === undefined ? {} : { arena }),

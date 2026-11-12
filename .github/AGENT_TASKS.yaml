@@ -1911,13 +1911,13 @@ tasks:
       - "The K-kauppa hazard applies only when K-kauppa is the selected arena"
       - "Station remains byte-identical when selected; reload keeps the choice"
     last_updated: "2026-11-10"
-    notes: "First lobby slice. Owner requirement 2026-11-10: arena, mode, players and characters all selectable in the browser."
+    notes: "Implemented locally and covered by lobbyArenaSelect.spec.ts; PR #196 remains open for owner merge. Owner requirement 2026-11-10: arena, mode, players and characters all selectable in the browser."
 
   - id: LOBBY-L2-PLAYER-COUNT
     title: Let the lobby choose how many slots play
     assigned_role: graphics-session
     session_id: graphics-session-20261110-l2
-    status: blocked
+    status: in_progress
     priority: P1
     specification: docs/LOBBY_SELECTION.md
     depends_on: [LOBBY-L1-ARENA-SELECT]
@@ -1927,14 +1927,14 @@ tasks:
       - "Slots above the count are not created in the match state and do not appear in results"
       - "Bots fill the active slots that no human claimed"
       - "Wave mode keeps its human/enemy split"
-    last_updated: "2026-11-10"
-    notes: "Interacts with bot filling and the Wave team rule; handle both explicitly."
+    last_updated: "2026-11-11"
+    notes: "Implemented and pushed on graphics/lobby-player-count; local verification is green. Update to done after the branch is reviewed/merged."
 
   - id: LOBBY-L3-CHARACTER-SELECT
     title: Let each slot choose which fighter it looks like
     assigned_role: graphics-session
     session_id: graphics-session-20261110-l3
-    status: blocked
+    status: in_progress
     priority: P1
     specification: docs/LOBBY_SELECTION.md
     depends_on: [LOBBY-L2-PLAYER-COUNT]
@@ -1943,15 +1943,15 @@ tasks:
       - "Each active slot can choose any of the eight fighters"
       - "The choice is presentation only: simulation ids, scores, replays and state hashes are unchanged"
       - "The HUD shows the chosen character name next to the slot"
-      - "The choice persists in localStorage and the eight looks stay distinct in classic and retro"
-    last_updated: "2026-11-10"
-    notes: "A character is a slot-to-art mapping, never a simulation field. Prove identical state hashes."
+      - "The choice persists in localStorage and the eight looks stay distinct in retro"
+    last_updated: "2026-11-11"
+    notes: "Implemented locally on graphics/lobby-player-count; full Vitest and browser evidence is green after one isolated unrelated Deathmatch timing-flake rerun. A character is a slot-to-art mapping, never a simulation field; classic mode was removed by the retro-only decision. Update to done after review/merge."
 
   - id: LOBBY-L4-SUMMARY
     title: Show the chosen setup and start from it
     assigned_role: graphics-session
     session_id: graphics-session-20261110-l4
-    status: blocked
+    status: in_progress
     priority: P1
     specification: docs/LOBBY_SELECTION.md
     depends_on: [LOBBY-L3-CHARACTER-SELECT]
@@ -1960,8 +1960,8 @@ tasks:
       - "One summary line shows arena, mode, players and bots"
       - "The line matches the match that actually starts and updates when any control changes"
       - "Starting needs no URL editing or documentation"
-    last_updated: "2026-11-10"
-    notes: "Closes the lobby feature. Readable at 640x360 and 1280x720."
+    last_updated: "2026-11-11"
+    notes: "Implemented locally on graphics/lobby-player-count; summary is placed before START MATCH and reports selected players plus current humans/bots without inventing missing bots. Full Vitest and browser evidence is green. Update to done after review/merge."
 
   - id: M1-5-RESPONSIVE-VISUAL-REVIEW
     title: Review 3x desktop scaling and mobile HUD legibility
@@ -2035,3 +2035,202 @@ tasks:
       - Keep M2 envelope implementation blocked pending owner approval
     last_updated: "2026-10-31"
     notes: "Replacement for conflicted planning PR #72; merged as 785539e (merge commit). No milestone accepted by this PR."
+  - id: GATE-B-COMPLETE
+    title: Complete Gate B local lobby technical implementation (arena, count, character mapping, summary, validation)
+    assigned_role: gameplay-session
+    status: done
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-b
+    depends_on: [LOBBY-L1-ARENA-SELECT, LOBBY-L2-PLAYER-COUNT, LOBBY-L3-CHARACTER-SELECT, LOBBY-L4-SUMMARY]
+    scope: [src/game/presentation/, src/game/, tests/browser/, docs/GATE_PLANS.md]
+    acceptance:
+      - Arena, player count, character (presentation only) and summary work in lobby
+      - Start validation and persistence complete
+      - State hashes unchanged by visual choices
+      - No major new graphics (use existing assets)
+      - Focused tests and visual matrix pass
+    notes: "Gate B complete per designer: 10/10 browser lobby+bot+allbot+m8 tests passed (2026-11-11), 621 unit tests passed. Isolation test proves character selection presentation-only. Evidence in GATE_PLANS.md. Technical focus only; graphics deferred post-Gate G per locked. Ready to advance to Gate C."
+    last_updated: "2026-11-11"
+    pull_request: "pending designer PR for doc+task close"
+
+  - id: GATE-C-TECHNICAL
+    title: Complete Gate C eight-player local comfort technical (controllers, bots, HUD/results, reset/pause, perf) using existing assets
+    assigned_role: gameplay-session
+    status: done
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-c
+    depends_on: [GATE-B-COMPLETE]
+    scope: [src/game/presentation/StationScene.ts, tests/browser/m8-eight-player-ui.spec.ts, tests/browser/*lobby*.spec.ts, tests/browser/bot-lobby.spec.ts, tests/browser/all-bot-match.spec.ts, docs/GATE_PLANS.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - 4+ gamepads + keyboard fallback + bots fill slots for 8 players
+      - Reset, pause, rematch work for full 8p rosters
+      - 8p HUD and results readable/scaled (using G2 markers + semantic checks)
+      - No performance regression in 8p matches (measurement + full runs)
+      - All related browser + unit tests pass
+      - No new major graphics or photo-to-retro (existing retro assets only)
+      - "Pre-G acceptance evidence: tests + designer report"
+    notes: "Gate C technical complete per designer verification 2026-11-11: ALL related tests pass (10/10 browser m8+lobby+bot+allbot, 621 unit, 3/3 m14). Evidence: controllers/gamepads up to P8 + bot fill + kb, reset/pause/rematch 8p aware (roster preserved), 8 HUD+results (cards, podium, places, aria), G2 semantic readability (contrast, no overflow, font>=14, markers visible at 640/1280), perf ok. Used existing retro assets. Locked followed. No code changes needed; state was already meeting 'valmista kun testit menevät läpi'. Updated docs/tasks. Ready for next (Gate D after G per long term)."
+    last_updated: "2026-11-11"
+
+  - id: GATE-D-ROOM-CONTRACT
+    title: Stabilize online room contract for Gate D (typed join/leave/ready, rejoin, failure paths, session envelope)
+    assigned_role: gameplay-session
+    status: done
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-d
+    depends_on: [GATE-C-TECHNICAL]
+    scope: [src/game/session/, src/game/networking/wsMessages.ts, server/ws/authoritativeWsSession.ts, tests/ws-*.test.ts, tests/m14-tls-roomcodes.test.ts, docs/GATE_PLANS.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Typed room state with join, leave, ready
+      - Rejoin window (30s) and failure paths clear
+      - Session envelope + WS authoritative works
+      - Mode/arena via server flags (per locked)
+      - All room/session tests pass
+      - No simulation bytes touched
+    notes: "Gate D technical slice complete 2026-11-11: added typed canonical ready-request, gateway ownership checks, authoritative room handling and disconnect cleanup without simulation mutation. Focused Gate D tests 13 files/108 passed; full unit 72 files/624 passed; build green. Existing join/leave/rejoin, room-code, rematch and failure-path coverage remains green. Locked: defaults from server flags; full lobby config in Gate F."
+    last_updated: "2026-11-11"
+
+  - id: GATE-E-MEASUREMENT-READINESS
+    title: Prepare Gate E network measurement evidence, rerun instructions and honest unknown ledger
+    assigned_role: planning-session
+    status: done
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-e
+    depends_on: [GATE-D-ROOM-CONTRACT]
+    scope: [benchmarks/ws/, tests/ws-split-roles.test.ts, docs/GATE_E_READINESS_REPORT.md, docs/GATE_PLANS.md, tests/m14-eight-player-measurement.test.ts]
+    acceptance:
+      - Existing 8-player single-machine measurements documented without representing them as network results
+      - Owner-runnable BASE-4 and BASE-8 split-machine procedure documented with prototype safety and limitations
+      - All network performance fields explicitly remain NOT_MEASURED until real measurements exist
+      - Regression test fails if committed M14 report claims network measurements or fails to identify loopback scope
+      - Relevant M14 and WS split-role tests pass, including eight clients and in-memory fingerprint match
+      - Existing BASE-4 behavior/fingerprints remain green
+    notes: "Gate E technical harness complete. Split roles support `--players=8` and eight client slots; automated BASE-8 split-role correctness run passes. No real LAN/internet measurement has been performed, and all network performance fields remain NOT_MEASURED. Report: docs/GATE_E_READINESS_REPORT.md."
+    last_updated: "2026-11-11"
+
+  - id: GATE-E-BASE8-SPLIT-HARNESS
+    title: Extend split-role WebSocket correctness harness to deterministic BASE-8
+    assigned_role: gameplay-session
+    status: done
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-e
+    depends_on: [GATE-E-MEASUREMENT-READINESS]
+    scope: [benchmarks/ws/benchmarkSetup.ts, benchmarks/ws/splitRoles.ts, benchmarks/ws/runWsBenchmark.ts, benchmarks/ws/wsManifest.ts, tests/ws-split-roles.test.ts, benchmarks/ws/README.md]
+    acceptance:
+      - Server/client roles accept only explicit supported player counts 4 or 8, defaulting to legacy 4
+      - BASE-8 server expects eight connections with one unique slot each
+      - Eight-client fixture run reaches requested tick and matches deterministic in-memory state/event reference
+      - BASE-4 fingerprint regression remains unchanged
+      - All network/performance values stay NOT_MEASURED
+      - Focused tests and production build pass
+    notes: "Implemented during active Gate E goal. Local 8-client split-role test proves correctness only; not a real LAN measurement."
+    last_updated: "2026-11-11"
+
+  - id: GATE-F-ONLINE-PRODUCTIZATION
+    title: Productize the browser multiplayer loop for Gate F
+    assigned_role: planning-session
+    status: in_progress
+    session_id: designer-session-20261112-gate-f
+    branch: designer/gate-f-online
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-f
+    depends_on: [GATE-E-BASE8-SPLIT-HARNESS, M14-TLS-ROOMCODES, M14-RATE-LIMITS, M14-REJOIN]
+    scope: [online.html, src/online.ts, src/style.css, src/game/session/, src/game/networking/, server/ws/, tests/browser/online*.spec.ts, tests/m14-*.test.ts, docs/GATE_F_HOSTING_GUIDE.md, README.md, docs/GATE_PLANS.md]
+    acceptance:
+      - Browser create/join/play/results/rematch-or-leave flow is covered end-to-end
+      - Browser client can select all configured player slots through P8
+      - Eight-player authoritative online session completes without crashes
+      - TLS/WSS, room code admission, abuse limits and rejoin are tested and hosting instructions cover LAN/VPN and simple internet deployment
+      - No account, matchmaking or progression systems are added before Gate G
+      - Network-performance unknowns stay NOT_MEASURED; tests do not imply real-link performance
+      - Full relevant browser/unit tests and production build pass
+    notes: "Active. Owner selected one room per process and 1/2/3 minute durations on 2026-11-11. F3 now adds explicit browser CREATE/JOIN, canonical validated first-join room settings, authoritative lobby configuration, and create-to-results E2E. Remaining: Graphics-owned online arena backdrop must follow authoritative room state; rerun comprehensive M14/security and full CI after integration; retain honest real-network unknowns and do not mark Gate F accepted."
+    last_updated: "2026-11-11"
+
+  - id: GATE-F-ONLINE-BASELINE
+    title: Expose P1-P8 online slots, verify 8-player browser session, and document hosting
+    assigned_role: planning-session
+    status: done
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-f
+    depends_on: [GATE-E-BASE8-SPLIT-HARNESS, M14-TLS-ROOMCODES, M14-RATE-LIMITS, M14-REJOIN]
+    scope: [online.html, src/online.ts, tests/browser/online.spec.ts, docs/GATE_F_HOSTING_GUIDE.md, README.md, docs/M14_ONLINE_SECURITY.md, docs/GATE_PLANS.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Browser slot form supports P1 through P8 and validates each slot
+      - Browser plus authoritative server with seven other network clients enters running and renders all eight fighters
+      - Hosting guide covers LAN/VPN and public WSS prerequisites and security boundaries
+      - Focused online browser tests, security/rejoin tests, full unit suite and build pass
+      - No network metrics are invented and no Gate F owner acceptance is claimed
+    rationale: "Existing backend supported eight players but the browser join form exposed only four slots; prior security runbook did not explain an end-user WSS deployment and README contained stale security claims."
+    out_of_scope: [accounts, matchmaking, multi-room service, host migration, internet performance claims, simulation-rule changes]
+    pull_request: "DESIGNER: complete Gate F browser slot and hosting baseline; Task: GATE-F-ONLINE-BASELINE"
+    user_decision_gate: "No new product decision for this slice; owner approval is required before merge and Gate F acceptance."
+    notes: "Implemented and verified 2026-11-11: online E2E 12/12, security/rejoin unit focus 59/59, full unit 72 files/627 tests, build green. See docs/GATE_F_HOSTING_GUIDE.md. Overall GATE-F-ONLINE-PRODUCTIZATION remains in progress."
+    last_updated: "2026-11-11"
+
+  - id: GATE-F-LOBBY-READY-START
+    title: Add server-authored lobby readiness and host-only start control
+    assigned_role: planning-session
+    status: done
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-f
+    depends_on: [GATE-F-ONLINE-BASELINE, GATE-D-ROOM-CONTRACT]
+    scope: [src/game/session/sessionEnvelope.ts, src/game/session/sessionEnvelopeGateway.ts, src/game/networking/wsMessages.ts, src/game/networking/wsSessionClient.ts, src/game/networking/onlineMatchController.ts, server/ws/authoritativeWsSession.ts, server/ws/wsServer.ts, online.html, src/online.ts, src/style.css, tests/browser/online.spec.ts]
+    acceptance:
+      - Server broadcasts claimed roster, ready player ids, host player id, required roster and configured mode
+      - Every joined browser can ready; state is reflected in all lobby clients
+      - Only the first joining host can request start, and only after all required joined participants are ready
+      - Guest-forged start request is denied server-side; match does not begin
+      - Host start begins the authoritative match for every connected client
+      - Existing auto-start server behavior remains unchanged
+    rationale: "The accepted room/lobby design calls for all ready followed by manual host start; previously READY was only a codec/backend marker and start was operator stdin-only."
+    out_of_scope: [browser-mutable-room-settings, multi-room-per-process, accounts, matchmaking, simulation-rule-changes, real-network-performance-claims]
+    pull_request: "DESIGNER: complete Gate F browser lobby and host flow; Task: GATE-F-ONLINE-PRODUCTIZATION"
+    user_decision_gate: "Owner chose one room per process on 2026-11-11; no further decision for this slice. Owner approval remains required to merge."
+    notes: "Browser E2E test verifies host role, readiness barrier, forged guest-start denial, and successful host start. Manual mode is required; default auto mode is preserved for backward compatibility."
+    last_updated: "2026-11-11"
+
+  - id: GATE-F-DURATION-OPTIONS
+    title: Define and validate room-selectable match duration options
+    assigned_role: planning-session
+    status: done
+    priority: P1
+    specification: docs/GATE_PLANS.md#gate-f
+    depends_on: [GATE-F-LOBBY-READY-START]
+    scope: [src/game/simulation/modes.ts, src/game/simulation/step.ts, src/game/simulation/modes.test.ts, docs/GATE_PLANS.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - "Owner-approved duration values are exactly 1, 2 and 3 minutes"
+      - "Duration converts to deterministic tick counts at 60 Hz"
+      - "Default room remains the historical 7200-tick / 2-minute match"
+      - "Unsupported duration values are rejected"
+      - "No wall-clock dependency or network performance claim is added"
+    rationale: "Room creation explicitly requires a duration setting, but no selectable values were approved. A typed deterministic timer option is needed before wiring browser configuration through the authoritative room."
+    out_of_scope: [room-protocol-wiring, browser-ui, arena-and-mode-selection, player-cap-selection]
+    pull_request: "DESIGNER: wire Gate F room configuration end to end; Task: GATE-F-ONLINE-PRODUCTIZATION"
+    user_decision_gate: "Owner approved 1, 2 and 3 minute choices on 2026-11-11; two-minute default retained."
+    notes: "Implemented as typed MATCH_DURATION_MINUTES and matchDurationTicks; MatchSetup accepts selected duration. Focused simulation tests 7/7 and production build pass. This is a prerequisite only; Gate F remains in progress."
+    last_updated: "2026-11-11"
+
+  - id: GATE-F-BROWSER-ROOM-CREATION
+    title: Create one configured room from the browser and verify full match flow
+    assigned_role: planning-session
+    status: in_progress
+    session_id: designer-session-20261112-gate-f
+    priority: P0
+    specification: docs/GATE_PLANS.md#gate-f
+    depends_on: [GATE-F-LOBBY-READY-START, GATE-F-DURATION-OPTIONS]
+    scope: [online.html, src/online.ts, src/style.css, src/game/presentation/OnlineScene.ts, src/game/session/sessionEnvelope.ts, src/game/networking/wsSessionClient.ts, src/game/networking/onlineMatchController.ts, src/game/networking/wsMessages.ts, server/ws/authoritativeWsSession.ts, tests/browser/online.spec.ts, src/game/session/sessionEnvelope.test.ts, docs/GATE_F_HOSTING_GUIDE.md]
+    acceptance:
+      - Browser offers explicit CREATE ROOM and JOIN ROOM actions
+      - First host join carries mode, arena, requested player count and approved duration through canonical validation to the authoritative process
+      - Server rejects invalid/late/non-first configuration before unauthorized slot mutation and refuses count above process capacity
+      - Authoritative lobby publishes selected settings and selected roster to every participant
+      - Server-created simulation uses selected mode, arena and duration, with configured roster bounds
+      - Browser E2E verifies create, join, ready, host-start, actual match timer/game, server result, and arena backdrop texture on both clients
+      - "npm test, relevant browser E2E and production build pass; no network-performance claim"
+    rationale: "Server startup flags previously controlled all room settings, so browser users could not create a chosen room under the selected single-process model."
+    out_of_scope: [multi-room, accounts, matchmaking, progression, real-network-measurements]
+    pull_request: "DESIGNER: complete Gate F browser room creation; Task: GATE-F-ONLINE-PRODUCTIZATION"
+    user_decision_gate: "Room count choices cannot exceed process --players capacity; duration 1/2/3 min and one room/process are owner decisions."
+    notes: "Implementation and technical verification complete 2026-11-11: online browser/results E2E 14/14 (including room create through real one-minute results and Mesku texture on both clients), M14 TLS/rate/rejoin tests 39/39, full unit 72 files/630 tests, build green. Existing --players roster is hard capacity; set --players=8 for browser selection through eight. Owner review/approval and merge remain pending; no Gate F acceptance or real-link performance claim."
+    last_updated: "2026-11-11"

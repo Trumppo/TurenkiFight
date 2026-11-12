@@ -2,6 +2,16 @@ import type { Fighter, ModeId, ModeRules, PlayerId, TieBreakCriterion, WaveRules
 
 /** Active match length in ticks. Unchanged from Score Brawl and shared by every mode. */
 export const MATCH_TICKS = 7200;
+/** Owner-selected Gate F room duration choices; the historic two-minute match remains default. */
+export const MATCH_DURATION_MINUTES = [1, 2, 3] as const;
+export type MatchDurationMinutes = (typeof MATCH_DURATION_MINUTES)[number];
+
+export function matchDurationTicks(minutes: number): number {
+  if (!MATCH_DURATION_MINUTES.includes(minutes as MatchDurationMinutes)) {
+    throw new Error(`Unsupported match duration: ${minutes} minutes`);
+  }
+  return minutes * 60 * 60;
+}
 
 /**
  * The modes the UI and the authoritative server accept, in a stable order.

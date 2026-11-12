@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test('VIS-04 retro HUD preserves readable timer and eight-slot layout', async ({ page }) => {
-  test.skip(process.env.VITE_VISUAL_STYLE !== 'retro', 'Retro HUD only');
   await page.setViewportSize({ width: 640, height: 360 });
   await page.goto('/');
   await expect(page.locator('#game canvas')).toBeVisible();

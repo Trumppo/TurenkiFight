@@ -2,15 +2,15 @@ import Phaser from 'phaser';
 import type { GameState, Fighter, ModeId } from '../simulation/types';
 import { TICK_RATE, WAVE_RULES } from '../simulation/step';
 import type { OnlineMatchController } from '../networking/onlineMatchController';
-import { VISUAL_ASSETS, publicAssetUrl } from './visualAssets';
+import { publicAssetUrl } from './visualAssets';
 import { VIEWPORT, cameraScale } from './viewport';
-import { createFighterTextures, fighterKey, type FighterPose } from './fighterSprites';
-import { createRetroP1Textures, RETRO_PREVIEW } from './retroPrototype';
+import { fighterKey, type FighterPose } from './fighterSprites';
+import { createRetroP1Textures } from './retroPrototype';
 import { createRetroP2Textures } from './retroP2';
 import { createRetroExtraTextures } from './retroExtras';
 import { audioControlsHost, createAudioPresentation, type AudioPresentation } from './audio/audioControls';
 import { CueBridge } from './audio/cueBridge';
-import { arenaBackdropTextureKey, resolveArenaSelection, type ArenaSelection } from './arenaVisuals';
+import { ARENA_MANIFESTS, arenaBackdropTextureKey, resolveArenaSelection, resolveArenaVisual, type ArenaSelection } from './arenaVisuals';
 import { drawZoneGraphics, zonePresentation, zoneSummaryText } from './zonePresentation';
 import { ObjectPresentation } from './objectPresentation';
 import { ArenaTelegraphPresentation, hazardDamagePreemptedByKnockout, observedHazardDamage } from './arenaTelegraph';
@@ -70,27 +70,31 @@ export class OnlineScene extends Phaser.Scene {
   private audio?: AudioPresentation;
   private audioBridge?: CueBridge;
   private readonly arenaSelection: ArenaSelection;
+  private arenaBackdrop?: Phaser.GameObjects.Image;
+  private arenaArtError?: Phaser.GameObjects.Text;
+  private activeArenaId: string;
 
   constructor(controller: OnlineMatchController, onFrame?: (now: number) => void,
-    arenaSelection = resolveArenaSelection(window.location.search, RETRO_PREVIEW ? 'retro' : 'classic')) {
+    arenaSelection = resolveArenaSelection(window.location.search)) {
     super('OnlineScene');
     this.controller = controller;
     this.onFrame = onFrame;
     this.arenaSelection = arenaSelection;
+    this.activeArenaId = arenaSelection.manifest.id;
   }
 
   preload(): void {
-    const backdrop = VISUAL_ASSETS.station.backdrop;
-    const key = arenaBackdropTextureKey(this.arenaSelection.manifest.id);
-    const path = this.arenaSelection.backdropPath;
-    const retro = this.arenaSelection.style === 'retro';
-    this.load.svg(key, publicAssetUrl(import.meta.env.BASE_URL, path), {
-      width: retro ? 640 : backdrop.width,
-      height: retro ? 360 : backdrop.height,
-    });
+    const failures = new Map<string, { name: string; path: string }>();
+    for (const arenaId of Object.keys(ARENA_MANIFESTS)) {
+      const selection = resolveArenaVisual(arenaId);
+      const key = arenaBackdropTextureKey(arenaId);
+      this.load.svg(key, publicAssetUrl(import.meta.env.BASE_URL, selection.backdropPath), { width: 640, height: 360 });
+      failures.set(key, { name: selection.manifest.displayName, path: selection.backdropPath });
+    }
     this.load.on('loaderror', (file: Phaser.Loader.File) => {
-      if (file.key !== key) return;
-      const message = `Could not load ${this.arenaSelection.manifest.displayName} arena art: ${path}`;
+      const failed = failures.get(file.key);
+      if (!failed) return;
+      const message = `Could not load ${failed.name} arena art: ${failed.path}`;
       console.error(message);
       const description = document.getElementById('arena-description');
       if (description) description.textContent = message;
@@ -100,32 +104,18 @@ export class OnlineScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.setZoom(cameraScale(this.scale.width, this.scale.height));
     this.cameras.main.centerOn(VIEWPORT.logicalWidth / 2, VIEWPORT.logicalHeight / 2);
-    createFighterTextures(this);
-    if (RETRO_PREVIEW) {
-      createRetroP1Textures(this);
-      createRetroP2Textures(this);
-      createRetroExtraTextures(this);
-    }
-    const textureKey = arenaBackdropTextureKey(this.arenaSelection.manifest.id);
-    const backgroundDepth = this.arenaSelection.layers.find(layer => layer.id === 'architecture')?.depth ?? -100;
-    if (this.textures.exists(textureKey)) {
-      this.add.image(0, 0, textureKey).setOrigin(0, 0)
-        .setDisplaySize(VIEWPORT.logicalWidth, VIEWPORT.logicalHeight).setDepth(backgroundDepth);
-    } else {
-      this.add.text(12, 42, `ARENA ART ERROR\n${this.arenaSelection.manifest.displayName}\n${this.arenaSelection.backdropPath}`, {
-        color: '#fff1b7', backgroundColor: '#172536', fontFamily: 'monospace', fontSize: '14px', padding: { x: 8, y: 6 },
-      }).setDepth(1000);
-    }
+    createRetroP1Textures(this);
+    createRetroP2Textures(this);
+    createRetroExtraTextures(this);
+    this.setArenaBackdrop(this.arenaSelection.manifest.id);
     this.zoneGraphics = this.add.graphics().setDepth(122).setVisible(false);
     this.combatFeedbackGraphics = this.add.graphics().setDepth(500_000);
-    this.itemPresentation = new ObjectPresentation(this, RETRO_PREVIEW);
+    this.itemPresentation = new ObjectPresentation(this);
     this.initDomHud();
     this.audio = createAudioPresentation(audioControlsHost());
     this.audioBridge = new CueBridge(cue => this.audio?.director.playCue(cue), true);
-    if (this.arenaSelection.manifest.id === 'station') {
-      const status = document.getElementById('station-event-status');
-      if (status) this.stationEvent = new StationEventPresentation(this, status, cue => this.audio?.director.playCue(cue), RETRO_PREVIEW);
-    }
+    const status = document.getElementById('station-event-status');
+    if (status) this.stationEvent = new StationEventPresentation(this, status, cue => this.audio?.director.playCue(cue), true);
     this.arenaTelegraph = new ArenaTelegraphPresentation(this, cue => this.audio?.director.playCue(cue));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.audioBridge?.reset();
@@ -149,7 +139,12 @@ export class OnlineScene extends Phaser.Scene {
     const now = this.controller.now();
     const state = this.controller.renderState(now);
     this.arenaTelegraph?.update(state?.tick ?? 0, state?.phase === 'fighting', state?.arena);
-    this.stationEvent?.update(state?.tick ?? 0, state?.phase === 'fighting');
+    const lobby = this.controller.lobbyState;
+    const hasAuthoritativeLobby = lobby.requiredPlayerIds.length > 0;
+    const authoritativeArena = state !== null ? state.arena ?? 'station'
+      : hasAuthoritativeLobby ? lobby.arena : this.activeArenaId;
+    if (state !== null || hasAuthoritativeLobby) this.setArenaBackdrop(authoritativeArena);
+    this.stationEvent?.update(state?.tick ?? 0, state?.phase === 'fighting' && authoritativeArena === 'station');
     if (state) {
       this.audioBridge?.observe(state);
       this.audio?.director.setMusicDucked(state.phase === 'results');
@@ -163,6 +158,34 @@ export class OnlineScene extends Phaser.Scene {
     this.onFrame?.(now);
   }
 
+  /** Current visual arena, sourced from the latest authoritative snapshot after joining. */
+  debugArenaId(): string { return this.activeArenaId; }
+  debugArenaBackdropTexture(): string | null { return this.arenaBackdrop?.texture.key ?? null; }
+
+  private setArenaBackdrop(arenaId: string): void {
+    const visual = resolveArenaVisual(arenaId);
+    const key = arenaBackdropTextureKey(arenaId);
+    this.activeArenaId = arenaId;
+    if (!this.textures.exists(key)) {
+      if (!this.arenaArtError) {
+        this.arenaArtError = this.add.text(12, 42,
+          `ARENA ART ERROR\n${visual.manifest.displayName}\n${visual.backdropPath}`, {
+            color: '#fff1b7', backgroundColor: '#172536', fontFamily: 'monospace', fontSize: '14px', padding: { x: 8, y: 6 },
+          }).setDepth(1000);
+      }
+      return;
+    }
+    this.arenaArtError?.destroy();
+    this.arenaArtError = undefined;
+    const depth = visual.layers.find(layer => layer.id === 'architecture')?.depth ?? -100;
+    if (!this.arenaBackdrop) {
+      this.arenaBackdrop = this.add.image(0, 0, key).setOrigin(0, 0)
+        .setDisplaySize(VIEWPORT.logicalWidth, VIEWPORT.logicalHeight).setDepth(depth);
+    } else if (this.arenaBackdrop.texture.key !== key) {
+      this.arenaBackdrop.setTexture(key).setDepth(depth);
+    }
+  }
+
   /** Read-only audio diagnostics used by browser QA; no simulation state is exposed. */
   audioDiagnostics(): { state: string; muted: boolean; volume: number } {
     const settings = this.audio?.director.settings;
@@ -171,8 +194,9 @@ export class OnlineScene extends Phaser.Scene {
 
   /** Development harness hook for rendering a supplied authoritative snapshot without stepping it. */
   debugRenderSnapshot(state: GameState | null): void {
+    if (state) this.setArenaBackdrop(state.arena ?? 'station');
     this.arenaTelegraph?.update(state?.tick ?? 0, state?.phase === 'fighting', state?.arena);
-    this.stationEvent?.update(state?.tick ?? 0, state?.phase === 'fighting');
+    this.stationEvent?.update(state?.tick ?? 0, state?.phase === 'fighting' && (state?.arena ?? 'station') === 'station');
     this.drawZone(state);
     this.itemPresentation?.draw(state);
     this.renderHud(state);
@@ -282,7 +306,7 @@ export class OnlineScene extends Phaser.Scene {
         marker.label.setPosition(markerX, markerY);
         if (fighter.eliminated) {
           sprite.setTintFill(0x4a5561).setAlpha(0.72);
-        } else if (!reducedMotion && RETRO_PREVIEW && (this.hitUntil.get(fighter.id) ?? 0) > state.tick && state.tick % 6 < 3) {
+        } else if (!reducedMotion && (this.hitUntil.get(fighter.id) ?? 0) > state.tick && state.tick % 6 < 3) {
           sprite.setTintFill(0xffe3a0);
           sprite.setAlpha(1);
         } else {

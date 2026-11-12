@@ -258,6 +258,23 @@ export class SessionEnvelopeGateway {
         this.sequences.set(connectionId, header.sequence);
         return accepted(envelope);
       }
+      case 'ready-request': {
+        // Ready signals client intent; authoritative room decides when to start.
+        // Gateway validates any explicit slot claims before passing through.
+        const envelope = decodeClientEnvelope(message, header);
+        if (envelope.kind === 'ready-request' && envelope.playerIds !== undefined) {
+          for (const playerId of envelope.playerIds) {
+            if (!this.ingress.owns(connectionId, playerId)) return denied('unauthorized-player', 'Ready request claims an unauthorized player');
+          }
+        }
+        this.sequences.set(connectionId, header.sequence);
+        return accepted(envelope);
+      }
+      case 'start-request': {
+        const envelope = decodeClientEnvelope(message, header);
+        this.sequences.set(connectionId, header.sequence);
+        return accepted(envelope);
+      }
     }
   }
 

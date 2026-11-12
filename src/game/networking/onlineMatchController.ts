@@ -1,5 +1,5 @@
 import type { StateSnapshot } from '../protocol/stateSnapshot';
-import { isRoomCode, normalizeRoomCode } from '../session/sessionEnvelope';
+import { isRoomCode, normalizeRoomCode, type RoomConfiguration } from '../session/sessionEnvelope';
 import { TICK_RATE } from '../simulation/step';
 import type { GameState, PlayerInput } from '../simulation/types';
 import {
@@ -77,6 +77,8 @@ export type OnlineJoinOptions = {
    * present it is normalized to uppercase and sent with the join.
    */
   readonly roomCode?: string;
+  /** Present when this browser is creating the one room hosted by the process. */
+  readonly roomConfig?: RoomConfiguration;
 };
 
 type MatchStartInfo = {
@@ -84,6 +86,16 @@ type MatchStartInfo = {
   readonly tickRate: number;
   readonly snapshotHz: SnapshotHz;
   readonly matchId?: number;
+};
+
+export type OnlineLobbyState = {
+  readonly requiredPlayerIds: readonly string[];
+  readonly playerIds: readonly string[];
+  readonly readyPlayerIds: readonly string[];
+  readonly hostPlayerId: string | null;
+  readonly mode: string;
+  readonly arena: string;
+  readonly durationMinutes: number;
 };
 
 const ROOM_ID = 'match';
@@ -136,6 +148,7 @@ export class OnlineMatchController {
   private playerIdValue = '';
   private roomCodeValue = '';
   private urlValue = '';
+  private lobbyStateValue: OnlineLobbyState = { requiredPlayerIds: [], playerIds: [], readyPlayerIds: [], hostPlayerId: null, mode: 'score-brawl', arena: 'station', durationMinutes: 2 };
 
   private statusValue: OnlineStatus = { state: 'idle', message: 'Not connected.' };
   private snapshots: TimedSnapshot[] = [];
@@ -172,6 +185,7 @@ export class OnlineMatchController {
   get connectionState(): OnlineConnectionState { return this.statusValue.state; }
   get playerId(): string { return this.playerIdValue; }
   get roomCode(): string { return this.roomCodeValue; }
+  get lobbyState(): OnlineLobbyState { return this.lobbyStateValue; }
   get url(): string { return this.urlValue; }
   get snapshotCount(): number { return this.snapshotCountValue; }
   get latestTick(): number {
@@ -255,6 +269,19 @@ export class OnlineMatchController {
             this.statusValue.state === 'running') return;
         this.setStatus('joined', `Roster: ${playerIds.join(', ') || 'empty'}. ` +
           'Waiting for every configured slot…');
+      },
+      onLobbyState: state => {
+        if (attempt !== this.attemptToken || this.terminal) return;
+        this.lobbyStateValue = {
+          requiredPlayerIds: [...state.requiredPlayerIds],
+          playerIds: [...state.playerIds],
+          readyPlayerIds: [...state.readyPlayerIds],
+          hostPlayerId: state.hostPlayerId,
+          mode: state.mode,
+          arena: state.arena,
+          durationMinutes: state.durationMinutes,
+        };
+        this.emitStatus();
       },
       onMatchStart: info => {
         if (attempt !== this.attemptToken || !this.joined) return;
@@ -392,7 +419,7 @@ export class OnlineMatchController {
       });
       this.session = session;
       // The adapter queues this until the WebSocket handshake completes.
-      session.client.join([this.playerIdValue], roomCode);
+      session.client.join([this.playerIdValue], roomCode, options.roomConfig);
     } catch (error) {
       this.fail(`Could not open the connection: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -439,6 +466,16 @@ export class OnlineMatchController {
     return this.session.client.rematch();
   }
 
+  requestReady(): number {
+    if (this.session === null) throw new Error('No open session to ready up');
+    return this.session.client.ready();
+  }
+
+  requestHostStart(): number {
+    if (this.session === null) throw new Error('No open session to start');
+    return this.session.client.startMatch();
+  }
+
   /** Best-effort graceful leave, then close the socket. Idempotent. */
   disconnect(): void {
     const hadSession = this.session !== null;
@@ -475,6 +512,7 @@ export class OnlineMatchController {
     this.matchStartValue = null;
     this.matchStartedAt = null;
     this.matchResultValue = null;
+    this.lobbyStateValue = { requiredPlayerIds: [], playerIds: [], readyPlayerIds: [], hostPlayerId: null, mode: 'score-brawl', arena: 'station', durationMinutes: 2 };
     this.rematchRefusedCodeValue = null;
     this.nextTick = 0;
     this.roomCodeValue = '';

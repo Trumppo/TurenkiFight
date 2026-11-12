@@ -1,6 +1,6 @@
 # Graphics roadmap (designer proposal, 2026-11-07)
 
-**Status:** Implemented 2026-11-09 (G1-G6 merged). **Retro is the default style since 2026-11-10** (owner decision; build with `VITE_VISUAL_STYLE=classic` for the classic art). Owner approved the track and asked for it to be executed; each
+**Status:** Implemented 2026-11-09 (G1-G6 merged). **Retro is the only supported visual style since 2026-11-11**; the former classic build path has been removed. Owner approved the track and asked for it to be executed; each
 phase still needs an owner visual review in the game. Merging is not acceptance. The game is desktop only: touch
 controls and mobile browsers are out of scope (owner decision 2026-11-07).
 
@@ -9,8 +9,7 @@ controls and mobile browsers are out of scope (owner decision 2026-11-07).
 
 ## 1. Starting point (observed in the repository, not claimed)
 
-- Logical canvas is **640x360**, scaled to the window. Two visual styles exist: `classic` (default) and `retro`
-  (`VITE_VISUAL_STYLE=retro`, accepted in M1.5 and M9).
+- Logical canvas is **640x360**, scaled to the window. The supported visual style is retro.
 - Fighters, arenas and HUD are procedural or SVG. Arena art is in `public/assets/`.
 - Presentation adapters (`StationScene`, `OnlineScene`) read simulation state and events and never decide outcomes.
 - Browser tests exist for layout, HUD and screenshots. Cross-platform **pixel hashes are not portable**: PR #172 failed
@@ -37,7 +36,7 @@ Each phase is one independently reviewable PR where possible.
 ### G1 - Desktop evaluation baseline (implemented, PR #183 and #188)
 
 - **Goal:** make visual review repeatable. A committed matrix of screenshots and a short review note, produced by one
-  command, covering classic and retro at 640x360 and 1280x720.
+  command, covering retro at 640x360 and 1280x720.
 - **Scope:** a test/harness script and `docs/visual/` evidence. No change to rendering.
 - **Acceptance:**
   1. One command writes the matrix for the station, K-kauppa and Mesku arenas with four fighters at the two desktop sizes.
@@ -114,7 +113,16 @@ G6 read as intended in motion. G3's spark is deliberately subtle and is the most
 ## 6. Open questions for the owner
 
 1. ~~Phone viewing or phone play~~ **Answered 2026-11-07: neither. The game is desktop only.**
-2. Should the retro style become the default after G2 and G4, or stay opt-in?
-   **Owner answer 2026-11-07: B.** Retro becomes the default only after the owner has approved G2 and G4.
-   Until then classic stays the default and retro stays opt-in (`VITE_VISUAL_STYLE=retro`). No default change is implemented.
-2. Is the K-kauppa band visual acceptable before the owner playtest, or should G6 wait?
+2. ~~Should the retro style become the default after G2 and G4, or stay opt-in?~~ **Resolved 2026-11-11: retro-only.**
+   The classic build path and its visual test matrix were removed; retro is the only supported style.
+3. Is the K-kauppa band visual acceptable before the owner playtest, or should G6 wait?
+
+## 7. Future arena photo-based updates (2026-11-11)
+
+A repeatable workflow now exists for updating arena backgrounds from real photos:
+- Collect multiple real photos (angles + seasons).
+- Generate 320×180 retro reference image(s) as aids (not final assets).
+- Graphics manually recreates clean SVG matching game style + correct real colors + quiet platform.
+- See `docs/ART_PHOTO_REFERENCE_WORKFLOW.md` for the full process and reference storage rules.
+
+First application: Turenki station (light pinkish-white facade instead of previous ochre). Same process will be used for K-kauppa and Mesku when ready.

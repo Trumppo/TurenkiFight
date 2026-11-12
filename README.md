@@ -2,7 +2,7 @@
 
 TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting game with an 8-bit-inspired pixel-art aesthetic. Inspired by the energy of classic arcade fighters (including IK+), but with its own mechanics, art and identity.
 
-**Status (2026-11-04):** M1 and M1.5 are accepted with documented limitations. Three modes are playable locally and online (Score Brawl, Last Man Standing, Deathmatch), local bots can fill empty slots, and an **ALL BOTS** action runs an eight-bot match unattended for testing. The roster supports up to **eight** players, the Ravintola Mesku arena is available with `?arena=mesku`, the local results screen shows a ranked podium with a victory cue, and placeholder audio exists. An authoritative WebSocket prototype serves real matches over LAN or VPN, now with an authoritative result payload and an opt-in rematch in the same process; it has no TLS, authentication or rate limiting, and eight-player network load is not measured. See [roadmap](docs/ROADMAP.md) and [ADR 0001](docs/adr/0001-network-topology.md).
+**Status (2026-11-11):** M1 and M1.5 are accepted with documented limitations. Four modes are playable locally and online (Score Brawl, Last Man Standing, Deathmatch, Wave), local bots can fill empty slots, and an **ALL BOTS** action runs an eight-bot match unattended for testing. The roster supports up to **eight** players. K-kauppa and Ravintola Mesku arenas are selectable via the lobby ARENA dropdown (or `?arena=kkauppa` / `?arena=mesku` for direct links); the local results screen shows a ranked podium with a victory cue, and placeholder audio exists. The authoritative WebSocket match server supports optional TLS/WSS, room codes, connection/rate/message-size limits, non-host rejoin, authoritative results and opt-in rematch. These controls are not authentication or a capacity guarantee; actual network performance is not measured. See [roadmap](docs/ROADMAP.md), [Gate F hosting guide](docs/GATE_F_HOSTING_GUIDE.md) and [ADR 0001](docs/adr/0001-network-topology.md).
 
 ## Core vision
 
@@ -10,14 +10,14 @@ TurenkiFight is a browser-based, Turenki-themed multiplayer 2.5D arena fighting 
 - Fixed arena camera: everyone sees the same battlefield.
 - 2.5D movement: X/Y ground-plane movement and Z jump height, rendered with depth-sorted 2D sprites.
 - First arena: **Turengin rautatieasema** (Turenki railway station), a stylized interpretation rather than a scale model.
-- Game modes: **Score Brawl**, **Last Man Standing** and **Deathmatch** are implemented; a full tie ends as a draw by owner decision.
+- Game modes: **Score Brawl**, **Last Man Standing**, **Deathmatch** and **Wave** are implemented; a full tie ends as a draw by owner decision.
 - Player count: **eight** is the supported maximum (owner decision 2026-11-03, one `MAX_PLAYERS` constant). Slots 1-4 have keyboard layouts; slots 5-8 are gamepad or bot slots. Eight fighters are supported but not reliably readable in the 640x360 arena during combat, which is a known limitation.
-- Arenas: Turengin rautatieasema (default) and Ravintola Mesku (`?arena=mesku`).
+- Arenas: Turengin rautatieasema (default), K-kauppa and Ravintola Mesku. Choose from the lobby ARENA dropdown (or use `?arena=kkauppa` / `?arena=mesku` for direct links).
 - Browser-only client with keyboard and gamepad support.
 
 ## Planned distribution
 
-The static client is built and published through **GitHub Pages**. The transport is decided: a central authoritative WebSocket server ([ADR 0001](docs/adr/0001-network-topology.md)). A prototype match server, an online browser client and headless bots exist; there is no TLS, authentication, rate limiting or TURN, and no real network measurement has been performed, so treat online play as LAN/VPN-only.
+The static client can be published through **GitHub Pages**. The transport is decided: a central authoritative WebSocket server ([ADR 0001](docs/adr/0001-network-topology.md)). The match server supports operator-provided TLS/WSS and basic abuse limits; room codes are not authentication. No real network performance has been measured. See the [hosting guide](docs/GATE_F_HOSTING_GUIDE.md) for LAN/VPN and public WSS setup boundaries.
 
 ## Run locally
 
@@ -26,13 +26,13 @@ npm ci
 npm run dev
 ```
 
-Retro pixel art is the default style. Build or run with `VITE_VISUAL_STYLE=classic` for the original classic art; the browser test harness pins classic by default and the retro job sets `VITE_VISUAL_STYLE=retro`.
+Retro pixel art is the only supported visual style. `VITE_FIGHTER_CANVAS=expanded` remains an optional retro rendering experiment.
 
 Open the local URL printed by Vite. To check changes, run `npm test`, `npm run build`, and `npm run test:browser` (Playwright browsers may need installation via `npx playwright install chromium`). GitHub Pages publishes the static browser client; it is not a multiplayer server.
 
-## Serve a real authoritative match (LAN or VPN only)
+## Serve a real authoritative match
 
-`npm run serve:match` hosts one real match over WebSocket for up to eight players. It reuses the authoritative session and envelope gateway; it is not the benchmark fixture runner and writes no manifest. Add `--mode=score-brawl|last-man-standing|deathmatch|wave` to choose the mode. In `wave`, connected humans are players and every unclaimed slot becomes a deterministic bot enemy; the match needs at least one human and one unclaimed slot.
+`npm run serve:match` hosts one real match over WebSocket for up to eight players. It reuses the authoritative session and envelope gateway; it is not the benchmark fixture runner and writes no manifest. Add `--mode=score-brawl|last-man-standing|deathmatch|wave` to choose the mode. In `wave`, connected humans are players and every unclaimed slot becomes a deterministic bot enemy; the match needs at least one human and one unclaimed slot. For user-facing LAN/VPN or TLS/WSS internet hosting steps, see the [Gate F hosting guide](docs/GATE_F_HOSTING_GUIDE.md).
 
 ```bash
 npm run serve:match -- --host=127.0.0.1 --port=8787 --players=4 --snapshot-hz=20
@@ -49,9 +49,9 @@ npm run serve:match -- --host=127.0.0.1 --port=8787 --players=4 --snapshot-hz=20
 
 The command prints exactly one machine-readable ready line on stdout (for example `{"kind":"match-server-ready","url":"ws://127.0.0.1:8787",...}`) and human-readable status on stderr. Type `start` to request an explicit start (the roster must still be full) and `quit` to stop. Ctrl+C/SIGINT and SIGTERM stop the 60 Hz loop and close every socket.
 
-A fifth connection is closed before registration with close code `1008`, so extra peers cannot join or disturb a running match. A mid-match disconnect revokes that connection's slots under the existing session rules; if the host disconnects, the session closes (`host-lost`) rather than migrating authority.
+A connection beyond the configured cap is closed before registration with close code `1008`. A non-host disconnect during a match reserves the slot for 30 seconds for same-code/same-slot rejoin; if the host disconnects, the session closes (`host-lost`) rather than migrating authority.
 
-**Security and latency:** `ws://` is unencrypted and has no authentication or rate limiting. Use it only on a LAN or over a VPN/SSH tunnel, never exposed to the open internet. The online client exists at `/online.html`; it renders snapshots by interpolation, shows RTT, and shows the authoritative result plus a rematch control at match end. There is still no prediction, so expect input latency of roughly the round-trip time plus up to one snapshot interval (50 ms at 20 Hz).
+**Security and latency:** without `--cert`/`--key`, `ws://` is unencrypted and should be limited to a trusted LAN/VPN, never exposed to the open internet. TLS/WSS uses operator-managed certificates; room codes and rate limits do not authenticate users. The online client at `/online.html` renders snapshots by interpolation, shows RTT, and shows the authoritative result plus an optional rematch control. There is no client prediction, and no real-link performance is claimed.
 
 ## Design and project status
 

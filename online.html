@@ -15,6 +15,11 @@
 
       <section id="online-setup" class="online-panel" aria-label="Online connection">
         <form id="online-connect-form" class="online-form" autocomplete="off">
+          <label for="room-action">Room</label>
+          <select id="room-action" name="roomAction">
+            <option value="create">CREATE ROOM</option>
+            <option value="join">JOIN ROOM</option>
+          </select>
           <label for="server-url">Server</label>
           <input id="server-url" name="server" type="text" inputmode="url"
             placeholder="ws://127.0.0.1:8787" value="ws://127.0.0.1:8787" />
@@ -27,6 +32,32 @@
             <option value="P2">P2</option>
             <option value="P3">P3</option>
             <option value="P4">P4</option>
+            <option value="P5">P5</option>
+            <option value="P6">P6</option>
+            <option value="P7">P7</option>
+            <option value="P8">P8</option>
+          </select>
+          <label for="room-mode">Mode</label>
+          <select id="room-mode" name="mode">
+            <option value="score-brawl">Score Brawl</option>
+            <option value="last-man-standing">Last Man Standing</option>
+            <option value="deathmatch">Deathmatch</option>
+            <option value="wave">Wave</option>
+          </select>
+          <label for="room-arena">Arena</label>
+          <select id="room-arena" name="arena">
+            <option value="station">Turenki Station</option>
+            <option value="mesku">Ravintola Mesku</option>
+            <option value="kkauppa">K-kauppa</option>
+          </select>
+          <label for="room-player-count">Players</label>
+          <select id="room-player-count" name="playerCount">
+            <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option>
+            <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+          </select>
+          <label for="room-duration">Duration</label>
+          <select id="room-duration" name="durationMinutes">
+            <option value="1">1 minute</option><option value="2" selected>2 minutes</option><option value="3">3 minutes</option>
           </select>
           <button id="online-connect" type="submit">Connect</button>
         </form>
@@ -49,6 +80,14 @@
           scheduling lead.
         </p>
         <p id="online-keys" class="online-note" aria-live="polite"></p>
+      </section>
+
+      <section id="online-lobby" class="online-panel online-lobby" aria-label="Online room lobby" hidden>
+        <h2>ROOM LOBBY</h2>
+        <p id="online-lobby-summary" role="status" aria-live="polite">Waiting for the room state…</p>
+        <p id="online-lobby-roster"></p>
+        <button id="online-ready" type="button" disabled>READY</button>
+        <button id="online-host-start" type="button" hidden disabled>HOST START</button>
       </section>
 
       <div id="game" aria-label="TurenkiFight online game canvas">
@@ -103,7 +142,7 @@
             <tr><th>Jump kick</th><td>H</td><td>U</td></tr>
           </tbody>
         </table>
-        <p>P3 and P4 use the P1 keyboard layout. LEAVE closes the session and returns to the join form; leaving the page also closes it.</p>
+        <p>P3–P8 use the P1 keyboard layout. LEAVE closes the session and returns to the join form; leaving the page also closes it.</p>
       </details>
     </main>
     <script type="module" src="/src/online.ts"></script>

@@ -20,6 +20,13 @@ import type { WsBenchmarkTickMode } from './wsManifest';
 export const WS_BENCHMARK_SCENARIO_ID = 'BASE-4-60-20' as const;
 export const WS_BENCHMARK_PLAYER_COUNT = 4;
 export const WS_BENCHMARK_ROSTER: readonly string[] = createRoster(WS_BENCHMARK_PLAYER_COUNT);
+export type WsBenchmarkPlayerCount = 4 | 8;
+export function wsBenchmarkRoster(playerCount: WsBenchmarkPlayerCount): readonly string[] {
+  return createRoster(playerCount);
+}
+export function wsBenchmarkScenarioId(playerCount: WsBenchmarkPlayerCount): 'BASE-4-60-20' | 'BASE-8-60-20' {
+  return playerCount === 8 ? 'BASE-8-60-20' : WS_BENCHMARK_SCENARIO_ID;
+}
 
 export const DEFAULT_TICKS = 300;
 export const MAX_TICKS = 7200;
@@ -87,7 +94,7 @@ export function decodeFixtureSchedule(
   const schedule: PlayerInput[][] = [];
   for (let tick = 0; tick < ticks; tick++) {
     const tickFrames = frames[tick];
-    if (tickFrames.length !== 1) throw new Error('Invalid BASE-4 fixture framing');
+    if (tickFrames.length !== 1) throw new Error('Invalid BASE fixture framing');
     const frame = decodeInputFrame(tickFrames[0]);
     if (frame.tick !== tick || frame.inputs.length !== players.length) throw new Error('Invalid fixture tick');
     for (const playerId of players) {
@@ -100,11 +107,16 @@ export function decodeFixtureSchedule(
 
 /** The deterministic fixture slice every role drives for the same tick bound. */
 export function loadWsBenchmarkSchedule(ticks: number): WsBenchmarkSchedule {
-  const fixture = generateFixture(WS_BENCHMARK_SCENARIO_ID);
+  return loadWsBenchmarkScheduleForPlayers(ticks, WS_BENCHMARK_PLAYER_COUNT);
+}
+
+export function loadWsBenchmarkScheduleForPlayers(ticks: number, playerCount: WsBenchmarkPlayerCount): WsBenchmarkSchedule {
+  const players = wsBenchmarkRoster(playerCount);
+  const fixture = generateFixture(wsBenchmarkScenarioId(playerCount));
   return {
     fixture,
-    players: [...WS_BENCHMARK_ROSTER],
-    schedule: decodeFixtureSchedule(fixture.framesByTick, WS_BENCHMARK_ROSTER, ticks),
+    players: [...players],
+    schedule: decodeFixtureSchedule(fixture.framesByTick, players, ticks),
   };
 }
 
@@ -116,10 +128,16 @@ export type ReferenceFingerprints = {
 
 /** In-memory BASE-4 reference for the same bounded range; no sockets involved. */
 export function inMemoryReferenceFingerprints(ticks: number): ReferenceFingerprints {
-  const fixture = generateFixture(WS_BENCHMARK_SCENARIO_ID);
+  return inMemoryReferenceFingerprintsForPlayers(ticks, WS_BENCHMARK_PLAYER_COUNT);
+}
+
+export function inMemoryReferenceFingerprintsForPlayers(ticks: number, playerCount: WsBenchmarkPlayerCount): ReferenceFingerprints {
+  const scenarioId = wsBenchmarkScenarioId(playerCount);
+  const roster = wsBenchmarkRoster(playerCount);
+  const fixture = generateFixture(scenarioId);
   const reference = new InMemoryBenchmarkAdapter();
-  reference.connect({ scenarioId: WS_BENCHMARK_SCENARIO_ID });
-  reference.join([...WS_BENCHMARK_ROSTER]);
+  reference.connect({ scenarioId });
+  reference.join([...roster]);
   for (let tick = 0; tick < ticks; tick++) reference.sendInput(fixture.framesByTick[tick][0]);
   const finalStateSha256 = sha256(encodeStateSnapshot(reference.observeSnapshot()));
   const orderedEventsSha256 = sha256(JSON.stringify(reference.observeEvents()));

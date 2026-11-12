@@ -1,7 +1,6 @@
 import type Phaser from 'phaser';
 import type { GameState, SimObject } from '../simulation/types';
 
-const TEXTURE_CLASSIC = 'm12-bottle-classic';
 const TEXTURE_RETRO = 'm12-bottle-retro';
 
 type ObjectDrawDiagnostic = {
@@ -22,9 +21,9 @@ export class ObjectPresentation {
   private readonly hint?: HTMLElement;
   private readonly textureKey: string;
 
-  constructor(private readonly scene: Phaser.Scene, retro: boolean) {
-    this.textureKey = retro ? TEXTURE_RETRO : TEXTURE_CLASSIC;
-    if (!scene.textures.exists(this.textureKey)) this.createBottleTexture(retro);
+  constructor(private readonly scene: Phaser.Scene) {
+    this.textureKey = TEXTURE_RETRO;
+    if (!scene.textures.exists(this.textureKey)) this.createBottleTexture();
     this.hint = document.getElementById('object-hint') ?? undefined;
     if (this.hint) this.hint.hidden = true;
   }
@@ -95,13 +94,13 @@ export class ObjectPresentation {
     if (this.hint) this.hint.hidden = true;
   }
 
-  private createBottleTexture(retro: boolean): void {
+  private createBottleTexture(): void {
     const graphics = this.scene.make.graphics({ x: 0, y: 0 });
-    const outline = retro ? 0x182b31 : 0x172536;
-    const glass = retro ? 0x3e8c7f : 0x267d71;
-    const glassLight = retro ? 0x91d8bc : 0x8ad8bc;
-    const label = retro ? 0xffe39a : 0xffefc0;
-    const cap = retro ? 0xf17358 : 0xe66e59;
+    const outline = 0x182b31;
+    const glass = 0x3e8c7f;
+    const glassLight = 0x91d8bc;
+    const label = 0xffe39a;
+    const cap = 0xf17358;
 
     // Block-by-block bottle silhouette: dark outline, flared shoulders, neck,
     // bright cap and a cream label remain legible after nearest-neighbor scale.
@@ -116,7 +115,7 @@ export class ObjectPresentation {
     graphics.fillStyle(glass, 1).fillRect(6, 11, 8, 5);
     graphics.fillStyle(glassLight, 1).fillRect(7, 10, 1, 6);
     graphics.fillStyle(label, 1).fillRect(8, 11, 5, 4);
-    graphics.fillStyle(retro ? 0x41534a : 0x496655, 1).fillRect(9, 12, 3, 1);
+    graphics.fillStyle(0x41534a, 1).fillRect(9, 12, 3, 1);
     graphics.fillStyle(glass, 1).fillRect(7, 16, 6, 1);
     graphics.generateTexture(this.textureKey, 20, 20);
     graphics.destroy();

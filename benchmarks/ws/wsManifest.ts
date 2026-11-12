@@ -1,6 +1,6 @@
 import { NOT_MEASURED } from '../manifest';
 import { SUPPORTED_SNAPSHOT_HZ, type SnapshotHz } from '../../src/game/networking/wsMessages';
-import { WS_BENCHMARK_PLAYER_COUNT } from './benchmarkSetup';
+import { WS_BENCHMARK_PLAYER_COUNT, type WsBenchmarkPlayerCount } from './benchmarkSetup';
 
 /**
  * Machine-readable manifest for the WebSocket prototype run.
@@ -56,7 +56,7 @@ export type WsPrototypeManifest = {
   schemaVersion: 3;
   kind: 'ws-prototype-run';
   runId: string;
-  scenarioId: 'BASE-4-60-20';
+  scenarioId: 'BASE-4-60-20' | 'BASE-8-60-20';
   scenarioVersion: 1;
   commitSha: string;
   architecture: 'architecture-a';
@@ -64,7 +64,7 @@ export type WsPrototypeManifest = {
   transport: 'ws-central';
   protocolVersion: 1;
   serverMessageVersion: 1;
-  players: 4;
+  players: WsBenchmarkPlayerCount;
   simulationHz: 60;
   inputHz: 60;
   snapshotHz: SnapshotHz;
@@ -123,6 +123,7 @@ export type WsPrototypeManifestInput = {
   maxLeadTicks: number;
   boundedTicks: number;
   tickMode: WsBenchmarkTickMode;
+  playerCount?: WsBenchmarkPlayerCount;
   /** Defaults to the single-process loopback topology. */
   topology?: WsPrototypeManifestTopologyInput;
   correctness: WsPrototypeManifest['correctness'];
@@ -143,7 +144,7 @@ export function pacingForTickMode(tickMode: WsBenchmarkTickMode): WsBenchmarkPac
   return tickMode === 'interval' ? 'timer-driven-approximation' : 'unsynchronized-correctness';
 }
 
-function topologyFor(input: WsPrototypeManifestTopologyInput): WsBenchmarkTopology {
+function topologyFor(input: WsPrototypeManifestTopologyInput, playerCount: WsBenchmarkPlayerCount): WsBenchmarkTopology {
   if (!isRecord(input) || (input.role !== 'loopback' && input.role !== 'server-coordinator')) {
     throw new Error('Invalid WS prototype manifest');
   }
@@ -161,7 +162,7 @@ function topologyFor(input: WsPrototypeManifestTopologyInput): WsBenchmarkTopolo
       mode: 'loopback',
       bindHostProvided: false,
       bindPortProvided: false,
-      clientCount: WS_BENCHMARK_PLAYER_COUNT,
+      clientCount: playerCount,
       clientsInProcess: true,
       tls: false,
     };
@@ -174,7 +175,7 @@ function topologyFor(input: WsPrototypeManifestTopologyInput): WsBenchmarkTopolo
     mode: 'network',
     bindHostProvided: true,
     bindPortProvided: true,
-    clientCount: WS_BENCHMARK_PLAYER_COUNT,
+    clientCount: playerCount,
     clientsInProcess: false,
     tls: false,
   };
@@ -194,7 +195,7 @@ function validateCorrectness(value: unknown): asserts value is WsPrototypeManife
   }
 }
 
-function validateTopology(value: unknown): asserts value is WsBenchmarkTopology {
+function validateTopology(value: unknown, playerCount: WsBenchmarkPlayerCount): asserts value is WsBenchmarkTopology {
   if (!isRecord(value) ||
       !exactKeys(value, [
         'role', 'mode', 'bindHostProvided', 'bindPortProvided', 'clientCount', 'clientsInProcess', 'tls',
@@ -202,7 +203,7 @@ function validateTopology(value: unknown): asserts value is WsBenchmarkTopology 
       (value.role !== 'loopback' && value.role !== 'server-coordinator') ||
       (value.mode !== 'loopback' && value.mode !== 'network') ||
       typeof value.bindHostProvided !== 'boolean' || typeof value.bindPortProvided !== 'boolean' ||
-      value.clientCount !== WS_BENCHMARK_PLAYER_COUNT ||
+      value.clientCount !== playerCount ||
       typeof value.clientsInProcess !== 'boolean' || value.tls !== false) {
     throw new Error('Invalid WS prototype manifest');
   }
@@ -229,12 +230,13 @@ function validateTopology(value: unknown): asserts value is WsBenchmarkTopology 
 }
 
 export function createWsPrototypeManifest(input: WsPrototypeManifestInput): WsPrototypeManifest {
-  const topology = topologyFor(input.topology ?? { role: 'loopback' });
+  const playerCount = input.playerCount ?? WS_BENCHMARK_PLAYER_COUNT;
+  const topology = topologyFor(input.topology ?? { role: 'loopback' }, playerCount);
   const manifest: WsPrototypeManifest = {
     schemaVersion: 3,
     kind: 'ws-prototype-run',
     runId: input.runId,
-    scenarioId: 'BASE-4-60-20',
+    scenarioId: playerCount === 8 ? 'BASE-8-60-20' : 'BASE-4-60-20',
     scenarioVersion: 1,
     commitSha: input.commitSha,
     architecture: 'architecture-a',
@@ -242,7 +244,7 @@ export function createWsPrototypeManifest(input: WsPrototypeManifestInput): WsPr
     transport: 'ws-central',
     protocolVersion: 1,
     serverMessageVersion: 1,
-    players: 4,
+    players: playerCount,
     simulationHz: 60,
     inputHz: 60,
     snapshotHz: input.snapshotHz,
@@ -283,11 +285,14 @@ export function validateWsPrototypeManifest(value: unknown): asserts value is Ws
       ]) ||
       value.schemaVersion !== 3 || value.kind !== 'ws-prototype-run' ||
       typeof value.runId !== 'string' || !RUN_ID.test(value.runId) ||
-      value.scenarioId !== 'BASE-4-60-20' || value.scenarioVersion !== 1 ||
+      (value.scenarioId !== 'BASE-4-60-20' && value.scenarioId !== 'BASE-8-60-20') ||
+      value.scenarioVersion !== 1 ||
       typeof value.commitSha !== 'string' || !COMMIT.test(value.commitSha) ||
       value.architecture !== 'architecture-a' || value.authority !== 'authoritative-server' ||
       value.transport !== 'ws-central' || value.protocolVersion !== 1 || value.serverMessageVersion !== 1 ||
-      value.players !== 4 || value.simulationHz !== 60 || value.inputHz !== 60 ||
+      (value.players !== 4 && value.players !== 8) ||
+      value.scenarioId !== (value.players === 8 ? 'BASE-8-60-20' : 'BASE-4-60-20') ||
+      value.simulationHz !== 60 || value.inputHz !== 60 ||
       !SUPPORTED_SNAPSHOT_HZ.includes(value.snapshotHz as SnapshotHz) ||
       !nonnegative(value.maxLeadTicks) || (value.maxLeadTicks as number) < 1 ||
       !nonnegative(value.boundedTicks) || (value.boundedTicks as number) < 1 ||
@@ -299,7 +304,7 @@ export function validateWsPrototypeManifest(value: unknown): asserts value is Ws
     throw new Error('Invalid WS prototype manifest');
   }
 
-  validateTopology(value.topology);
+  validateTopology(value.topology, value.players as WsBenchmarkPlayerCount);
 
   const environment = value.environment;
   if (!isRecord(environment) ||

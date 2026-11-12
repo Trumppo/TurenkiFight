@@ -38,7 +38,7 @@ async function startProbeFight(page: import('@playwright/test').Page): Promise<v
 
 test('local P1-P4 keyboard bindings remap, join, persist and reset without moving the canvas', async ({ page }) => {
   const errors: string[] = [];
-  const style = process.env.VITE_VISUAL_STYLE === 'retro' ? 'retro' : 'classic';
+  const style = 'retro';
   mkdirSync('artifacts/screenshots', { recursive: true });
   page.on('pageerror', error => errors.push(error.message));
   await page.setViewportSize({ width: 1280, height: 720 });

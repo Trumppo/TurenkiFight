@@ -58,7 +58,7 @@ This is a protocol change (a new input field), so it needs ADR 0004 before imple
    objects are unchanged.
 3. Bandwidth impact measured on a fixture with the maximum objects; no invented numbers.
 4. Bots pick up and throw within a match; measurable count before/after in a fixture.
-5. Rendered bottle, held bottle and thrown arc are readable at 640x360 and 1280x720 in classic and retro.
+5. Rendered bottle, held bottle and thrown arc are readable at 640x360 and 1280x720 in retro.
 6. Full suites in both builds pass; Score Brawl and Last Man Standing rules are untouched apart from the shared
    object layer.
 
