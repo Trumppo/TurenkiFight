@@ -2360,6 +2360,6 @@ tasks:
       - npm run test:browser and the configured game-harness workflow pass; no assertion is weakened or skipped
     rationale: "PR #199 correctly defers Phaser/Game creation until LOCAL FIGHT, but legacy browser tests assume a game canvas exists immediately on page load."
     branch: tester/gate-g-title-flow-regression-tests
-    pull_request: "pending; title must start TESTER:; Task: GATE-G-TITLE-FLOW-REGRESSION-TESTS"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/204
     user_decision_gate: "No new product decision; tests must retain the owner-approved title screen and Local/Create/Join flow."
     last_updated: "2026-11-13"
