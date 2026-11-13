@@ -295,6 +295,15 @@
 
 **Entry criteria:** Gates A–F complete (or explicit gaps documented).
 
+**Owner direction (2026-11-12):** Before the playtest, make entry clearer with
+a retro title/start screen, a LOCAL FIGHT / CREATE ROOM / JOIN ROOM main menu,
+per-slot display names and character looks, and READY-before-host-start for
+both local and online participants. A new splash image is an approved,
+narrow pre-Gate-G art exception; reuse existing chiptune only, with playback
+beginning after the first user gesture. The full task breakdown and unapproved
+implementation details are in [Gate G onboarding flow](GATE_G_ONBOARDING_FLOW.md).
+This is playtest preparation, not Gate G acceptance.
+
 **Must be ready at exit:**
 - Owner has run multiple local 4-human and 8-player matches.
 - Owner has run at least one real online session (if measurement allows).
@@ -361,7 +370,7 @@ Task lists are created only after the gate documentation is stable. Example task
 ## Locked Decisions for Ambiguous Areas (agents must follow these; this reduces the need for owner approval on every design decision)
 
 - **Priority order:** Complete Gate B fully before moving to Gate C or later gates.
-- **Graphics and audio (including photo-to-retro for arenas and music generation):** Explicitly deferred until after Gate G. Pre-G work uses existing retro assets only. Real photo references are preserved in docs for later use.
+- **Graphics and audio (including photo-to-retro for arenas and music generation):** Broad visual changes and new music remain deferred until after Gate G, except the owner-approved start-screen splash art in `GATE_G_ONBOARDING_FLOW.md`. Reuse existing chiptune before then. Real photo references are preserved in docs for later use.
 - **Character selection (Gate B and later):** Strictly presentation-only. No effect on simulation, bots, scoring or hashes. (Heavy visual work deferred post-Gate G.)
 - **Readability for 8 players (Gate C and later):** Use existing G2 markers + semantic checks. Major visual updates (photo references) deferred post-Gate G. Pre-G acceptance via tests + agent reports.
 - **Online configuration (Gate D):** Server flags as defaults. Full configuration in Gate F.

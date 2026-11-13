@@ -2,6 +2,10 @@
 
 **Status:** Owner requirement 2026-11-10. L1 arena selection, L2 player count and L3 character selection are
 implemented locally; L4 summary is implemented locally as well.
+**Owner direction 2026-11-12:** a pre-Gate-G title/menu, per-slot display names,
+and READY-before-start for local and online are specified in
+[GATE_G_ONBOARDING_FLOW.md](GATE_G_ONBOARDING_FLOW.md); they are not yet
+implemented.
 **Related:** [GRAPHICS_ROADMAP.md](GRAPHICS_ROADMAP.md), [GAME_DESIGN.md](GAME_DESIGN.md), [M1_GAMEPLAY_CONTROLS.md](M1_GAMEPLAY_CONTROLS.md).
 
 ## 1. The gap
@@ -23,6 +27,8 @@ In the lobby, before starting a match, a player can choose:
 2. **Mode** - Score Brawl, Last Man Standing, Deathmatch, Wave.
 3. **Player count** - how many slots take part (1-8), with bots filling the rest.
 4. **Character per slot** - which of the eight fighters a slot looks like.
+5. **Display name per slot** - how that participant is labelled in lobby, HUD
+   and results.
 
 The chosen combination is visible as one summary line before the match starts, and the match starts from it.
 
@@ -34,7 +40,11 @@ The chosen combination is visible as one summary line before the match starts, a
 4. **One panel.** Arena, mode, players and characters belong to the same pre-match panel; no hidden URL-only options.
 5. **Persistence.** Character and arena choices persist in `localStorage` and are reflected in the URL (`?arena=`), so a refresh keeps the setup.
 6. **Bots follow the selection.** Bot slots use the characters chosen for their slots; bots do not pick their own.
-7. **Readable at 640x360 and 1280x720**, text at least 14 px, no clipping, keyboard-only reachable.
+7. **Names are presentation metadata.** P1-P8 remain stable simulation and
+   protocol identities; a display name must not affect hashes or scoring.
+8. **Readiness:** local and online human participants READY before host start;
+   bot behavior is a proposed default recorded in the Gate G onboarding spec.
+9. **Readable at 640x360 and 1280x720**, text at least 14 px, no clipping, keyboard-only reachable.
 
 ## 4. Slices
 

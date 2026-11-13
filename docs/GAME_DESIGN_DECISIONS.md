@@ -89,3 +89,21 @@ Do not bundle all of this into one PR. First define input/state transitions and 
 - The game is not meant to be played on mobile. Touch controls and mobile browser support are out of scope.
 - Visual review uses desktop sizes (640x360 logical canvas, 1280x720). Phone-sized captures are not required.
 - Status: owner-stated decision.
+
+## Owner direction 2026-11-12: start-to-lobby onboarding
+
+- On browser load, show a retro title/start screen; any user button press leads
+  to a main menu with LOCAL FIGHT, CREATE ROOM and JOIN ROOM.
+- A new retro splash image is approved as a narrow pre-Gate-G exception to the
+  earlier deferral of new graphics. This does not reopen arena art updates or
+  authorize broad visual rework.
+- Reuse the existing procedural chiptune; no new soundtrack is approved. Since
+  browsers block reliable audio autoplay, audio starts after the first user
+  activation.
+- Local and online participating humans must READY before the host starts.
+  Character appearance and display name are per-slot presentation metadata;
+  stable P1-P8 identities remain unchanged in simulation/protocol scoring and
+  replay.
+- The post-start main menu includes LOCAL FIGHT, CREATE ROOM and JOIN ROOM.
+- Status: owner direction for implementation. Gate G remains pending until the
+  owner playtests and explicitly accepts or gives follow-up direction.
