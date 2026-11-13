@@ -2382,3 +2382,25 @@ tasks:
     pull_request: "https://github.com/Trumppo/TurenkiFight/pull/201 (merged 2026-11-13)"
     notes: "Merged as e20558f38e7fd9926b837cc4acd99fd387d36923 after all required checks passed. Documentation/policy change only; protected settings and required CI were unchanged. Historical handoff records may retain their original context; current instructions supersede obsolete merge gates."
     last_updated: "2026-11-13"
+
+  - id: GATE-G-TITLE-FLOW-REGRESSION-TESTS
+    title: Adapt browser regression harness to the title-to-local flow
+    assigned_role: tester-session
+    status: ready
+    priority: P0
+    specification: docs/GATE_G_ONBOARDING_FLOW.md#gate-g-title-screen
+    depends_on: []
+    scope: [tests/browser/harness.spec.ts, tests/browser/kkauppaArena.spec.ts, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Existing harness tests explicitly enter LOCAL FIGHT after title activation when the onboarding UI exists
+      - With the title UI present, tests assert fresh load is still title-only with no match canvas before navigating
+      - Without the title UI, tests remain compatible with main and exercise the existing game flow
+      - K-kauppa browser scenarios enter LOCAL FIGHT before scene/canvas assertions and continue to verify P2 join and arena state
+      - Existing combat, KO/respawn, replay determinism, player-count and viewport assertions remain intact
+      - `npm run test:browser` and the configured game-harness workflow pass; no assertion is weakened or skipped
+    rationale: "PR #199 correctly defers Phaser/Game creation until LOCAL FIGHT, but legacy browser tests assume a game canvas exists immediately on page load."
+    out_of_scope: [title-screen-product-code, simulation-changes, arena-behavior-changes, online-protocol, relaxing-regression-checks]
+    user_decision_gate: "No new product decision; tests must retain the owner-approved title screen and Local/Create/Join flow."
+    pull_request: "pending; title must start TESTER:; Task: GATE-G-TITLE-FLOW-REGRESSION-TESTS"
+    notes: "Independent regression-test repair for PR #199. Keep compatible with both current main (before title feature) and PR #199 so it can merge first and the graphics PR can be rerun against updated main."
+    last_updated: "2026-11-13"
