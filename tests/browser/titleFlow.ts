@@ -1,1 +1,19 @@
-import { expect, type Page } from '@playwright/test';/** Enter the local game on title-flow builds, while retaining main's eager-game path. */export async function enterLocalGame(page: Page, path = '/'): Promise<void> {  await page.goto(path);  const onboarding = page.locator('#onboarding');  if (await onboarding.count()) {    const screen = await onboarding.getAttribute('data-screen');    if (screen === 'title') {      await expect(page.locator('#game canvas')).toHaveCount(0);      await page.locator('#title-start').click();      await expect(onboarding).toHaveAttribute('data-screen', 'menu');    } else {      await expect(onboarding).toHaveAttribute('data-screen', 'menu');    }    await page.locator('[data-route="local"]').click();  }  await expect(page.locator('#game canvas')).toBeVisible();}
+import { expect, type Page } from '@playwright/test';
+
+/** Enter the local game on title-flow builds, while retaining main's eager-game path. */
+export async function enterLocalGame(page: Page, path = '/'): Promise<void> {
+  await page.goto(path);
+  const onboarding = page.locator('#onboarding');
+  if (await onboarding.count()) {
+    const screen = await onboarding.getAttribute('data-screen');
+    if (screen === 'title') {
+      await expect(page.locator('#game canvas')).toHaveCount(0);
+      await page.locator('#title-start').click();
+      await expect(onboarding).toHaveAttribute('data-screen', 'menu');
+    } else {
+      await expect(onboarding).toHaveAttribute('data-screen', 'menu');
+    }
+    await page.locator('[data-route="local"]').click();
+  }
+  await expect(page.locator('#game canvas')).toBeVisible();
+}
