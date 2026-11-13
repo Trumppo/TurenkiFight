@@ -2362,7 +2362,7 @@ tasks:
   - id: AGENT-PR-MERGE-AUTHORIZATION
     title: Document agent authorization to merge reviewed PRs
     assigned_role: planning-session
-    status: in_progress
+    status: done
     session_id: designer-session-20261113-pr-merge-policy
     branch: designer/agent-pr-merge-policy
     priority: P1
@@ -2379,6 +2379,6 @@ tasks:
     rationale: "Owner changed the project workflow on 2026-11-13, authorizing all agents to merge qualifying PRs without asking for per-PR permission."
     out_of_scope: [branch-protection-settings, github-permissions, bypass-required-checks, milestone-acceptance, product-decisions]
     user_decision_gate: "Owner explicitly approved agent PR creation and merge authority; design/product decisions and milestone acceptance remain owner-gated."
-    pull_request: "pending; title must start DESIGNER:; Task: AGENT-PR-MERGE-AUTHORIZATION"
-    notes: "Documentation/policy change only. Do not alter protected settings or weaken required CI. Historical handoff records may retain their original context; current instructions supersede obsolete merge gates."
+    pull_request: "https://github.com/Trumppo/TurenkiFight/pull/201 (merged 2026-11-13)"
+    notes: "Merged as e20558f38e7fd9926b837cc4acd99fd387d36923 after all required checks passed. Documentation/policy change only; protected settings and required CI were unchanged. Historical handoff records may retain their original context; current instructions supersede obsolete merge gates."
     last_updated: "2026-11-13"
