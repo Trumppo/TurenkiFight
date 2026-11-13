@@ -1,5 +1,25 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; background: #172536; color: #f5e9c7; font-family: ui-monospace, Consolas, monospace; }
+.onboarding-active { overflow: hidden; }
+.onboarding-active main { visibility: hidden; }
+.onboarding { position: fixed; z-index: 1000; inset: 0; display: grid; place-items: center; overflow: hidden; background: #172536; color: #f5e9c7; }
+.onboarding[hidden] { display: none; }
+.onboarding-art { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,25,39,.22), rgba(13,25,39,.72)), url('/assets/title/turenkifight-splash.svg') center / cover no-repeat; image-rendering: pixelated; }
+.onboarding-panel { position: relative; display: flex; flex-direction: column; align-items: center; width: min(92vw, 620px); padding: clamp(18px, 5vw, 44px); border: 4px solid #c7a76a; outline: 2px solid #233a50; background: rgba(19,32,48,.86); box-shadow: 8px 8px 0 rgba(5,12,21,.65); text-align: center; }
+.onboarding-eyebrow, .onboarding-caption, .onboarding-footer { margin: 0; color: #b9d6d8; font-size: clamp(12px, 2vw, 16px); font-weight: 800; letter-spacing: .13em; }
+.onboarding-title { display: flex; flex-wrap: wrap; justify-content: center; gap: .18em; margin: 12px 0 4px; color: #fff1b7; font-size: clamp(36px, 9vw, 76px); line-height: 1; letter-spacing: .04em; text-shadow: 4px 4px #a74c55, 7px 7px #172536; }
+.onboarding-title span { color: #77cfdf; }
+.onboarding-caption { margin-bottom: 22px; color: #e3b85e; }
+.onboarding-start, .onboarding-menu button { min-height: 48px; padding: 10px 18px; border: 2px solid #e3b85e; border-radius: 0; background: #263d52; color: #fff1b7; font: inherit; font-size: clamp(15px, 2.6vw, 21px); font-weight: 900; letter-spacing: .055em; cursor: pointer; }
+.onboarding-start { animation: title-pulse 1.1s steps(2, end) infinite; }
+.onboarding-menu { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: 100%; }
+.onboarding-menu[hidden] { display: none; }
+.onboarding-menu button { min-height: 56px; padding: 8px 6px; font-size: clamp(13px, 2vw, 18px); }
+.onboarding-start:hover, .onboarding-menu button:hover, .onboarding-menu button:focus-visible { background: #3e5d72; outline: 3px solid #77cfdf; outline-offset: 2px; }
+.onboarding-footer { position: absolute; bottom: 18px; color: #d6d0bd; font-size: 12px; }
+@keyframes title-pulse { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .onboarding-start { animation: none; } }
+@media (max-width: 580px) { .onboarding-menu { grid-template-columns: 1fr; } .onboarding-menu button { min-height: 44px; } }
 main { max-width: 1024px; margin: 0 auto; padding: 24px 16px; text-align: center; }
 h1 { margin: 0 0 8px; letter-spacing: .1em; }
 p { color: #c2cbd2; }
