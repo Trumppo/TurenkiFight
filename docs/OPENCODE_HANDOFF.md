@@ -4,6 +4,7 @@
 Move ongoing TurenkiFight development from three manually coordinated ChatGPT sessions to three named OpenCode agents in one repository, while preserving project history, owner decisions and CI.
 
 ## Repository and baseline
+- **Agent PR/merge policy (owner update 2026-11-13):** all project agents are authorized to open and merge PRs without per-PR owner approval. Merge only after all required checks and review pass; never bypass branch protections or required CI. Merging does not imply product/design approval or milestone acceptance. This supersedes older instructions in archived handoffs that required owner merge approval.
 - Repository: https://github.com/Trumppo/TurenkiFight
 - Stack: TypeScript, Phaser 3, Vite, deterministic fixed-step simulation, Vitest and Playwright/CI.
 - M1: owner accepted 2026-10-30 with documented limitations. See docs/M1_ACCEPTANCE_REPORT.md.
@@ -14,24 +15,24 @@ Move ongoing TurenkiFight development from three manually coordinated ChatGPT se
 - Resolution: 640×360 logical presentation, configurable rendering; provisional 320×180 raster art grid.
 
 ## Installation and usage
-Install OpenCode using its current official instructions, connect OpenCode Go with `/connect`, open a terminal in the repository root and launch `opencode`. The project-local agent definitions live in `.opencode/agents/`, and `opencode.json` sets `designer` as the default primary agent. In OpenCode V2, agents use `mode`, `model`, and ordered `permissions` rules; the project keeps `subagent_depth: 1` so workers cannot create further delegation chains.
+Install OpenCode using its current official instructions, connect the configured OpenAI account with `/connect`, open a terminal in the repository root and launch `opencode`. The project-local agent definitions live in `.opencode/agents/`, and `opencode.json` sets `designer` as the default primary agent. In OpenCode V2, agents use `mode`, `model`, and ordered `permissions` rules; the project keeps `subagent_depth: 1` so workers cannot create further delegation chains.
 
-Configured model IDs (verify with the installed version's `/models` or `opencode models`): Designer `opencode-go/gpt-6-luna`; Gameplay `opencode-go/deepseek-v4.1-flash`; Graphics `opencode-go/gpt-6-luna`; Tester `opencode-go/glm-5.3-flash`. `openai/luna` is not a verified identifier; the official Go catalog uses `opencode-go/gpt-6-luna`. GPT 6 Luna is used for Graphics because the catalog records text, image and PDF input. No agent is assumed to generate bitmap files without an image tool.
+Configured model ID as of 2026-11-13 (verify with the installed version's `/models` or `opencode models`): Designer, Gameplay, Graphics and Tester use `openai/gpt-6-luna`. Availability, entitlements and provider routing remain runtime facts; report a failed lookup rather than silently substituting another model. No agent is assumed to generate bitmap files without an image tool.
 
-If the local Go catalog does not expose DeepSeek or requires a Global/China-routing privacy setting, do not change that setting automatically: ask the owner or select the documented fallback `opencode-go/glm-5.3-flash`. Gameplay may alternatively use `opencode-go/kimi-k2.7-code` when the owner explicitly approves the change. GPT 6 Luna has 30-day retention/abuse-monitoring terms in the Go catalog; confirm the account policy before sending project images.
+Do not change provider privacy, routing or account settings automatically. If the configured GPT-6 Luna model is unavailable, stop and report the observed limitation instead of substituting another provider or model. Check current provider terms before sending sensitive material; this repository does not set or override account privacy policy.
 
 Recommended work sequence:
 1. **designer** inspects current GitHub branches, PRs, docs and CI, then produces a small scoped task with acceptance criteria and file ownership.
 2. **designer** delegates only to **gameplay**, **graphics** or **tester** through OpenCode's native subagent mechanism.
 3. **gameplay** or **graphics** takes the assigned task; if both run simultaneously, their file scopes must not overlap.
 4. **tester** checks the implementation, tests and CI evidence. Defects return to the owning worker; Tester re-checks the correction.
-5. **designer** reviews integration and prepares a PR; project owner decides acceptance and merging.
+5. **designer** reviews integration and prepares a PR. Any authorized agent may merge after all required checks and reviews pass; project owner still decides product acceptance and milestones.
 6. Repeat. Never imply agents run persistently or autonomously without a configured runner.
 
 Suggested prompts:
 - Designer: "Read AGENTS.md, docs/OPENCODE_HANDOFF.md, docs/GAME_DESIGN_DECISIONS.md, docs/ROADMAP.md and current PRs. Propose the next smallest task and acceptance tests. Do not implement or merge."
-- Gameplay: "Read AGENTS.md and the assigned specification. Implement only the approved gameplay scope, add deterministic regression tests, run CI-equivalent checks and open a PR. Do not merge."
-- Graphics: "Read AGENTS.md and docs/M1_5_VISUAL_UPGRADE.md. Implement only the approved visual slice, preserve pose/API contracts, capture visual QA evidence and open a PR. Do not merge."
+- Gameplay: "Read AGENTS.md and the assigned specification. Implement only the approved gameplay scope, add deterministic regression tests, run CI-equivalent checks and open a PR. Merge when required checks and reviews pass; never bypass branch protection."
+- Graphics: "Read AGENTS.md and docs/M1_5_VISUAL_UPGRADE.md. Implement only the approved visual slice, preserve pose/API contracts, capture visual QA evidence and open a PR. Merge when required checks and reviews pass; never bypass branch protection."
 
 ## Handoff / boundaries
 Designer owns specifications and cross-cutting decisions. Gameplay owns `src/game/simulation/`, modes, input, transport-neutral `src/game/protocol/` foundations and relevant tests. Graphics owns `public/assets/`, visual themes, sprites and presentation-only effects. Shared `src/game/presentation/` scene integration requires explicit task-level ownership to avoid conflicts. Designer should not simultaneously edit task coordination files with workers.
@@ -53,9 +54,9 @@ Designer owns specifications and cross-cutting decisions. Gameplay owns `src/gam
 4. Create separate feature specs for guard/throw/knockdown and items; preserve approved design without implementing everything at once.
 5. Build M2 input/protocol abstractions; run both network architecture benchmarks before decision.
 
-## Owner approval gates
-Design decisions in docs/GAME_DESIGN_DECISIONS.md are approved *conceptually*, not automatic authorization to implement now. Owner approves milestone scope, significant design changes, PR merges, and final acceptance.
+## Owner decision gates
+Design decisions in docs/GAME_DESIGN_DECISIONS.md are approved *conceptually*, not automatic authorization to implement beyond their scope. Owner approval remains necessary for significant new product/design decisions and milestone/final acceptance. Per-PR merge approval is no longer required under the 2026-11-13 agent merge policy above.
 
 ## User approval gates
 
-The owner starts OpenCode and selects Designer (or accepts the configured default), connects the approved provider account, and verifies `/models`. The owner reviews the Tester report and PR checks before merging. In this workspace agents may push branches and open pull requests; merging, secret access and destructive history rewrites (force-push, `git reset --hard`) remain owner-gated or denied by configuration.
+The owner starts OpenCode and selects Designer (or accepts the configured default), connects the configured provider account, and verifies `/models`. Agents are authorized to review required evidence and merge PRs without per-PR owner approval once required CI and reviews pass. This does not authorize changing protected settings, bypassing branch protection, exposing secrets, force-pushing, or running `git reset --hard`; destructive history rewrites remain denied by configuration.

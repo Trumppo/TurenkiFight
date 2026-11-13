@@ -260,7 +260,7 @@
 - **Out of scope:** Accounts, matchmaking, multi-room hosting, host migration, progression; actual LAN/internet measurements; changes to simulation rules or M1/M1.5 baseline.
 - **Acceptance tests:** Browser form exposes P1–P8; an 8-slot authoritative server plus seven additional clients and browser P8 reaches running and renders every authoritative fighter; online browser flows and results/rematch tests pass; TLS/rate/rejoin unit/integration tests pass; full unit suite/build pass; network metrics remain `NOT_MEASURED`.
 - **Risk:** 8-slot selection is only an admission UI, not a full configurable lobby; online arena/mode/duration still use server/operator defaults. A loopback test cannot validate firewall, certificate hostname, router or internet behavior.
-- **Branch/PR plan:** `designer/gate-f-online`; one reviewable `DESIGNER: ` PR with `Task: GATE-F-ONLINE-BASELINE`; no merge without owner approval.
+- **Branch/PR plan:** `designer/gate-f-online`; one reviewable `DESIGNER: ` PR with `Task: GATE-F-ONLINE-BASELINE`; merge follows the shared agent policy after required checks/reviews pass. Gate F acceptance remains owner-controlled.
 - **User decision gate:** None for this narrow slice; existing approved security choices apply. Owner review/merge is still required. Overall Gate F remains open until remaining product-boundary/configuration gaps are resolved and evidence is consolidated.
 
 ### Gate F work package: participant readiness and host start (F2)
@@ -284,7 +284,7 @@
 - **Out of scope:** multi-room per process, accounts, matchmaking, changing local lobby or simulation rules beyond deterministic timer configuration, real network performance claims.
 - **Acceptance tests:** reject malformed configuration before slot mutation; reject creation by a non-first host or configuration above server capacity; authoritative lobby broadcasts chosen settings; room state uses selected mode/arena/duration/roster; browser E2E covers creation, P2 join, readiness, host start, real play timer and results.
 - **Risk:** Server process capacity remains an operator ceiling (`--players`); browser can select a room size up to that capacity. The online scene preloads arena backdrops to allow authoritative switching; verify missing-asset and query-preview behavior in browser QA.
-- **Branch/PR plan:** continue `designer/gate-f-online`, same Gate F PR #197 with primary task `GATE-F-ONLINE-PRODUCTIZATION`; no merge without owner approval.
+- **Branch/PR plan:** continue `designer/gate-f-online`, same Gate F PR #197 with primary task `GATE-F-ONLINE-PRODUCTIZATION`; merge follows the shared agent policy after required checks/reviews pass. Gate F acceptance remains owner-controlled.
 - **User decision gate:** duration choices approved as 1/2/3 minutes; single-room-per-process already selected. No unresolved rules decision for this slice.
 
 ---

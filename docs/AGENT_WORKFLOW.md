@@ -10,7 +10,7 @@ The shared source of task intent is [AGENT_TASKS.yaml](../.github/AGENT_TASKS.ya
 4. Create the task's named feature branch from current `main`, implement the specification, and run tests.
 5. Group 2–5 related tasks into a coherent work package when practical. Commit incremental changes on one feature branch, run focused local checks, and open one PR only when the package is independently reviewable. Include `Task: M1-GAMEPLAY` (replace with the primary task ID) in the PR body; list any other task IDs in prose. Keep PR open for review.
 6. Update the primary task to `review` and record `pull_request` URL and `session_id` with the implementation PR or a coordinated metadata update. Avoid separate PRs for interim status changes.
-7. Reviewer checks tests, code and visual quality; user approves merge. Only then mark `done` in a separate follow-up commit.
+7. Reviewer checks tests, code and visual quality. Any authorized agent may merge once required CI and reviews pass; no per-PR owner approval is required. Only then mark `done` in a separate follow-up commit. A merge does not itself accept a product decision or milestone.
 
 ## GitHub Actions
 
@@ -36,7 +36,7 @@ No automatic Work/Codex session creation is provided.
 
 `work_packages` in `.github/AGENT_TASKS.yaml` is an optional planning layer; existing `tasks` entries, IDs, statuses and dependency rules remain authoritative for automation. Each package names an owner, related `task_ids`, a shared branch, acceptance criteria and a single PR boundary. Package status is not an automatic lock or substitute for claiming tasks. A package should normally contain 2–5 related tasks, but coherent small or urgent fixes may use one. Avoid unrelated bundling or excessively large reviews. No retroactive conversion of completed tasks is required.
 
-During implementation, use multiple commits and focused local checks. Open a PR only when package acceptance criteria are met and the change is reviewable. Run required CI, repair failures in the same PR, and seek owner approval before merge. Preserve the existing primary `Task: <ID>` marker and include other task IDs in the PR description until the tracker supports package IDs. For documentation-only changes, CI optimization should be introduced separately and must not bypass required checks.
+During implementation, use multiple commits and focused local checks. Open a PR only when package acceptance criteria are met and the change is reviewable. Run required CI, repair failures in the same PR, then any agent may merge once required checks and reviews pass. Do not bypass branch protection or required checks. Preserve the existing primary `Task: <ID>` marker and include other task IDs in the PR description until the tracker supports package IDs. For documentation-only changes, CI optimization should be introduced separately and must not bypass required checks. A merge does not constitute owner acceptance of a design or milestone.
 ## PR naming convention
 
 Start every new PR title with its owning agent's uppercase prefix: `DESIGNER:`, `LOGIC:`, `GRAPHICS:`, or `TESTER:`. `planning-session` maps to `DESIGNER`, `gameplay-session` to `LOGIC`, `graphics-session` to `GRAPHICS`, and `tester-session` to `TESTER`. Example: `LOGIC: korjaa osumalogiikan reunatapaus`. Preserve `Task: <ID>` in the PR body for tracking; title prefixes do not replace task IDs. Do not rename historical PRs unless separately requested.

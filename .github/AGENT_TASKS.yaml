@@ -7,11 +7,11 @@ coordination:
   default_base: main
   claim_policy: "A worker must explicitly claim an assigned task before starting. Session labels are roles, not automatically discoverable session IDs."
   update_policy: "Update task state via PR or an explicitly authorized commit; avoid simultaneous edits to this file."
-  merge_policy: "Never merge a PR without user approval."
+  merge_policy: "Any project agent may merge a PR without per-PR user approval once required CI/checks and required independent review pass and no blocker remains. Never bypass branch protection or required checks; merge does not accept a product decision or milestone."
   statuses: [backlog, ready, claimed, in_progress, review, blocked, done]
   work_package_policy: "Prefer one PR per coherent work package (normally 2-5 related tasks), multiple commits on one branch; avoid PRs for individual fixes or interim task metadata. Never batch unrelated changes."
   pr_body_policy: "Keep Task: <primary-task-id> for existing PR tracking; list additional tasks in the description until multi-task tracking is implemented."
-  ci_policy: "Run focused local checks during development; full required CI on PR. Never bypass mandatory checks or owner merge approval."
+  ci_policy: "Run focused local checks during development and full required CI on PR. Never bypass mandatory checks or branch protection; any agent may merge after required checks and reviews pass."
 # Optional work packages supplement existing task IDs; do not migrate historical tasks.
 # Legacy task validation and PR tracking still use tasks: and one primary Task: ID.
 work_packages:
@@ -374,7 +374,7 @@ tasks:
       - Trusted adapter-supplied connection identity cannot be spoofed by payload
       - Strict envelope and bounded parsing preserve canonical InputFrame
       - Room isolation, replay, disconnect and tick bounds covered
-      - Independent Tester report and owner merge approval
+      - Independent Tester report and all required CI/checks pass before merge
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/94
     last_updated: "2026-11-02"
     notes: "PR #94 merged as ce8c5a1 after independent Tester PASS WITH LIMITATIONS: 46/46 adversarial checks and a 48,000-call fuzz with no implementation defects. Follow-ups: encode-side byte guard, less brittle error classification, header duplicate-key note. Transport choice remains open."
@@ -412,7 +412,7 @@ tasks:
       - Replace obsolete InputFrame sketch with canonical v1 codec references
       - Define identical seed and fixture hashes for both transport architectures
       - Separate topology and transport overhead and record reproducible run manifests
-      - CI and agent task validation pass before owner-approved merge
+      - CI and agent task validation pass before any authorized agent merges under the shared merge policy
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/53
     last_updated: "2026-10-31"
     notes: "PR #53 merged as 0eacaae after all four CI checks passed; no measured performance or transport decision."
@@ -431,7 +431,7 @@ tasks:
       - Define reproducible scenario IDs and manifest schema
       - Separate transport and authority measurements and missing values
       - Define deterministic replay and adversarial acceptance tests
-      - CI and owner-approved merge
+      - Required CI passes before merge under the shared merge policy
     pull_request: https://github.com/Trumppo/TurenkiFight/pull/56
     last_updated: "2026-10-31"
     notes: "Design-only PR #56 merged as ac97a34; no benchmark measurements or transport decision."
@@ -2164,7 +2164,7 @@ tasks:
     rationale: "Existing backend supported eight players but the browser join form exposed only four slots; prior security runbook did not explain an end-user WSS deployment and README contained stale security claims."
     out_of_scope: [accounts, matchmaking, multi-room service, host migration, internet performance claims, simulation-rule changes]
     pull_request: "DESIGNER: complete Gate F browser slot and hosting baseline; Task: GATE-F-ONLINE-BASELINE"
-    user_decision_gate: "No new product decision for this slice; owner approval is required before merge and Gate F acceptance."
+    user_decision_gate: "No new product decision for this slice; merge follows the shared agent merge policy. Gate F acceptance remains owner-controlled."
     notes: "Implemented and verified 2026-11-11: online E2E 12/12, security/rejoin unit focus 59/59, full unit 72 files/627 tests, build green. See docs/GATE_F_HOSTING_GUIDE.md. Overall GATE-F-ONLINE-PRODUCTIZATION remains in progress."
     last_updated: "2026-11-11"
 
@@ -2186,7 +2186,7 @@ tasks:
     rationale: "The accepted room/lobby design calls for all ready followed by manual host start; previously READY was only a codec/backend marker and start was operator stdin-only."
     out_of_scope: [browser-mutable-room-settings, multi-room-per-process, accounts, matchmaking, simulation-rule-changes, real-network-performance-claims]
     pull_request: "DESIGNER: complete Gate F browser lobby and host flow; Task: GATE-F-ONLINE-PRODUCTIZATION"
-    user_decision_gate: "Owner chose one room per process on 2026-11-11; no further decision for this slice. Owner approval remains required to merge."
+    user_decision_gate: "Owner chose one room per process on 2026-11-11; no further decision for this slice. Merge follows the shared agent merge policy; Gate F acceptance remains owner-controlled."
     notes: "Browser E2E test verifies host role, readiness barrier, forged guest-start denial, and successful host start. Manual mode is required; default auto mode is preserved for backward compatibility."
     last_updated: "2026-11-11"
 
@@ -2341,8 +2341,7 @@ tasks:
   - id: OPENCODE-AGENT-MODEL-ALIGNMENT
     title: Align all project agents on GPT-6 Luna
     assigned_role: planning-session
-    status: in_progress
-    session_id: designer-session-20261113-agent-model
+    status: done
     branch: designer/agents-gpt6-luna
     priority: P2
     specification: .opencode/agents/
@@ -2356,6 +2355,30 @@ tasks:
     rationale: "Owner requested a common GPT-6 Luna model after the Go usage limit and Grok billing prevented the first retries."
     out_of_scope: [game-feature-changes, provider-credentials, global-user-config, protected-permissions]
     user_decision_gate: "Owner directly requested GPT-6 Luna for all agents; availability and provider choice are runtime facts."
-    pull_request: "pending; title must start DESIGNER:; Task: OPENCODE-AGENT-MODEL-ALIGNMENT"
-    notes: "GPT-6 Luna is available from OpenAI and was used successfully for the Graphics child session. Configuration change is project-local and requires owner merge review."
+    pull_request: "https://github.com/Trumppo/TurenkiFight/pull/200 (merged 2026-11-13)"
+    notes: "GPT-6 Luna was verified available and used successfully for the Graphics child session. Project-local model declarations were merged in PR #200; this does not imply feature or milestone acceptance."
+    last_updated: "2026-11-13"
+
+  - id: AGENT-PR-MERGE-AUTHORIZATION
+    title: Document agent authorization to merge reviewed PRs
+    assigned_role: planning-session
+    status: in_progress
+    session_id: designer-session-20261113-pr-merge-policy
+    branch: designer/agent-pr-merge-policy
+    priority: P1
+    specification: AGENTS.md
+    depends_on: []
+    scope: [AGENTS.md, docs/OPENCODE_HANDOFF.md, docs/AGENT_WORKFLOW.md, docs/GATE_PLANS.md, docs/LOBBY_L2_PLAYER_COUNT_PLAN.md, docs/M1_GAMEPLAY_QA.md, docs/RETRO_ONLY_MODE_PLAN.md, docs/visual/STYLE_GUIDE.md, .opencode/agents/designer.md, .opencode/agents/gameplay.md, .opencode/agents/graphics.md, .opencode/agents/tester.md, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Current project operating instructions authorize all agents to open and merge PRs without per-PR owner approval
+      - Merge requires passing required checks, required review and no known blocking issue; branch protection and required checks are never bypassed
+      - Merge authorization is clearly distinguished from owner-controlled design/product decisions and milestone acceptance
+      - Active agent instructions and workflows contain no contradictory owner-approval-before-merge requirement
+      - OpenCode handoff reflects the configured OpenAI GPT-6 Luna defaults and generic runtime availability policy
+      - Agent task queue validation and git diff checks pass
+    rationale: "Owner changed the project workflow on 2026-11-13, authorizing all agents to merge qualifying PRs without asking for per-PR permission."
+    out_of_scope: [branch-protection-settings, github-permissions, bypass-required-checks, milestone-acceptance, product-decisions]
+    user_decision_gate: "Owner explicitly approved agent PR creation and merge authority; design/product decisions and milestone acceptance remain owner-gated."
+    pull_request: "pending; title must start DESIGNER:; Task: AGENT-PR-MERGE-AUTHORIZATION"
+    notes: "Documentation/policy change only. Do not alter protected settings or weaken required CI. Historical handoff records may retain their original context; current instructions supersede obsolete merge gates."
     last_updated: "2026-11-13"
