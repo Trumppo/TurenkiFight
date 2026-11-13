@@ -7,6 +7,10 @@ export type AudioPresentation = {
 
 /** Mount compact retro controls in the page header, outside the playfield HUD. */
 export function mountAudioControls(host: HTMLElement, director: AudioDirector): () => void {
+  // A presentation may be mounted by the title bootstrap and then handed to a
+  // scene, or a scene may be restarted by Phaser. Keep the page-level control
+  // contract singular across those lifecycle transitions.
+  host.querySelectorAll(':scope > .audio-controls').forEach(existing => existing.remove());
   const root = document.createElement('div');
   root.className = 'audio-controls';
   root.setAttribute('aria-label', 'Audio controls');

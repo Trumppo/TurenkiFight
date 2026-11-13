@@ -640,6 +640,16 @@ body.integer-scale-2 .hud-player { min-height: 22px; padding: 1px 6px; }
   body.integer-scale-2 .page-header { height: 0; }
   body.integer-scale-2 #game { width: min(100%, calc(100dvh * 16 / 9)); max-width: none; margin: 0 auto; border: 0; }
   body.integer-scale-2 #game canvas { width: 100% !important; height: auto !important; }
+  /* Keep the complete HUD inside the 35/216 camera scoreboard band at the
+     native 640x360 viewport. The short-height rules above otherwise inherit
+     a wrapped 2-row toolbar plus 2 rows of 16px player cards (69px total). */
+  #fight-hud { padding: 0 4px; }
+  .hud-toolbar { min-height: 14px; }
+  #match-timer { font-size: 14px; line-height: 14px; }
+  #match-status { font-size: 14px; line-height: 14px; }
+  #player-hud { grid-auto-rows: 14px; gap: 0 1px; }
+  .hud-player { min-height: 14px; height: 14px; font-size: 14px; line-height: 14px; }
+  .hud-slot-action { min-height: 14px; height: 14px; line-height: 14px; }
 }
 
 /* Keep the podium and the frozen fighters readable together in short desktop

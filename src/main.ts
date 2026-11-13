@@ -20,14 +20,13 @@ function enterMenu(): void {
   if (onboarding) onboarding.dataset.screen = 'menu';
   if (titleStart) titleStart.hidden = true;
   if (menu) menu.hidden = false;
-  if (!audioStarted) {
-    audioStarted = true;
-    audioPresentation = createAudioPresentation(audioControlsHost());
-    void audioPresentation.director.unlock();
-  }
 }
 function enterRoute(route: string): void {
   if (onboardingState !== 'menu') return;
+  if (!audioStarted) {
+    audioStarted = true;
+    audioPresentation = createAudioPresentation(audioControlsHost());
+  }
   onboardingState = 'entered';
   onboarding?.setAttribute('hidden', '');
   document.body.classList.remove('onboarding-active');
