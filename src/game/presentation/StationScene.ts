@@ -158,10 +158,12 @@ export class StationScene extends Phaser.Scene {
   private readonly combatFeedback = new CombatFeedbackState();
   private combatFeedbackGraphics?: Phaser.GameObjects.Graphics;
 
-  constructor(arenaSelection = resolveArenaSelection(window.location.search), mode: ModeId = 'score-brawl') {
+  constructor(arenaSelection = resolveArenaSelection(window.location.search), mode: ModeId = 'score-brawl',
+    audioPresentation?: AudioPresentation) {
     super('StationScene');
     this.arenaSelection = arenaSelection;
     this.selectedMode = mode;
+    this.audio = audioPresentation;
     // Gate B technical: load persisted player count and character selections early
     // (presentation only per locked recommendation in GATE_PLANS.md).
     this.selectedPlayerCount = this.readPlayerCount();
@@ -217,7 +219,7 @@ export class StationScene extends Phaser.Scene {
     // DOM HUD. It occupies the reserved scoreboard band on desktop and moves
     // above the playfield on narrow screens.
     this.initDomHud();
-    this.audio = createAudioPresentation(audioControlsHost());
+    this.audio ??= createAudioPresentation(audioControlsHost());
     this.audioBridge = new CueBridge(cue => this.playAudioCue(cue));
     if (this.arenaSelection.manifest.id === 'station') {
       const status = document.getElementById('station-event-status');
