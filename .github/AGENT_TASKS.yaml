@@ -2262,7 +2262,9 @@ tasks:
   - id: GATE-G-TITLE-SCREEN
     title: Add retro title screen and Local/Create/Join main menu
     assigned_role: graphics-session
-    status: backlog
+    status: review
+    branch: graphics/gate-g-title-screen
+    session_id: ses_e2ce4bbfcffe7GUIpbYLw6Y0eJ
     priority: P0
     specification: docs/GATE_G_ONBOARDING_FLOW.md#gate-g-title-screen
     depends_on: [GATE-G-ONBOARDING-SPEC]
@@ -2277,7 +2279,9 @@ tasks:
     rationale: "The current browser opens directly into a populated prototype/lobby and gives new players no intentional entry point."
     out_of_scope: [new-music, arena-art-overhaul, simulation-changes, online-identity-protocol, account-systems]
     user_decision_gate: "Owner approved a new retro splash image as a narrow pre-Gate-G exception; no new soundtrack is approved."
-    last_updated: "2026-11-12"
+    last_updated: "2026-11-13"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/199
+    notes: "Claimed before implementation. PR #196 remains open; inspected its main.ts diff and kept the retro-only selection edit intact. Playwright headless checks and 640x360/1280x720 screenshots are documented in docs/visual/GATE_G_TITLE_SCREEN_QA.md."
 
   - id: GATE-G-LOCAL-IDENTITY-READY
     title: Add local slot display names and READY-before-host-start
