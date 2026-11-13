@@ -2341,3 +2341,25 @@ tasks:
     out_of_scope: [simulation-ids, account-profiles, matchmaking, gameplay-balance, real-network-measurements]
     user_decision_gate: "Owner approved names/characters per slot and the READY barrier; visual treatment and text fit remain owner review points."
     last_updated: "2026-11-12"
+
+  - id: GATE-G-TITLE-FLOW-REGRESSION-TESTS
+    title: Adapt browser regression harness to the title-to-local flow
+    assigned_role: tester-session
+    session_id: tester-session-20261113-title-flow
+    status: in_progress
+    priority: P0
+    specification: docs/GATE_G_ONBOARDING_FLOW.md#gate-g-title-screen
+    depends_on: []
+    scope: [tests/browser/harness.spec.ts, tests/browser/kkauppaArena.spec.ts, .github/AGENT_TASKS.yaml]
+    acceptance:
+      - Existing harness tests explicitly enter LOCAL FIGHT after title activation when the onboarding UI exists
+      - With the title UI present, tests assert fresh load is still title-only with no match canvas before navigating
+      - Without the title UI, tests remain compatible with main and exercise the existing game flow
+      - K-kauppa browser scenarios enter LOCAL FIGHT before scene/canvas assertions and continue to verify P2 join and arena state
+      - Existing combat, KO/respawn, replay determinism, player-count and viewport assertions remain intact
+      - npm run test:browser and the configured game-harness workflow pass; no assertion is weakened or skipped
+    rationale: "PR #199 correctly defers Phaser/Game creation until LOCAL FIGHT, but legacy browser tests assume a game canvas exists immediately on page load."
+    branch: tester/gate-g-title-flow-regression-tests
+    pull_request: "pending; title must start TESTER:; Task: GATE-G-TITLE-FLOW-REGRESSION-TESTS"
+    user_decision_gate: "No new product decision; tests must retain the owner-approved title screen and Local/Create/Join flow."
+    last_updated: "2026-11-13"
