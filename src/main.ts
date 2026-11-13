@@ -11,6 +11,7 @@ const titleStart = document.getElementById('title-start');
 const menu = document.querySelector<HTMLElement>('.onboarding-menu');
 let onboardingState: 'title' | 'menu' | 'entered' = 'title';
 let audioStarted = false;
+let audioPresentation: ReturnType<typeof createAudioPresentation> | undefined;
 let game: Phaser.Game | null = null;
 
 function enterMenu(): void {
@@ -21,8 +22,8 @@ function enterMenu(): void {
   if (menu) menu.hidden = false;
   if (!audioStarted) {
     audioStarted = true;
-    const audio = createAudioPresentation(audioControlsHost());
-    void audio.director.unlock();
+    audioPresentation = createAudioPresentation(audioControlsHost());
+    void audioPresentation.director.unlock();
   }
 }
 function enterRoute(route: string): void {
@@ -48,7 +49,7 @@ function startLocalGame(): void {
     pixelArt: true,
     antialias: false,
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-    scene: [new StationScene(arenaSelection)],
+    scene: [new StationScene(arenaSelection, 'score-brawl', audioPresentation)],
   });
   if (import.meta.env.DEV) (window as typeof window & { __turenkiGame?: Phaser.Game }).__turenkiGame = game;
 }
