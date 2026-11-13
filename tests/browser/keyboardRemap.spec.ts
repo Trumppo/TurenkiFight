@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdirSync } from 'node:fs';
 
 type SceneProbe = {
@@ -42,7 +43,7 @@ test('local P1-P4 keyboard bindings remap, join, persist and reset without movin
   mkdirSync('artifacts/screenshots', { recursive: true });
   page.on('pageerror', error => errors.push(error.message));
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.locator('#keyboard-editor > summary').click();
   const desktopCanvas = await page.locator('#game canvas').boundingBox();
@@ -109,6 +110,7 @@ test('local P1-P4 keyboard bindings remap, join, persist and reset without movin
 
   // Saved P3 mappings restore the third keyboard player and all bindings after reload.
   await page.reload();
+  await enterLocalGame(page);
   await expect.poll(async () => (await scene(page)).state.fighters.map(fighter => fighter.id)).toEqual(['P1', 'P3']);
   await startProbeFight(page);
   const reloadedP1 = (await scene(page)).state.fighters.find(fighter => fighter.id === 'P1')!.x;

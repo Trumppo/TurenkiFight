@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 type SceneHook = {
   state: { phase: string; fighters: { id: string; x: number }[] };
 };
@@ -23,7 +24,7 @@ async function tap(page: import('@playwright/test').Page, key: string): Promise<
 test('a lobby bot joins, is marked in the HUD and moves during the match', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect.poll(() => state(page)).toMatchObject({ phase: 'lobby', ids: ['P1'] });
 

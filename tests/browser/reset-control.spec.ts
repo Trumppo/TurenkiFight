@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { startMatchServer, type MatchServerHandle } from '../../server/ws/matchServer';
 
 /**
@@ -83,7 +84,7 @@ function collectErrors(page: Page): string[] {
 
 test('RESET during a match restores the lobby with the roster and mode kept, then clears it to P1', async ({ page }) => {
   const errors = collectErrors(page);
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   const reset = page.locator('#reset-match');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect(reset).toBeVisible();
@@ -134,7 +135,7 @@ test('RESET during a match restores the lobby with the roster and mode kept, the
 
 test('Esc performs the same reset as the button', async ({ page }) => {
   const errors = collectErrors(page);
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
 
   await startBotMatch(page);
@@ -161,7 +162,7 @@ test('Esc performs the same reset as the button', async ({ page }) => {
 
 test('RESET after a finished match cannot leak results or MatchEnded into the new lobby', async ({ page }) => {
   const errors = collectErrors(page);
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.evaluate(async () => {
     const moduleUrl = '/src/game/simulation/step.ts';

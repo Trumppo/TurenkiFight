@@ -3,8 +3,14 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { createState } from '../../src/game/simulation/step';
+import { enterLocalGame } from './titleFlow';
 
 const style = 'retro';
+
+async function enterLocalFight(page: import('@playwright/test').Page, path: string): Promise<void> {
+  await enterLocalGame(page, path);
+  await expect(page.locator('#game canvas')).toBeVisible();
+}
 
 async function waitForBackdrop(page: import('@playwright/test').Page, texture: string): Promise<void> {
   await expect.poll(() => page.evaluate((key) => {
@@ -45,8 +51,7 @@ async function assetSha256(assetPath: string): Promise<string> {
 test('K-kauppa renders in retro with four readable fighter sprites at native and 2x scale', async ({ page }) => {
   for (const size of [{ name: '640x360', width: 640, height: 360, scale: 1 }, { name: '1280x720', width: 1280, height: 720, scale: 2 }]) {
     await page.setViewportSize({ width: size.width, height: size.height });
-    await page.goto(size.scale === 2 ? '/?arena=kkauppa&scale=2' : '/?arena=kkauppa');
-    await expect(page.locator('#game canvas')).toBeVisible();
+    await enterLocalFight(page, size.scale === 2 ? '/?arena=kkauppa&scale=2' : '/?arena=kkauppa');
     await expect(page.locator('.page-header p')).toHaveText('K-kauppa · interior 2.5D arena prototype');
     await waitForBackdrop(page, 'arena-kkauppa-backdrop');
     await expect(page.locator('#game canvas')).toHaveAttribute('width', '640');
@@ -94,7 +99,7 @@ test('K-kauppa renders in retro with four readable fighter sprites at native and
 });
 
 test('station default and Mesku selection still resolve their original backdrops', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalFight(page, '/');
   await waitForBackdrop(page, 'station-backdrop');
   expect(await page.evaluate(() => {
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
@@ -105,7 +110,7 @@ test('station default and Mesku selection still resolve their original backdrops
     };
   })).toEqual({ selectedArena: 'station', station: true, kkauppa: false });
 
-  await page.goto('/?arena=mesku');
+  await enterLocalFight(page, '/?arena=mesku');
   await waitForBackdrop(page, 'arena-mesku-backdrop');
   expect(await page.evaluate(() => {
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
@@ -125,7 +130,7 @@ test('station default and Mesku selection still resolve their original backdrops
 });
 
 test('the selected arena wires into normal, reset, ALL BOTS and wave state creation', async ({ page }) => {
-  await page.goto('/?arena=kkauppa');
+  await enterLocalFight(page, '/?arena=kkauppa');
   await waitForBackdrop(page, 'arena-kkauppa-backdrop');
   await page.keyboard.press('Shift');
   await expect.poll(() => page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene').state.fighters.map((fighter: any) => fighter.id))).toEqual(['P1', 'P2']);
@@ -238,7 +243,7 @@ test('the selected arena wires into normal, reset, ALL BOTS and wave state creat
 });
 
 test('station keeps default state bytes and has no shelf band', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalFight(page, '/');
   await waitForBackdrop(page, 'station-backdrop');
   const station = await page.evaluate(async () => {
     const moduleUrl = '/src/game/simulation/step.ts';
@@ -284,7 +289,7 @@ test('online hazard follows the snapshot arena and tick; an omitted arena is har
 
 test('the danger band, warning and collapse render at 640x360 and 1280x720', async ({ page }) => {
   test.setTimeout(90_000);
-  await page.goto('/?arena=kkauppa');
+  await enterLocalFight(page, '/?arena=kkauppa');
   await waitForBackdrop(page, 'arena-kkauppa-backdrop');
   await page.addStyleTag({ content: '#game { width: 648px !important; max-width: none !important; margin-left: 0 !important; margin-right: 0 !important; } #game canvas { width: 640px !important; height: 360px !important; max-width: none !important; margin: 0 !important; } main { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }' });
   for (const size of [

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const visualStyle = 'retro';
@@ -51,7 +52,7 @@ test('local Deathmatch shows the shrinking edge, schedule and outside danger onl
     { width: 1280, height: 720, scale: 2 },
   ]) {
     await page.setViewportSize(size);
-    await page.goto('/');
+    await enterLocalGame(page, '/');
     await expect(page.locator('#game canvas')).toBeVisible();
     await page.addStyleTag({ content: '#game { width: 648px !important; max-width: none !important; margin-left: 0 !important; margin-right: 0 !important; } #game canvas { width: 640px !important; height: 360px !important; max-width: none !important; margin: 0 !important; } main { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }' });
 
@@ -150,7 +151,7 @@ test('online Deathmatch derives the same zone and warning from the snapshot tick
 
 test('reduced motion keeps both mode boundaries and warnings steady', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await setLocalZoneState(page, 930);
   await expect(page.locator('#zone-summary')).toContainText('MODE: SHRINKING ZONE');
   await expect(page.locator('#zone-status')).toHaveClass(/is-warning/);

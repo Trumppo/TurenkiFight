@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 test('keyboard guide labels keyboard, gamepad and bot slots without obscuring the arena', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   const canvas = page.locator('#game canvas');
   await expect(canvas).toBeVisible();
   const guide = page.locator('details.controls');

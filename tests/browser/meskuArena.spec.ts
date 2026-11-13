@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { createState } from '../../src/game/simulation/step';
 
 const sizes = [
@@ -16,7 +17,7 @@ for (const size of sizes) {
     page.on('response', response => {
       if (response.url().includes('/assets/mesku/ravintola-mesku-evening.svg')) assetResponses.push(response.status());
     });
-    await page.goto('/?arena=mesku');
+    await enterLocalGame(page, '/?arena=mesku');
     const canvas = page.locator('#game canvas');
     await expect(canvas).toBeVisible();
     await expect(page.locator('.page-header p')).toHaveText('Ravintola Mesku · evening 2.5D arena prototype');
@@ -84,7 +85,7 @@ for (const size of sizes) {
 }
 
 test('unknown arena selection clearly falls back to the default station', async ({ page }) => {
-  await page.goto('/?arena=not-real');
+  await enterLocalGame(page, '/?arena=not-real');
   await expect(page.locator('.page-header p')).toHaveText('Unknown arena "not-real"; showing Turenki railway station.');
   await expect.poll(() => page.evaluate(() => {
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');

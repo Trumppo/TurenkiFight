@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { createState } from '../../src/game/simulation/step';
 
 const retro = true;
@@ -102,7 +103,7 @@ function spriteDelta(reference: SpriteSample, current: SpriteSample): { meanChan
 
 test('KO stays a detailed, marked pose and down-versus-standing survives greyscale', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.waitForFunction(() => !!(window as any).__turenkiGame?.scene?.getScene('StationScene')?.sys?.isActive());
 
@@ -192,7 +193,7 @@ test('KO stays a detailed, marked pose and down-versus-standing survives greysca
 test('retro hit cycle keeps detail on five frames and a high-contrast pop on the sixth', async ({ page }) => {
   test.skip(!retro, 'Retro-only hit flash');
   await page.setViewportSize({ width: 640, height: 360 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.waitForFunction(() => !!(window as any).__turenkiGame?.scene?.getScene('StationScene')?.sys?.isActive());
   const state = createState({ ids: ['P1'], phase: 'fighting', mode: 'score-brawl' });

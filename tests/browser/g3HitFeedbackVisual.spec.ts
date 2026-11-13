@@ -2,6 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 async function triggerFeedback(page: Page, targetHealth: number): Promise<void> {
   await page.evaluate(async targetHealth => {
     const moduleUrl = '/src/game/simulation/step.ts';
@@ -40,7 +41,7 @@ test('G3 hit and KO desktop visual evidence', async ({ page }) => {
 
   for (const { width, height } of [{ width: 640, height: 360 }, { width: 1280, height: 720 }]) {
     await page.setViewportSize({ width, height });
-    await page.goto('/');
+    await enterLocalGame(page, '/');
     await expect(page.locator('#game canvas')).toBeVisible();
     await triggerFeedback(page, 100);
     const hit = await page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene').combatFeedbackDiagnostics());
@@ -49,6 +50,7 @@ test('G3 hit and KO desktop visual evidence', async ({ page }) => {
     await page.screenshot({ path: join(directory, `${style}-${width}x${height}-hit.png`) });
 
     await page.reload();
+    await enterLocalGame(page);
     await expect(page.locator('#game canvas')).toBeVisible();
     await triggerFeedback(page, 10);
     const knockout = await page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene').combatFeedbackDiagnostics());

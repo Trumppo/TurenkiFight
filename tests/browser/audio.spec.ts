@@ -1,7 +1,18 @@
 import { expect, test } from '@playwright/test';
 
-test('audio unlocks on gameplay key press, mute persists, and browser reports no audio errors', async ({ page }) => {
+import { enterLocalGame } from './titleFlow';
+test('audio stays lazy before title activation, remains active in a local fight, and mute persists', async ({ page }) => {
   const audioErrors: string[] = [];
+  await page.addInitScript(() => {
+    const Original = window.AudioContext;
+    if (!Original) return;
+    let creations = 0;
+    class TrackedAudioContext extends Original {
+      constructor(options?: AudioContextOptions) { super(options); creations++; }
+    }
+    Object.defineProperty(window, 'AudioContext', { configurable: true, value: TrackedAudioContext });
+    (window as typeof window & { __audioContextCreations?: () => number }).__audioContextCreations = () => creations;
+  });
   page.on('console', message => {
     if (message.type() === 'error' && /audio|audiocontext|resume|webaudio/i.test(message.text())) audioErrors.push(message.text());
   });
@@ -9,21 +20,32 @@ test('audio unlocks on gameplay key press, mute persists, and browser reports no
     if (/audio|audiocontext|resume|webaudio/i.test(error.message)) audioErrors.push(error.message);
   });
   await page.goto('/');
-  await expect(page.locator('#audio-mute')).toBeVisible();
-  await expect(page.locator('#audio-volume')).toBeVisible();
+  await expect(page.locator('#onboarding')).toHaveAttribute('data-screen', 'title');
+  await expect(page.locator('#audio-mute')).toHaveCount(0);
+  await expect(page.locator('#audio-volume')).toHaveCount(0);
+  await expect(page.locator('#audio-mute')).toBeHidden();
+  expect(await page.evaluate(() => (window as typeof window & { __audioContextCreations?: () => number }).__audioContextCreations?.() ?? 0)).toBe(0);
+
+  await page.locator('#title-start').click();
+  await expect(page.locator('#onboarding')).toHaveAttribute('data-screen', 'menu');
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __audioContextCreations?: () => number }).__audioContextCreations?.() ?? 0)).toBeGreaterThan(0);
+  await page.locator('[data-route="local"]').click();
+  await expect(page.locator('#game canvas')).toBeVisible();
+  await expect(page.locator('#audio-mute')).toHaveCount(1);
+  await expect(page.locator('#audio-volume')).toHaveCount(1);
   expect(Number.parseFloat(await page.locator('#audio-mute').evaluate(element => getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(14);
+  await page.locator('#all-bots-match').click();
   await expect.poll(() => page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
-    const scene = game?.scene.getScene('StationScene') as { audioDiagnostics?: () => { state: string } } | undefined;
-    return scene?.audioDiagnostics?.().state ?? 'not-ready';
-  })).toBe('not-created');
-
-  await page.keyboard.press('F');
+    const scene = game?.scene.getScene('StationScene') as { state?: { phase?: string } } | undefined;
+    return scene?.state?.phase;
+  }), { timeout: 10_000 }).toBe('fighting');
   await expect.poll(() => page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
     const scene = game?.scene.getScene('StationScene') as { audioDiagnostics?: () => { state: string } } | undefined;
     return scene?.audioDiagnostics?.().state ?? 'not-ready';
   })).toBe('running');
+  await page.keyboard.press('F');
 
   await page.locator('#audio-mute').click();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('turenkifight.audio.v1') ?? '{}').muted)).toBe(true);
@@ -47,7 +69,7 @@ test('online scene uses the same gesture unlock and audio controls', async ({ pa
 });
 
 test('procedural punch and kick cues are sharper and still flow through the unlocked audio director', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.keyboard.press('f');
   await expect.poll(() => page.evaluate(() => {
@@ -79,7 +101,7 @@ test('procedural punch and kick cues are sharper and still flow through the unlo
 
 test('header audio controls stay outside the HUD and leave status readable on short and mobile views', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#audio-mute')).toBeVisible();
   const native = await page.evaluate(() => {
     const status = document.querySelector<HTMLElement>('#match-status')!;
@@ -106,7 +128,7 @@ test('header audio controls stay outside the HUD and leave status readable on sh
 });
 
 test('audio controls are tabbable and define no gameplay-key shortcuts', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await page.keyboard.press('Tab');
   await expect(page.locator('#audio-mute')).toBeFocused();
   await page.keyboard.press('Tab');

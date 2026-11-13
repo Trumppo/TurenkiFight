@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdirSync } from 'node:fs';
 
 test('VIS-02A P2 retro contract and four-frame poses', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const evidence = await page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (name: string) => {
@@ -45,7 +46,7 @@ for (const [label, width, height] of [
 ] as const) {
   test(`VIS-02A comparison screenshot ${label}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
-    await page.goto('/');
+    await enterLocalGame(page, '/');
     await expect(page.locator('#game canvas')).toBeVisible();
     await page.keyboard.down('Shift');
     await expect.poll(() => page.evaluate(() => {

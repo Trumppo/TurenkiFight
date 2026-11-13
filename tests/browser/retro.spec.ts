@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 const expanded = process.env.VITE_FIGHTER_CANVAS === 'expanded';
 const p1Width = expanded ? 48 : 32;
 const p1Height = expanded ? 64 : 48;
 const screenshotPrefix = expanded ? 'retro-expanded' : 'retro';
 
 async function startMatch(page: import('@playwright/test').Page): Promise<void> {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { sys: { isActive: () => boolean } } } } }).__turenkiGame;
@@ -41,7 +42,7 @@ test('station and P1 prototype render with stable legacy sprite API', async ({ p
   const missing: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('response', r => { if (r.status() >= 400) missing.push(r.url()); });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const result = await page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame!;
@@ -100,7 +101,7 @@ for (const [label, width, height] of [
 ] as const) {
   test(`retro visual screenshot ${label}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
-    await page.goto('/');
+    await enterLocalGame(page, '/');
     const canvas = page.locator('#game canvas');
     await expect(canvas).toBeVisible();
     await expect.poll(async () => page.evaluate(() => {
@@ -149,7 +150,7 @@ for (const [label, width, height] of [
 }
 
 test('capture enlarged P1 pose sheet for visual acceptance', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
@@ -186,7 +187,7 @@ test('capture enlarged P1 pose sheet for visual acceptance', async ({ page }) =>
 });
 
 test('capture four-frame kick anatomy strip for acceptance', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { exists: (key: string) => boolean } } } } }).__turenkiGame;
@@ -220,7 +221,7 @@ test('capture four-frame kick anatomy strip for acceptance', async ({ page }) =>
 
 test('forward kick overlaps torso without a duplicate third leg', async ({ page }) => {
   test.skip(expanded, 'Pixel coordinates are specific to the original 32x48 kick');
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const result = await page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { get: (key: string) => { getSourceImage: () => HTMLCanvasElement } } } } } }).__turenkiGame!;
@@ -244,7 +245,7 @@ test('forward kick overlaps torso without a duplicate third leg', async ({ page 
 
 test('expanded P1 keeps the same feet anchor and leaves P2 unchanged', async ({ page }) => {
   test.skip(!expanded, 'Only the opt-in expanded P1 experiment');
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { exists: (key: string) => boolean } } } } }).__turenkiGame;
@@ -273,7 +274,7 @@ test('expanded P1 keeps the same feet anchor and leaves P2 unchanged', async ({ 
 
 test('extended kick toe uses boot shading rather than a stray bright spark', async ({ page }) => {
   test.skip(expanded, 'Toe pixel coordinate is specific to the original 32x48 canvas');
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { textures: { exists: (key: string) => boolean } } } } }).__turenkiGame;
