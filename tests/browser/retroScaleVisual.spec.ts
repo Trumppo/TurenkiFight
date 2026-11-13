@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { enterLocalGame } from './titleFlow';
 import { mkdirSync } from 'node:fs';
 import { createState } from '../../src/game/simulation/step';
+import { enterLocalGame } from './titleFlow';
 
 const sizes = [
   { name: 'native', width: 640, height: 360 },
@@ -81,7 +81,6 @@ for (const size of [
     if (size.name === '1280') {
       await page.locator('#display-scale').selectOption('2');
       await expect(page).toHaveURL(/scale=2/);
-      await enterLocalGame(page, page.url());
     }
     const canvas = page.locator('#game canvas');
     await expect(canvas).toBeVisible();
@@ -173,7 +172,6 @@ test('scale control is hidden only below the short-height cutoff and remains rea
   await expect(scaleControl).toBeVisible();
   await page.locator('#display-scale').selectOption('2');
   await expect(page).toHaveURL(/scale=2/);
-  await enterLocalGame(page, page.url());
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(scaleControl).toBeVisible();
@@ -312,3 +310,4 @@ for (const size of [
     await page.screenshot({ path: `artifacts/visual/vis-05-four-fighters-${size.name}.png`, fullPage: true });
   });
 }
+
