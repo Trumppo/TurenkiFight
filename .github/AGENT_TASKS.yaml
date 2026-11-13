@@ -2397,7 +2397,7 @@ tasks:
       - Without the title UI, tests remain compatible with main and exercise the existing game flow
       - K-kauppa browser scenarios enter LOCAL FIGHT before scene/canvas assertions and continue to verify P2 join and arena state
       - Existing combat, KO/respawn, replay determinism, player-count and viewport assertions remain intact
-      - `npm run test:browser` and the configured game-harness workflow pass; no assertion is weakened or skipped
+      - npm run test:browser and the configured game-harness workflow pass; no assertion is weakened or skipped
     rationale: "PR #199 correctly defers Phaser/Game creation until LOCAL FIGHT, but legacy browser tests assume a game canvas exists immediately on page load."
     out_of_scope: [title-screen-product-code, simulation-changes, arena-behavior-changes, online-protocol, relaxing-regression-checks]
     user_decision_gate: "No new product decision; tests must retain the owner-approved title screen and Local/Create/Join flow."
