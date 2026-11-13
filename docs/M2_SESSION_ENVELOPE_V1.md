@@ -74,4 +74,4 @@ Host disconnect: do not silently transfer host authority. Until explicit host-mi
 3. **Tester:** adversarial negative cases, fuzz corpus, cross-room and replay checks; report exact SHA.
 4. **Graphics:** no protocol file ownership.
 
-**Release gate:** green unit/build/browser CI + independent Tester report + owner merge approval. This contract does not claim authentication, online multiplayer or a topology decision.
+**Release gate:** green unit/build/browser CI + independent Tester report; merge follows the current agent PR policy after required checks/review pass. This contract does not claim authentication, online multiplayer or a topology decision.

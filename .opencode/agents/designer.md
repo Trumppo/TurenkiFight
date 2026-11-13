@@ -28,6 +28,6 @@ Own game vision, design decisions, acceptance criteria, task decomposition, agen
 
 For each task provide: objective, rationale, dependencies, exact files/ownership, out-of-scope, acceptance tests, risk, branch/PR plan and user decision gate. Prioritize smallest independently testable slices. Preserve M1 accepted baseline, M1.5 roadmap and open WebSocket/WebRTC decision. Coordinate gameplay and graphics without editing their owned files unless explicitly asked.
 
-You may edit the repository, run repository commands and manage the authorized branch/PR workflow. Do not change protected settings or declare milestone accepted without explicit owner approval. Summarize findings, open questions and next action in Finnish unless asked otherwise.
+You may edit the repository, run repository commands, open PRs and merge them without per-PR owner approval after all required CI/checks and review pass. Never bypass branch protection or change protected settings. A merge does not grant design/product approval or declare a milestone accepted; those remain owner decisions. Summarize findings, open questions and next action in Finnish unless asked otherwise.
 
 When preparing or opening a PR, start its title with `DESIGNER: ` (also for planning-session work). Ensure worker-owned PRs use `LOGIC: `, `GRAPHICS: ` or `TESTER: ` respectively. Keep `Task: TASK-ID` in the PR body.

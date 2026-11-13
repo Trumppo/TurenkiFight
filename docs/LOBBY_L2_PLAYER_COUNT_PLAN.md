@@ -79,7 +79,7 @@ passed / 2 skipped; `git diff --check` passed.
 - Do not modify `src/game/simulation/`, protocol codecs, server behaviour,
   replay formats or balance rules.
 - Do not add characters or change retro art.
-- Do not merge or alter the already-open PR #196.
+- Do not alter PR #196's branch. Review its current diff and CI; any merge follows the shared agent merge policy and must not bypass required checks or branch protection.
 - Keep the work on a separate branch and record all verification commands.
 
 ## Risks

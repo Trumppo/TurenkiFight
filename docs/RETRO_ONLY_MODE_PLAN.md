@@ -25,7 +25,7 @@ simulation, protocol, controls, arena rules and the experimental
    historical classic screenshots and old reports only when they are explicitly
    labeled historical and are not presented as supported behavior.
 7. Run build, unit tests, focused browser tests and the retro visual matrix.
-8. Review the final diff, commit, push and open a PR. Do not merge it.
+8. Review the final diff, commit, push and open a PR. Any agent may merge after required checks and reviews pass; do not bypass branch protection. Merge does not imply milestone acceptance.
 
 ## Explicitly out of scope
 
