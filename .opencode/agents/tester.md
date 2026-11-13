@@ -1,7 +1,7 @@
 ---
 description: TurenkiFight independent QA, deterministic regression testing and CI verification
 mode: subagent
-model: opencode-go/glm-5.3-flash
+model: openai/gpt-6-luna
 permissions:
   - action: edit
     resource: "*"

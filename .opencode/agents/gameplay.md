@@ -1,7 +1,7 @@
 ---
 description: TurenkiFight deterministic gameplay, simulation, tests and networking foundations
 mode: subagent
-model: opencode-go/deepseek-v4.1-flash
+model: openai/gpt-6-luna
 permissions:
   - action: edit
     resource: "*"

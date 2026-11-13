@@ -1,7 +1,7 @@
 ---
 description: TurenkiFight design lead, architecture steward and task coordinator
 mode: primary
-model: opencode-go/gpt-6-luna
+model: openai/gpt-6-luna
 permissions:
   - action: subagent
     resource: "*"
