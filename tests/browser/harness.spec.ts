@@ -1,17 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { installVirtualPads, setPadButton, snapshot, advanceUntilResults } from './harness/gameHarness';
 
 async function enterLocalFight(page: import('@playwright/test').Page): Promise<void> {
-  await page.goto('/');
-  const onboarding = page.locator('#onboarding');
-  if (await onboarding.count()) {
-    await expect(onboarding).toHaveAttribute('data-screen', 'title');
-    await expect(page.locator('#game canvas')).toHaveCount(0);
-    await page.locator('#title-start').click();
-    await expect(onboarding).toHaveAttribute('data-screen', 'menu');
-    await page.locator('[data-route="local"]').click();
-  }
-  await expect(page.locator('#game canvas')).toBeVisible();
+  await enterLocalGame(page);
 }
 
 test.describe('M1 automated game harness', () => {

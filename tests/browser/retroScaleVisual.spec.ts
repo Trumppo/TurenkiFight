@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdirSync } from 'node:fs';
 import { createState } from '../../src/game/simulation/step';
 
@@ -12,7 +13,7 @@ const sizes = [
 for (const size of sizes) {
   test(`VIS-05 retro arena at ${size.name} viewport`, async ({ page }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
-    await page.goto('/');
+    await enterLocalGame(page, '/');
     const canvas = page.locator('#game canvas');
     await expect(canvas).toBeVisible();
     await expect.poll(() => page.evaluate(() => {
@@ -76,10 +77,11 @@ for (const size of [
 ]) {
   test(`VIS-05 integer 2x mode at ${size.name}`, async ({ page }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
-    await page.goto(size.name === '1280' ? '/' : '/?scale=2');
+    await enterLocalGame(page, size.name === '1280' ? '/' : '/?scale=2');
     if (size.name === '1280') {
       await page.locator('#display-scale').selectOption('2');
       await expect(page).toHaveURL(/scale=2/);
+      await enterLocalGame(page, page.url());
     }
     const canvas = page.locator('#game canvas');
     await expect(canvas).toBeVisible();
@@ -116,7 +118,7 @@ for (const size of [
 
 test('VIS-05 2x preference falls back cleanly on a short viewport', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
-  await page.goto('/?scale=2');
+  await enterLocalGame(page, '/?scale=2');
   const canvas = page.locator('#game canvas');
   await expect(canvas).toBeVisible();
   const layout = await page.evaluate(() => {
@@ -138,7 +140,7 @@ test('VIS-05 2x preference falls back cleanly on a short viewport', async ({ pag
 
 test('VIS-05 2x preference has no scroll at 1280x680', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 680 });
-  await page.goto('/?scale=2');
+  await enterLocalGame(page, '/?scale=2');
   const canvas = page.locator('#game canvas');
   await expect(canvas).toBeVisible();
   const layout = await page.evaluate(() => {
@@ -158,7 +160,7 @@ test('scale control is hidden only below the short-height cutoff and remains rea
   const scaleControl = page.locator('.scale-control');
 
   await page.setViewportSize({ width: 640, height: 540 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(scaleControl).toBeHidden();
 
   await page.setViewportSize({ width: 640, height: 541 });
@@ -171,6 +173,7 @@ test('scale control is hidden only below the short-height cutoff and remains rea
   await expect(scaleControl).toBeVisible();
   await page.locator('#display-scale').selectOption('2');
   await expect(page).toHaveURL(/scale=2/);
+  await enterLocalGame(page, page.url());
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(scaleControl).toBeVisible();
@@ -179,7 +182,7 @@ test('scale control is hidden only below the short-height cutoff and remains rea
 
 test('VIS-05 native short-viewport lobby status is fully readable', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   const status = page.locator('#match-status');
   await expect.poll(() => status.textContent()).toBe('SHIFT/PAD JOIN · START');
   const metrics = await page.evaluate(() => {
@@ -205,7 +208,7 @@ for (const size of [
 ]) {
   test(`VIS-05 external HUD stays readable at ${size.name}`, async ({ page }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
-    await page.goto('/');
+    await enterLocalGame(page, '/');
     const canvas = page.locator('#game canvas');
     await expect(canvas).toBeVisible();
     const hud = page.locator('#fight-hud');
@@ -237,7 +240,7 @@ for (const size of [
 ]) {
   test(`VIS-05 full eight-player status is visible at ${size.name}`, async ({ page }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
-    await page.goto('/');
+    await enterLocalGame(page, '/');
     await page.locator('#game canvas').waitFor({ state: 'visible' });
     const ids = Array.from({ length: 8 }, (_, index) => `P${index + 1}`);
     const state = createState({ ids, phase: 'fighting', mode: 'score-brawl' });
@@ -290,7 +293,7 @@ for (const size of [
 ]) {
   test(`VIS-05 four-player HUD and fighter distinction at ${size.name}`, async ({ page }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
-    await page.goto('/');
+    await enterLocalGame(page, '/');
     const fixture = createState(['P1', 'P2', 'P3', 'P4'], 'lobby');
     await page.evaluate(state => {
       const scene = (window as any).__turenkiGame.scene.getScene('StationScene');

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 test('audio unlocks on gameplay key press, mute persists, and browser reports no audio errors', async ({ page }) => {
   const audioErrors: string[] = [];
   page.on('console', message => {
@@ -8,7 +9,7 @@ test('audio unlocks on gameplay key press, mute persists, and browser reports no
   page.on('pageerror', error => {
     if (/audio|audiocontext|resume|webaudio/i.test(error.message)) audioErrors.push(error.message);
   });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#audio-mute')).toBeVisible();
   await expect(page.locator('#audio-volume')).toBeVisible();
   expect(Number.parseFloat(await page.locator('#audio-mute').evaluate(element => getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(14);
@@ -47,7 +48,7 @@ test('online scene uses the same gesture unlock and audio controls', async ({ pa
 });
 
 test('procedural punch and kick cues are sharper and still flow through the unlocked audio director', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.keyboard.press('f');
   await expect.poll(() => page.evaluate(() => {
@@ -79,7 +80,7 @@ test('procedural punch and kick cues are sharper and still flow through the unlo
 
 test('header audio controls stay outside the HUD and leave status readable on short and mobile views', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#audio-mute')).toBeVisible();
   const native = await page.evaluate(() => {
     const status = document.querySelector<HTMLElement>('#match-status')!;
@@ -106,7 +107,7 @@ test('header audio controls stay outside the HUD and leave status readable on sh
 });
 
 test('audio controls are tabbable and define no gameplay-key shortcuts', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await page.keyboard.press('Tab');
   await expect(page.locator('#audio-mute')).toBeFocused();
   await page.keyboard.press('Tab');

@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 test('Wave selection shows the human-plus-bot lobby rule and passes explicit teams to match creation', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const mode = page.locator('#game-mode');
   await expect(mode.locator('option[value="wave"]')).toHaveText('Wave (Asemahalli)');
@@ -34,7 +35,7 @@ test('Wave selection shows the human-plus-bot lobby rule and passes explicit tea
 
 test('Wave HUD derives counter, enemy count and inter-wave countdown from state', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const rendered = await page.evaluate(async () => {
     const moduleUrl = '/src/game/simulation/step.ts';
@@ -99,7 +100,7 @@ test('Wave HUD derives counter, enemy count and inter-wave countdown from state'
 });
 
 test('Wave results show score ranking and the waves-cleared end reason', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.evaluate(async () => {
     const moduleUrl = '/src/game/simulation/step.ts';
@@ -169,7 +170,7 @@ test('retro Wave HUD visual proof at 640x360 and 1280x720', async ({ page }, tes
     { width: 1280, height: 720, url: '/?scale=2' },
   ]) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.goto(viewport.url);
+    await enterLocalGame(page, viewport.url);
     await expect(page.locator('#game canvas')).toBeVisible();
     await prepareWaveSnapshot();
     const name = `m13-wave-${style}-${viewport.width}x${viewport.height}.png`;

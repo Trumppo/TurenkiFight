@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 type SceneState = {
   phase: string;
   tick: number;
@@ -24,7 +25,7 @@ function station(page: Page): Promise<SceneState> {
 }
 
 test('pressing T picks up a nearby bottle through the local keyboard input path', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
 
   // Two keyboard players, started through the normal lobby controls.

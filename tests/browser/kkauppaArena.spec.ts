@@ -3,19 +3,12 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { createState } from '../../src/game/simulation/step';
+import { enterLocalGame } from './titleFlow';
 
 const style = 'retro';
 
 async function enterLocalFight(page: import('@playwright/test').Page, path: string): Promise<void> {
-  await page.goto(path);
-  const onboarding = page.locator('#onboarding');
-  if (await onboarding.count()) {
-    await expect(onboarding).toHaveAttribute('data-screen', 'title');
-    await expect(page.locator('#game canvas')).toHaveCount(0);
-    await page.locator('#title-start').click();
-    await expect(onboarding).toHaveAttribute('data-screen', 'menu');
-    await page.locator('[data-route="local"]').click();
-  }
+  await enterLocalGame(page, path);
   await expect(page.locator('#game canvas')).toBeVisible();
 }
 

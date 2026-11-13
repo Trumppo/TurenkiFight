@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 test('four local fighters can join through simulated gamepads', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -12,7 +13,7 @@ test('four local fighters can join through simulated gamepads', async ({ page })
     Object.defineProperty(navigator, 'getGamepads', {configurable: true, value: () => pads});
     (window as typeof window & { __testPads?: typeof pads }).__testPads = pads;
   });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect(page.locator('#game canvas')).toHaveAttribute('width', '640');
   await expect(page.locator('#game canvas')).toHaveAttribute('height', '360');

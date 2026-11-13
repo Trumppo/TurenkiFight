@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 type CharacterDiagnostics = {
   stateJson: string;
   p1Texture: string;
@@ -36,7 +37,7 @@ test('local character selection remaps presentation only and persists', async ({
       localStorage.removeItem('turenkifight.characterSelections');
     }
   });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('[data-player="P1"] .hud-character-select')).toBeVisible();
 
   // Gate B technical: prove character change does not affect simulation state (locked recommendation)
@@ -61,12 +62,13 @@ test('local character selection remaps presentation only and persists', async ({
   expect(after2.textureKeys).toHaveLength(8);
 
   await page.reload();
+  await enterLocalGame(page);
   await expect(page.locator('[data-player="P1"] .hud-character-select')).toHaveValue('P6');
   await expect(page.locator('[data-player="P1"] .hud-character-select')).toHaveAttribute('aria-label', 'P1 character: KIOSK VENDOR');
 });
 
 test('character selectors follow the active player-count boundary', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await page.locator('#player-count').selectOption('4');
   await expect(page.locator('[data-player="P4"] .hud-character-select')).toBeVisible();
   await expect(page.locator('[data-player="P5"] .hud-character-select')).toBeHidden();

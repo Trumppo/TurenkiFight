@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { createState } from '../../src/game/simulation/step';
 
 const poses = ['idle', 'walk', 'depth', 'punch', 'kick', 'jump', 'jumpkick', 'hit', 'ko', 'respawn'];
@@ -12,7 +13,7 @@ const retroMainHashes = {
 
 test('P5-P8 are original monochrome silhouettes; P1-P4 textures match main', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await page.waitForFunction(() => !!(window as any).__turenkiGame?.scene?.getScene('StationScene')?.textures?.exists('fighter-P8-respawn-3'));
   const evidence = await page.evaluate((poseKeys) => {
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
@@ -85,7 +86,7 @@ test('P5-P8 are original monochrome silhouettes; P1-P4 textures match main', asy
     { name: '390x844', width: 390, height: 844 },
   ]) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.goto('/');
+    await enterLocalGame(page, '/');
     await page.waitForFunction(() => !!(window as any).__turenkiGame?.scene?.getScene('StationScene')?.sys?.isActive());
     const state = createState({ ids: Array.from({ length: 8 }, (_, i) => `P${i + 1}`), phase: 'fighting', mode: 'score-brawl' });
     state.fighters.forEach((fighter, index) => {
@@ -106,7 +107,7 @@ test('P5-P8 are original monochrome silhouettes; P1-P4 textures match main', asy
   }
 
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await page.waitForFunction(() => !!(window as any).__turenkiGame?.scene?.getScene('StationScene')?.sys?.isActive());
   const crowd = createState({ ids: Array.from({ length: 8 }, (_, i) => `P${i + 1}`), phase: 'fighting', mode: 'score-brawl' });
   crowd.fighters.forEach((fighter, index) => {
@@ -123,7 +124,7 @@ test('P5-P8 are original monochrome silhouettes; P1-P4 textures match main', asy
   await page.screenshot({ path: 'artifacts/visual/m9-p5-p8-crowded-fight-1280x720.png', fullPage: true });
 
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await page.waitForFunction(() => !!(window as any).__turenkiGame?.scene?.getScene('StationScene')?.textures?.exists('fighter-P8-respawn-3'));
   await page.evaluate((poseKeys) => {
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene');
