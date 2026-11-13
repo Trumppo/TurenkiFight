@@ -2279,7 +2279,7 @@ tasks:
     out_of_scope: [new-music, arena-art-overhaul, simulation-changes, online-identity-protocol, account-systems]
     user_decision_gate: "Owner approved a new retro splash image as a narrow pre-Gate-G exception; no new soundtrack is approved."
     last_updated: "2026-11-13"
-    pull_request: "pending; title must start GRAPHICS:; Task: GATE-G-TITLE-SCREEN"
+    pull_request: https://github.com/Trumppo/TurenkiFight/pull/199
     notes: "Claimed before implementation. PR #196 remains open; inspected its main.ts diff and kept the retro-only selection edit intact. Playwright headless checks and 640x360/1280x720 screenshots are documented in docs/visual/GATE_G_TITLE_SCREEN_QA.md."
 
   - id: GATE-G-LOCAL-IDENTITY-READY
