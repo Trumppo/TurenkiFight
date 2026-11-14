@@ -176,7 +176,7 @@ test('scale control is hidden only below the short-height cutoff and remains rea
   // Scale selection reloads into the title screen; re-enter LOCAL before inspecting resized layout.
   await enterLocalGame(page, '/?scale=2');
 
-  await page.setViewportSize({ width: 1280, height: 844 });
+  await page.setViewportSize({ width: 390, height: 844 });
   await expect(scaleControl).toBeVisible();
   await expect(page.locator('#display-scale')).toHaveValue('2');
 });
