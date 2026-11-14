@@ -2,6 +2,7 @@ import { AudioDirector } from './audioDirector';
 
 export type AudioPresentation = {
   director: AudioDirector;
+  mountControls(host: HTMLElement | null): void;
   dispose(): void;
 };
 
@@ -64,9 +65,15 @@ export function audioControlsHost(): HTMLElement | null {
 
 export function createAudioPresentation(host: HTMLElement | null): AudioPresentation {
   const director = new AudioDirector();
-  const unmount = host ? mountAudioControls(host, director) : () => undefined;
-  return {
+  let unmount = (): void => undefined;
+  const presentation: AudioPresentation = {
     director,
+    mountControls: nextHost => {
+      unmount();
+      unmount = nextHost ? mountAudioControls(nextHost, director) : () => undefined;
+    },
     dispose: () => { unmount(); director.dispose(); },
   };
+  if (host) presentation.mountControls(host);
+  return presentation;
 }

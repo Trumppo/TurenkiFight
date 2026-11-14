@@ -29,6 +29,7 @@ function enterMenu(): void {
 }
 function enterRoute(route: string): void {
   if (onboardingState !== 'menu') return;
+  audioPresentation.mountControls(audioControlsHost());
   onboardingState = 'entered';
   onboarding?.setAttribute('hidden', '');
   document.body.classList.remove('onboarding-active');
@@ -114,9 +115,10 @@ if (arenaSelect) {
 
 const displayScale = new URLSearchParams(window.location.search).get('scale') === '2' ? '2' : 'fit';
 if (displayScale === '2') document.body.classList.add('integer-scale-2');
-// Host placement depends on the resolved scale mode; initialize after its
-// class is applied, but before any title activation can occur.
-audioPresentation = createAudioPresentation(audioControlsHost());
+// Install only the lazy gesture owner before title activation. Controls remain
+// unmounted behind the title/menu; the selected host is known and visible when
+// the user chooses a route.
+audioPresentation = createAudioPresentation(null);
 const scaleSelect = document.getElementById('display-scale') as HTMLSelectElement | null;
 if (scaleSelect) {
   scaleSelect.value = displayScale;
