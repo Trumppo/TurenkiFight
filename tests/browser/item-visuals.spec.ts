@@ -2,12 +2,13 @@ import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 const style = 'retro';
 const evidenceDirectory = resolve('artifacts/m12-item-ui');
 
 test('M12 bottles render on the floor, follow a holder, and use snapshot flight coordinates', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto('/?scale=2');
+  await enterLocalGame(page, '/?scale=2');
   await page.waitForFunction(() => !!(window as any).__turenkiGame?.scene?.getScene('StationScene')?.sys?.isActive());
 
   const setup = await page.evaluate(() => {

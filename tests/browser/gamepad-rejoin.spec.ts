@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 test('same browser gamepad index and id reclaim their paired slot on reconnect', async ({ page }) => {
   await page.addInitScript(() => {
     const pad = {
@@ -11,7 +12,7 @@ test('same browser gamepad index and id reclaim their paired slot on reconnect',
     Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: () => pad.connected ? [pad] : [] });
     (window as typeof window & { __stablePad?: typeof pad }).__stablePad = pad;
   });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.evaluate(() => { (window as any).__stablePad.buttons[8].pressed = true; });
   await expect(page.locator('.hud-player[data-player="P2"] .hud-name')).toHaveText('P2 PAD 0');
@@ -39,7 +40,7 @@ test('disconnected pad releases its slot; replacement joins without a phantom fi
     (window as typeof window & { __pads?: typeof pads; __makePad?: typeof makePad }).__pads = pads;
     (window as typeof window & { __makePad?: typeof makePad }).__makePad = makePad;
   });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const snapshot = () => page.evaluate(() => {
     const scene = (window as typeof window & {

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdirSync } from 'node:fs';
 
 const modes = [
@@ -8,7 +9,7 @@ const modes = [
 ] as const;
 
 test('mode selection is part of local match creation and preserves the join flow', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const mode = page.locator('#game-mode');
   await expect(mode).toHaveValue('score-brawl');
@@ -35,7 +36,7 @@ test('mode selection is part of local match creation and preserves the join flow
 });
 
 test('Last Man Standing HUD shows stocks and a visibly eliminated fighter', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.evaluate(async () => {
     const moduleUrl = '/src/game/simulation/step.ts';
@@ -79,7 +80,7 @@ test('Last Man Standing HUD shows stocks and a visibly eliminated fighter', asyn
 });
 
 test('Deathmatch HUD shows frags and deaths instead of score', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.evaluate(async () => {
     const moduleUrl = '/src/game/simulation/step.ts';
@@ -101,7 +102,7 @@ test('Deathmatch HUD shows frags and deaths instead of score', async ({ page }) 
 
 test('results name winners and reasons for every mode and show draws', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const setResult = async (mode: string, reason: string, winner: string | null) => {
     await page.evaluate(async ({ mode, reason, winner }) => {

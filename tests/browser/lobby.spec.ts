@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 test('lobby requires explicit joining, P1 host and two players', async ({ page }) => {
   await page.addInitScript(() => {
     const pad = {
@@ -11,7 +12,7 @@ test('lobby requires explicit joining, P1 host and two players', async ({ page }
     Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: () => [pad] });
     (window as typeof window & { __testPad?: typeof pad }).__testPad = pad;
   });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const state = () => page.evaluate(() => {
     const game = (window as typeof window & {

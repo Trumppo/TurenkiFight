@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 test('VIS-04 retro HUD preserves readable timer and eight-slot layout', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
 
   const hud = page.locator('#fight-hud');

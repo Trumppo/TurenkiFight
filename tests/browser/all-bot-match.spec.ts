@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdirSync } from 'node:fs';
 
 type SceneView = {
@@ -14,7 +15,7 @@ test('ALL BOTS starts a visibly bot-driven P1-P8 match, finishes unattended, and
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect(page.locator('#all-bots-match')).toBeVisible();
   await expect(page.locator('#lobby-actions')).toContainText('P1 is bot-driven');
@@ -89,7 +90,7 @@ test('ALL BOTS starts a visibly bot-driven P1-P8 match, finishes unattended, and
 test('O is the stated keyboard shortcut for an all-bot match', async ({ page }) => {
   test.setTimeout(15_000);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => { sys: { isActive: () => boolean } } } } }).__turenkiGame;
@@ -109,7 +110,7 @@ test('O is the stated keyboard shortcut for an all-bot match', async ({ page }) 
 });
 
 test('same seed and all-bot roster reproduce the same full match fingerprint', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   const runs = await page.evaluate(async () => {
     const simulationPath = '/src/game/simulation/step.ts';
     const botPolicyPath = '/src/game/input/botPolicy.ts';

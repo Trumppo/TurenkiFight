@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdirSync } from 'node:fs';
 
 test('VIS-02B visual review sheet for all four retro fighters', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (name: string) => {

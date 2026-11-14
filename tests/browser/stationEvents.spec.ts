@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdir } from 'node:fs/promises';
 import { createState } from '../../src/game/simulation/step';
 
@@ -6,7 +7,7 @@ const style = 'retro';
 
 test('station event is tick-derived, visible only during its window and cues once', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const fixture = createState(['P1', 'P2', 'P3', 'P4'], 'fighting');
   for (const [index, fighter] of fixture.fighters.entries()) {
@@ -111,7 +112,7 @@ test('station event has native and 2x screenshots with the HUD and four fighters
     { width: 1280, height: 720, name: '1280x720' },
   ]) {
     await page.setViewportSize({ width: size.width, height: size.height });
-    await page.goto(size.width === 1280 ? '/?scale=2' : '/');
+    await enterLocalGame(page, size.width === 1280 ? '/?scale=2' : '/');
     await expect(page.locator('#game canvas')).toBeVisible();
     const state = createState(['P1', 'P2', 'P3', 'P4'], 'fighting');
     for (const [index, fighter] of state.fighters.entries()) {

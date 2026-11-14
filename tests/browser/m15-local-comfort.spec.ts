@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -17,7 +18,7 @@ test('four local humans occupy keyboard and paired pads; local pause freezes and
     });
     (window as typeof window & { __m15Pads?: typeof pads }).__m15Pads = pads;
   });
-  await page.goto('/?scale=2');
+  await enterLocalGame(page, '/?scale=2');
   await expect(page.locator('#game canvas')).toHaveAttribute('width', '640');
   await expect(page.locator('#game canvas')).toHaveAttribute('height', '360');
 

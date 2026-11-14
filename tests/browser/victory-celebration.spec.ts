@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -51,7 +52,7 @@ async function installResults(page: Page, mode: string, ids = EIGHT, draw = fals
 }
 
 test('Score Brawl, Deathmatch and Last Man Standing reveal their ranked podium metrics', async ({ page }) => {
-  await page.goto('/?visual=retro');
+  await enterLocalGame(page, '/?visual=retro');
   await expect(page.locator('#game canvas')).toBeVisible();
 
   await installResults(page, 'score-brawl');
@@ -111,7 +112,7 @@ test('Score Brawl, Deathmatch and Last Man Standing reveal their ranked podium m
 });
 
 test('draw names all tied players without announcing a winner', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await installResults(page, 'score-brawl', ['P1', 'P2', 'P3'], true);
   await expect(page.locator('#victory-title')).toHaveText('DRAW');
@@ -131,7 +132,7 @@ test('draw names all tied players without announcing a winner', async ({ page })
 });
 
 test('victory cue is emitted once for a match end and is not replayed by skip, reset or rematch start', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await installResults(page, 'score-brawl', ['P1', 'P2', 'P3']);
   const cueCounts = () => page.evaluate(() => {
@@ -156,7 +157,7 @@ test('victory cue is emitted once for a match end and is not replayed by skip, r
 });
 
 test('Last Man Standing carries knockout events across match ticks into the podium ranking', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.evaluate(async () => {
     const moduleUrl = '/src/game/simulation/step.ts';
@@ -192,7 +193,7 @@ test('Last Man Standing carries knockout events across match ticks into the podi
 });
 
 test('keyboard or pointer skips the flourish but keeps the static podium', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await installResults(page, 'score-brawl', ['P1', 'P2', 'P3']);
   await expect(page.locator('#victory-reveal')).toHaveClass(/is-revealing/);
@@ -202,13 +203,13 @@ test('keyboard or pointer skips the flourish but keeps the static podium', async
 
   // Reinstall results to restart the reveal, then an unrelated click skips it.
   await installResults(page, 'score-brawl', ['P1', 'P2', 'P3']);
-  await page.locator('h1').click({ force: true });
+  await page.locator('main h1').click({ force: true });
   await expect(page.locator('#victory-reveal')).not.toHaveClass(/is-revealing/);
 });
 
 test('reduced motion starts with a static podium and no reveal timer', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await installResults(page, 'deathmatch', ['P1', 'P2', 'P3']);
   await expect(page.locator('#victory-reveal')).not.toHaveClass(/is-revealing/);
@@ -221,7 +222,7 @@ test('reduced motion starts with a static podium and no reveal timer', async ({ 
 });
 
 test('RESET button and Esc return to the lobby during reveal and clear timers', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await installResults(page, 'score-brawl', ['P1', 'P2', 'P3']);
   await page.locator('#reset-match').click();
@@ -238,7 +239,7 @@ test('RESET button and Esc return to the lobby during reveal and clear timers', 
 test('results screenshots fit all requested viewports with readable, non-clipped labels', async ({ page }) => {
   const outputDirectory = path.join(process.cwd(), 'artifacts', 'm9-victory-viewports');
   await mkdir(outputDirectory, { recursive: true });
-  await page.goto('/?visual=retro');
+  await enterLocalGame(page, '/?visual=retro');
   await expect(page.locator('#game canvas')).toBeVisible();
   for (const viewport of [
     { width: 640, height: 360, label: '640x360' },
