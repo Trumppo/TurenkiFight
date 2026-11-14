@@ -2411,7 +2411,7 @@ tasks:
   - id: DEVELOPMENT-PLAN-SHORT-MID-TERM
     title: Document the short- and medium-term development plan
     assigned_role: planning-session
-    status: review
+    status: done
     session_id: designer-session-20261114-short-mid-term-plan
     branch: designer/short-mid-term-development-plan
     priority: P1
@@ -2428,5 +2428,5 @@ tasks:
     out_of_scope: [gameplay-implementation, Hetzner-deployment, network-transport-selection, milestone-acceptance]
     user_decision_gate: "Owner requested this planning document only; later feature decisions and Gate G acceptance remain owner-controlled."
     pull_request: "https://github.com/Trumppo/TurenkiFight/pull/207"
-    notes: "Documentation only. Merge does not approve the proposed implementation schedule or mark Gate G accepted."
+    notes: "Documentation-only PR #207 merged 2026-11-14 as 1d5f3e393c3a01cf4b357a81d846f2525b5d12fd after all required checks passed. This records the plan, not approval of the proposed implementation schedule or Gate G acceptance."
     last_updated: "2026-11-14"
