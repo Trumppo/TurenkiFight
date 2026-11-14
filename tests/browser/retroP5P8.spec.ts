@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdirSync } from 'node:fs';
 
 const poses = ['idle','walk','depth','punch','kick','jump','jumpkick','hit','ko','respawn'];
 
 test('VIS-02C retro contract covers all eight 32x48 fighters and distinct P5-P8 silhouettes', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const result = await page.evaluate(async ({ poses }) => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame!;
@@ -43,7 +44,7 @@ test('VIS-02C retro contract covers all eight 32x48 fighters and distinct P5-P8 
 
 test('eight-player retro lobby and match screenshots use the P1-P8 roster', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   for (let player = 2; player <= 8; player++) {
     await page.locator(`.hud-player[data-player="P${player}"] .hud-slot-action`).click();

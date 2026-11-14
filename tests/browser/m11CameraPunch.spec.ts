@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 type CameraDiagnostics = {
   shakeCount: number;
   lastShake: { reason: string; duration: number; intensity: number } | null;
@@ -36,7 +37,7 @@ async function landPunch(page: Page, targetHealth: number): Promise<{
 }
 
 test('a knockout produces a short restrained camera punch, stronger than an ordinary hit', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const ordinaryHit = await landPunch(page, 100);
   expect(ordinaryHit.camera.lastShake).toMatchObject({ reason: 'hit', duration: 32, intensity: 0.0015 });
@@ -53,7 +54,7 @@ test('a knockout produces a short restrained camera punch, stronger than an ordi
 
 test('prefers-reduced-motion suppresses camera shake on a real knockout', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const result = await landPunch(page, 10);
   expect(result.knockoutEvents).toBeGreaterThan(0);

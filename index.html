@@ -7,6 +7,21 @@
     <title>TurenkiFight – Prototype</title>
   </head>
   <body>
+    <div id="onboarding" class="onboarding" data-screen="title" aria-label="TurenkiFight start screen">
+      <div class="onboarding-art" aria-hidden="true"></div>
+      <section class="onboarding-panel" aria-live="polite">
+        <p class="onboarding-eyebrow">TURenki · ARCADE BRAWLER</p>
+        <h1 class="onboarding-title">TURENKI<span>FIGHT</span></h1>
+        <p class="onboarding-caption">A PIXEL-POWERED PLATFORM SHOWDOWN</p>
+        <button id="title-start" class="onboarding-start" type="button">PRESS ANY BUTTON</button>
+        <nav class="onboarding-menu" aria-label="Main menu" hidden>
+          <button type="button" data-route="local">LOCAL FIGHT</button>
+          <button type="button" data-route="create">CREATE ROOM</button>
+          <button type="button" data-route="join">JOIN ROOM</button>
+        </nav>
+      </section>
+      <span class="onboarding-footer">TURenki STATION · 16-BIT ARCADE</span>
+    </div>
     <main>
       <header class="page-header">
         <h1>TurenkiFight</h1>

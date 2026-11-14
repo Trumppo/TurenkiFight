@@ -2,11 +2,17 @@ import { AudioDirector } from './audioDirector';
 
 export type AudioPresentation = {
   director: AudioDirector;
+  mountControls(host: HTMLElement | null): void;
   dispose(): void;
 };
 
 /** Mount compact retro controls in the page header, outside the playfield HUD. */
 export function mountAudioControls(host: HTMLElement, director: AudioDirector): () => void {
+  // A presentation may be mounted by the title bootstrap and then handed to a
+  // scene, or recreated during a Phaser lifecycle transition. The selected host
+  // can also change (for example, integer-scale mode moves controls into the
+  // HUD), so deduplicate document-wide to preserve unique IDs and one control.
+  document.querySelectorAll('.audio-controls').forEach(existing => existing.remove());
   const root = document.createElement('div');
   root.className = 'audio-controls';
   root.setAttribute('aria-label', 'Audio controls');
@@ -59,9 +65,15 @@ export function audioControlsHost(): HTMLElement | null {
 
 export function createAudioPresentation(host: HTMLElement | null): AudioPresentation {
   const director = new AudioDirector();
-  const unmount = host ? mountAudioControls(host, director) : () => undefined;
-  return {
+  let unmount = (): void => undefined;
+  const presentation: AudioPresentation = {
     director,
+    mountControls: nextHost => {
+      unmount();
+      unmount = nextHost ? mountAudioControls(nextHost, director) : () => undefined;
+    },
     dispose: () => { unmount(); director.dispose(); },
   };
+  if (host) presentation.mountControls(host);
+  return presentation;
 }

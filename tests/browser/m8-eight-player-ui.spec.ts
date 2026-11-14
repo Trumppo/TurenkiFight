@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdirSync } from 'node:fs';
 import { contrastRatio, FIGHTER_MARKER_CONTRAST_THRESHOLD, FIGHTER_MARKER_FACE, FIGHTER_MARKER_FLOORS, FIGHTER_MARKER_OUTLINE } from '../../src/game/presentation/fighterMarker';
 
@@ -32,7 +33,7 @@ async function setPresentationState(page: import('@playwright/test').Page, mode:
 }
 
 test('lobby offers bot add/remove in every non-host slot through eight', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect(page.locator('[data-player="P2"] .hud-name')).toHaveText('P2 KEY/PAD');
   await expect(page.locator('[data-player="P5"] .hud-name')).toHaveText('P5 PAD/BOT');
@@ -66,7 +67,7 @@ test('unassigned gamepads can explicitly join non-host slots through P8', async 
     Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: () => pads });
     (window as any).__testPads = pads;
   });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.evaluate(() => {
     for (const pad of (window as any).__testPads) pad.buttons[8].pressed = true;
@@ -87,7 +88,7 @@ test('unassigned gamepads can explicitly join non-host slots through P8', async 
 });
 
 test('eight HUD cards show each mode field and the eight-player results roster', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const fields = [
     { mode: 'score-brawl', expected: (index: number) => ({ score: `${(8 - index) * 250}`, health: 'H100' }) },
@@ -126,7 +127,7 @@ const visualStyle = 'retro';
 for (const viewport of viewports) {
   test(`M8 eight-fighter arena readability evidence at ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.goto('/');
+    await enterLocalGame(page, '/');
     await expect(page.locator('#game canvas')).toBeVisible();
     await addBots(page);
     await page.keyboard.down('Enter');

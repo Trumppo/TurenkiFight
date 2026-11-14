@@ -2262,7 +2262,9 @@ tasks:
   - id: GATE-G-TITLE-SCREEN
     title: Add retro title screen and Local/Create/Join main menu
     assigned_role: graphics-session
-    status: backlog
+    status: review
+    session_id: ses_e24f491cfffeFTwTkc2b3jw0ZE
+    branch: graphics/gate-g-title-screen
     priority: P0
     specification: docs/GATE_G_ONBOARDING_FLOW.md#gate-g-title-screen
     depends_on: [GATE-G-ONBOARDING-SPEC]
@@ -2277,7 +2279,9 @@ tasks:
     rationale: "The current browser opens directly into a populated prototype/lobby and gives new players no intentional entry point."
     out_of_scope: [new-music, arena-art-overhaul, simulation-changes, online-identity-protocol, account-systems]
     user_decision_gate: "Owner approved a new retro splash image as a narrow pre-Gate-G exception; no new soundtrack is approved."
-    last_updated: "2026-11-12"
+    pull_request: "https://github.com/Trumppo/TurenkiFight/pull/199"
+    notes: "Canonical integration PR #199 contains the original title implementation, Tester regression commits from #204, and presentation fixes from #206. Exact combined head c405630 passed CI and received independent Tester PASS; latest main merge ab7eee9 awaits renewed CI/review. Owner Gate G playtest remains pending."
+    last_updated: "2026-11-14"
 
   - id: GATE-G-LOCAL-IDENTITY-READY
     title: Add local slot display names and READY-before-host-start
@@ -2386,27 +2390,30 @@ tasks:
   - id: GATE-G-TITLE-FLOW-REGRESSION-TESTS
     title: Adapt browser regression harness to the title-to-local flow
     assigned_role: tester-session
-    status: ready
+    session_id: ses_e24f47978ffeaYDC11gujnqELi
+    status: review
+    branch: tester/gate-g-title-flow-regression-tests
     priority: P0
     specification: docs/GATE_G_ONBOARDING_FLOW.md#gate-g-title-screen
     depends_on: []
     scope: [tests/browser/**/*.spec.ts, tests/browser/**/*.ts, .github/AGENT_TASKS.yaml]
     acceptance:
-      - Existing harness tests explicitly enter LOCAL FIGHT after title activation when the onboarding UI exists
-      - With the title UI present, tests assert fresh load is still title-only with no match canvas before navigating
-      - Without the title UI, tests remain compatible with main and exercise the existing game flow
-      - K-kauppa browser scenarios enter LOCAL FIGHT before scene/canvas assertions and continue to verify P2 join and arena state
-      - Every local browser scenario that requires the Phaser game enters LOCAL FIGHT when onboarding is present; online page flows remain unchanged
-      - A shared helper avoids duplicating title activation logic and preserves legacy-main compatibility
+      - Existing harness tests explicitly enter LOCAL FIGHT after title activation when onboarding exists
+      - Fresh-load title is title-only with no match canvas before route selection
+      - Keyboard, pointer and gamepad title activation produces exactly one observable title-to-menu transition
+      - LOCAL FIGHT, CREATE ROOM and JOIN ROOM route to their existing destinations
+      - Without onboarding, the helper remains compatible with main's eager-canvas flow
+      - K-kauppa browser scenarios enter LOCAL FIGHT before scene assertions and retain P2-join and arena checks
+      - Every local browser scenario requiring Phaser enters LOCAL FIGHT when onboarding exists; online flows remain unchanged
       - Full browser suite completes without timing out
       - Existing combat, KO/respawn, replay determinism, player-count and viewport assertions remain intact
-      - npm run test:browser and the configured game-harness workflow pass; no assertion is weakened or skipped
-    rationale: "PR #199 correctly defers Phaser/Game creation until LOCAL FIGHT, but legacy browser tests assume a game canvas exists immediately on page load."
+      - npm run test:browser and configured game-harness workflow pass; no assertion is weakened or skipped
+    rationale: "The title screen defers Phaser/Game creation until LOCAL FIGHT, so legacy browser tests must enter the local route explicitly."
     out_of_scope: [title-screen-product-code, simulation-changes, arena-behavior-changes, online-protocol, relaxing-regression-checks]
-    user_decision_gate: "No new product decision; tests must retain the owner-approved title screen and Local/Create/Join flow."
-    pull_request: "pending; title must start TESTER:; Task: GATE-G-TITLE-FLOW-REGRESSION-TESTS"
-    notes: "Independent regression-test repair for PR #199. Expanded after independent Tester found 38 other potentially affected spec files and 89 root navigations. Preserve all existing assertions; compatibility with current main and feature branch is required."
-    last_updated: "2026-11-13"
+    user_decision_gate: "No new product decision; tests retain the owner-approved title screen and Local/Create/Join flow."
+    pull_request: "https://github.com/Trumppo/TurenkiFight/pull/199"
+    notes: "Tester commits from PR #204 (head 0e1cc63) are incorporated in canonical PR #199; GitHub marked #204 merged into its advanced base c405630. The combined c405630 suite passed CI; latest main merge ab7eee9 awaits renewed CI/review."
+    last_updated: "2026-11-14"
 
   - id: DEVELOPMENT-PLAN-SHORT-MID-TERM
     title: Document the short- and medium-term development plan

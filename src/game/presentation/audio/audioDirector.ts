@@ -58,6 +58,8 @@ export class AudioDirector {
   private stepIndex = 0;
   private musicDuck = 1;
   private disposed = false;
+  private unlocking = false;
+  private audioFailureReported = false;
   private readonly onGesture = (): void => { void this.unlock(); };
 
   constructor(options: AudioDirectorOptions = {}) {
@@ -87,7 +89,8 @@ export class AudioDirector {
   }
 
   async unlock(): Promise<void> {
-    if (this.disposed) return;
+    if (this.disposed || this.unlocking) return;
+    this.unlocking = true;
     try {
       if (!this.context) {
         this.context = this.contextFactory();
@@ -102,8 +105,12 @@ export class AudioDirector {
       }
       if (this.context.state !== 'running') await this.context.resume();
       if (this.context.state === 'running') this.startScheduler();
-    } catch {
+      else this.reportAudioFailure('Browser playback may require another user gesture.');
+    } catch (error) {
       // Audio is optional; autoplay restrictions and missing implementations never block play.
+      this.reportAudioFailure('Audio could not start; gameplay will continue silently.', error);
+    } finally {
+      this.unlocking = false;
     }
   }
 
@@ -124,7 +131,7 @@ export class AudioDirector {
     try {
       playAudioAsset(this.context, this.sfxBus, PLACEHOLDER_CUE_ASSETS[cue],
         (source, nodes) => this.track(source, nodes), this.context.currentTime + 0.004);
-    } catch { /* optional effect; a failed voice must not affect gameplay */ }
+    } catch (error) { this.reportAudioFailure('An audio cue failed; gameplay will continue silently.', error); }
   }
 
   setMusicDucked(ducked: boolean): void {
@@ -142,10 +149,17 @@ export class AudioDirector {
       const index = this.stepIndex % MUSIC_ARRANGEMENT.notes.length;
       const note = MUSIC_ARRANGEMENT.notes[index];
       const duration = musicStepSeconds;
-      if (!this.currentSettings.muted) playAudioAsset(context, bus, { kind: 'synth', shape: {
-        frequency: midiFrequency(note), duration, waveform: MUSIC_ARRANGEMENT.waveform,
-        peak: MUSIC_ARRANGEMENT.level, attack: 0.004, release: 0.035,
-      } }, (source, nodes) => this.track(source, nodes), this.nextStepTime);
+      if (!this.currentSettings.muted) {
+        try {
+          playAudioAsset(context, bus, { kind: 'synth', shape: {
+            frequency: midiFrequency(note), duration, waveform: MUSIC_ARRANGEMENT.waveform,
+            peak: MUSIC_ARRANGEMENT.level, attack: 0.004, release: 0.035,
+          } }, (source, nodes) => this.track(source, nodes), this.nextStepTime);
+        } catch (error) {
+          this.reportAudioFailure('Procedural music playback failed; gameplay will continue silently.', error);
+          return;
+        }
+      }
       this.nextStepTime += musicStepSeconds;
       this.stepIndex++;
     }
@@ -216,5 +230,11 @@ export class AudioDirector {
 
   private persist(): void {
     try { this.storage?.setItem(AUDIO_SETTINGS_KEY, JSON.stringify(this.currentSettings)); } catch { /* unavailable or quota-limited storage */ }
+  }
+
+  private reportAudioFailure(message: string, error?: unknown): void {
+    if (this.audioFailureReported) return;
+    this.audioFailureReported = true;
+    console.warn(`TurenkiFight audio: ${message}`, error ?? '');
   }
 }

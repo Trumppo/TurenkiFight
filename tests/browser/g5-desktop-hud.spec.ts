@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -116,7 +117,7 @@ test('G5 desktop HUD and results stay readable at native and scaled desktop size
 
   for (const viewport of VIEWPORTS) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.goto('/');
+    await enterLocalGame(page, '/');
     await expect(page.locator('#game canvas')).toBeVisible();
     await installFightingHud(page);
 

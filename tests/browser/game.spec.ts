@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 test('station prototype loads without browser errors', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.getByRole('heading', { name: 'TurenkiFight' })).toBeVisible();
   await expect(page.locator('#game canvas')).toBeVisible();
   await expect(page.getByText('Turengin rautatieasema', { exact: false })).toBeVisible();
@@ -31,7 +32,7 @@ test('station SVG loads and four-player HUD is visible after gamepad joins', asy
     }));
     Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: () => pads });
   });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   const canvas = page.locator('#game canvas');
   await expect(canvas).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
@@ -74,7 +75,7 @@ test('station SVG loads and four-player HUD is visible after gamepad joins', asy
 
 test('responsive canvas retains 16:9 and logical camera coverage', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   const canvas = page.locator('#game canvas');
   await expect(canvas).toBeVisible();
   const geometry = await canvas.evaluate((element: HTMLCanvasElement) => ({
@@ -88,7 +89,7 @@ test('responsive canvas retains 16:9 and logical camera coverage', async ({ page
 });
 
 test('all fighter poses resolve to distinct, nonempty canvas textures', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const result = await page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame!;
@@ -135,7 +136,7 @@ test('all fighter poses resolve to distinct, nonempty canvas textures', async ({
 });
 
 test('HUD clock, score and hit/KO/respawn presentation follow authoritative state', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const result = await page.evaluate(() => {
     const game = (window as typeof window & { __turenkiGame?: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame!;
@@ -198,7 +199,7 @@ test('HUD clock, score and hit/KO/respawn presentation follow authoritative stat
 });
 
 test('960x540 browser renderer keeps the same logical camera framing', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const result = await page.evaluate(() => {
     const game = (window as typeof window & {

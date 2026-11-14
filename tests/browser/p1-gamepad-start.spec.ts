@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 test('P1 explicitly binds an unassigned gamepad Start; nonhost cannot start; reconnect requires explicit host Start', async ({ page }) => {
   await page.addInitScript(() => {
     const pads = Array.from({ length: 4 }, (_, index) => ({
@@ -10,7 +11,7 @@ test('P1 explicitly binds an unassigned gamepad Start; nonhost cannot start; rec
     Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: () => pads.map(p => p.connected ? p : null) });
     (window as typeof window & { __qaPads?: typeof pads }).__qaPads = pads;
   });
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const inspect = () => page.evaluate(() => {
     const scene = (window as typeof window & {

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { enterLocalGame } from './titleFlow';
 /**
  * QA finding F2 (docs/visual/M8_QA_REPORT_2026-11-02.md): after the match
  * reached `results`, the presentation loop kept calling `step`, so the
@@ -17,7 +18,7 @@ type ResultsState = {
 };
 
 test('reported tick stays at the match-end tick across frames in results, then rematch starts', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
 
   const measured = await page.evaluate(() => {
@@ -96,7 +97,7 @@ test('reported tick stays at the match-end tick across frames in results, then r
 });
 
 test('results phase keeps its authoritative tick, winner and reason while frames run', async ({ page }) => {
-  await page.goto('/');
+  await enterLocalGame(page, '/');
   await expect(page.locator('#game canvas')).toBeVisible();
   const samples = await page.evaluate(async () => {
     const scene = (window as any).__turenkiGame.scene.getScene('StationScene') as {

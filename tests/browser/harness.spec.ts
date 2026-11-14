@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { enterLocalGame } from './titleFlow';
 import { installVirtualPads, setPadButton, snapshot, advanceUntilResults } from './harness/gameHarness';
+
+async function enterLocalFight(page: import('@playwright/test').Page): Promise<void> {
+  await enterLocalGame(page);
+}
 
 test.describe('M1 automated game harness', () => {
   test('four virtual players complete a real 120-second Score Brawl', async ({ page }, testInfo) => {
@@ -8,8 +13,7 @@ test.describe('M1 automated game harness', () => {
     page.on('pageerror', error => errors.push(error.message));
     page.on('response', response => { if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`); });
     await installVirtualPads(page, 3);
-    await page.goto('/');
-    await expect(page.locator('#game canvas')).toBeVisible();
+    await enterLocalFight(page);
     // Explicit join edge for each pad; each press is observed by the scene.
     for (let i = 0; i < 3; i++) {
       await setPadButton(page, i, 8, true);
@@ -44,8 +48,7 @@ test.describe('M1 automated game harness', () => {
   test('browser combat: P1 punch lands, scores and reduces P2 health', async ({ page }, testInfo) => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto('/');
-    await expect(page.locator('#game canvas')).toBeVisible();
+    await enterLocalFight(page);
     // P2 joins via the documented keyboard join key.
     await page.keyboard.down('Shift');
     await page.evaluate(() => {
@@ -93,8 +96,7 @@ test.describe('M1 automated game harness', () => {
   test('browser knockout, respawn and protection complete without errors', async ({ page }, testInfo) => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto('/');
-    await expect(page.locator('#game canvas')).toBeVisible();
+    await enterLocalFight(page);
     // Prepare a deterministic combat fixture in the existing Phaser scene.
     // The hit, KO and respawn are resolved by the production simulation.
     const outcome = await page.evaluate(() => {
@@ -147,8 +149,7 @@ test.describe('M1 automated game harness', () => {
 
   test('identical browser match fixtures produce identical authoritative snapshots', async ({ page }) => {
     const run = async () => {
-      await page.goto('/');
-      await expect(page.locator('#game canvas')).toBeVisible();
+      await enterLocalFight(page);
       return page.evaluate(() => {
         const game = (window as typeof window & { __turenkiGame: { scene: { getScene: (key: string) => unknown } } }).__turenkiGame;
         const scene = game.scene.getScene('StationScene') as {
@@ -190,9 +191,8 @@ test.describe('M1 automated game harness', () => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
+    await enterLocalFight(page);
     const canvas = page.locator('#game canvas');
-    await expect(canvas).toBeVisible();
     const dims = await canvas.evaluate((el: HTMLCanvasElement) => ({
       width: el.width, height: el.height,
       cssWidth: el.getBoundingClientRect().width,

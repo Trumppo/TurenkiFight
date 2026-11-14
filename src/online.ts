@@ -29,6 +29,7 @@ const STATE_LABEL: Record<OnlineConnectionState, string> = {
 };
 
 const params = new URLSearchParams(window.location.search);
+const requestedRoomAction = params.get('action');
 const arenaSelection = resolveArenaSelection(window.location.search);
 const pageDescription = document.querySelector('.page-header p');
 if (pageDescription) {
@@ -451,6 +452,7 @@ if (serverParam && playerParam) {
   for (const control of [roomMode, roomArena, roomPlayerCount, roomDuration]) control.disabled = true;
   start(serverParam, playerParam, roomParam, queryAction);
 } else {
+  if (requestedRoomAction === 'create' || requestedRoomAction === 'join') roomAction.value = requestedRoomAction;
   serverInput.value = serverParam || defaultServerUrl(window.location.protocol);
   roomInput.value = roomParam;
   if (/^P[1-8]$/.test(playerParam)) {
