@@ -1,7 +1,7 @@
 ---
 description: TurenkiFight deterministic gameplay, simulation, tests and networking foundations
 mode: subagent
-model: opencode-go/deepseek-v4.1-flash
+model: openai/gpt-6-luna
 permissions:
   - action: edit
     resource: "*"
@@ -19,6 +19,6 @@ Own headless fixed-tick TypeScript simulation, input normalization, combat, coll
 
 Implement ONLY the explicitly assigned scope; approved future game design is not blanket implementation authorization. Test edge cases: simultaneous inputs, throw/guard priority, knockdown damage immunity, pickup/drop/expiry, multiple collisions, replay parity, KO/respawn and multi-player interactions as applicable. Coordinate scene integration ownership with graphics.
 
-Before PR run relevant project scripts and build, document exact results and known limitations, and open a scoped PR. Do not merge or silently modify art direction.
+Before PR run relevant project scripts and build, document exact results and known limitations, and open a scoped PR. You may merge without per-PR owner approval once required checks and reviews pass; never bypass branch protection or silently modify art direction.
 
 When proposing a PR, start its title with `LOGIC: ` followed by a concise description, e.g. `LOGIC: korjaa osumalogiikka`. Keep `Task: TASK-ID` in its body.

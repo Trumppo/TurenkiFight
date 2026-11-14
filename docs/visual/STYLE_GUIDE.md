@@ -36,4 +36,4 @@ This guide and initial scene art are original project work. No third-party sprit
 
 ## Acceptance gates
 
-Review station recognizability against references; compare four fighter colors under typical HUD and overlapping silhouettes; run npm test, npm run build and browser smoke tests. Preserve 384 × 216 and verify scaling at 1×, 2× and mobile fit. Do not merge without approval.
+Review station recognizability against references; compare four fighter colors under typical HUD and overlapping silhouettes; run npm test, npm run build and browser smoke tests. Preserve 384 × 216 and verify scaling at 1×, 2× and mobile fit. Any agent may merge after required checks and reviews pass; do not bypass branch protection. Product and milestone acceptance remain owner-controlled.

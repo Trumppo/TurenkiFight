@@ -30,6 +30,6 @@ Independently review, test and correct the M1 Score Brawl simulation, mode rules
 
 Record each scenario as PASS / FAIL / NOT VERIFIED with command, expected and observed behavior, relevant test file and commit. State explicitly which browser/gamepad cases were not tested. Include a summary of discovered bugs and fixes, any outstanding issues and whether all automated checks passed.
 
-Follow `docs/AGENT_WORKFLOW.md`: after this preparation PR merges, claim the `ready` task in a **separate claim PR**, wait for its merge, then create implementation branch from current `main`. Open implementation PR with exact line `Task: M1-GAMEPLAY-QA`. Never merge your own implementation PR without user approval. Coordinate `.github/AGENT_TASKS.yaml` metadata edits to avoid concurrent updates.
+Follow `docs/AGENT_WORKFLOW.md`: after this preparation PR merges, claim the `ready` task in a **separate claim PR**, wait for its merge, then create implementation branch from current `main`. Open implementation PR with exact line `Task: M1-GAMEPLAY-QA`. Any agent may merge after required checks and reviews pass; do not bypass branch protection. Coordinate `.github/AGENT_TASKS.yaml` metadata edits to avoid concurrent updates.
 
 **Non-goals:** network multiplayer, enemy AI, scrolling stages, new game modes, visual redesign, audio, balance overhaul, and any new post-M1 beat-'em-up mechanics.

@@ -60,4 +60,4 @@ For percentile computation define a single interpolation algorithm and report sa
 ## Handoff
 **Gameplay:** implement shared fixture generator, manifest schema validator, no-op/in-memory adapter and replay fingerprint tests first; then WS and WebRTC adapters in separate PRs. **Tester:** independently validate fixture reproducibility, manifest completeness, missing-metric handling, disconnect and adversarial inputs. **Designer:** review metric definitions and compare authority placement separately from transport overhead. **Graphics:** no benchmark file ownership; continue M1.5 QA fixes.
 
-**Acceptance:** reproducible CLI commands, CI unit tests and browser smoke as applicable, independent Tester report, and owner merge approval. Benchmark numbers remain pending until actual experiments.
+**Acceptance:** reproducible CLI commands, CI unit tests and browser smoke as applicable, and an independent Tester report. Merge follows the current agent PR policy after required checks/review pass; benchmark numbers remain pending until actual experiments.

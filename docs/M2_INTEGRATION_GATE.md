@@ -27,7 +27,7 @@ These are **not wire-compatible**. Do not quietly adapt the codec to match the e
 5. Inspect edge cases documented in `docs/M2_INPUT_PROTOCOL.md`: EventBatch 8192-byte cap can reject schema-valid maximal messages; snapshots validate finite z/vz without physical bounds and fail closed on invalid advancement. Decide whether these are documented limits acceptable for a transport-neutral first slice; do not silently weaken validation.
 6. Run exact project unit/protocol tests, production build, browser smoke and deterministic regression tests on candidate SHA; check relevant Actions workflows and provide links and logs. Distinguish local test results from remote CI.
 7. Tester independently records PASS / PASS WITH LIMITATIONS / FAIL with tested SHA, reproducible defects, remaining risks and recommendation.
-8. Only after explicit owner approval and passing required checks should the reviewed PR be merged. This planning PR grants no merge permission.
+8. After the independent Tester report and all required checks pass, any authorized agent may merge under the current shared PR policy. This does not approve a transport architecture, authorize follow-on implementation, or accept a milestone; those product decisions remain owner-controlled. Never bypass branch protection.
 
 ## Follow-on implementation slices (not yet authorized)
 - M2-SESSION-01: versioned session envelope and ownership model (session ID, client ID, player ID, tick/sequence, authority checks, disconnect neutrality) without choosing WS or WebRTC.
