@@ -26,6 +26,5 @@ menu render before the game canvas, first title activation creates/resumes audio
 and LOCAL FIGHT mounts one `#audio-mute` control. After local route activation
 the HUD measured 45 CSS px against the scoreboard band's 54.4 CSS px bottom; the
 canvas remains within the 360 px viewport. The short-HUD capture is illustrative,
-not a pixel baseline. The existing retro-scale browser test still navigates
-directly to `/` and expects a canvas before title activation; it requires the
-Tester-owned onboarding helper adaptation before it can serve as a valid check.
+not a pixel baseline. After merging Tester head `ea2edb1`, focused Playwright
+coverage for title routes/activation, audio, and retro-scale/HUD completed 29/29.
