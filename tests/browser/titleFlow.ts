@@ -8,12 +8,17 @@ export async function enterLocalGame(page: Page, path = '/'): Promise<void> {
     const screen = await onboarding.getAttribute('data-screen');
     if (screen === 'title') {
       await expect(page.locator('#game canvas')).toHaveCount(0);
+      await expect(page.locator('#lobby-actions')).toBeHidden();
       await page.locator('#title-start').click();
       await expect(onboarding).toHaveAttribute('data-screen', 'menu');
     } else {
       await expect(onboarding).toHaveAttribute('data-screen', 'menu');
     }
+    await expect(page.locator('#game canvas')).toHaveCount(0);
     await page.locator('[data-route="local"]').click();
   }
   await expect(page.locator('#game canvas')).toBeVisible();
+  // The menu button becomes hidden when LOCAL FIGHT is selected. Focus the game
+  // surface so subsequent synthetic keyboard input reaches the Phaser window.
+  await page.locator('#game canvas').focus();
 }

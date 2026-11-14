@@ -132,8 +132,9 @@ test('station default and Mesku selection still resolve their original backdrops
 test('the selected arena wires into normal, reset, ALL BOTS and wave state creation', async ({ page }) => {
   await enterLocalFight(page, '/?arena=kkauppa');
   await waitForBackdrop(page, 'arena-kkauppa-backdrop');
-  await page.keyboard.press('Shift');
+  await page.keyboard.down('Shift');
   await expect.poll(() => page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene').state.fighters.map((fighter: any) => fighter.id))).toEqual(['P1', 'P2']);
+  await page.keyboard.up('Shift');
   await page.locator('#start-match').click();
   await expect.poll(() => page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene').state.phase)).toBe('countdown');
   expect(await page.evaluate(() => (window as any).__turenkiGame.scene.getScene('StationScene').state.arena)).toBe('kkauppa');
