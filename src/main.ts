@@ -10,23 +10,25 @@ const onboarding = document.getElementById('onboarding');
 const titleStart = document.getElementById('title-start');
 const menu = document.querySelector<HTMLElement>('.onboarding-menu');
 let onboardingState: 'title' | 'menu' | 'entered' = 'title';
-let audioStarted = false;
-let audioPresentation: ReturnType<typeof createAudioPresentation> | undefined;
+// Install the lazy gesture listeners before any title activation. Creating the
+// presentation does not create an AudioContext; AudioDirector does that only
+// inside unlock(), invoked from the first user activation.
+let audioPresentation: ReturnType<typeof createAudioPresentation>;
 let game: Phaser.Game | null = null;
 
 function enterMenu(): void {
   if (onboardingState !== 'title') return;
   onboardingState = 'menu';
+  // Do this synchronously in the activation handler so AudioContext.resume()
+  // remains within the browser's transient user-activation window. Audio is
+  // optional and failures are reported by AudioDirector without blocking flow.
+  void audioPresentation.director.unlock();
   if (onboarding) onboarding.dataset.screen = 'menu';
   if (titleStart) titleStart.hidden = true;
   if (menu) menu.hidden = false;
 }
 function enterRoute(route: string): void {
   if (onboardingState !== 'menu') return;
-  if (!audioStarted) {
-    audioStarted = true;
-    audioPresentation = createAudioPresentation(audioControlsHost());
-  }
   onboardingState = 'entered';
   onboarding?.setAttribute('hidden', '');
   document.body.classList.remove('onboarding-active');
@@ -112,6 +114,9 @@ if (arenaSelect) {
 
 const displayScale = new URLSearchParams(window.location.search).get('scale') === '2' ? '2' : 'fit';
 if (displayScale === '2') document.body.classList.add('integer-scale-2');
+// Host placement depends on the resolved scale mode; initialize after its
+// class is applied, but before any title activation can occur.
+audioPresentation = createAudioPresentation(audioControlsHost());
 const scaleSelect = document.getElementById('display-scale') as HTMLSelectElement | null;
 if (scaleSelect) {
   scaleSelect.value = displayScale;
