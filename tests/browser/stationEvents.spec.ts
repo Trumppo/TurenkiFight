@@ -53,7 +53,7 @@ test('station event is tick-derived, visible only during its window and cues onc
   expect(duringWarning).toEqual({
     event: { active: true, phase: 'warning', cycle: 1, cueCount: 1 },
     text: 'TRAIN APPROACH · PLATFORM LIGHTS ONLY', hidden: false, cueCount: 1,
-    audioState: 'not-created', fighters: 4, lightsVisible: true, stateTick: 3300, unchangedState: true,
+    audioState: 'running', fighters: 4, lightsVisible: true, stateTick: 3300, unchangedState: true,
   });
   await expect(page.locator('#station-event-status')).toHaveCSS('font-size', '14px');
   await expect(page.locator('#station-event-status')).toHaveCSS('white-space', 'nowrap');
